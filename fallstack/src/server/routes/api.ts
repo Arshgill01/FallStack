@@ -11,6 +11,7 @@ import type {
   RecordSummitResponse,
 } from '../../shared/api';
 import {
+  createInitialAchievements,
   createDailySeed,
   createSeededCounters,
   deriveSnapshot,
@@ -21,6 +22,7 @@ import {
   SEEDED_TOTAL_FALLS,
   ZERO_COUNTERS,
   type GameSnapshot,
+  type AchievementState,
   type ZoneId,
   type ZoneMutationCounters,
 } from '../../shared/game/mutation';
@@ -37,6 +39,7 @@ type StoredDailyState = {
   totalFalls: number;
   totalClears: number;
   totalSummits: number;
+  achievements: AchievementState;
 };
 
 export const api = new Hono();
@@ -66,15 +69,25 @@ api.post('/record-fall', async (c) => {
   if (!postId) return error(c, 'postId is required but missing from context');
 
   const body = await c.req.json<Partial<RecordFallRequest>>().catch(() => null);
-  if (!body || !isZoneId(body.zoneId) || !isFailureBucket(body.failureBucket)) {
+  if (!body || !validAttemptId(body.attemptId) || !isZoneId(body.zoneId) || !isFailureBucket(body.failureBucket)) {
     return error(c, 'Invalid fall event.');
   }
 
   try {
     const state = await loadDailyState();
     if (body.dailySeed !== state.dailySeed) return error(c, 'Stale tower seed.', 409);
+    const duplicate = await seenEvent(state, `fall:${body.attemptId}`);
+    if (duplicate) {
+      return c.json<RecordFallResponse>({
+        type: 'recordFall',
+        counted: false,
+        message: 'Your fall was already heard.',
+        snapshot: snapshotFor(state),
+      });
+    }
 
     const userKey = contributorKey();
+    const username = await currentDisplayUsername();
     const bucketCapKey = keyFor(
       state,
       `user:${userKey}:zone:${body.zoneId}:bucket:${body.failureBucket}`
@@ -92,6 +105,7 @@ api.post('/record-fall', async (c) => {
     if (counted) {
       state.counters[body.zoneId][body.failureBucket] += 1;
       state.totalFalls += 1;
+      updateHighestClimber(state, username, body.zoneId, body.highestY);
       await saveDailyState(state);
     }
 
@@ -117,19 +131,31 @@ api.post('/record-fall', async (c) => {
 
 api.post('/record-clear', async (c) => {
   const body = await c.req.json<Partial<RecordClearRequest>>().catch(() => null);
-  if (!body || !isZoneId(body.zoneId)) return error(c, 'Invalid clear event.');
+  if (!body || !validAttemptId(body.attemptId) || !isZoneId(body.zoneId)) return error(c, 'Invalid clear event.');
 
   try {
     const state = await loadDailyState();
     if (body.dailySeed !== state.dailySeed) return error(c, 'Stale tower seed.', 409);
+    const duplicate = await seenEvent(state, `clear:${body.attemptId}:${body.zoneId}`);
+    if (duplicate) {
+      return c.json<RecordClearResponse>({
+        type: 'recordClear',
+        counted: false,
+        message: 'That checkpoint already held.',
+        snapshot: snapshotFor(state),
+      });
+    }
 
     const clearCapKey = keyFor(state, `user:${contributorKey()}:zone:${body.zoneId}:clears`);
     const clearContribution = await redis.incrBy(clearCapKey, 1);
     const counted = clearContribution <= USER_ZONE_CLEAR_CAP;
+    const username = await currentDisplayUsername();
 
     if (counted) {
       state.counters[body.zoneId].successfulClears += 1;
       state.totalClears += 1;
+      updateHighestClimber(state, username, body.zoneId, body.highestY);
+      updateBestStabilizer(state, username, clearContribution);
       await saveDailyState(state);
     }
 
@@ -163,12 +189,28 @@ api.post('/record-summit', async (c) => {
     if (body?.dailySeed && body.dailySeed !== state.dailySeed) {
       return error(c, 'Stale tower seed.', 409);
     }
+    if (!validAttemptId(body?.attemptId)) return error(c, 'Invalid summit event.');
+    const duplicate = await seenEvent(state, `summit:${body.attemptId}`);
+    if (duplicate) {
+      return c.json<RecordSummitResponse>({
+        type: 'recordSummit',
+        counted: false,
+        message: 'The summit already knows you.',
+        snapshot: snapshotFor(state),
+      });
+    }
 
     const summitCapKey = keyFor(state, `user:${contributorKey()}:summits`);
     const summitContribution = await redis.incrBy(summitCapKey, 1);
     const counted = summitContribution <= 1;
+    const username = await currentDisplayUsername();
 
     if (counted) {
+      if (!state.achievements.firstSummitUsername) {
+        state.achievements.firstSummitUsername = username;
+        state.achievements.firstSummitAt = Date.now();
+      }
+      updateHighestClimber(state, username, 'moon_roof', 392);
       state.totalSummits += 1;
       await saveDailyState(state);
     }
@@ -198,6 +240,7 @@ async function loadDailyState(): Promise<StoredDailyState> {
     totalFalls: SEEDED_TOTAL_FALLS,
     totalClears: 0,
     totalSummits: 0,
+    achievements: createInitialAchievements(),
   };
   await saveDailyState(state);
   return state;
@@ -219,6 +262,7 @@ function reviveState(
     totalFalls: Math.max(SEEDED_TOTAL_FALLS, stored.totalFalls ?? SEEDED_TOTAL_FALLS),
     totalClears: stored.totalClears ?? 0,
     totalSummits: stored.totalSummits ?? 0,
+    achievements: { ...createInitialAchievements(), ...stored.achievements },
   };
 }
 
@@ -238,8 +282,47 @@ function keyFor(state: StoredDailyState, suffix: string): string {
   return `fallstack:daily:${state.dateKey}:${suffix}`;
 }
 
+async function seenEvent(state: StoredDailyState, eventId: string): Promise<boolean> {
+  const key = keyFor(state, `event:${eventId}`);
+  const existing = await redis.get(key);
+  if (existing) return true;
+  await redis.set(key, '1');
+  await redis.expire(key, 60 * 60 * 30);
+  return false;
+}
+
+function updateHighestClimber(
+  state: StoredDailyState,
+  username: string,
+  zoneId: ZoneId,
+  highestY: number | undefined
+) {
+  if (typeof highestY !== 'number' || Number.isNaN(highestY)) return;
+  if (highestY < state.achievements.highestClimberY) {
+    state.achievements.highestClimberY = Math.max(260, highestY);
+    state.achievements.highestClimberZone = zoneId;
+    state.achievements.highestClimberUsername = username;
+  }
+}
+
+function updateBestStabilizer(state: StoredDailyState, username: string, userClearCount: number) {
+  if (userClearCount > state.achievements.bestStabilizerClears) {
+    state.achievements.bestStabilizerClears = userClearCount;
+    state.achievements.bestStabilizerUsername = username;
+  }
+}
+
+async function currentDisplayUsername(): Promise<string> {
+  const username = context.username ?? (await reddit.getCurrentUsername()) ?? null;
+  return username ? `u/${username}` : 'a quiet climber';
+}
+
 function contributorKey(): string {
   return context.userId ?? context.loid ?? 'anonymous';
+}
+
+function validAttemptId(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-zA-Z0-9:_-]{8,80}$/.test(value);
 }
 
 function error(c: HonoContext, message: string, status: 400 | 409 | 500 = 400) {

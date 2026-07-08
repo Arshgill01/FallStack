@@ -18,9 +18,11 @@ export type InitGameResponse = {
 
 export type RecordFallRequest = {
   dailySeed: string;
+  attemptId: string;
   zoneId: ZoneId;
   failureBucket: FailureBucket;
   chargePercent: number;
+  highestY: number;
   timestamp: number;
 };
 
@@ -33,7 +35,9 @@ export type RecordFallResponse = {
 
 export type RecordClearRequest = {
   dailySeed: string;
+  attemptId: string;
   zoneId: ZoneId;
+  highestY: number;
   timestamp: number;
 };
 
@@ -46,6 +50,7 @@ export type RecordClearResponse = {
 
 export type RecordSummitRequest = {
   dailySeed: string;
+  attemptId: string;
   timestamp: number;
 };
 

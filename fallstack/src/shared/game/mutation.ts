@@ -57,6 +57,31 @@ export type GameSnapshot = {
   totalSummits: number;
   headline: string;
   zones: ZoneSnapshot[];
+  result: ResultSummary;
+};
+
+export type AchievementState = {
+  firstSummitUsername: string | null;
+  firstSummitAt: number | null;
+  highestClimberUsername: string | null;
+  highestClimberZone: ZoneId;
+  highestClimberY: number;
+  bestStabilizerUsername: string | null;
+  bestStabilizerClears: number;
+};
+
+export type ResultSummary = {
+  towerName: string;
+  seedLabel: string;
+  summitStatus: 'Summit Cleared' | 'Summit Unclaimed';
+  firstSummitUsername: string | null;
+  mostCursedZone: string;
+  mostCursedStatus: ZoneStatus;
+  mostUsefulArtifact: string;
+  bestStabilizerUsername: string | null;
+  highestClimberUsername: string | null;
+  highestClimberZone: string;
+  tomorrowHook: string;
 };
 
 export const ZERO_COUNTERS: ZoneMutationCounters = {
@@ -144,6 +169,7 @@ export function deriveSnapshot(input: {
   totalFalls: number;
   totalClears: number;
   totalSummits: number;
+  achievements: AchievementState;
 }): GameSnapshot {
   const zones = ZONE_IDS.map((zoneId) => deriveZone(zoneId, input.counters[zoneId]));
 
@@ -155,6 +181,19 @@ export function deriveSnapshot(input: {
     totalSummits: input.totalSummits,
     headline: `Today's tower has ${input.totalFalls} failed climbs in it.`,
     zones,
+    result: deriveResult(input.dailySeed, zones, input.achievements, input.totalSummits),
+  };
+}
+
+export function createInitialAchievements(): AchievementState {
+  return {
+    firstSummitUsername: null,
+    firstSummitAt: null,
+    highestClimberUsername: null,
+    highestClimberZone: 'lower_ruins',
+    highestClimberY: 2164,
+    bestStabilizerUsername: null,
+    bestStabilizerClears: 0,
   };
 }
 
@@ -253,6 +292,53 @@ function deriveArtifacts(
   }
 
   return artifacts.slice(0, 3);
+}
+
+function deriveResult(
+  dailySeed: string,
+  zones: ZoneSnapshot[],
+  achievements: AchievementState,
+  totalSummits: number
+): ResultSummary {
+  const mostCursed = [...zones].sort((a, b) => curseScore(b) - curseScore(a))[0] ?? zones[0]!;
+  const usefulArtifact =
+    zones
+      .flatMap((zone) => zone.artifacts.map((artifact) => ({ zone, artifact })))
+      .filter(({ artifact }) => artifact.type === 'corpse_stack' || artifact.type === 'mercy_nail')
+      .sort((a, b) => b.artifact.count - a.artifact.count)[0] ?? null;
+
+  return {
+    towerName: 'The Cursed Stack',
+    seedLabel: dailySeed.replace('fallstack-', ''),
+    summitStatus: totalSummits > 0 ? 'Summit Cleared' : 'Summit Unclaimed',
+    firstSummitUsername: achievements.firstSummitUsername,
+    mostCursedZone: mostCursed.name,
+    mostCursedStatus: mostCursed.status,
+    mostUsefulArtifact: usefulArtifact
+      ? `${displayArtifactName(usefulArtifact.artifact.type)} · ${usefulArtifact.zone.name}`
+      : 'No foothold has earned trust yet.',
+    bestStabilizerUsername: achievements.bestStabilizerUsername,
+    highestClimberUsername: achievements.highestClimberUsername,
+    highestClimberZone: ZONE_NAMES[achievements.highestClimberZone],
+    tomorrowHook: "Tomorrow, today's worst ledge comes back as a relic.",
+  };
+}
+
+function curseScore(zone: ZoneSnapshot): number {
+  const failures =
+    zone.counters.short_jump +
+    zone.counters.overjump +
+    zone.counters.wall_bonk +
+    zone.counters.helper_overuse;
+  return failures * 2 - zone.counters.successfulClears * 3;
+}
+
+function displayArtifactName(type: ArtifactType): string {
+  if (type === 'corpse_stack') return 'Corpse Stack';
+  if (type === 'mercy_nail') return 'Mercy Nail';
+  if (type === 'ghost_platform') return 'Ghost Platform';
+  if (type === 'cursed_brick') return 'Cursed Brick';
+  return 'Lantern Trail';
 }
 
 function makeArtifact(
