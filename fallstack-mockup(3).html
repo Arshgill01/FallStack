@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fallstack — a mountain shaped by every fall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi: #f2e9d8;
+    --washi-dim: #e6d9bf;
+    --ink: #33291f;
+    --ink-soft: #6b5c48;
+    --indigo: #2c3a45;
+    --indigo-deep: #1b262f;
+    --persimmon: #c1502f;
+    --persimmon-deep: #9c3e23;
+    --moss: #74855f;
+    --gold: #c79a3e;
+    --paper-card: #f7f0e2;
+    --shadow: rgba(51,41,31,0.22);
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{
+    margin:0; padding:0; height:100%; background: var(--indigo-deep);
+    font-family: 'Zen Maru Gothic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    overscroll-behavior: none;
+    touch-action: none;
+    user-select: none;
+  }
+  #stage{
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100%;
+    display:flex;
+    flex-direction: column;
+    position: relative;
+  }
+  /* ---------- Header ---------- */
+  #topbar{
+    padding: 12px 14px 10px;
+    background: linear-gradient(180deg, #f7f0e2, #ecdfc4);
+    border-bottom: 1px solid rgba(51,41,31,0.15);
+    flex-shrink: 0;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  #hanko{
+    flex-shrink:0;
+    width: 34px; height: 34px;
+    border-radius: 7px;
+    background: var(--persimmon);
+    color: #fff4e6;
+    display:flex; align-items:center; justify-content:center;
+    font-family: 'Shippori Mincho', serif;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 2px 0 var(--persimmon-deep), inset 0 0 0 1.5px rgba(255,255,255,0.25);
+    transform: rotate(-2deg);
+  }
+  #topbar-text{ min-width:0; }
+  #wordmark{
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+  }
+  #wordmark span{ color: var(--persimmon); }
+  #headline{
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1px;
+  }
+  #headline b{ color: var(--persimmon-deep); font-weight: 700; }
+
+  /* ---------- Game viewport ---------- */
+  #viewport-wrap{
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    background: var(--indigo-deep);
+  }
+  #game{
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Sparse HUD overlay */
+  .hud{
+    position:absolute;
+    pointer-events:none;
+    font-variant-numeric: tabular-nums;
+  }
+  #zoneTag{
+    top:10px; left:10px;
+    padding: 6px 11px 7px;
+    background: rgba(247,240,226,0.88);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px var(--shadow);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.2px;
+  }
+  #zoneTag .badge{
+    display:inline-block;
+    margin-left:7px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+  }
+  .badge-quiet{ background:#e7e2d1; color:#7a7358; }
+  .badge-haunted{ background:#e6d3d8; color:#96455b; }
+  .badge-cursed{ background:#5c4a63; color:#e9c9e0; }
+  .badge-reinforced{ background:#dbe6d1; color:#4e6a3b; }
+  .badge-stabilized{ background:#d7e6df; color:#2f6b57; }
+
+  #stats{
+    top:10px; right:10px;
+    padding: 6px 11px 7px;
+    background: rgba(247,240,226,0.88);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px var(--shadow);
+    font-size: 11px;
+    text-align:right;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  #stats b{ color: var(--ink); }
+
+  #mutationBanner{
+    left: 10px; right: 10px; bottom: 96px;
+    padding: 9px 12px;
+    background: rgba(247,240,226,0.94);
+    border-radius: 10px;
+    border-left: 4px solid var(--persimmon);
+    box-shadow: 0 3px 10px var(--shadow);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  #mutationBanner.show{ opacity:1; transform: translateY(0); }
+
+  #checkpointBanner{
+    left: 50%; top: 40%;
+    transform: translate(-50%,-50%) scale(0.96);
+    padding: 16px 22px;
+    background: rgba(247,240,226,0.96);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px var(--shadow);
+    text-align:center;
+    min-width: 220px;
+    opacity:0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #checkpointBanner.show{ opacity:1; transform: translate(-50%,-50%) scale(1); }
+  #checkpointBanner .cp-title{
+    font-family: 'Shippori Mincho', serif; font-weight: 700; letter-spacing: 0.4px;
+    font-size: 15.5px; color: var(--persimmon-deep); margin-bottom: 4px;
+  }
+  #checkpointBanner .cp-sub{ font-size: 12px; color: var(--ink-soft); }
+
+  #controlsHint{
+    left:10px; bottom: 72px;
+    font-size: 10.5px; color: rgba(247,240,226,0.65);
+    letter-spacing: 0.2px;
+  }
+
+  /* ---------- Mobile / universal controls ---------- */
+  #controls{
+    flex-shrink: 0;
+    height: 88px;
+    background: linear-gradient(180deg, #ecdfc4, #e2d3b3);
+    border-top: 1px solid rgba(51,41,31,0.15);
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 0 14px;
+    gap: 12px;
+  }
+  .ctrl-btn{
+    -webkit-user-select:none; user-select:none;
+    display:flex; align-items:center; justify-content:center;
+    width: 62px; height: 62px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbf5e8, #e9dcc0);
+    box-shadow: 0 3px 0 #c9b98f, inset 0 1px 0 rgba(255,255,255,0.6);
+    color: var(--ink-soft);
+    font-size: 19px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ctrl-btn.active{
+    background: linear-gradient(180deg, #e9dcc0, #ddcda9);
+    box-shadow: 0 1px 0 #c9b98f, inset 0 1px 0 rgba(255,255,255,0.4);
+    transform: translateY(2px);
+  }
+  #jumpBtn{
+    flex: 1;
+    max-width: 220px;
+    height: 62px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbf5e8, #e9dcc0);
+    box-shadow: 0 3px 0 #c9b98f, inset 0 1px 0 rgba(255,255,255,0.6);
+    color: var(--persimmon-deep);
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    position: relative;
+    overflow: hidden;
+  }
+  #jumpBtn .charge-fill{
+    position:absolute; left:0; bottom:0; top:0; width:0%;
+    background: rgba(193,80,47,0.28);
+    transition: width 0.03s linear;
+  }
+  #jumpBtn.active{
+    box-shadow: 0 1px 0 #c9b98f, inset 0 1px 0 rgba(255,255,255,0.4);
+    transform: translateY(2px);
+  }
+  #jumpBtn span{ position:relative; z-index:2; }
+
+  /* ---------- Result card ---------- */
+  #resultOverlay{
+    position:absolute; inset:0;
+    background: rgba(27,38,47,0.82);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding: 20px;
+    z-index: 20;
+  }
+  #resultOverlay.show{ display:flex; }
+  #resultCard{
+    width:100%;
+    max-width: 360px;
+    background: var(--paper-card);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    padding: 22px 22px 20px;
+  }
+  #resultCard h2{
+    margin:0 0 2px;
+    font-family: 'Shippori Mincho', serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.4px;
+    color: var(--persimmon-deep);
+  }
+  #resultCard .rc-sub{ font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
+  .rc-row{
+    display:flex; justify-content: space-between;
+    font-size: 12.5px;
+    padding: 7px 0;
+    border-top: 1px dashed rgba(51,41,31,0.18);
+  }
+  .rc-row .rc-label{ color: var(--ink-soft); }
+  .rc-row .rc-val{ color: var(--ink); font-weight:700; text-align:right; max-width: 60%; }
+  #resultCard .rc-hook{
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: rgba(116,133,95,0.14);
+    border-left: 3px solid var(--moss);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #47543a;
+  }
+  #closeResult{
+    margin-top: 16px;
+    width:100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--persimmon);
+    border: none;
+    color: #fff4e6;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+    cursor:pointer;
+    box-shadow: 0 3px 0 var(--persimmon-deep);
+  }
+  #closeResult:active{ transform: translateY(2px); box-shadow: 0 1px 0 var(--persimmon-deep); }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div id="topbar">
+    <div id="hanko">登</div>
+    <div id="topbar-text">
+      <div id="wordmark">Fall<span>stack</span></div>
+      <div id="headline"><b id="fallCountHeadline">37</b> travelers slipped on this mountain today.</div>
+    </div>
+  </div>
+
+  <div id="viewport-wrap">
+    <canvas id="game"></canvas>
+
+    <div class="hud" id="zoneTag">Moss Steps <span class="badge badge-haunted" id="zoneBadge">Restless</span></div>
+    <div class="hud" id="stats">climbs <b id="statClimbs">0</b> · falls <b id="statFalls">0</b><br>gate <b id="statCheckpoint">0/3</b></div>
+    <div class="hud" id="controlsHint">Arrows move & steer midair · Hold Space · Release to leap</div>
+    <div class="hud" id="mutationBanner"></div>
+    <div class="hud" id="checkpointBanner"><div class="cp-title" id="cpTitle"></div><div class="cp-sub" id="cpSub"></div></div>
+
+    <div id="resultOverlay">
+      <div id="resultCard">
+        <h2 id="rcTowerName">Today's Climb</h2>
+        <div class="rc-sub" id="rcSeed">Daily Seed #37</div>
+        <div class="rc-row"><span class="rc-label">Summit</span><span class="rc-val" id="rcSummit">—</span></div>
+        <div class="rc-row"><span class="rc-label">Most restless slope</span><span class="rc-val" id="rcCursed">—</span></div>
+        <div class="rc-row"><span class="rc-label">Most useful marker</span><span class="rc-val" id="rcArtifact">—</span></div>
+        <div class="rc-row"><span class="rc-label">Best stabilizer</span><span class="rc-val" id="rcStabilizer">—</span></div>
+        <div class="rc-row"><span class="rc-label">This session</span><span class="rc-val" id="rcSession">—</span></div>
+        <div class="rc-hook" id="rcHook">Tomorrow, today's stumbles return as tomorrow's stepping stones.</div>
+        <button id="closeResult">Keep Climbing</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div class="ctrl-btn" id="leftBtn">◀</div>
+    <div id="jumpBtn"><div class="charge-fill" id="chargeFill"></div><span id="jumpLabel">HOLD / SPACE</span></div>
+    <div class="ctrl-btn" id="rightBtn">▶</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     WORLD / ZONE DATA
+     y decreases going UP the mountain. Player starts near the
+     bottom (large y) and climbs toward the summit (small y).
+  ========================================================= */
+  const WORLD_W = 480;
+
+  // Each zone's "floorY" doubles as its checkpoint/respawn line
+  // and as the death boundary for the zone *above* it.
+  const zones = [
+    {
+      id: 'ruins', name: 'Moss Steps', theme: 'ruins',
+      floorY: 3320, topY: 2470,
+      checkpoint: { x: 170, y: 3320, w: 160 },
+      ledges: [
+        { x: 60,  y: 3180, w: 108, kind:'stone' },
+        { x: 300, y: 3040, w: 96,  kind:'stone' },
+        { x: 90,  y: 2900, w: 96,  kind:'stone' },
+        { x: 300, y: 2760, w: 96,  kind:'stone' },
+        { x: 120, y: 2620, w: 100, kind:'stone' },
+      ],
+      counts: { short_jump: 14, overjump: 3, wall_bonk: 9, helper_overuse: 1 },
+      successfulClears: 4,
+      seededOrigin: { short_jump: '14 falls wore smooth this step.' },
+      contribUsed: { short_jump:0, overjump:0, wall_bonk:0, helper_overuse:0, clear:0 },
+    },
+    {
+      id: 'bell', name: 'Temple Bells', theme: 'bell',
+      floorY: 2470, topY: 1520,
+      checkpoint: { x: 160, y: 2470, w: 150 },
+      ledges: [
+        { x: 40,  y: 2340, w: 78, kind:'iron' },
+        { x: 330, y: 2200, w: 78, kind:'iron' },
+        { x: 150, y: 2060, w: 78, kind:'iron' },
+        { x: 340, y: 1920, w: 78, kind:'iron' },
+        { x: 60,  y: 1780, w: 78, kind:'iron' },
+        { x: 270, y: 1640, w: 78, kind:'iron' },
+      ],
+      counts: { short_jump: 6, overjump: 1, wall_bonk: 3, helper_overuse: 0 },
+      successfulClears: 0,
+      seededOrigin: {},
+      contribUsed: { short_jump:0, overjump:0, wall_bonk:0, helper_overuse:0, clear:0 },
+    },
+    {
+      id: 'moon', name: 'Moon Terrace', theme: 'moon',
+      floorY: 1520, topY: 200,
+      checkpoint: { x: 160, y: 1520, w: 150 },
+      ledges: [
+        { x: 310, y: 1380, w: 88, kind:'moon' },
+        { x: 80,  y: 1240, w: 84, kind:'moon' },
+        { x: 320, y: 1100, w: 84, kind:'moon' },
+        { x: 100, y: 960,  w: 84, kind:'moon' },
+        { x: 300, y: 820,  w: 84, kind:'moon' },
+        { x: 120, y: 680,  w: 84, kind:'moon' },
+        { x: 280, y: 540,  w: 88, kind:'moon' },
+        { x: 140, y: 400,  w: 88, kind:'moon' },
+      ],
+      counts: { short_jump: 0, overjump: 0, wall_bonk: 0, helper_overuse: 0 },
+      successfulClears: 0,
+      seededOrigin: {},
+      summit: { x: 170, y: 220, w: 140 },
+      contribUsed: { short_jump:0, overjump:0, wall_bonk:0, helper_overuse:0, clear:0 },
+    },
+  ];
+
+  const WORLD_H = zones[0].floorY + 100;
+
+  // ---- Derived artifact/state logic ----
+  function deriveArtifacts(zone){
+    const c = zone.counts;
+    const arts = {};
+    // helpful: short_jump bucket -> Worn Step (3+), upgrade Lucky Charm (6+)
+    if (c.short_jump >= 6) arts.helpful = { type:'mercy_nail', label:'Lucky Charm', count:c.short_jump };
+    else if (c.short_jump >= 3) arts.helpful = { type:'corpse_stack', label:'Worn Step', count:c.short_jump };
+    // rescue: wall_bonk -> Paper Lantern (3+)
+    if (c.wall_bonk >= 3) arts.rescue = { type:'ghost_platform', label:'Paper Lantern', count:c.wall_bonk };
+    // hazard: overjump / helper_overuse -> Mossy Stone (3+)
+    if ((c.overjump + c.helper_overuse) >= 3) arts.hazard = { type:'cursed_brick', label:'Mossy Stone', count:c.overjump + c.helper_overuse };
+    // hint: successfulClears -> Lantern Path (3+)
+    if (zone.successfulClears >= 3) arts.hint = { type:'lantern_trail', label:'Lantern Path', count: zone.successfulClears };
+    return arts;
+  }
+  function deriveBadge(zone){
+    const c = zone.counts;
+    const maxFail = Math.max(c.short_jump, c.overjump, c.wall_bonk, c.helper_overuse);
+    const net = maxFail - zone.successfulClears * 2;
+    if (net >= 10) return 'Cursed';
+    if (net >= 6) return 'Haunted';
+    if (zone.successfulClears >= 6) return 'Stabilized';
+    if (zone.successfulClears >= 3) return 'Reinforced';
+    return 'Quiet';
+  }
+  // internal state stays as Quiet/Haunted/Cursed/Reinforced/Stabilized (logic keys);
+  // only the on-screen wording is softened via this display map.
+  const BADGE_DISPLAY = { Quiet:'Untouched', Haunted:'Restless', Cursed:'Overgrown', Reinforced:'Well-Trodden', Stabilized:'Blessed' };
+  zones.forEach(z => { z.artifacts = deriveArtifacts(z); z.badge = deriveBadge(z); });
+
+  /* =========================================================
+     CANVAS / RENDER SETUP
+  ========================================================= */
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let viewW = 480, viewH = 720, scale = 1;
+
+  function resize(){
+    const wrap = document.getElementById('viewport-wrap');
+    const rect = wrap.getBoundingClientRect();
+    viewW = 480; viewH = Math.round(viewW * (rect.height/rect.width));
+    canvas.width = viewW; canvas.height = viewH;
+    canvas.style.width = '100%'; canvas.style.height = '100%';
+  }
+  window.addEventListener('resize', resize);
+
+  /* =========================================================
+     PLAYER STATE
+  ========================================================= */
+  const PLAYER_W = 20, PLAYER_H = 28;
+  const GRAVITY = 1550;
+  const AIR_ACCEL = 950;   // arrow keys steer the arc in flight
+  const AIR_MAX_VX = 420;  // clamp so steering can't outrun the leap itself
+  const player = {
+    x: 220, y: 3320 - PLAYER_H, vx:0, vy:0,
+    onGround:true, facing:1, charging:false, chargeStart:0,
+    standingType: null, standingSince:0,
+  };
+
+  let input = { left:false, right:false, jumpHeld:false };
+  let camY = player.y;
+  let curZoneIndex = 0;
+  let sessionStats = { climbs:0, falls:0, checkpoints:0 };
+  let crumbling = []; // {ledgeRef, brokenUntil}
+  const CHECKPOINT_TOTAL = 3;
+
+  function zoneIndexForY(y){
+    for (let i=0;i<zones.length;i++){
+      const z = zones[i];
+      if (y > z.topY || i === zones.length-1) return i;
+    }
+    return 0;
+  }
+
+  function currentZone(){ return zones[curZoneIndex]; }
+
+  function respawnAt(zone){
+    player.x = zone.checkpoint.x + zone.checkpoint.w/2 - PLAYER_W/2;
+    player.y = zone.checkpoint.y - PLAYER_H;
+    player.vx = 0; player.vy = 0; player.onGround = true;
+    camY = player.y;
+  }
+  respawnAt(zones[0]);
+
+  /* =========================================================
+     INPUT
+  ========================================================= */
+  // In an embedded/iframe context, keydown only fires once the frame has
+  // focus. Force focus immediately and on any interaction so Arrow/Space
+  // work without requiring a click on the on-screen button first.
+  document.body.setAttribute('tabindex', '-1');
+  document.body.style.outline = 'none';
+  function grabFocus(){ document.body.focus({ preventScroll: true }); }
+  grabFocus();
+  window.addEventListener('pointerdown', grabFocus);
+  window.addEventListener('touchstart', grabFocus, {passive:true});
+
+  window.addEventListener('keydown', e=>{
+    if (e.code === 'ArrowLeft'){ e.preventDefault(); input.left = true; }
+    if (e.code === 'ArrowRight'){ e.preventDefault(); input.right = true; }
+    if (e.code === 'Space'){ e.preventDefault(); startCharge(); }
+  });
+  window.addEventListener('keyup', e=>{
+    if (e.code === 'ArrowLeft'){ e.preventDefault(); input.left = false; }
+    if (e.code === 'ArrowRight'){ e.preventDefault(); input.right = false; }
+    if (e.code === 'Space'){ e.preventDefault(); releaseCharge(); }
+  });
+
+  function bindHold(el, onDown, onUp){
+    const down = e => { e.preventDefault(); el.classList.add('active'); onDown(); };
+    const up   = e => { e.preventDefault(); el.classList.remove('active'); onUp(); };
+    el.addEventListener('mousedown', down);
+    el.addEventListener('touchstart', down, {passive:false});
+    el.addEventListener('mouseup', up);
+    el.addEventListener('mouseleave', up);
+    el.addEventListener('touchend', up, {passive:false});
+    el.addEventListener('touchcancel', up, {passive:false});
+  }
+  bindHold(document.getElementById('leftBtn'), ()=>input.left=true, ()=>input.left=false);
+  bindHold(document.getElementById('rightBtn'), ()=>input.right=true, ()=>input.right=false);
+  bindHold(document.getElementById('jumpBtn'), startCharge, releaseCharge);
+
+  function startCharge(){
+    if (!player.onGround || player.charging) return;
+    player.charging = true;
+    player.chargeStart = performance.now();
+  }
+  function releaseCharge(){
+    if (!player.charging) return;
+    player.charging = false;
+    const held = Math.min(performance.now() - player.chargeStart, 900);
+    const power = 0.32 + (held/900) * 0.68; // 0.32 (tap) .. 1.0 (full charge)
+    // Height and distance are tuned separately so even a light tap clears
+    // the first step comfortably; full charge roughly doubles both.
+    const vy = -(560 + power*440);   // ~153px arc at a tap, ~285px at full charge
+    const vx = player.facing * (170 + power*230);
+    player.vx = vx;
+    player.vy = vy;
+    player.onGround = false;
+    player.standingType = null;
+    lastLaunchPower = power;
+    lastWallBonk = false;
+    sessionStats.climbs++;
+    refreshHUD();
+  }
+  let lastLaunchPower = 0.4;
+  let lastWallBonk = false;
+
+  /* =========================================================
+     PHYSICS / COLLISION
+  ========================================================= */
+  let lastT = performance.now();
+
+  function activeLedges(zone){
+    const list = zone.ledges.map(l => ({...l, ref:l}));
+    // ground/checkpoint platform for this zone acts as a ledge too
+    list.push({ x: zone.checkpoint.x, y: zone.checkpoint.y, w: zone.checkpoint.w, kind:'checkpoint', ref:zone.checkpoint });
+    if (zone.summit) list.push({ x: zone.summit.x, y: zone.summit.y, w: zone.summit.w, kind:'summit', ref:zone.summit });
+    // seeded artifact platforms attach to specific hand-picked ledges
+    const arts = zone.artifacts;
+    if (arts.helpful) tagLedge(list, zone, 0, arts.helpful.type);
+    if (arts.rescue)  tagLedge(list, zone, zone.ledges.length>4?4:1, arts.rescue.type);
+    if (arts.hazard)  tagLedge(list, zone, 1, arts.hazard.type);
+    return list;
+  }
+  function tagLedge(list, zone, idx, type){
+    if (idx < zone.ledges.length) list[idx].artifact = type;
+  }
+
+  function stepPhysics(dt){
+    // grounded lateral nudge (no aiming once airborne — Jump King commitment)
+    if (player.onGround && !player.charging){
+      const walk = 140;
+      if (input.left){ player.vx = -walk; player.facing = -1; }
+      else if (input.right){ player.vx = walk; player.facing = 1; }
+      else player.vx = 0;
+    } else if (player.onGround && player.charging){
+      if (input.left) player.facing = -1;
+      if (input.right) player.facing = 1;
+      player.vx = 0;
+    }
+
+    if (!player.onGround){
+      player.vy += GRAVITY * dt;
+      // mid-air steering: arrows bend the arc instead of locking it at release
+      if (input.left){ player.vx -= AIR_ACCEL * dt; player.facing = -1; }
+      if (input.right){ player.vx += AIR_ACCEL * dt; player.facing = 1; }
+      if (player.vx > AIR_MAX_VX) player.vx = AIR_MAX_VX;
+      if (player.vx < -AIR_MAX_VX) player.vx = -AIR_MAX_VX;
+    }
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // world side walls -> wall bonk
+    if (player.x < 4){ player.x = 4; if(!player.onGround){ player.vx = 0; lastWallBonk = true; } }
+    if (player.x > WORLD_W - PLAYER_W - 4){ player.x = WORLD_W - PLAYER_W - 4; if(!player.onGround){ player.vx = 0; lastWallBonk = true; } }
+
+    // find zone to test collisions against (current + neighbor for smooth transition)
+    const zone = zones[zoneIndexForY(player.y)];
+    const ledges = activeLedges(zone);
+
+    let grounded = false;
+    for (const l of ledges){
+      if (isCrumbled(l)) continue;
+      const withinX = (player.x + PLAYER_W + 4) > l.x && (player.x - 4) < (l.x + l.w);
+      const playerBottom = player.y + PLAYER_H;
+      if (withinX && player.vy >= 0 && playerBottom >= l.y && playerBottom <= l.y + 26){
+        player.y = l.y - PLAYER_H;
+        player.vy = 0; player.vx = 0;
+        player.onGround = true; grounded = true;
+        onLand(zone, l);
+        break;
+      }
+    }
+    if (!grounded && player.onGround && player.vy === 0 && player.charging === false){
+      // was grounded on a ledge that just crumbled beneath us
+      player.onGround = false;
+    }
+
+    // fell below current zone's floor -> attempt ends
+    if (player.y > zone.floorY + 70){
+      handleFall(zone);
+    }
+  }
+
+  function isCrumbled(l){
+    if (l.kind !== 'cursed_brick_ledge' && l.artifact !== 'cursed_brick') return false;
+    const c = crumbling.find(c=>c.ref===l.ref);
+    return c && performance.now() < c.brokenUntil;
+  }
+
+  function onLand(zone, ledge){
+    player.standingType = ledge.artifact || ledge.kind;
+    player.standingSince = performance.now();
+
+    if (ledge.kind === 'checkpoint' && ledge.ref === zone.checkpoint){
+      maybeCheckpoint(zone);
+    }
+    if (ledge.kind === 'summit'){
+      onSummit();
+    }
+    if (ledge.artifact === 'cursed_brick'){
+      scheduleCrumble(ledge);
+    }
+  }
+
+  let lastCheckpointZoneId = null;
+  function maybeCheckpoint(zone){
+    // reaching THIS zone's own floor checkpoint = respawn point, not a clear.
+    // a "clear" happens when reaching the checkpoint ABOVE (i.e. this zone's topY / next zone's floor)
+  }
+
+  function onEnterZone(newIndex){
+    const clearedZone = zones[curZoneIndex];
+    if (newIndex > curZoneIndex){
+      sessionStats.checkpoints++;
+      registerClear(clearedZone);
+      showCheckpointBanner(clearedZone, zones[newIndex]);
+    }
+    curZoneIndex = newIndex;
+    refreshHUD();
+  }
+
+  function registerClear(zone){
+    if (zone.contribUsed.clear < 3){
+      zone.successfulClears++;
+      zone.contribUsed.clear++;
+      zone.badge = deriveBadge(zone);
+      zone.artifacts = deriveArtifacts(zone);
+    }
+  }
+
+  function onSummit(){
+    if (resultShown) return;
+    resultShown = true;
+    showResultCard();
+  }
+  let resultShown = false;
+
+  function scheduleCrumble(ledge){
+    let c = crumbling.find(c=>c.ref===ledge.ref);
+    const now = performance.now();
+    if (!c){ c = {ref: ledge.ref, standingStart: now, brokenUntil:0}; crumbling.push(c); }
+    if (!c.standingStart) c.standingStart = now;
+    if (now - c.standingStart > 550 && c.brokenUntil < now){
+      c.brokenUntil = now + 3500;
+    }
+  }
+
+  /* ---- FALL / MUTATION ---- */
+  function classifyFailure(zone){
+    if (player.standingType === 'mercy_nail' || player.standingType === 'corpse_stack'){
+      if (performance.now() - player.standingSince < 4000) return 'helper_overuse';
+    }
+    if (lastWallBonk) return 'wall_bonk';
+    if (lastLaunchPower > 0.82) return 'overjump';
+    return 'short_jump';
+  }
+
+  const BUCKET_TO_ARTIFACT_HELPFUL = { short_jump: c => c>=6?'Lucky Charm':'Worn Step' };
+
+  function handleFall(zone){
+    sessionStats.falls++;
+    const bucket = classifyFailure(zone);
+    lastWallBonk = false;
+
+    let msg = '';
+    if (zone.contribUsed[bucket] >= 3){
+      msg = `Your fall was noticed, but ${zone.name} has heard enough from you today.`;
+    } else {
+      zone.contribUsed[bucket]++;
+      zone.counts[bucket]++;
+      zone.badge = deriveBadge(zone);
+      zone.artifacts = deriveArtifacts(zone);
+
+      const val = zone.counts[bucket];
+      let toNext, artifactName;
+      if (bucket === 'short_jump'){
+        artifactName = BUCKET_TO_ARTIFACT_HELPFUL.short_jump(val);
+        toNext = val < 3 ? 3-val : (val < 6 ? 6-val : null);
+      } else if (bucket === 'wall_bonk'){
+        artifactName = 'Paper Lantern'; toNext = val < 3 ? 3-val : null;
+      } else {
+        artifactName = 'Mossy Stone';
+        const combined = zone.counts.overjump + zone.counts.helper_overuse;
+        toNext = combined < 3 ? 3-combined : null;
+      }
+      if (toNext){
+        msg = `Your fall added +1 to ${zone.name}. ${toNext} more will grow a ${artifactName}.`;
+      } else {
+        msg = `Your fall added +1 to ${zone.name}. Its ${artifactName} settles, freshly grown.`;
+      }
+    }
+    showMutationBanner(msg);
+    respawnAt(zone);
+    curZoneIndex = zones.indexOf(zone);
+    refreshHUD();
+  }
+
+  /* =========================================================
+     UI HELPERS
+  ========================================================= */
+  let bannerTimer = null;
+  function showMutationBanner(text){
+    const el = document.getElementById('mutationBanner');
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(()=>el.classList.remove('show'), 3600);
+  }
+  let cpTimer = null;
+  function showCheckpointBanner(clearedZone, nextZone){
+    const el = document.getElementById('checkpointBanner');
+    document.getElementById('cpTitle').textContent = `${clearedZone.name} ${clearedZone.successfulClears>=6?'settles quiet':'noted your care'}`;
+    document.getElementById('cpSub').textContent =
+      `${clearedZone.successfulClears} clean climb${clearedZone.successfulClears===1?'':'s'} tended this slope · Next: ${nextZone.name}, ${BADGE_DISPLAY[nextZone.badge]}`;
+    el.classList.add('show');
+    clearTimeout(cpTimer);
+    cpTimer = setTimeout(()=>el.classList.remove('show'), 3200);
+  }
+
+  function badgeClass(b){
+    return { Quiet:'badge-quiet', Haunted:'badge-haunted', Cursed:'badge-cursed', Reinforced:'badge-reinforced', Stabilized:'badge-stabilized' }[b] || 'badge-quiet';
+  }
+  function refreshHUD(){
+    const z = currentZone();
+    const tag = document.getElementById('zoneTag');
+    tag.innerHTML = `${z.name} <span class="badge ${badgeClass(z.badge)}">${BADGE_DISPLAY[z.badge]}</span>`;
+    document.getElementById('statClimbs').textContent = sessionStats.climbs;
+    document.getElementById('statFalls').textContent = sessionStats.falls;
+    document.getElementById('statCheckpoint').textContent = `${sessionStats.checkpoints}/${CHECKPOINT_TOTAL}`;
+  }
+
+  function showResultCard(){
+    let mostCursed = zones[0], worst = -999;
+    zones.forEach(z=>{ const m = Math.max(z.counts.short_jump,z.counts.overjump,z.counts.wall_bonk,z.counts.helper_overuse) - z.successfulClears*2; if (m>worst){worst=m; mostCursed=z;} });
+    let bestArtifactZone = zones[0], bestCount=-1, bestName='Worn Step';
+    zones.forEach(z=>{ if (z.artifacts.helpful && z.artifacts.helpful.count>bestCount){ bestCount=z.artifacts.helpful.count; bestArtifactZone=z; bestName=z.artifacts.helpful.label; } });
+
+    document.getElementById('rcTowerName').textContent = "Today's Climb";
+    document.getElementById('rcSeed').textContent = 'Daily Seed #37 · Fallstack';
+    document.getElementById('rcSummit').textContent = 'First clear — you';
+    document.getElementById('rcCursed').textContent = `${mostCursed.name} (${BADGE_DISPLAY[mostCursed.badge]})`;
+    document.getElementById('rcArtifact').textContent = `${bestName}, ${bestArtifactZone.name}`;
+    document.getElementById('rcStabilizer').textContent = sessionStats.checkpoints>0 ? 'You' : '—';
+    document.getElementById('rcSession').textContent = `${sessionStats.climbs} climbs · ${sessionStats.falls} falls · ${sessionStats.checkpoints} clears`;
+    document.getElementById('resultOverlay').classList.add('show');
+  }
+  document.getElementById('closeResult').addEventListener('click', ()=>{
+    document.getElementById('resultOverlay').classList.remove('show');
+  });
+
+  /* =========================================================
+     RENDER — soft, warm, paper-and-ink mountain
+  ========================================================= */
+  const THEME = {
+    ruins: { sky:['#e9d9ae','#c9a876'], stone:'#a9906c', stoneDark:'#7d6a4c', edge:'#5f5138', glow:'#c1502f', mountain:'#8a9770' },
+    bell:  { sky:['#3c4f5e','#24303d'], stone:'#5c6b74', stoneDark:'#3a444c', edge:'#28313a', glow:'#e0b25a', mountain:'#233040' },
+    moon:  { sky:['#2b2f45','#121322'], stone:'#d8d2bd', stoneDark:'#a49d84', edge:'#7d7561', glow:'#b9a0e0', mountain:'#1c1e30' },
+  };
+
+  function draw(){
+    const zone = zones[zoneIndexForY(player.y)];
+    const th = THEME[zone.theme];
+
+    // camera: more room above than below, gentle lookahead
+    const targetCamY = player.y - viewH*0.18;
+    camY += (targetCamY - camY) * 0.12;
+
+    // sky
+    const grad = ctx.createLinearGradient(0,0,0,viewH);
+    grad.addColorStop(0, th.sky[1]);
+    grad.addColorStop(1, th.sky[0]);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,viewW,viewH);
+
+    if (zone.theme === 'moon'){
+      // big pale moon, fixed to the sky rather than the world
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#efe7cf';
+      ctx.beginPath(); ctx.arc(viewW*0.72, viewH*0.16, 46, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      for (let i=0;i<22;i++){
+        const sx = (i*173)%viewW, sy = (i*97 + Math.floor(camY*0.03))%viewH;
+        ctx.fillRect(sx, sy, 1.3, 1.3);
+      }
+    } else if (zone.theme === 'ruins'){
+      // distant soft mountain silhouette, fixed to sky
+      ctx.save();
+      ctx.fillStyle = th.mountain;
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(0, viewH*0.5);
+      ctx.lineTo(viewW*0.22, viewH*0.28);
+      ctx.lineTo(viewW*0.4, viewH*0.42);
+      ctx.lineTo(viewW*0.62, viewH*0.22);
+      ctx.lineTo(viewW*0.85, viewH*0.4);
+      ctx.lineTo(viewW, viewH*0.32);
+      ctx.lineTo(viewW, viewH*0.6);
+      ctx.lineTo(0, viewH*0.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (zone.theme === 'bell'){
+      // faint hanging lantern silhouettes in the twilight background
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = th.glow;
+      for (let i=0;i<4;i++){
+        const lx = viewW*0.15 + i*viewW*0.24;
+        const ly = viewH*0.18 + (i%2)*22;
+        ctx.beginPath(); ctx.ellipse(lx, ly, 8, 11, 0, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.translate(0, viewH*0.62 - camY);
+
+    zones.forEach(z=>{ drawZoneStructure(z); });
+    drawPlayer();
+    ctx.restore();
+
+    requestAnimationFrame(loop);
+  }
+
+  function drawZoneStructure(zone){
+    const th = THEME[zone.theme];
+    const ledges = activeLedges(zone);
+    ledges.forEach(l=>{
+      drawLedge(l, th, zone);
+    });
+    // lantern path (visual-only, no collision) between two mid ledges
+    if (zone.artifacts.hint && zone.ledges.length>=4){
+      drawLanternTrail(zone.ledges[3], zone.checkpoint, th);
+    }
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y, x+w,y+h, r);
+    ctx.arcTo(x+w,y+h, x,y+h, r);
+    ctx.arcTo(x,y+h, x,y, r);
+    ctx.arcTo(x,y, x+w,y, r);
+    ctx.closePath();
+  }
+
+  function drawLedge(l, th, zone){
+    const broken = isCrumbled(l);
+    ctx.save();
+    if (l.kind === 'checkpoint'){
+      drawToriiGate(l, th, zone === zones[0]);
+    } else if (l.kind === 'summit'){
+      ctx.fillStyle = th.stone;
+      roundRect(l.x, l.y, l.w, 16, 6); ctx.fill();
+      ctx.fillStyle = th.glow;
+      ctx.font = "700 12px 'Shippori Mincho', serif";
+      ctx.fillText('summit', l.x+l.w/2-20, l.y-10);
+    } else if (l.artifact === 'corpse_stack'){
+      drawWornStep(l, th, zone);
+    } else if (l.artifact === 'mercy_nail'){
+      drawLuckyCharm(l, th, zone);
+    } else if (l.artifact === 'ghost_platform'){
+      drawPaperLantern(l, th, zone);
+    } else if (l.artifact === 'cursed_brick'){
+      drawMossyStone(l, th, zone, broken);
+    } else {
+      // plain themed ledge — soft rounded plank/step
+      ctx.fillStyle = th.stoneDark;
+      roundRect(l.x, l.y+3, l.w, 11, 5); ctx.fill();
+      ctx.fillStyle = th.stone;
+      roundRect(l.x, l.y, l.w, 8, 4); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawToriiGate(l, th, isGround){
+    const cx = l.x + l.w/2;
+    const postW = 8, postH = 46;
+    if (isGround){
+      // ground level: soft bedrock fill beneath the gate
+      ctx.fillStyle = th.stoneDark;
+      roundRect(l.x - 40, l.y, l.w + 80, 90, 10); ctx.fill();
+    } else {
+      ctx.fillStyle = th.stoneDark;
+      roundRect(l.x, l.y+4, l.w, 12, 5); ctx.fill();
+    }
+    // torii posts + beams (persimmon), sitting on top of the ledge
+    ctx.fillStyle = '#b8492c';
+    ctx.fillRect(cx - l.w*0.32, l.y - postH, 7, postH);
+    ctx.fillRect(cx + l.w*0.32 - 7, l.y - postH, 7, postH);
+    ctx.fillStyle = '#c1502f';
+    roundRect(cx - l.w*0.42, l.y - postH - 10, l.w*0.84, 9, 4); ctx.fill();
+    ctx.fillRect(cx - l.w*0.34, l.y - postH + 12, l.w*0.68, 6);
+    ctx.fillStyle = 'rgba(51,41,31,0.55)';
+    ctx.font = "10px 'Zen Maru Gothic', sans-serif";
+    ctx.fillText('gate', cx-10, l.y-postH-16);
+  }
+
+  function drawWornStep(l, th, zone){
+    ctx.fillStyle = th.stoneDark; roundRect(l.x, l.y+4, l.w, 10, 5); ctx.fill();
+    ctx.fillStyle = '#c7ac7c';
+    for (let i=0;i<3;i++){ roundRect(l.x+6+i*(l.w-24)/2, l.y-5, 16, 11, 4); ctx.fill(); }
+    labelChip(l.x, l.y-26, 'Worn Step', zone.seededOrigin && zone.seededOrigin.short_jump);
+  }
+  function drawLuckyCharm(l, th, zone){
+    ctx.fillStyle = th.stoneDark; roundRect(l.x, l.y+4, Math.min(l.w,40), 10, 5); ctx.fill();
+    ctx.fillStyle = '#c1502f';
+    roundRect(l.x+6, l.y-8, 12, 12, 3); ctx.fill();
+    ctx.strokeStyle = '#fff4e6'; ctx.lineWidth = 1;
+    ctx.strokeRect(l.x+9, l.y-5, 6, 6);
+    labelChip(l.x, l.y-30, 'Lucky Charm', `${zone.counts.short_jump} falls carved this charm.`);
+  }
+  function drawPaperLantern(l, th, zone){
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = th.glow; ctx.lineWidth = 2; ctx.setLineDash([5,4]);
+    roundRect(l.x, l.y, l.w, 10, 4); ctx.stroke();
+    ctx.fillStyle = th.glow; ctx.globalAlpha = 0.2;
+    roundRect(l.x, l.y, l.w, 10, 4); ctx.fill();
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+    labelChip(l.x, l.y-26, 'Paper Lantern', `${zone.counts.wall_bonk} stumbles lit this lantern.`);
+  }
+  function drawMossyStone(l, th, zone, broken){
+    if (broken){
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = '#5b6b47'; ctx.setLineDash([3,3]);
+      roundRect(l.x, l.y+4, l.w, 10, 4); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      return;
+    }
+    const jitter = Math.sin(performance.now()/70)*1.2;
+    ctx.fillStyle = '#5c6b4a'; roundRect(l.x+jitter, l.y+4, l.w, 10, 5); ctx.fill();
+    ctx.fillStyle = '#74855f'; roundRect(l.x+jitter, l.y, l.w, 8, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(60,72,45,0.5)';
+    ctx.beginPath(); ctx.ellipse(l.x+l.w*0.3+jitter, l.y+3, 6, 3, 0, 0, Math.PI*2); ctx.fill();
+    labelChip(l.x, l.y-26, 'Mossy Stone', `${zone.counts.overjump+zone.counts.helper_overuse} overreaches grew this moss.`);
+  }
+  function drawLanternTrail(fromL, toCheckpoint, th){
+    ctx.save();
+    ctx.strokeStyle = th.glow; ctx.globalAlpha = 0.55; ctx.lineWidth = 2; ctx.setLineDash([2,6]);
+    ctx.beginPath();
+    const x1 = fromL.x + fromL.w/2, y1 = fromL.y;
+    const x2 = toCheckpoint.x + toCheckpoint.w/2, y2 = toCheckpoint.y;
+    ctx.moveTo(x1,y1);
+    ctx.quadraticCurveTo((x1+x2)/2, (y1+y2)/2 - 40, x2, y2);
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function labelChip(x,y,title,origin){
+    ctx.save();
+    ctx.font = "700 9px 'Zen Maru Gothic', sans-serif";
+    ctx.fillStyle = 'rgba(247,240,226,0.92)';
+    const w = ctx.measureText(title).width + 12;
+    roundRect(x-2, y-2, w, 14, 4); ctx.fill();
+    ctx.fillStyle = '#5c4a35';
+    ctx.fillText(title, x+4, y+9);
+    if (origin){
+      ctx.font = "8.5px 'Zen Maru Gothic', sans-serif";
+      ctx.fillStyle = 'rgba(247,240,226,0.8)';
+      ctx.fillText(origin, x, y+23);
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer(){
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    // charge glow
+    if (player.charging){
+      const held = Math.min(performance.now()-player.chargeStart, 900)/900;
+      ctx.fillStyle = `rgba(193,80,47,${0.15+held*0.35})`;
+      ctx.beginPath(); ctx.arc(PLAYER_W/2, PLAYER_H/2, 14+held*8, 0, Math.PI*2); ctx.fill();
+    }
+    // small round fox-spirit body
+    const cx = PLAYER_W/2, cy = PLAYER_H*0.58;
+    ctx.fillStyle = '#f3ead9';
+    // ears
+    ctx.beginPath();
+    ctx.moveTo(cx-9, cy-8); ctx.lineTo(cx-4, cy-18); ctx.lineTo(cx-1, cy-8); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx+9, cy-8); ctx.lineTo(cx+4, cy-18); ctx.lineTo(cx+1, cy-8); ctx.closePath(); ctx.fill();
+    // body
+    ctx.beginPath(); ctx.ellipse(cx, cy, 10, 11, 0, 0, Math.PI*2); ctx.fill();
+    // blush
+    ctx.fillStyle = 'rgba(193,80,47,0.35)';
+    ctx.beginPath(); ctx.arc(cx-6, cy+2, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx+6, cy+2, 2, 0, Math.PI*2); ctx.fill();
+    // eyes
+    ctx.fillStyle = '#3a2f22';
+    const eyeOffset = player.facing>0 ? 2 : -2;
+    ctx.beginPath(); ctx.arc(cx-4+eyeOffset, cy-1, 1.6, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx+4+eyeOffset, cy-1, 1.6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  /* =========================================================
+     MAIN LOOP
+  ========================================================= */
+  function loop(t){
+    const dt = Math.min((t-lastT)/1000, 0.032);
+    lastT = t;
+
+    stepPhysics(dt);
+
+    const newIndex = zoneIndexForY(player.y);
+    if (newIndex !== curZoneIndex){
+      onEnterZone(newIndex);
+    }
+
+    // charge fill UI
+    const fill = document.getElementById('chargeFill');
+    if (player.charging){
+      const held = Math.min(performance.now()-player.chargeStart, 900)/900;
+      fill.style.width = (held*100).toFixed(0)+'%';
+    } else {
+      fill.style.width = '0%';
+    }
+
+    draw();
+  }
+
+  window.addEventListener('load', ()=>{
+    resize();
+    refreshHUD();
+    showMutationBanner(`Moss Steps already holds a Mossy Stone, a Lucky Charm, and a Paper Lantern. Your first slip will shape it too.`);
+    requestAnimationFrame((t)=>{ lastT = t; loop(t); });
+  });
+})();
+</script>
+</body>
+</html>

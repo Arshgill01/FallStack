@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fallstack - Shared Failure Mockup</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b0c0f;
+  --post:#15171d;
+  --post-2:#1b1e26;
+  --panel:#11151b;
+  --line:#2e3440;
+  --line-2:#454d5b;
+  --ink:#f2ebdc;
+  --muted:#aaa89e;
+  --quiet:#777b80;
+  --stone:#2a3039;
+  --stone-2:#39414d;
+  --stone-lit:#54606f;
+  --gold:#f0c85a;
+  --orange:#dc7f46;
+  --red:#d95a4e;
+  --teal:#67d4c8;
+  --green:#7fc978;
+  --violet:#b08cff;
+  --shadow:#050608;
+  --sans:"Avenir Next","Helvetica Neue",Arial,sans-serif;
+  --mono:"SFMono-Regular","Menlo","Consolas",monospace;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;background:var(--bg);color:var(--ink);font:14px/1.38 var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.wrap{width:min(1160px,100%);margin:0 auto;padding:16px}
+.post{border:1px solid var(--line);background:var(--post);overflow:hidden}
+.reddit{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#111318;border-bottom:1px solid var(--line)}
+.mark{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#d45232;color:white;font-weight:900;flex:0 0 auto}
+.meta{min-width:0;flex:1}
+.meta b{display:block;font-size:13px;line-height:1.1}
+.meta span{display:block;margin-top:2px;color:var(--muted);font:12px/1.15 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{border:1px solid var(--line-2);background:#20252f;border-radius:5px;padding:5px 7px;font:850 10px/1 var(--mono);color:#d8dde2}
+.title{padding:10px 12px;border-bottom:1px solid var(--line);font-weight:850;color:#fff0bd}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px}
+.main{min-width:0;border-right:1px solid var(--line)}
+.brief{padding:12px;background:var(--post-2);border-bottom:1px solid var(--line)}
+.brief-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+h1{margin:0;color:#fff1bd;font-size:23px;line-height:1.06;letter-spacing:0}
+.copy{margin-top:5px;color:#cfcbc0;max-width:68ch}
+.clock{white-space:nowrap;border:1px solid #72591e;background:#29220f;color:#ffe08a;border-radius:5px;padding:6px 8px;font:850 12px/1 var(--mono)}
+.radio{margin-top:10px;border:1px solid var(--line-2);background:#11161d;padding:10px 11px;min-height:44px;color:#e8e2d2}
+.radio strong{color:#ffe08a}
+.stage{position:relative;background:#090d12;border-bottom:1px solid var(--line);padding:8px}
+.tower-frame{position:relative;background:linear-gradient(180deg,#161a22,#0d1117);border:4px solid #07080b;overflow:hidden}
+canvas{display:block;width:100%;aspect-ratio:720/620;touch-action:none}
+.stage-tags{position:absolute;left:16px;right:16px;top:16px;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
+.tag{border:1px solid rgba(242,235,220,.24);background:rgba(13,17,23,.82);padding:6px 8px;color:#eae2d0;font:850 11px/1 var(--mono)}
+.readout{display:grid;grid-template-columns:repeat(3,1fr);background:#12161d;border-bottom:1px solid var(--line)}
+.cell{padding:9px 10px;border-right:1px solid var(--line);min-width:0}
+.cell:last-child{border-right:0}
+.cell span{display:block;color:var(--muted);font:11px/1 var(--mono)}
+.cell b{display:block;margin-top:4px;color:#fff;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{padding:12px;background:var(--post)}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.jump{
+  min-height:48px;border:1px solid #917024;background:#5a4210;color:#fff1a6;border-radius:7px;
+  font-weight:900;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)
+}
+.secondary{min-height:48px;border:1px solid var(--line-2);background:#252a34;border-radius:7px;font-weight:850}
+.meter{margin-top:10px;height:10px;background:#0f1319;border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:34%;background:linear-gradient(90deg,var(--teal),var(--gold),var(--red))}
+.aside{background:#12161d}
+.section{border-bottom:1px solid var(--line)}
+.section-head{padding:11px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.section-head h2{margin:0;font-size:15px;line-height:1.1}
+.section-head span{color:var(--muted);font:11px/1 var(--mono)}
+.list{display:grid;gap:7px;padding:9px 10px 12px}
+.artifact{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:8px;border:1px solid var(--line);background:#1b2029;border-radius:7px;padding:8px}
+.icon{height:30px;border-radius:5px;background:#28313d;display:grid;place-items:center;font:900 13px/1 var(--mono)}
+.artifact b{display:block;font-size:13px;line-height:1.1}
+.artifact span{display:block;margin-top:3px;color:#b8b5aa;font:11px/1.2 var(--mono)}
+.count{border-radius:4px;background:#d9b14c;color:#171103;padding:5px 6px;font:900 11px/1 var(--mono)}
+.count.good{background:var(--green)}
+.count.bad{background:var(--red);color:#180807}
+.score{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);margin:12px}
+.score div{padding:9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.score div:nth-child(2n){border-right:0}
+.score div:nth-last-child(-n+2){border-bottom:0}
+.score span{display:block;color:var(--muted);font:11px/1 var(--mono)}
+.score b{display:block;margin-top:5px;color:#fff;font-size:13px}
+.feed{padding:12px;display:grid;grid-template-columns:80px 1fr;gap:10px;align-items:center}
+.thumb{height:60px;border:1px solid var(--line-2);background:#151a21;position:relative;overflow:hidden}
+.thumb:before{content:"";position:absolute;left:34px;top:8px;bottom:8px;width:12px;background:#39424f}
+.thumb:after{content:"";position:absolute;left:20px;right:18px;bottom:16px;border-top:3px solid var(--gold);transform:rotate(-18deg)}
+.feed b{display:block;font-size:13px}
+.feed span{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.25}
+@media(max-width:880px){
+  .wrap{padding:0}
+  .layout{grid-template-columns:1fr}
+  .main{border-right:0}
+  .aside{border-top:1px solid var(--line)}
+}
+@media(max-width:460px){
+  .reddit{height:45px;padding:0 10px}
+  .title{padding:9px 10px}
+  .brief{padding:10px}
+  h1{font-size:21px}
+  .copy{font-size:13px}
+  .stage{padding:0}
+  .tower-frame{border-left:0;border-right:0}
+  canvas{aspect-ratio:390/440}
+  .stage-tags{left:9px;right:9px;top:9px}
+  .readout{grid-template-columns:1fr 1fr}
+  .cell:nth-child(3){grid-column:1/-1;border-top:1px solid var(--line)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <article class="post" aria-label="Reddit interactive tower post">
+    <header class="reddit">
+      <div class="mark">r/</div>
+      <div class="meta">
+        <b>r/curseclimbers</b>
+        <span>u/TowerKeeper - daily shared climb</span>
+      </div>
+      <div class="pill">DAY 1</div>
+    </header>
+    <div class="title">Fallstack - Moon Shelf</div>
+    <div class="layout">
+      <main class="main">
+        <section class="brief">
+          <div class="brief-top">
+            <div>
+              <h1>Everyone Fell Here</h1>
+              <div class="copy">Climb the same tower as the subreddit. Every bad jump leaves a foothold, a warning, or a curse for the next climber.</div>
+            </div>
+            <div class="clock">11h left</div>
+          </div>
+          <div class="radio" id="radio"><strong>Hold jump, release clean.</strong> The Moon Shelf already has 37 failed climbs in it.</div>
+        </section>
+        <section class="stage">
+          <div class="tower-frame">
+            <canvas id="tower" width="720" height="620" aria-label="Shared cursed tower mockup"></canvas>
+          </div>
+          <div class="stage-tags">
+            <div class="tag" id="zoneTag">Moon Shelf: cursed</div>
+            <div class="tag" id="climberTag">37 falls today</div>
+          </div>
+        </section>
+        <section class="readout">
+          <div class="cell"><span>Your best</span><b id="bestRead">Floor 3</b></div>
+          <div class="cell"><span>Subreddit best</span><b>Floor 7 by u/jump_tax</b></div>
+          <div class="cell"><span>Most cursed</span><b id="curseRead">Moon Shelf</b></div>
+        </section>
+        <section class="controls">
+          <div class="control-row">
+            <button class="jump" id="jumpBtn">Simulate jump</button>
+            <button class="secondary" id="stabilizeBtn">Stabilize shelf</button>
+          </div>
+          <div class="meter" aria-label="Jump charge preview"><i id="chargeMeter"></i></div>
+        </section>
+      </main>
+      <aside class="aside">
+        <section class="section">
+          <div class="section-head"><h2>Shared artifacts</h2><span>capped per zone</span></div>
+          <div class="list" id="artifactList"></div>
+        </section>
+        <section class="section">
+          <div class="section-head"><h2>Daily climb</h2><span>live state</span></div>
+          <div class="score">
+            <div><span>Climbers</span><b id="climbersRead">37</b></div>
+            <div><span>Falls</span><b id="fallsRead">92</b></div>
+            <div><span>Echo helps</span><b>18 saves</b></div>
+            <div><span>Cleared floors</span><b id="floorsRead">3/8</b></div>
+          </div>
+        </section>
+        <section class="section">
+          <div class="section-head"><h2>Feed read</h2><span>collapsed post</span></div>
+          <div class="feed">
+            <div class="thumb"></div>
+            <div>
+              <b id="feedHead">Moon Shelf is cursed by 37 falls.</b>
+              <span>Your failed jump can become the next climber's shortcut.</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </article>
+</div>
+<script>
+(() => {
+const canvas = document.getElementById("tower");
+const ctx = canvas.getContext("2d");
+const $ = id => document.getElementById(id);
+const W = 720, H = 620;
+const state = {
+  falls: 92,
+  climbers: 37,
+  floors: 3,
+  stabilized: false,
+  anim: 0,
+  running: false,
+  mode: "fall"
+};
+
+const artifacts = [
+  {id:"echo", icon:"E", name:"Echo Block", note:"last bad landing became a ledge", count:"3 uses"},
+  {id:"corpse", icon:"C", name:"Corpse Stack", note:"14 falls made a foothold", count:"14"},
+  {id:"ghost", icon:"G", name:"Ghost Platform", note:"appears where jumps keep missing", count:"new"},
+  {id:"curse", icon:"!", name:"Cursed Brick", note:"too many touches made it unstable", count:"hot"}
+];
+
+const ledges = [
+  [80,560,210,18],[386,515,210,18],[126,458,188,18],[384,405,176,18],
+  [86,340,214,18],[404,292,196,18],[160,226,180,18],[392,172,190,18],[248,106,210,18]
+];
+
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function mono(){ return getComputedStyle(document.documentElement).getPropertyValue("--mono"); }
+
+function resize(){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  draw();
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+  drawTower();
+  drawArtifacts();
+  drawGhostArcs();
+  drawPlayer();
+}
+
+function drawBackground(){
+  const grd = ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,"#1b1d2b");
+  grd.addColorStop(.55,"#10151d");
+  grd.addColorStop(1,"#090c11");
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = "rgba(240,200,90,.12)";
+  ctx.beginPath(); ctx.arc(586,92,50,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.42)";
+  for(let i=0;i<42;i++){
+    const x = (i*97)%W, y = (i*53)%260;
+    ctx.fillRect(x,y,1.4,1.4);
+  }
+}
+
+function drawTower(){
+  ctx.save();
+  ctx.fillStyle = "#151a22";
+  ctx.strokeStyle = css("--line-2");
+  ctx.lineWidth = 2;
+  roundRect(38,72,644,522,8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,.05)";
+  for(let y=100;y<590;y+=36){
+    ctx.beginPath(); ctx.moveTo(46,y); ctx.lineTo(674,y); ctx.stroke();
+  }
+  ledges.forEach((l,i) => {
+    ctx.fillStyle = i === 4 && !state.stabilized ? "#45303a" : i === 4 ? "#2e4735" : css("--stone");
+    ctx.strokeStyle = i === 4 && !state.stabilized ? css("--red") : i === 4 ? css("--green") : css("--stone-lit");
+    ctx.lineWidth = i === 4 ? 3 : 2;
+    roundRect(l[0],l[1],l[2],l[3],4);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "rgba(242,235,220,.55)";
+    ctx.font = "10px " + mono();
+    ctx.fillText("F" + (ledgedFloor(i)), l[0]+8, l[1]-7);
+  });
+  drawCheckpoint(626,515,"F3");
+  drawCheckpoint(66,340,"F5");
+  drawCheckpoint(608,172,"F7");
+  ctx.restore();
+}
+
+function ledgedFloor(index){
+  return Math.max(1, Math.ceil((index+1)/1.2));
+}
+
+function drawCheckpoint(x,y,label){
+  ctx.save();
+  ctx.strokeStyle = css("--gold");
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x,y,15,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle = css("--gold");
+  ctx.font = "900 11px " + mono();
+  ctx.textAlign = "center";
+  ctx.fillText(label,x,y+4);
+  ctx.restore();
+}
+
+function drawArtifacts(){
+  drawEchoBlock(352,368);
+  drawCorpseStack(202,434);
+  drawGhostPlatform(318,315);
+  drawCursedBrick(172,322);
+  drawMercyNail(390,214);
+  drawLanternTrail();
+}
+
+function drawEchoBlock(x,y){
+  ctx.save();
+  ctx.globalAlpha = .88;
+  ctx.fillStyle = "rgba(103,212,200,.22)";
+  ctx.strokeStyle = css("--teal");
+  ctx.lineWidth = 2;
+  roundRect(x,y,74,15,5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = css("--teal");
+  ctx.font = "900 10px " + mono();
+  ctx.fillText("ECHO",x+20,y-5);
+  ctx.restore();
+}
+
+function drawCorpseStack(x,y){
+  ctx.save();
+  for(let i=0;i<5;i++){
+    ctx.fillStyle = i%2 ? "#9a7a55" : "#c9aa74";
+    ctx.beginPath();
+    ctx.arc(x+i*12,y-i*5,8,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillRect(x+i*12-5,y-i*5+6,10,13);
+  }
+  ctx.fillStyle = css("--gold");
+  ctx.font = "900 10px " + mono();
+  ctx.fillText("14 FALLS",x-6,y+28);
+  ctx.restore();
+}
+
+function drawGhostPlatform(x,y){
+  ctx.save();
+  ctx.setLineDash([7,7]);
+  ctx.strokeStyle = "rgba(176,140,255,.9)";
+  ctx.lineWidth = 3;
+  roundRect(x,y,112,14,6);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(176,140,255,.16)";
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCursedBrick(x,y){
+  ctx.save();
+  ctx.fillStyle = "rgba(217,90,78,.28)";
+  ctx.strokeStyle = css("--red");
+  ctx.lineWidth = 2;
+  roundRect(x,y,72,17,4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = css("--red");
+  ctx.font = "900 10px " + mono();
+  ctx.fillText("CURSED",x+8,y-6);
+  ctx.restore();
+}
+
+function drawMercyNail(x,y){
+  ctx.save();
+  ctx.strokeStyle = css("--gold");
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+42,y-12); ctx.stroke();
+  ctx.fillStyle = css("--gold");
+  ctx.beginPath(); ctx.arc(x+42,y-12,5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawLanternTrail(){
+  ctx.save();
+  ctx.strokeStyle = "rgba(240,200,90,.62)";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([4,8]);
+  ctx.beginPath();
+  ctx.moveTo(464,515);
+  ctx.quadraticCurveTo(356,455,220,458);
+  ctx.quadraticCurveTo(128,418,192,340);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = css("--gold");
+  ctx.font = "900 10px " + mono();
+  ctx.fillText("BEST ARC",112,397);
+  ctx.restore();
+}
+
+function drawGhostArcs(){
+  ctx.save();
+  ctx.lineWidth = 2;
+  const arcs = [
+    [110,560,270,458,430,515,"rgba(103,212,200,.42)"],
+    [480,515,360,405,204,458,"rgba(217,90,78,.45)"],
+    [214,458,96,390,172,340,"rgba(176,140,255,.44)"]
+  ];
+  arcs.forEach(a => {
+    ctx.strokeStyle = a[6];
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.quadraticCurveTo(a[2],a[3],a[4],a[5]); ctx.stroke();
+  });
+  if(state.running){
+    const t = state.anim;
+    const start = {x:490,y:504}, ctrl = {x:350,y:390}, end = state.mode === "fall" ? {x:198,y:438} : {x:194,y:330};
+    const x = (1-t)*(1-t)*start.x + 2*(1-t)*t*ctrl.x + t*t*end.x;
+    const y = (1-t)*(1-t)*start.y + 2*(1-t)*t*ctrl.y + t*t*end.y;
+    ctx.strokeStyle = state.mode === "fall" ? css("--red") : css("--green");
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(start.x,start.y); ctx.quadraticCurveTo(ctrl.x,ctrl.y,x,y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPlayer(){
+  let x = 490, y = 504;
+  if(state.running){
+    const t = state.anim;
+    const start = {x:490,y:504}, ctrl = {x:350,y:390}, end = state.mode === "fall" ? {x:198,y:438} : {x:194,y:330};
+    x = (1-t)*(1-t)*start.x + 2*(1-t)*t*ctrl.x + t*t*end.x;
+    y = (1-t)*(1-t)*start.y + 2*(1-t)*t*ctrl.y + t*t*end.y;
+  }
+  ctx.save();
+  ctx.fillStyle = "#f0b15e";
+  ctx.beginPath(); ctx.arc(x,y-13,8,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#d95a4e";
+  roundRect(x-8,y-5,16,24,5); ctx.fill();
+  ctx.strokeStyle = "#111318";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function sync(){
+  $("climbersRead").textContent = state.climbers;
+  $("fallsRead").textContent = state.falls;
+  $("floorsRead").textContent = state.stabilized ? "4/8" : "3/8";
+  $("zoneTag").textContent = state.stabilized ? "Moon Shelf: stabilized" : "Moon Shelf: cursed";
+  $("climberTag").textContent = state.climbers + " climbers today";
+  $("feedHead").textContent = state.stabilized ? "Moon Shelf got stabilized by the crew." : "Moon Shelf is cursed by " + state.climbers + " climbers.";
+  $("curseRead").textContent = state.stabilized ? "Bell Stair" : "Moon Shelf";
+  renderArtifacts();
+}
+
+function renderArtifacts(){
+  const root = $("artifactList");
+  root.innerHTML = "";
+  artifacts.forEach(a => {
+    const row = document.createElement("div");
+    row.className = "artifact";
+    const countClass = a.id === "curse" ? "count bad" : a.id === "ghost" ? "count good" : "count";
+    row.innerHTML = `<div class="icon">${a.icon}</div><div><b>${a.name}</b><span>${a.note}</span></div><div class="${countClass}">${a.count}</div>`;
+    root.appendChild(row);
+  });
+}
+
+function run(mode){
+  if(state.running) return;
+  state.running = true;
+  state.mode = mode;
+  state.anim = 0;
+  $("radio").innerHTML = mode === "fall"
+    ? "<strong>You fell.</strong> Your impact added one more body to the Moon Shelf stack."
+    : "<strong>Shelf stabilized.</strong> A clean jump turned the cursed route into a safe line.";
+  const step = () => {
+    state.anim += .028;
+    $("chargeMeter").style.width = Math.round(20 + state.anim * 76) + "%";
+    if(state.anim >= 1){
+      state.running = false;
+      state.anim = 0;
+      if(mode === "fall"){
+        state.falls += 1;
+        state.climbers += 1;
+      }else{
+        state.stabilized = true;
+        state.floors = 4;
+      }
+      sync();
+      draw();
+      return;
+    }
+    draw();
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+$("jumpBtn").addEventListener("click", () => run("fall"));
+$("stabilizeBtn").addEventListener("click", () => run("clear"));
+sync();
+resize();
+window.addEventListener("resize", resize);
+})();
+</script>
+</body>
+</html>
