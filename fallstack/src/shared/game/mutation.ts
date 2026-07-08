@@ -45,6 +45,7 @@ export type ZoneSnapshot = {
   id: ZoneId;
   name: string;
   status: ZoneStatus;
+  statusLabel: string;
   counters: ZoneMutationCounters;
   artifacts: Artifact[];
 };
@@ -76,7 +77,7 @@ export type ResultSummary = {
   summitStatus: 'Summit Cleared' | 'Summit Unclaimed';
   firstSummitUsername: string | null;
   mostCursedZone: string;
-  mostCursedStatus: ZoneStatus;
+  mostCursedStatus: string;
   mostUsefulArtifact: string;
   bestStabilizerUsername: string | null;
   highestClimberUsername: string | null;
@@ -206,6 +207,7 @@ export function deriveZone(zoneId: ZoneId, counters: ZoneMutationCounters): Zone
     id: zoneId,
     name: ZONE_NAMES[zoneId],
     status,
+    statusLabel: displayZoneStatus(status),
     counters: { ...counters },
     artifacts,
   };
@@ -313,7 +315,7 @@ function deriveResult(
     summitStatus: totalSummits > 0 ? 'Summit Cleared' : 'Summit Unclaimed',
     firstSummitUsername: achievements.firstSummitUsername,
     mostCursedZone: mostCursed.name,
-    mostCursedStatus: mostCursed.status,
+    mostCursedStatus: mostCursed.statusLabel,
     mostUsefulArtifact: usefulArtifact
       ? `${displayArtifactName(usefulArtifact.artifact.type)} · ${usefulArtifact.zone.name}`
       : 'No foothold has earned trust yet.',
@@ -322,6 +324,14 @@ function deriveResult(
     highestClimberZone: ZONE_NAMES[achievements.highestClimberZone],
     tomorrowHook: "Tomorrow, today's worst ledge comes back as a relic.",
   };
+}
+
+export function displayZoneStatus(status: ZoneStatus): string {
+  if (status === 'Quiet') return 'Untouched';
+  if (status === 'Haunted') return 'Restless';
+  if (status === 'Cursed') return 'Overgrown';
+  if (status === 'Reinforced') return 'Well-Trodden';
+  return 'Blessed';
 }
 
 function curseScore(zone: ZoneSnapshot): number {

@@ -416,7 +416,7 @@ class FallstackScene extends Phaser.Scene {
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     for (const zone of snapshot.zones) {
-      this.addLabel(18, (ZONES.find((candidate) => candidate.id === zone.id)?.yTop ?? 0) + 22, `${zone.name} · ${zone.status}`, 13, '#2a2118');
+      this.addLabel(18, (ZONES.find((candidate) => candidate.id === zone.id)?.yTop ?? 0) + 22, `${zone.name} · ${zone.statusLabel}`, 13, '#2a2118');
       for (const artifact of zone.artifacts) this.drawArtifact(artifact);
     }
   }

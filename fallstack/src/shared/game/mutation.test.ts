@@ -1,0 +1,98 @@
+/// <reference types="node" />
+
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  createDailySeed,
+  createInitialAchievements,
+  createSeededCounters,
+  deriveSnapshot,
+  displayZoneStatus,
+  fallFeedback,
+  type ZoneMutationCounters,
+} from './mutation.js';
+
+void test('daily seed is stable for a UTC date', () => {
+  assert.deepEqual(createDailySeed(new Date('2026-07-08T12:34:00Z')), {
+    dateKey: '2026-07-08',
+    dailySeed: 'fallstack-2026-07-08',
+  });
+});
+
+void test('seeded snapshot opens with visible shared mutation hook', () => {
+  const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
+  const snapshot = deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+
+  assert.equal(snapshot.headline, "Today's tower has 37 failed climbs in it.");
+  assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
+  assert.ok(snapshot.zones.some((zone) => zone.artifacts.some((artifact) => artifact.label.includes('falls'))));
+});
+
+void test('zone status display labels do not leak internal state names', () => {
+  assert.equal(displayZoneStatus('Quiet'), 'Untouched');
+  assert.equal(displayZoneStatus('Haunted'), 'Restless');
+  assert.equal(displayZoneStatus('Cursed'), 'Overgrown');
+  assert.equal(displayZoneStatus('Reinforced'), 'Well-Trodden');
+  assert.equal(displayZoneStatus('Stabilized'), 'Blessed');
+});
+
+void test('artifact derivation stays capped per zone under high traffic', () => {
+  const busyCounters: ZoneMutationCounters = {
+    short_jump: 500,
+    overjump: 500,
+    wall_bonk: 500,
+    helper_overuse: 500,
+    successfulClears: 500,
+  };
+  const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
+  const snapshot = deriveSnapshot({
+    ...seed,
+    counters: {
+      lower_ruins: busyCounters,
+      bell_shaft: busyCounters,
+      moon_roof: busyCounters,
+    },
+    totalFalls: 1500,
+    totalClears: 500,
+    totalSummits: 1,
+    achievements: {
+      ...createInitialAchievements(),
+      firstSummitUsername: 'u/riverknife',
+      bestStabilizerUsername: 'u/riverknife',
+      highestClimberUsername: 'u/riverknife',
+    },
+  });
+
+  assert.equal(snapshot.zones.every((zone) => zone.artifacts.length <= 3), true);
+  assert.equal(snapshot.zones.every((zone) => zone.status === 'Stabilized'), true);
+  assert.equal(snapshot.result.summitStatus, 'Summit Cleared');
+  assert.equal(snapshot.result.mostCursedStatus, 'Blessed');
+});
+
+void test('fall feedback is short, specific, and cap-aware', () => {
+  assert.equal(
+    fallFeedback({
+      zoneName: 'Bell Shaft',
+      bucket: 'wall_bonk',
+      count: 2,
+      counted: true,
+    }),
+    'Your fall counted. 1 more wall bonks spawn Ghost Platform.'
+  );
+  assert.equal(
+    fallFeedback({
+      zoneName: 'Moon Roof',
+      bucket: 'overjump',
+      count: 10,
+      counted: false,
+    }),
+    'Moon Roof has heard enough from you today.'
+  );
+});

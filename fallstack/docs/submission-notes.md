@@ -22,3 +22,17 @@
 - Devvit CLI authenticated as `u/BrightyBrainiac`.
 - Latest observed playtest URL: `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack`.
 - The app uses Devvit Web entrypoints only, with Phaser bundled through Vite in the expanded `game` entrypoint.
+
+## Final QA Evidence
+
+- `npm test`: passes 8 pure game-logic tests covering daily seeds, seeded hook state, status display labels, artifact caps, feedback copy, tower bounds, and zone progression.
+- `npm run lint`: passes with non-blocking Fast Refresh warnings on Vite entrypoint files.
+- `npm run build`: passes; Vite still warns that the Phaser client chunk is larger than 500 kB.
+- `npm run dev`: last verified playtest succeeded at version `v0.0.1.5`.
+
+## Remaining Owner Checks
+
+- Open the playtest URL on an actual phone and desktop browser.
+- Capture screenshots for the app listing.
+- Submit the app listing and public demo post.
+- Record the demo video if the submission requires it.

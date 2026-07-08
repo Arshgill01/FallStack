@@ -77,3 +77,16 @@
 - Severity: docs gap.
 - Workaround: install from the tarball directly rather than using the public skill installer lookup.
 - Notes: Public skill discovery only finds published curated skills. Local/custom skills need direct copy or tar extraction into `$CODEX_HOME/skills`.
+
+## 2026-07-08 00:00 UTC — Final local validation pass
+
+- Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7.
+- Task attempted: final local QA after adding pure game tests and display-label copy cleanup.
+- Commands:
+  - `npm test`
+  - `npm run lint`
+  - `npm run build`
+- Expected result: automated tests, lint, and production build pass before submission packaging.
+- Actual result: all commands passed. Lint reports only Fast Refresh warnings for Vite entrypoint-local components. Build reports the known Phaser chunk-size warning.
+- Severity: praise.
+- Notes: The scaffold's TypeScript project references made it straightforward to run pure shared game tests without launching Phaser or Devvit after adding a `node --test` script against emitted shared JS.
