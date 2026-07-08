@@ -158,8 +158,9 @@ button:disabled {
 .hud h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.18rem, 4.9vw, 1.85rem);
+  font-size: 1.55rem;
   line-height: 1;
+  text-wrap: balance;
 }
 
 .hint {
@@ -390,6 +391,42 @@ button:disabled {
     width: 480px;
     min-height: 760px;
     margin: 0 auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .hud {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 132px;
+    gap: 9px 12px;
+    padding: 10px 12px;
+  }
+
+  .hud h1 {
+    max-width: 17rem;
+    font-size: 1.28rem;
+    line-height: 1.05;
+  }
+
+  .hint {
+    max-width: 17rem;
+    font-size: 0.74rem;
+    line-height: 1.18;
+  }
+
+  .hud-actions {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stats div {
+    min-width: 0;
   }
 }
 

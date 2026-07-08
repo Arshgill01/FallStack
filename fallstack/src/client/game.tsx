@@ -439,9 +439,9 @@ class FallstackScene extends Phaser.Scene {
     this.labels = [];
 
     this.graphics.fillStyle(0xf7efe0, 1).fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-    this.drawZoneBand(260, 900, 0xb8c7d7, 0x516073, 'Moon Roof');
-    this.drawZoneBand(900, 1620, 0xc4b8a0, 0x4c5768, 'Bell Shaft');
-    this.drawZoneBand(1620, 2220, 0xd8b58a, 0x65432f, 'Lower Ruins');
+    this.drawZoneBand(260, 900, 0xb8c7d7, 0x516073);
+    this.drawZoneBand(900, 1620, 0xc4b8a0, 0x4c5768);
+    this.drawZoneBand(1620, 2220, 0xd8b58a, 0x65432f);
 
     for (const platform of PLATFORMS) this.drawPlatform(platform);
 
@@ -453,10 +453,9 @@ class FallstackScene extends Phaser.Scene {
     }
   }
 
-  private drawZoneBand(yTop: number, yBottom: number, fill: number, line: number, name: string) {
+  private drawZoneBand(yTop: number, yBottom: number, fill: number, line: number) {
     this.graphics?.fillStyle(fill, 0.42).fillRect(0, yTop, WORLD_WIDTH, yBottom - yTop);
     this.graphics?.lineStyle(2, line, 0.22).lineBetween(24, yTop, WORLD_WIDTH - 24, yTop);
-    this.addLabel(22, yTop + 16, name, 15, '#2a2118');
   }
 
   private drawPlatform(platform: Platform) {

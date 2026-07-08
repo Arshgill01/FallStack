@@ -13,6 +13,7 @@
 Prepared static browser captures:
 
 - `docs/screenshots/fallstack-first-viewport-static.png`
+- `docs/screenshots/fallstack-mobile-smoke.png`
 - `docs/screenshots/fallstack-result-static.png`
 
 ## Human-Only Steps
@@ -35,6 +36,7 @@ Prepared static browser captures:
 - `npm run build`: passes; Vite still warns that the Phaser client chunk is larger than 500 kB.
 - `npm run dev`: last verified playtest succeeded at version `v0.0.1.9`.
 - Static browser smoke with Playwright/Chrome: `game.html` renders a nonblank Phaser tower, seeded local fallback state, an enabled result card, and a readable result dialog when `/api/init-game` is unavailable.
+- Mobile static smoke at `390x844`: keyboard-hold control state works, headline no longer compresses into one-word lines, and the tower is visible in the first viewport.
 - Real Reddit playtest browser inspection from this VM is blocked by Reddit network security with HTTP 403 before the post loads; use a logged-in human browser for final in-Reddit visual QA.
 
 ## Remaining Owner Checks

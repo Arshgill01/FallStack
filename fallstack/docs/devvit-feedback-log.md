@@ -158,3 +158,19 @@
 - Actual result: validation passed; playtest succeeded and returned `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.9`.
 - Severity: praise.
 - Notes: Upload and update remained reliable after changing server persistence internals. The same Phaser chunk warning still appears during build.
+
+## 2026-07-08 00:00 UTC — Mobile static smoke caught first-viewport HUD compression
+
+- Environment: Ubuntu VM, built `dist/client`, local static server, Playwright CLI wrapper, Google Chrome 150.0.7871.100.
+- Task attempted: inspect the expanded `game.html` at a phone-sized `390x844` viewport after input and persistence hardening.
+- Commands:
+  - `python3 -m http.server 4173 --bind 127.0.0.1 --directory dist/client`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh open 'http://127.0.0.1:4173/game.html'`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh resize 390 844`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh snapshot`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh screenshot --filename output/playwright/fallstack-mobile-smoke-after-hud.png --full-page`
+- Expected result: the first viewport keeps the headline readable, shows the tower immediately, and leaves mobile controls usable.
+- Actual result: first smoke showed the headline squeezed into one-word lines. Fixed the mobile HUD grid and duplicate in-canvas zone label, then re-smoked successfully. Saved `docs/screenshots/fallstack-mobile-smoke.png`.
+- Severity: rough edge.
+- Workaround: fixed in CSS/canvas label rendering.
+- Notes: Local static smoke still logs `/api/init-game` 404s by design, then uses seeded local fallback state. That path remains useful for fast visual QA when the real Reddit URL is blocked.
