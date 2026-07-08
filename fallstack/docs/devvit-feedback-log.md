@@ -116,3 +116,17 @@
 - Severity: rough edge.
 - Workaround: ran `npx playwright install chrome`, which installed Google Chrome plus supporting dependencies and allowed browser smoke testing to proceed.
 - Notes: The error was actionable. On fresh VMs, browser automation needs this one-time setup.
+
+## 2026-07-08 00:00 UTC — Playtest after install-trigger removal
+
+- Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, authenticated as `u/BrightyBrainiac`.
+- Task attempted: verify Devvit playtest after removing the scaffold app-install trigger so posts are created only through the explicit moderator menu.
+- Commands:
+  - `npm test`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run dev`
+- Expected result: tests/build still pass, Devvit uploads the WebView bundle, and the playtest URL remains available without an automatic install-time post side effect.
+- Actual result: all local validation passed, then playtest succeeded and returned `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.7`.
+- Severity: praise.
+- Notes: The CLI clearly reported the new WebView asset upload, update progress, version number, and the command to revert from the playtest version.
