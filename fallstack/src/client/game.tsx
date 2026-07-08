@@ -1,78 +1,626 @@
 import './index.css';
 
-import { StrictMode } from 'react';
+import Phaser from 'phaser';
+import {
+  StrictMode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+} from 'react';
 import { createRoot } from 'react-dom/client';
-import { navigateTo } from '@devvit/web/client';
-import { useCounter } from './hooks/useCounter';
+import type {
+  InitGameResponse,
+  RecordClearResponse,
+  RecordFallRequest,
+  RecordFallResponse,
+  RecordSummitResponse,
+} from '../shared/api';
+import type { Artifact, FailureBucket, GameSnapshot, ZoneId } from '../shared/game/mutation';
+import { PLATFORMS, WORLD_HEIGHT, WORLD_WIDTH, ZONES, zoneForY, type Platform } from '../shared/game/tower';
 
-export const App = () => {
-  const { count, username, loading, increment, decrement } = useCounter();
-  return (
-    <div className="flex relative flex-col justify-center items-center min-h-screen gap-4 bg-white dark:bg-gray-900">
-      <img
-        className="object-contain w-1/2 max-w-[250px] mx-auto"
-        src="/snoo.png"
-        alt="Snoo"
-      />
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100">
-          {username ? `Hey ${username} 👋` : ''}
-        </h1>
-        <p className="text-base text-center text-gray-600 dark:text-gray-300">
-          Edit{' '}
-          <span className="bg-[#e5ebee] dark:bg-gray-700 px-1 py-0.5 rounded">
-            src/client/game.tsx
-          </span>{' '}
-          to get started.
-        </p>
-      </div>
-      <div className="flex items-center justify-center mt-5">
-        <button
-          className="flex items-center justify-center bg-[#d93900] dark:bg-orange-600 text-white w-14 h-14 text-[2.5em] rounded-full cursor-pointer font-mono leading-none transition-colors hover:bg-[#c23300] dark:hover:bg-orange-700"
-          onClick={decrement}
-          disabled={loading}
-        >
-          -
-        </button>
-        <span className="text-[1.8em] font-medium mx-5 min-w-[50px] text-center leading-none text-gray-900 dark:text-white">
-          {loading ? '...' : count}
-        </span>
-        <button
-          className="flex items-center justify-center bg-[#d93900] dark:bg-orange-600 text-white w-14 h-14 text-[2.5em] rounded-full cursor-pointer font-mono leading-none transition-colors hover:bg-[#c23300] dark:hover:bg-orange-700"
-          onClick={increment}
-          disabled={loading}
-        >
-          +
-        </button>
-      </div>
-      <footer className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 text-[0.8em] text-gray-600 dark:text-gray-400">
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://developers.reddit.com/docs')}
-        >
-          Docs
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://www.reddit.com/r/Devvit')}
-        >
-          r/Devvit
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">|</span>
-        <button
-          className="cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
-          onClick={() => navigateTo('https://discord.com/invite/R7yu2wh9Qz')}
-        >
-          Discord
-        </button>
-      </footer>
-    </div>
-  );
+type InputState = {
+  left: boolean;
+  right: boolean;
+  jump: boolean;
 };
+
+type FallEventDetail = Omit<RecordFallRequest, 'dailySeed' | 'timestamp'>;
+type ClearEventDetail = { zoneId: ZoneId };
+type SummitEventDetail = Record<string, never>;
+
+declare global {
+  interface Window {
+    fallstackInput: InputState;
+    fallstackSnapshot?: GameSnapshot;
+  }
+}
+
+const INITIAL_INPUT: InputState = { left: false, right: false, jump: false };
+const START_POS = { x: 112, y: 2128 };
+const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
+  lower_ruins: START_POS,
+  bell_shaft: { x: 112, y: 1548 },
+  moon_roof: { x: 350, y: 942 },
+};
+
+function setSharedInput(key: keyof InputState, value: boolean) {
+  window.fallstackInput = { ...(window.fallstackInput ?? INITIAL_INPUT), [key]: value };
+}
+
+class FallstackScene extends Phaser.Scene {
+  private player?: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+  private platforms?: Phaser.Physics.Arcade.StaticGroup;
+  private artifactBodies?: Phaser.Physics.Arcade.StaticGroup;
+  private graphics?: Phaser.GameObjects.Graphics;
+  private labels: Phaser.GameObjects.Text[] = [];
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
+  private space: Phaser.Input.Keyboard.Key | undefined;
+  private facing: -1 | 1 = 1;
+  private wasGrounded = false;
+  private charging = false;
+  private chargeStart = 0;
+  private lastChargePercent = 0;
+  private lastWallBonk = false;
+  private currentZone: ZoneId = 'lower_ruins';
+  private respawnZone: ZoneId = 'lower_ruins';
+  private checkpointed = new Set<ZoneId>();
+  private summitSent = false;
+  private lastHelperTouchAt = -Infinity;
+  private lastTouchedHelper = false;
+
+  create() {
+    window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT + 220);
+    this.physics.world.gravity.y = 1550;
+
+    this.graphics = this.add.graphics();
+    this.platforms = this.physics.add.staticGroup();
+    for (const platform of PLATFORMS) this.addPlatform(platform);
+
+    this.player = this.add.rectangle(START_POS.x, START_POS.y, 24, 34, 0x2a2118) as Phaser.GameObjects.Rectangle & {
+      body: Phaser.Physics.Arcade.Body;
+    };
+    this.physics.add.existing(this.player);
+    this.player.body.setSize(24, 34);
+    this.player.body.setCollideWorldBounds(true);
+    this.player.body.setDragX(850);
+    this.player.body.setMaxVelocity(420, 1300);
+    this.physics.add.collider(this.player, this.platforms, this.onLand, undefined, this);
+
+    this.artifactBodies = this.physics.add.staticGroup();
+    this.physics.add.collider(this.player, this.artifactBodies, this.onArtifactTouch, undefined, this);
+
+    this.cursors = this.input.keyboard?.createCursorKeys();
+    this.space = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.12, 0, 84);
+    this.cameras.main.setZoom(1);
+
+    this.refreshSnapshot(window.fallstackSnapshot);
+  }
+
+  override update(_time: number, deltaMs: number) {
+    if (!this.player) return;
+    const input = this.readInput();
+    const body = this.player.body;
+    const onFloor = body.blocked.down || body.touching.down;
+    this.currentZone = zoneForY(this.player.y).id;
+
+    if (input.left) this.facing = -1;
+    if (input.right) this.facing = 1;
+
+    if (onFloor) {
+      body.setAccelerationX(0);
+      body.setVelocityX(input.left ? -155 : input.right ? 155 : Phaser.Math.Linear(body.velocity.x, 0, 0.18));
+      this.lastWallBonk = false;
+    } else {
+      const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+      body.setAccelerationX(steer * 620);
+      body.setMaxVelocity(390, 1300);
+      if ((body.blocked.left || body.blocked.right) && body.velocity.y > -720) this.lastWallBonk = true;
+    }
+
+    if (onFloor && input.jump && !this.charging) {
+      this.charging = true;
+      this.chargeStart = this.time.now;
+    }
+
+    if (this.charging && (!input.jump || !onFloor)) {
+      const held = Math.max(0, this.time.now - this.chargeStart);
+      const percent = Phaser.Math.Clamp(0.32 + (held / 900) * 0.68, 0.32, 1);
+      this.lastChargePercent = Math.round(percent * 100);
+      if (onFloor && !input.jump) {
+        body.setVelocity(this.facing * Phaser.Math.Linear(170, 400, percent), Phaser.Math.Linear(-560, -1000, percent));
+      }
+      this.charging = false;
+      window.dispatchEvent(
+        new CustomEvent('fallstack:charge', { detail: { percent: Math.round(percent * 100) } })
+      );
+    }
+
+    if (this.charging) {
+      const percent = Phaser.Math.Clamp(0.32 + ((this.time.now - this.chargeStart) / 900) * 0.68, 0.32, 1);
+      window.dispatchEvent(
+        new CustomEvent('fallstack:charge', { detail: { percent: Math.round(percent * 100) } })
+      );
+    }
+
+    if (!this.wasGrounded && onFloor) window.dispatchEvent(new CustomEvent('fallstack:land'));
+    this.wasGrounded = onFloor;
+
+    this.checkProgress();
+    this.checkFall();
+    this.updateCamera(deltaMs);
+  }
+
+  refreshSnapshot(snapshot?: GameSnapshot) {
+    if (snapshot) window.fallstackSnapshot = snapshot;
+    this.drawWorld();
+    this.rebuildArtifactBodies();
+  }
+
+  private addPlatform(platform: Platform) {
+    const rect = this.add.rectangle(
+      platform.x + platform.width / 2,
+      platform.y + platform.height / 2,
+      platform.width,
+      platform.height,
+      0xffffff,
+      0
+    );
+    rect.setData('platformId', platform.id);
+    rect.setData('kind', platform.kind);
+    this.platforms?.add(rect);
+  }
+
+  private readInput(): InputState {
+    return {
+      left: Boolean(window.fallstackInput?.left || this.cursors?.left?.isDown),
+      right: Boolean(window.fallstackInput?.right || this.cursors?.right?.isDown),
+      jump: Boolean(window.fallstackInput?.jump || this.space?.isDown),
+    };
+  }
+
+  private onLand(_player: unknown, platformObject: unknown) {
+    const object = platformObject as Phaser.GameObjects.GameObject;
+    if (object.getData('platformId') === 'summit' && !this.summitSent) {
+      this.summitSent = true;
+      window.dispatchEvent(new CustomEvent<SummitEventDetail>('fallstack:summit', { detail: {} }));
+    }
+  }
+
+  private onArtifactTouch(_player: unknown, artifactObject: unknown) {
+    const object = artifactObject as Phaser.GameObjects.GameObject;
+    const type = object.getData('artifactType');
+    this.lastTouchedHelper = type === 'corpse_stack' || type === 'mercy_nail';
+    if (this.lastTouchedHelper) this.lastHelperTouchAt = this.time.now;
+  }
+
+  private checkProgress() {
+    if (!this.player) return;
+    if (this.respawnZone === 'lower_ruins' && this.player.y < 1620 && !this.checkpointed.has('lower_ruins')) {
+      this.unlockZone('bell_shaft', 'lower_ruins');
+    }
+    if (this.respawnZone === 'bell_shaft' && this.player.y < 900 && !this.checkpointed.has('bell_shaft')) {
+      this.unlockZone('moon_roof', 'bell_shaft');
+    }
+  }
+
+  private unlockZone(nextZone: ZoneId, clearedZone: ZoneId) {
+    this.respawnZone = nextZone;
+    this.checkpointed.add(clearedZone);
+    window.dispatchEvent(new CustomEvent<ClearEventDetail>('fallstack:clear', { detail: { zoneId: clearedZone } }));
+  }
+
+  private checkFall() {
+    if (!this.player) return;
+    const recovery = ZONES.find((zone) => zone.id === this.currentZone)?.recoveryY ?? WORLD_HEIGHT + 120;
+    if (this.player.y < recovery) return;
+
+    const failureBucket = this.classifyFailure();
+    const zoneId = this.currentZone;
+    window.dispatchEvent(
+      new CustomEvent<FallEventDetail>('fallstack:fall', {
+        detail: {
+          zoneId,
+          failureBucket,
+          chargePercent: this.lastChargePercent,
+        },
+      })
+    );
+    this.respawn();
+  }
+
+  private classifyFailure(): FailureBucket {
+    if (this.lastTouchedHelper && this.time.now - this.lastHelperTouchAt < 4000) return 'helper_overuse';
+    if (this.lastWallBonk) return 'wall_bonk';
+    if (this.lastChargePercent > 82) return 'overjump';
+    return 'short_jump';
+  }
+
+  private respawn() {
+    if (!this.player) return;
+    const checkpoint = CHECKPOINTS[this.respawnZone];
+    this.player.setPosition(checkpoint.x, checkpoint.y);
+    this.player.body.setVelocity(0, 0);
+    this.player.body.setAcceleration(0, 0);
+    this.currentZone = this.respawnZone;
+    this.charging = false;
+    this.lastHelperTouchAt = -Infinity;
+    this.lastTouchedHelper = false;
+  }
+
+  private updateCamera(deltaMs: number) {
+    if (!this.player) return;
+    const targetY = Phaser.Math.Clamp(this.player.y - 120, 0, WORLD_HEIGHT);
+    const current = this.cameras.main.scrollY;
+    this.cameras.main.scrollY = Phaser.Math.Linear(current, targetY, Math.min(1, deltaMs / 260));
+  }
+
+  private drawWorld() {
+    if (!this.graphics) return;
+    this.graphics.clear();
+    for (const label of this.labels) label.destroy();
+    this.labels = [];
+
+    this.graphics.fillStyle(0xf7efe0, 1).fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.drawZoneBand(260, 900, 0xb8c7d7, 0x516073, 'Moon Roof');
+    this.drawZoneBand(900, 1620, 0xc4b8a0, 0x4c5768, 'Bell Shaft');
+    this.drawZoneBand(1620, 2220, 0xd8b58a, 0x65432f, 'Lower Ruins');
+
+    for (const platform of PLATFORMS) this.drawPlatform(platform);
+
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot) return;
+    for (const zone of snapshot.zones) {
+      this.addLabel(18, (ZONES.find((candidate) => candidate.id === zone.id)?.yTop ?? 0) + 22, `${zone.name} · ${zone.status}`, 13, '#2a2118');
+      for (const artifact of zone.artifacts) this.drawArtifact(artifact);
+    }
+  }
+
+  private drawZoneBand(yTop: number, yBottom: number, fill: number, line: number, name: string) {
+    this.graphics?.fillStyle(fill, 0.42).fillRect(0, yTop, WORLD_WIDTH, yBottom - yTop);
+    this.graphics?.lineStyle(2, line, 0.22).lineBetween(24, yTop, WORLD_WIDTH - 24, yTop);
+    this.addLabel(22, yTop + 16, name, 15, '#2a2118');
+  }
+
+  private drawPlatform(platform: Platform) {
+    const colors: Record<Platform['kind'], number> = {
+      stone: 0x72503a,
+      metal: 0x43536a,
+      moon: 0x5f6878,
+      summit: 0x9b412d,
+    };
+    this.graphics?.fillStyle(colors[platform.kind], 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height, 5);
+    this.graphics?.fillStyle(0xf7efe0, 0.18).fillRect(platform.x + 4, platform.y + 4, platform.width - 8, 3);
+  }
+
+  private drawArtifact(artifact: Artifact) {
+    if (artifact.type === 'lantern_trail') {
+      this.graphics?.lineStyle(3, 0xd97934, 0.52).beginPath();
+      this.graphics?.arc(artifact.x + 60, artifact.y + 10, 72, Math.PI * 1.08, Math.PI * 1.82);
+      this.graphics?.strokePath();
+      this.addLabel(artifact.x - 22, artifact.y - 28, artifact.label, 11, '#5c3a22');
+      return;
+    }
+
+    if (artifact.type === 'corpse_stack') {
+      this.graphics?.fillStyle(0x8c5835, 1);
+      for (let i = 0; i < 3; i += 1) {
+        this.graphics?.fillRoundedRect(artifact.x + i * 8, artifact.y + i * 7, artifact.width - i * 16, 10, 3);
+      }
+    } else if (artifact.type === 'mercy_nail') {
+      this.graphics?.fillStyle(0x2f4f5f, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 7);
+      this.graphics?.fillStyle(0xd97934, 1).fillCircle(artifact.x + artifact.width - 8, artifact.y + artifact.height / 2, 4);
+    } else if (artifact.type === 'ghost_platform') {
+      this.graphics?.lineStyle(2, 0x405f78, 0.75).strokeRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
+      this.graphics?.fillStyle(0x9eb7c8, 0.28).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
+    } else {
+      this.graphics?.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 4);
+      this.graphics?.lineStyle(2, 0x2a2118, 0.5).lineBetween(artifact.x + 10, artifact.y + 4, artifact.x + 34, artifact.y + artifact.height - 4);
+    }
+    this.addLabel(artifact.x - 18, artifact.y - 28, artifact.label, 11, '#2a2118');
+  }
+
+  private addLabel(x: number, y: number, text: string, size: number, color: string) {
+    const label = this.add.text(x, y, text, {
+      fontFamily: 'Georgia, serif',
+      fontSize: `${size}px`,
+      color,
+      backgroundColor: 'rgba(247, 239, 224, 0.76)',
+      padding: { left: 5, right: 5, top: 3, bottom: 3 },
+      wordWrap: { width: 210 },
+    });
+    label.setDepth(3);
+    this.labels.push(label);
+  }
+
+  private rebuildArtifactBodies() {
+    this.artifactBodies?.clear(true, true);
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.artifactBodies) return;
+    for (const artifact of snapshot.zones.flatMap((zone) => zone.artifacts)) {
+      if (!artifact.solid) continue;
+      const rect = this.add.rectangle(
+        artifact.x + artifact.width / 2,
+        artifact.y + artifact.height / 2,
+        artifact.width,
+        artifact.height,
+        0xffffff,
+        0
+      );
+      rect.setData('artifactType', artifact.type);
+      this.artifactBodies.add(rect);
+    }
+  }
+}
+
+function GameApp() {
+  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
+  const [message, setMessage] = useState('The tower is waking.');
+  const [charge, setCharge] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [summitOpen, setSummitOpen] = useState(false);
+  const gameRef = useRef<Phaser.Game | null>(null);
+  const sceneRef = useRef<FallstackScene | null>(null);
+
+  const stats = useMemo(() => {
+    if (!snapshot) return { falls: 37, clears: 0, summits: 0 };
+    return {
+      falls: snapshot.totalFalls,
+      clears: snapshot.totalClears,
+      summits: snapshot.totalSummits,
+    };
+  }, [snapshot]);
+
+  useEffect(() => {
+    window.fallstackInput = { ...INITIAL_INPUT };
+    let cancelled = false;
+    const init = async () => {
+      try {
+        const res = await fetch('/api/init-game');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as InitGameResponse;
+        if (cancelled) return;
+        window.fallstackSnapshot = data.snapshot;
+        setSnapshot(data.snapshot);
+        setMessage('14 falls made this foothold.');
+      } catch (error) {
+        console.error('init-game failed', error);
+        setMessage('The tower is offline. Local seed loaded.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (gameRef.current) return;
+    const scene = new FallstackScene('FallstackScene');
+    sceneRef.current = scene;
+    gameRef.current = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: 'game-canvas',
+      backgroundColor: '#f7efe0',
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: WORLD_WIDTH,
+        height: 720,
+      },
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 1550, x: 0 },
+          debug: false,
+        },
+      },
+      scene,
+    });
+
+    return () => {
+      gameRef.current?.destroy(true);
+      gameRef.current = null;
+      sceneRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!snapshot) return;
+    window.fallstackSnapshot = snapshot;
+    sceneRef.current?.refreshSnapshot(snapshot);
+  }, [snapshot]);
+
+  const postFall = useCallback(
+    async (detail: FallEventDetail) => {
+      if (!snapshot) return;
+      setMessage('Your fall is being counted.');
+      try {
+        const res = await fetch('/api/record-fall', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...detail,
+            dailySeed: snapshot.dailySeed,
+            timestamp: Date.now(),
+          }),
+        });
+        const data = (await res.json()) as RecordFallResponse;
+        setSnapshot(data.snapshot);
+        setMessage(data.message);
+      } catch (error) {
+        console.error('record-fall failed', error);
+        setMessage('Your fall was noticed. The tower did not answer.');
+      }
+    },
+    [snapshot]
+  );
+
+  const postClear = useCallback(
+    async (zoneId: ZoneId) => {
+      if (!snapshot) return;
+      try {
+        const res = await fetch('/api/record-clear', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zoneId, dailySeed: snapshot.dailySeed, timestamp: Date.now() }),
+        });
+        const data = (await res.json()) as RecordClearResponse;
+        setSnapshot(data.snapshot);
+        setMessage(data.message);
+      } catch (error) {
+        console.error('record-clear failed', error);
+        setMessage('The checkpoint did not hold.');
+      }
+    },
+    [snapshot]
+  );
+
+  const postSummit = useCallback(async () => {
+    if (!snapshot) return;
+    try {
+      const res = await fetch('/api/record-summit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dailySeed: snapshot.dailySeed, timestamp: Date.now() }),
+      });
+      const data = (await res.json()) as RecordSummitResponse;
+      setSnapshot(data.snapshot);
+      setMessage(data.message);
+      setSummitOpen(true);
+    } catch (error) {
+      console.error('record-summit failed', error);
+      setMessage('The summit went quiet.');
+    }
+  }, [snapshot]);
+
+  useEffect(() => {
+    const onCharge = (event: Event) => {
+      const detail = (event as CustomEvent<{ percent: number }>).detail;
+      setCharge(detail.percent);
+    };
+    const onLand = () => {
+      setCharge(0);
+    };
+    const onFall = (event: Event) => {
+      const detail = (event as CustomEvent<FallEventDetail>).detail;
+      void postFall(detail);
+    };
+    const onClear = (event: Event) => {
+      const detail = (event as CustomEvent<ClearEventDetail>).detail;
+      void postClear(detail.zoneId);
+    };
+    const onSummit = () => {
+      void postSummit();
+    };
+    window.addEventListener('fallstack:charge', onCharge);
+    window.addEventListener('fallstack:land', onLand);
+    window.addEventListener('fallstack:fall', onFall);
+    window.addEventListener('fallstack:clear', onClear);
+    window.addEventListener('fallstack:summit', onSummit);
+    return () => {
+      window.removeEventListener('fallstack:charge', onCharge);
+      window.removeEventListener('fallstack:land', onLand);
+      window.removeEventListener('fallstack:fall', onFall);
+      window.removeEventListener('fallstack:clear', onClear);
+      window.removeEventListener('fallstack:summit', onSummit);
+    };
+  }, [postClear, postFall, postSummit]);
+
+  return (
+    <main className="game-shell">
+      <section className="hud" aria-live="polite">
+        <div>
+          <p className="eyebrow">Fallstack</p>
+          <h1>{snapshot?.headline ?? "Today's tower has 37 failed climbs in it."}</h1>
+          <p className="hint">Arrows move · Hold Space · Release to leap</p>
+        </div>
+        <dl className="stats">
+          <div>
+            <dt>Falls</dt>
+            <dd>{stats.falls}</dd>
+          </div>
+          <div>
+            <dt>Clears</dt>
+            <dd>{stats.clears}</dd>
+          </div>
+          <div>
+            <dt>Summits</dt>
+            <dd>{stats.summits}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="tower-wrap" aria-label="Fallstack tower">
+        <div id="game-canvas" />
+        {loading ? <div className="banner">Loading today's tower.</div> : <div className="banner">{message}</div>}
+        <div className="charge" aria-label="Jump charge">
+          <span style={{ width: `${charge}%` }} />
+        </div>
+      </section>
+
+      <TouchControls disabled={summitOpen} />
+
+      {summitOpen ? (
+        <section className="result-backdrop" role="dialog" aria-modal="true" aria-label="Daily result">
+          <div className="result-card">
+            <p className="eyebrow">Daily result</p>
+            <h2>The tower has a witness.</h2>
+            <p>{snapshot?.totalSummits ? `${snapshot.totalSummits} summit clears today.` : 'First summit clear pending.'}</p>
+            <p>{snapshot?.zones.find((zone) => zone.status === 'Cursed')?.name ?? 'Lower Ruins'} carried the worst memory.</p>
+            <button type="button" onClick={() => setSummitOpen(false)}>
+              Keep climbing
+            </button>
+          </div>
+        </section>
+      ) : null}
+    </main>
+  );
+}
+
+function TouchControls({ disabled }: { disabled: boolean }) {
+  const set = (key: keyof InputState, value: boolean) => {
+    if (disabled) return;
+    setSharedInput(key, value);
+  };
+
+  const bind = (key: keyof InputState) => ({
+    onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      set(key, true);
+    },
+    onPointerUp: (event: PointerEvent<HTMLButtonElement>) => {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+      set(key, false);
+    },
+    onPointerCancel: () => set(key, false),
+    onPointerLeave: () => set(key, false),
+  });
+
+  return (
+    <nav className="touch-controls" aria-label="Climb controls">
+      <button type="button" aria-label="Move left" {...bind('left')}>
+        ◀
+      </button>
+      <button type="button" className="jump-button" aria-label="Hold to charge jump" {...bind('jump')}>
+        Jump
+      </button>
+      <button type="button" aria-label="Move right" {...bind('right')}>
+        ▶
+      </button>
+    </nav>
+  );
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <GameApp />
   </StrictMode>
 );
