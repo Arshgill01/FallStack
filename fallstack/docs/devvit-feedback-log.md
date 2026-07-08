@@ -174,3 +174,18 @@
 - Severity: rough edge.
 - Workaround: fixed in CSS/canvas label rendering.
 - Notes: Local static smoke still logs `/api/init-game` 404s by design, then uses seeded local fallback state. That path remains useful for fast visual QA when the real Reddit URL is blocked.
+
+## 2026-07-08 00:00 UTC — Playtest after seeded chunk generator
+
+- Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, authenticated as `u/BrightyBrainiac`.
+- Task attempted: verify the app after replacing the flat hardcoded platform source with a pure seeded chunk generator consumed by Phaser.
+- Commands:
+  - `npm test`
+  - `npm run lint`
+  - `npm run build`
+  - Static smoke of `dist/client/game.html` at `390x844`
+  - `npm run dev`
+- Expected result: generated towers remain deterministic/reachable, local static smoke renders the first viewport, and Devvit playtest uploads the generated-geometry client.
+- Actual result: 11 pure tests passed, static smoke rendered the generated-tower build, and playtest succeeded at `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.11`.
+- Severity: praise.
+- Notes: The CLI uploaded 3 new WebView assets after the shared tower generator split.

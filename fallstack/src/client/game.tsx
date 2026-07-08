@@ -31,7 +31,14 @@ import {
   type GameSnapshot,
   type ZoneId,
 } from '../shared/game/mutation';
-import { PLATFORMS, WORLD_HEIGHT, WORLD_WIDTH, ZONES, zoneForY, type Platform } from '../shared/game/tower';
+import {
+  generateDailyTower,
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
+  ZONES,
+  zoneForY,
+  type Platform,
+} from '../shared/game/tower';
 
 type InputState = {
   left: boolean;
@@ -216,6 +223,8 @@ class FallstackScene extends Phaser.Scene {
   private lastHelperTouchAt = -Infinity;
   private lastTouchedHelper = false;
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  private towerSeed = createDailySeed().dailySeed;
+  private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed).platforms;
 
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
@@ -225,7 +234,7 @@ class FallstackScene extends Phaser.Scene {
 
     this.graphics = this.add.graphics();
     this.platforms = this.physics.add.staticGroup();
-    for (const platform of PLATFORMS) this.addPlatform(platform);
+    this.rebuildPlatformBodies();
 
     this.player = this.add.rectangle(START_POS.x, START_POS.y, 24, 34, 0x2a2118) as Phaser.GameObjects.Rectangle & {
       body: Phaser.Physics.Arcade.Body;
@@ -308,6 +317,11 @@ class FallstackScene extends Phaser.Scene {
 
   refreshSnapshot(snapshot?: GameSnapshot) {
     if (snapshot) window.fallstackSnapshot = snapshot;
+    if (snapshot?.dailySeed && snapshot.dailySeed !== this.towerSeed) {
+      this.towerSeed = snapshot.dailySeed;
+      this.towerPlatforms = generateDailyTower(snapshot.dailySeed).platforms;
+      this.rebuildPlatformBodies();
+    }
     this.drawWorld();
     this.rebuildArtifactBodies();
   }
@@ -328,6 +342,11 @@ class FallstackScene extends Phaser.Scene {
     rect.setData('platformId', platform.id);
     rect.setData('kind', platform.kind);
     this.platforms?.add(rect);
+  }
+
+  private rebuildPlatformBodies() {
+    this.platforms?.clear(true, true);
+    for (const platform of this.towerPlatforms) this.addPlatform(platform);
   }
 
   private readInput(): InputState {
@@ -443,7 +462,7 @@ class FallstackScene extends Phaser.Scene {
     this.drawZoneBand(900, 1620, 0xc4b8a0, 0x4c5768);
     this.drawZoneBand(1620, 2220, 0xd8b58a, 0x65432f);
 
-    for (const platform of PLATFORMS) this.drawPlatform(platform);
+    for (const platform of this.towerPlatforms) this.drawPlatform(platform);
 
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
