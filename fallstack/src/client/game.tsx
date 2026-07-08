@@ -656,6 +656,10 @@ function GameApp() {
     window.setTimeout(() => resultCloseRef.current?.focus(), 0);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSummitOpen(false);
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        resultCloseRef.current?.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -852,7 +856,7 @@ function GameApp() {
 
   return (
     <main className="game-shell">
-      <section className="hud" aria-live="polite">
+      <section className="hud">
         <div>
           <p className="eyebrow">Fallstack</p>
           <h1>{snapshot?.headline ?? "Today's tower has 37 failed climbs in it."}</h1>
@@ -884,7 +888,9 @@ function GameApp() {
 
       <section className="tower-wrap" aria-label="Fallstack tower">
         <div id="game-canvas" />
-        {loading ? <div className="banner">Loading today's tower.</div> : <div className="banner">{message}</div>}
+        <div className="banner" role="status" aria-live="polite" aria-atomic="true">
+          {loading ? "Loading today's tower." : message}
+        </div>
         <div className="charge" aria-label="Jump charge">
           <span style={{ width: `${charge}%` }} />
         </div>
