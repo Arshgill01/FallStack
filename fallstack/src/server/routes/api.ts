@@ -31,6 +31,7 @@ import { nextZoneId } from '../../shared/game/tower';
 const USER_BUCKET_CAP = 3;
 const USER_DAILY_FAILURE_CAP = 10;
 const USER_ZONE_CLEAR_CAP = 3;
+const DAILY_KEY_TTL_SECONDS = 60 * 60 * 72;
 
 type StoredDailyState = {
   dailySeed: string;
@@ -94,8 +95,8 @@ api.post('/record-fall', async (c) => {
     );
     const dailyCapKey = keyFor(state, `user:${userKey}:falls`);
     const [bucketContribution, dailyContribution] = await Promise.all([
-      redis.incrBy(bucketCapKey, 1),
-      redis.incrBy(dailyCapKey, 1),
+      incrementDailyKey(bucketCapKey),
+      incrementDailyKey(dailyCapKey),
     ]);
 
     const counted =
@@ -104,8 +105,8 @@ api.post('/record-fall', async (c) => {
 
     if (counted) {
       await Promise.all([
-        redis.incrBy(counterKey(state, body.zoneId, body.failureBucket), 1),
-        redis.incrBy(totalKey(state, 'falls'), 1),
+        incrementDailyKey(counterKey(state, body.zoneId, body.failureBucket)),
+        incrementDailyKey(totalKey(state, 'falls')),
       ]);
       updateHighestClimber(state, username, body.zoneId, body.highestY);
       await saveAchievements(state);
@@ -153,14 +154,14 @@ api.post('/record-clear', async (c) => {
     }
 
     const clearCapKey = keyFor(state, `user:${contributorKey()}:zone:${body.zoneId}:clears`);
-    const clearContribution = await redis.incrBy(clearCapKey, 1);
+    const clearContribution = await incrementDailyKey(clearCapKey);
     const counted = clearContribution <= USER_ZONE_CLEAR_CAP;
     const username = await currentDisplayUsername();
 
     if (counted) {
       await Promise.all([
-        redis.incrBy(counterKey(state, body.zoneId, 'successfulClears'), 1),
-        redis.incrBy(totalKey(state, 'clears'), 1),
+        incrementDailyKey(counterKey(state, body.zoneId, 'successfulClears')),
+        incrementDailyKey(totalKey(state, 'clears')),
       ]);
       updateHighestClimber(state, username, body.zoneId, body.highestY);
       updateBestStabilizer(state, username, clearContribution);
@@ -213,7 +214,7 @@ api.post('/record-summit', async (c) => {
     }
 
     const summitCapKey = keyFor(state, `user:${contributorKey()}:summits`);
-    const summitContribution = await redis.incrBy(summitCapKey, 1);
+    const summitContribution = await incrementDailyKey(summitCapKey);
     const counted = summitContribution <= 1;
     const username = await currentDisplayUsername();
 
@@ -223,7 +224,7 @@ api.post('/record-summit', async (c) => {
         state.achievements.firstSummitAt = Date.now();
       }
       updateHighestClimber(state, username, 'moon_roof', 392);
-      await redis.incrBy(totalKey(state, 'summits'), 1);
+      await incrementDailyKey(totalKey(state, 'summits'));
       await saveAchievements(state);
     }
 
@@ -291,7 +292,7 @@ function reviveState(
 }
 
 async function saveAchievements(state: StoredDailyState): Promise<void> {
-  await redis.set(achievementKey(state.dateKey), JSON.stringify(state.achievements));
+  await setDailyKey(achievementKey(state.dateKey), JSON.stringify(state.achievements));
 }
 
 function snapshotFor(state: StoredDailyState): GameSnapshot {
@@ -405,9 +406,19 @@ async function seenEvent(state: StoredDailyState, eventId: string): Promise<bool
   const key = keyFor(state, `event:${eventId}`);
   const existing = await redis.get(key);
   if (existing) return true;
-  await redis.set(key, '1');
-  await redis.expire(key, 60 * 60 * 30);
+  await setDailyKey(key, '1');
   return false;
+}
+
+async function incrementDailyKey(key: string): Promise<number> {
+  const value = await redis.incrBy(key, 1);
+  await redis.expire(key, DAILY_KEY_TTL_SECONDS);
+  return value;
+}
+
+async function setDailyKey(key: string, value: string): Promise<void> {
+  await redis.set(key, value);
+  await redis.expire(key, DAILY_KEY_TTL_SECONDS);
 }
 
 function updateHighestClimber(

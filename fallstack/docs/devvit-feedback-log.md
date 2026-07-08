@@ -189,3 +189,17 @@
 - Actual result: 11 pure tests passed, static smoke rendered the generated-tower build, and playtest succeeded at `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.11`.
 - Severity: praise.
 - Notes: The CLI uploaded 3 new WebView assets after the shared tower generator split.
+
+## 2026-07-08 00:00 UTC — Playtest after daily TTL and stale-client handling
+
+- Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, authenticated as `u/BrightyBrainiac`.
+- Task attempted: verify server/client hardening for date-namespaced TTL cleanup and non-OK mutation API responses.
+- Commands:
+  - `npm test`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run dev`
+- Expected result: local validation passes, non-OK mutation payloads are handled without corrupting client state, daily Redis keys get expiration, and Devvit playtest remains uploadable.
+- Actual result: local validation passed; playtest succeeded at `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.13`.
+- Severity: praise.
+- Notes: Server-side route changes still rebuilt and uploaded cleanly through the playtest workflow.

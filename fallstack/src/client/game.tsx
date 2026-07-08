@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { createRoot } from 'react-dom/client';
 import type {
+  ApiErrorResponse,
   InitGameResponse,
   RecordClearRequest,
   RecordClearResponse,
@@ -68,6 +69,15 @@ const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   moon_roof: { x: 350, y: 942 },
 };
 
+class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
 function createLocalSnapshot() {
   const seed = createDailySeed();
   return deriveSnapshot({
@@ -87,6 +97,15 @@ function setSharedInput(key: keyof InputState, value: boolean) {
 function newAttemptId(prefix: string) {
   const random = Math.random().toString(36).slice(2, 10);
   return `${prefix}_${Date.now().toString(36)}_${random}`;
+}
+
+async function parseApiResponse<T>(res: Response): Promise<T> {
+  const data = (await res.json()) as T | ApiErrorResponse;
+  if (!res.ok) {
+    const message = (data as ApiErrorResponse).message ?? 'The tower did not answer.';
+    throw new ApiRequestError(message, res.status);
+  }
+  return data as T;
 }
 
 class ProceduralSound {
@@ -568,6 +587,14 @@ function GameApp() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
+  const loadSharedState = useCallback(async (successMessage = '14 falls made this foothold.') => {
+    const res = await fetch('/api/init-game');
+    const data = await parseApiResponse<InitGameResponse>(res);
+    window.fallstackSnapshot = data.snapshot;
+    setSnapshot(data.snapshot);
+    setMessage(successMessage);
+  }, []);
+
   const stats = useMemo(() => {
     if (!snapshot) return { falls: 37, clears: 0, summits: 0 };
     return {
@@ -582,13 +609,8 @@ function GameApp() {
     let cancelled = false;
     const init = async () => {
       try {
-        const res = await fetch('/api/init-game');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as InitGameResponse;
         if (cancelled) return;
-        window.fallstackSnapshot = data.snapshot;
-        setSnapshot(data.snapshot);
-        setMessage('14 falls made this foothold.');
+        await loadSharedState();
       } catch (error) {
         console.error('init-game failed', error);
         const localSnapshot = createLocalSnapshot();
@@ -603,7 +625,7 @@ function GameApp() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadSharedState]);
 
   useEffect(() => {
     localStorage.setItem('fallstack:muted', String(muted));
@@ -699,16 +721,20 @@ function GameApp() {
             timestamp: Date.now(),
           }),
         });
-        const data = (await res.json()) as RecordFallResponse;
+        const data = await parseApiResponse<RecordFallResponse>(res);
         setSnapshot(data.snapshot);
         setMessage(data.message);
         if (data.counted) soundRef.current?.play('mutation');
       } catch (error) {
         console.error('record-fall failed', error);
+        if (error instanceof ApiRequestError && error.status === 409) {
+          await loadSharedState('A new tower took over. Fresh stones loaded.');
+          return;
+        }
         setMessage('Your fall was noticed. The tower did not answer.');
       }
     },
-    [snapshot]
+    [loadSharedState, snapshot]
   );
 
   const postClear = useCallback(
@@ -722,36 +748,47 @@ function GameApp() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...detail, dailySeed: snapshot.dailySeed, timestamp: Date.now() }),
         });
-        const data = (await res.json()) as RecordClearResponse;
+        const data = await parseApiResponse<RecordClearResponse>(res);
         setSnapshot(data.snapshot);
         setMessage(data.message);
       } catch (error) {
         console.error('record-clear failed', error);
+        if (error instanceof ApiRequestError && error.status === 409) {
+          await loadSharedState('A new tower took over. Fresh stones loaded.');
+          return;
+        }
         setMessage('The checkpoint did not hold.');
       }
     },
-    [snapshot]
+    [loadSharedState, snapshot]
   );
 
-  const postSummit = useCallback(async (detail: SummitEventDetail) => {
-    if (!snapshot) return;
-    try {
-      setSessionStats((current) => ({ ...current, summits: current.summits + 1 }));
-      soundRef.current?.play('checkpoint');
-      const res = await fetch('/api/record-summit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...detail, dailySeed: snapshot.dailySeed, timestamp: Date.now() }),
-      });
-      const data = (await res.json()) as RecordSummitResponse;
-      setSnapshot(data.snapshot);
-      setMessage(data.message);
-      setSummitOpen(true);
-    } catch (error) {
-      console.error('record-summit failed', error);
-      setMessage('The summit went quiet.');
-    }
-  }, [snapshot]);
+  const postSummit = useCallback(
+    async (detail: SummitEventDetail) => {
+      if (!snapshot) return;
+      try {
+        setSessionStats((current) => ({ ...current, summits: current.summits + 1 }));
+        soundRef.current?.play('checkpoint');
+        const res = await fetch('/api/record-summit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...detail, dailySeed: snapshot.dailySeed, timestamp: Date.now() }),
+        });
+        const data = await parseApiResponse<RecordSummitResponse>(res);
+        setSnapshot(data.snapshot);
+        setMessage(data.message);
+        setSummitOpen(true);
+      } catch (error) {
+        console.error('record-summit failed', error);
+        if (error instanceof ApiRequestError && error.status === 409) {
+          await loadSharedState('A new tower took over. Fresh stones loaded.');
+          return;
+        }
+        setMessage('The summit went quiet.');
+      }
+    },
+    [loadSharedState, snapshot]
+  );
 
   useEffect(() => {
     const onCharge = (event: Event) => {
