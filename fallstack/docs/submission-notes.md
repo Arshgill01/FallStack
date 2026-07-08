@@ -33,7 +33,7 @@ Prepared static browser captures:
 - `npm test`: passes 8 pure game-logic tests covering daily seeds, seeded hook state, status display labels, artifact caps, feedback copy, tower bounds, and zone progression.
 - `npm run lint`: passes with non-blocking Fast Refresh warnings on Vite entrypoint files.
 - `npm run build`: passes; Vite still warns that the Phaser client chunk is larger than 500 kB.
-- `npm run dev`: last verified playtest succeeded at version `v0.0.1.7`.
+- `npm run dev`: last verified playtest succeeded at version `v0.0.1.9`.
 - Static browser smoke with Playwright/Chrome: `game.html` renders a nonblank Phaser tower, seeded local fallback state, an enabled result card, and a readable result dialog when `/api/init-game` is unavailable.
 - Real Reddit playtest browser inspection from this VM is blocked by Reddit network security with HTTP 403 before the post loads; use a logged-in human browser for final in-Reddit visual QA.
 

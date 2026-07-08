@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent,
 } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -214,6 +215,7 @@ class FallstackScene extends Phaser.Scene {
   private summitSent = false;
   private lastHelperTouchAt = -Infinity;
   private lastTouchedHelper = false;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
@@ -308,6 +310,10 @@ class FallstackScene extends Phaser.Scene {
     if (snapshot) window.fallstackSnapshot = snapshot;
     this.drawWorld();
     this.rebuildArtifactBodies();
+  }
+
+  setReducedMotion(reducedMotion: boolean) {
+    this.reducedMotion = reducedMotion;
   }
 
   private addPlatform(platform: Platform) {
@@ -418,6 +424,10 @@ class FallstackScene extends Phaser.Scene {
   private updateCamera(deltaMs: number) {
     if (!this.player) return;
     const targetY = Phaser.Math.Clamp(this.player.y - 120, 0, WORLD_HEIGHT);
+    if (this.reducedMotion) {
+      this.cameras.main.scrollY = targetY;
+      return;
+    }
     const current = this.cameras.main.scrollY;
     this.cameras.main.scrollY = Phaser.Math.Linear(current, targetY, Math.min(1, deltaMs / 260));
   }
@@ -536,6 +546,9 @@ function GameApp() {
   const soundRef = useRef<ProceduralSound | null>(new ProceduralSound(muted));
   const resultCloseRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 
   const stats = useMemo(() => {
     if (!snapshot) return { falls: 37, clears: 0, summits: 0 };
@@ -578,6 +591,14 @@ function GameApp() {
     localStorage.setItem('fallstack:muted', String(muted));
     soundRef.current?.setMuted(muted);
   }, [muted]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReducedMotion(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const unlock = () => soundRef.current?.unlock();
@@ -639,6 +660,10 @@ function GameApp() {
     window.fallstackSnapshot = snapshot;
     sceneRef.current?.refreshSnapshot(snapshot);
   }, [snapshot]);
+
+  useEffect(() => {
+    sceneRef.current?.setReducedMotion(reducedMotion);
+  }, [reducedMotion]);
 
   const postFall = useCallback(
     async (detail: FallEventDetail) => {
@@ -849,6 +874,11 @@ function GameApp() {
 }
 
 function TouchControls({ disabled }: { disabled: boolean }) {
+  useEffect(() => {
+    if (!disabled) return;
+    window.fallstackInput = { ...INITIAL_INPUT };
+  }, [disabled]);
+
   const set = (key: keyof InputState, value: boolean) => {
     if (disabled) return;
     setSharedInput(key, value);
@@ -856,26 +886,38 @@ function TouchControls({ disabled }: { disabled: boolean }) {
 
   const bind = (key: keyof InputState) => ({
     onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
+      if (disabled) return;
       event.currentTarget.setPointerCapture(event.pointerId);
       set(key, true);
     },
     onPointerUp: (event: PointerEvent<HTMLButtonElement>) => {
+      if (disabled) return;
       event.currentTarget.releasePointerCapture(event.pointerId);
       set(key, false);
     },
     onPointerCancel: () => set(key, false),
     onPointerLeave: () => set(key, false),
+    onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      set(key, true);
+    },
+    onKeyUp: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      set(key, false);
+    },
   });
 
   return (
     <nav className="touch-controls" aria-label="Climb controls">
-      <button type="button" aria-label="Move left" {...bind('left')}>
+      <button type="button" aria-label="Move left" disabled={disabled} {...bind('left')}>
         ◀
       </button>
-      <button type="button" className="jump-button" aria-label="Hold to charge jump" {...bind('jump')}>
+      <button type="button" className="jump-button" aria-label="Hold to charge jump" disabled={disabled} {...bind('jump')}>
         Jump
       </button>
-      <button type="button" aria-label="Move right" {...bind('right')}>
+      <button type="button" aria-label="Move right" disabled={disabled} {...bind('right')}>
         ▶
       </button>
     </nav>

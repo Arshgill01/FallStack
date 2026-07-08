@@ -144,3 +144,17 @@
 - Severity: blocker.
 - Workaround: use a logged-in human browser session for final in-Reddit visual QA; static local browser smoke and `devvit playtest` upload still validate separate parts of the path.
 - Notes: The error page is clear, but automated QA for playtest posts needs either browser login state or documented developer-token setup.
+
+## 2026-07-08 00:00 UTC — Playtest after additive mutation counters
+
+- Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, authenticated as `u/BrightyBrainiac`.
+- Task attempted: verify Devvit build/upload after moving new mutation totals to additive Redis counter keys and adding keyboard/reduced-motion input hardening.
+- Commands:
+  - `npm test`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run dev`
+- Expected result: validation passes and Devvit playtest returns a fresh URL/version with the larger Phaser WebView bundle.
+- Actual result: validation passed; playtest succeeded and returned `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.9`.
+- Severity: praise.
+- Notes: Upload and update remained reliable after changing server persistence internals. The same Phaser chunk warning still appears during build.

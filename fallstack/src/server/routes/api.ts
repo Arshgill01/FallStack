@@ -103,13 +103,16 @@ api.post('/record-fall', async (c) => {
       dailyContribution <= USER_DAILY_FAILURE_CAP;
 
     if (counted) {
-      state.counters[body.zoneId][body.failureBucket] += 1;
-      state.totalFalls += 1;
+      await Promise.all([
+        redis.incrBy(counterKey(state, body.zoneId, body.failureBucket), 1),
+        redis.incrBy(totalKey(state, 'falls'), 1),
+      ]);
       updateHighestClimber(state, username, body.zoneId, body.highestY);
-      await saveDailyState(state);
+      await saveAchievements(state);
     }
 
-    const snapshot = snapshotFor(state);
+    const latestState = await loadDailyState();
+    const snapshot = snapshotFor(latestState);
     const zone = snapshot.zones.find((candidate) => candidate.id === body.zoneId);
 
     return c.json<RecordFallResponse>({
@@ -118,7 +121,7 @@ api.post('/record-fall', async (c) => {
       message: fallFeedback({
         zoneName: zone?.name ?? 'This zone',
         bucket: body.failureBucket,
-        count: state.counters[body.zoneId][body.failureBucket],
+        count: latestState.counters[body.zoneId][body.failureBucket],
         counted,
       }),
       snapshot,
@@ -130,6 +133,9 @@ api.post('/record-fall', async (c) => {
 });
 
 api.post('/record-clear', async (c) => {
+  const postId = context.postId;
+  if (!postId) return error(c, 'postId is required but missing from context');
+
   const body = await c.req.json<Partial<RecordClearRequest>>().catch(() => null);
   if (!body || !validAttemptId(body.attemptId) || !isZoneId(body.zoneId)) return error(c, 'Invalid clear event.');
 
@@ -152,14 +158,17 @@ api.post('/record-clear', async (c) => {
     const username = await currentDisplayUsername();
 
     if (counted) {
-      state.counters[body.zoneId].successfulClears += 1;
-      state.totalClears += 1;
+      await Promise.all([
+        redis.incrBy(counterKey(state, body.zoneId, 'successfulClears'), 1),
+        redis.incrBy(totalKey(state, 'clears'), 1),
+      ]);
       updateHighestClimber(state, username, body.zoneId, body.highestY);
       updateBestStabilizer(state, username, clearContribution);
-      await saveDailyState(state);
+      await saveAchievements(state);
     }
 
-    const snapshot = snapshotFor(state);
+    const latestState = await loadDailyState();
+    const snapshot = snapshotFor(latestState);
     const zone = snapshot.zones.find((candidate) => candidate.id === body.zoneId);
     const next = nextZoneId(body.zoneId);
     const nextZone = next ? snapshot.zones.find((candidate) => candidate.id === next) : undefined;
@@ -169,7 +178,7 @@ api.post('/record-clear', async (c) => {
       counted,
       message: clearFeedback({
         zoneName: zone?.name ?? 'This zone',
-        clears: state.counters[body.zoneId].successfulClears,
+        clears: latestState.counters[body.zoneId].successfulClears,
         counted,
         nextZoneStatus: nextZone?.status,
       }),
@@ -182,6 +191,9 @@ api.post('/record-clear', async (c) => {
 });
 
 api.post('/record-summit', async (c) => {
+  const postId = context.postId;
+  if (!postId) return error(c, 'postId is required but missing from context');
+
   const body = await c.req.json<Partial<RecordSummitRequest>>().catch(() => null);
 
   try {
@@ -211,15 +223,15 @@ api.post('/record-summit', async (c) => {
         state.achievements.firstSummitAt = Date.now();
       }
       updateHighestClimber(state, username, 'moon_roof', 392);
-      state.totalSummits += 1;
-      await saveDailyState(state);
+      await redis.incrBy(totalKey(state, 'summits'), 1);
+      await saveAchievements(state);
     }
 
     return c.json<RecordSummitResponse>({
       type: 'recordSummit',
       counted,
       message: counted ? 'The summit remembers your name.' : 'The summit already knows you.',
-      snapshot: snapshotFor(state),
+      snapshot: snapshotFor(await loadDailyState()),
     });
   } catch (err) {
     console.error('record-summit failed', err);
@@ -229,21 +241,33 @@ api.post('/record-summit', async (c) => {
 
 async function loadDailyState(): Promise<StoredDailyState> {
   const seed = createDailySeed();
-  const stored = await redis.get(stateKey(seed.dateKey));
-  if (stored) {
-    return reviveState(JSON.parse(stored) as Partial<StoredDailyState>, seed);
-  }
+  const legacy = await redis.get(stateKey(seed.dateKey));
+  const legacyState = legacy ? parseStoredState(legacy) : null;
+  const baseline = legacy
+    ? reviveState(legacyState ?? {}, seed)
+    : {
+        ...seed,
+        counters: createSeededCounters(),
+        totalFalls: SEEDED_TOTAL_FALLS,
+        totalClears: 0,
+        totalSummits: 0,
+        achievements: createInitialAchievements(),
+      };
 
-  const state: StoredDailyState = {
-    ...seed,
-    counters: createSeededCounters(),
-    totalFalls: SEEDED_TOTAL_FALLS,
-    totalClears: 0,
-    totalSummits: 0,
-    achievements: createInitialAchievements(),
+  const [deltas, totals, achievements] = await Promise.all([
+    loadCounterDeltas(seed),
+    loadTotalDeltas(seed),
+    loadAchievements(seed),
+  ]);
+
+  return {
+    ...baseline,
+    counters: mergeCounters(baseline.counters, deltas),
+    totalFalls: baseline.totalFalls + totals.falls,
+    totalClears: baseline.totalClears + totals.clears,
+    totalSummits: baseline.totalSummits + totals.summits,
+    achievements: { ...baseline.achievements, ...achievements },
   };
-  await saveDailyState(state);
-  return state;
 }
 
 function reviveState(
@@ -266,8 +290,8 @@ function reviveState(
   };
 }
 
-async function saveDailyState(state: StoredDailyState): Promise<void> {
-  await redis.set(stateKey(state.dateKey), JSON.stringify(state));
+async function saveAchievements(state: StoredDailyState): Promise<void> {
+  await redis.set(achievementKey(state.dateKey), JSON.stringify(state.achievements));
 }
 
 function snapshotFor(state: StoredDailyState): GameSnapshot {
@@ -278,8 +302,103 @@ function stateKey(dateKey: string): string {
   return `fallstack:daily:${dateKey}:state`;
 }
 
+function achievementKey(dateKey: string): string {
+  return `fallstack:daily:${dateKey}:achievements`;
+}
+
 function keyFor(state: StoredDailyState, suffix: string): string {
   return `fallstack:daily:${state.dateKey}:${suffix}`;
+}
+
+function counterKey(
+  state: Pick<StoredDailyState, 'dateKey'>,
+  zoneId: ZoneId,
+  counter: keyof ZoneMutationCounters
+): string {
+  return `fallstack:daily:${state.dateKey}:counter:${zoneId}:${counter}`;
+}
+
+function totalKey(state: Pick<StoredDailyState, 'dateKey'>, total: 'falls' | 'clears' | 'summits'): string {
+  return `fallstack:daily:${state.dateKey}:total:${total}`;
+}
+
+async function loadCounterDeltas(seed: { dateKey: string }): Promise<Record<ZoneId, ZoneMutationCounters>> {
+  const deltas = emptyCounters();
+  await Promise.all(
+    (Object.keys(deltas) as ZoneId[]).flatMap((zoneId) =>
+      (Object.keys(ZERO_COUNTERS) as (keyof ZoneMutationCounters)[]).map(async (counter) => {
+        deltas[zoneId][counter] = await readNumber(counterKey(seed, zoneId, counter));
+      })
+    )
+  );
+  return deltas;
+}
+
+async function loadTotalDeltas(seed: { dateKey: string }): Promise<{
+  falls: number;
+  clears: number;
+  summits: number;
+}> {
+  const [falls, clears, summits] = await Promise.all([
+    readNumber(totalKey(seed, 'falls')),
+    readNumber(totalKey(seed, 'clears')),
+    readNumber(totalKey(seed, 'summits')),
+  ]);
+  return { falls, clears, summits };
+}
+
+async function loadAchievements(seed: { dateKey: string }): Promise<Partial<AchievementState>> {
+  const stored = await redis.get(achievementKey(seed.dateKey));
+  if (!stored) return {};
+  return parseAchievements(stored);
+}
+
+async function readNumber(key: string): Promise<number> {
+  const value = await redis.get(key);
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function emptyCounters(): Record<ZoneId, ZoneMutationCounters> {
+  return Object.fromEntries(
+    (Object.keys(createSeededCounters()) as ZoneId[]).map((zoneId) => [zoneId, { ...ZERO_COUNTERS }])
+  ) as Record<ZoneId, ZoneMutationCounters>;
+}
+
+function mergeCounters(
+  baseline: Record<ZoneId, ZoneMutationCounters>,
+  deltas: Record<ZoneId, ZoneMutationCounters>
+): Record<ZoneId, ZoneMutationCounters> {
+  return Object.fromEntries(
+    (Object.keys(baseline) as ZoneId[]).map((zoneId) => [
+      zoneId,
+      {
+        short_jump: baseline[zoneId].short_jump + deltas[zoneId].short_jump,
+        overjump: baseline[zoneId].overjump + deltas[zoneId].overjump,
+        wall_bonk: baseline[zoneId].wall_bonk + deltas[zoneId].wall_bonk,
+        helper_overuse: baseline[zoneId].helper_overuse + deltas[zoneId].helper_overuse,
+        successfulClears: baseline[zoneId].successfulClears + deltas[zoneId].successfulClears,
+      },
+    ])
+  ) as Record<ZoneId, ZoneMutationCounters>;
+}
+
+function parseStoredState(value: string): Partial<StoredDailyState> | null {
+  try {
+    return JSON.parse(value) as Partial<StoredDailyState>;
+  } catch (error) {
+    console.error('Ignoring malformed legacy daily state', error);
+    return null;
+  }
+}
+
+function parseAchievements(value: string): Partial<AchievementState> {
+  try {
+    return JSON.parse(value) as Partial<AchievementState>;
+  } catch (error) {
+    console.error('Ignoring malformed daily achievements', error);
+    return {};
+  }
 }
 
 async function seenEvent(state: StoredDailyState, eventId: string): Promise<boolean> {
