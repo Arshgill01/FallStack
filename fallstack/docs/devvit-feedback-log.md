@@ -130,3 +130,17 @@
 - Actual result: all local validation passed, then playtest succeeded and returned `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack` with version `v0.0.1.7`.
 - Severity: praise.
 - Notes: The CLI clearly reported the new WebView asset upload, update progress, version number, and the command to revert from the playtest version.
+
+## 2026-07-08 00:00 UTC — Browser inspection of Reddit playtest blocked by network security
+
+- Environment: Ubuntu VM, Playwright CLI wrapper, Google Chrome 150.0.7871.100, Devvit playtest URL `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack`.
+- Task attempted: open the real Reddit playtest URL in an automated browser to inspect the Devvit iframe after the `v0.0.1.7` upload.
+- Commands:
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh open 'https://www.reddit.com/r/fallstack_dev/?playtest=fallstack'`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh snapshot`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh screenshot --filename output/playwright/reddit-playtest-network-block.png --full-page`
+- Expected result: Reddit page loads the playtest post so the interactive post can be visually inspected in its real host page.
+- Actual result: Reddit returned a 403 and displayed "You've been blocked by network security" with instructions to log in or use a developer token.
+- Severity: blocker.
+- Workaround: use a logged-in human browser session for final in-Reddit visual QA; static local browser smoke and `devvit playtest` upload still validate separate parts of the path.
+- Notes: The error page is clear, but automated QA for playtest posts needs either browser login state or documented developer-token setup.

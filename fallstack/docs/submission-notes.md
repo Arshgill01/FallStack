@@ -35,10 +35,11 @@ Prepared static browser captures:
 - `npm run build`: passes; Vite still warns that the Phaser client chunk is larger than 500 kB.
 - `npm run dev`: last verified playtest succeeded at version `v0.0.1.7`.
 - Static browser smoke with Playwright/Chrome: `game.html` renders a nonblank Phaser tower, seeded local fallback state, an enabled result card, and a readable result dialog when `/api/init-game` is unavailable.
+- Real Reddit playtest browser inspection from this VM is blocked by Reddit network security with HTTP 403 before the post loads; use a logged-in human browser for final in-Reddit visual QA.
 
 ## Remaining Owner Checks
 
-- Open the playtest URL on an actual phone and desktop browser.
+- Open the playtest URL on an actual phone and logged-in desktop browser.
 - Capture final production screenshots inside the real Devvit playtest post.
 - Submit the app listing and public demo post.
 - Record the demo video if the submission requires it.
