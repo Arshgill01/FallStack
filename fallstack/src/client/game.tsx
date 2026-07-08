@@ -19,7 +19,17 @@ import type {
   RecordFallResponse,
   RecordSummitResponse,
 } from '../shared/api';
-import type { Artifact, FailureBucket, GameSnapshot, ZoneId } from '../shared/game/mutation';
+import {
+  createDailySeed,
+  createInitialAchievements,
+  createSeededCounters,
+  deriveSnapshot,
+  SEEDED_TOTAL_FALLS,
+  type Artifact,
+  type FailureBucket,
+  type GameSnapshot,
+  type ZoneId,
+} from '../shared/game/mutation';
 import { PLATFORMS, WORLD_HEIGHT, WORLD_WIDTH, ZONES, zoneForY, type Platform } from '../shared/game/tower';
 
 type InputState = {
@@ -49,6 +59,18 @@ const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   bell_shaft: { x: 112, y: 1548 },
   moon_roof: { x: 350, y: 942 },
 };
+
+function createLocalSnapshot() {
+  const seed = createDailySeed();
+  return deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: SEEDED_TOTAL_FALLS,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+}
 
 function setSharedInput(key: keyof InputState, value: boolean) {
   window.fallstackInput = { ...(window.fallstackInput ?? INITIAL_INPUT), [key]: value };
@@ -466,14 +488,17 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private addLabel(x: number, y: number, text: string, size: number, color: string) {
+    const labelX = Phaser.Math.Clamp(x, 8, WORLD_WIDTH - 220);
+    const wrapWidth = Math.min(210, WORLD_WIDTH - labelX - 12);
     const label = this.add.text(x, y, text, {
       fontFamily: 'Georgia, serif',
       fontSize: `${size}px`,
       color,
       backgroundColor: 'rgba(247, 239, 224, 0.76)',
       padding: { left: 5, right: 5, top: 3, bottom: 3 },
-      wordWrap: { width: 210 },
+      wordWrap: { width: wrapWidth },
     });
+    label.setX(labelX);
     label.setDepth(3);
     this.labels.push(label);
   }
@@ -535,7 +560,10 @@ function GameApp() {
         setMessage('14 falls made this foothold.');
       } catch (error) {
         console.error('init-game failed', error);
-        setMessage('The tower is offline. Local seed loaded.');
+        const localSnapshot = createLocalSnapshot();
+        window.fallstackSnapshot = localSnapshot;
+        setSnapshot(localSnapshot);
+        setMessage('The mountain remembers locally. Shared marks are delayed.');
       } finally {
         if (!cancelled) setLoading(false);
       }

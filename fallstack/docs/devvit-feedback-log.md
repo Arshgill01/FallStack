@@ -90,3 +90,29 @@
 - Actual result: all commands passed. Lint reports only Fast Refresh warnings for Vite entrypoint-local components. Build reports the known Phaser chunk-size warning.
 - Severity: praise.
 - Notes: The scaffold's TypeScript project references made it straightforward to run pure shared game tests without launching Phaser or Devvit after adding a `node --test` script against emitted shared JS.
+
+## 2026-07-08 00:00 UTC — Static browser smoke found graceful-degradation gap
+
+- Environment: Ubuntu VM, Node v22.22.1, local static server via `python3 -m http.server`, Playwright CLI wrapper, Google Chrome 150.0.7871.100.
+- Task attempted: open the built `dist/client/game.html` outside Devvit to inspect first viewport and result card rendering.
+- Commands:
+  - `python3 -m http.server 4173 --bind 127.0.0.1 --directory dist/client`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh open http://127.0.0.1:4173/game.html`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh snapshot`
+  - `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh screenshot --filename ... --full-page`
+- Expected result: even without Devvit server context, the client should show seeded local state and a nonblank tower.
+- Actual result: initial run showed the offline message but no seeded snapshot/result data after `/api/init-game` returned 404. Fixed by deriving the seeded snapshot client-side on init failure. Re-test showed enabled result card, seeded tower stats, readable labels, and nonblank Phaser rendering.
+- Severity: rough edge.
+- Workaround: fixed in client fallback.
+- Notes: Static browser smoke is not a substitute for Devvit playtest, but it is fast and caught a real graceful-degradation bug.
+
+## 2026-07-08 00:00 UTC — Playwright browser install needed system Chrome
+
+- Environment: Ubuntu VM with `npx` present but no Chrome at `/opt/google/chrome/chrome`.
+- Task attempted: use the local Playwright CLI skill to inspect the built client.
+- Command: `bash ~/.codex/skills/playwright/scripts/playwright_cli.sh open http://127.0.0.1:4173/game.html`.
+- Expected result: wrapper launches a browser or gives clear setup guidance.
+- Actual result: wrapper failed with `Chromium distribution 'chrome' is not found` and suggested `npx playwright install chrome`.
+- Severity: rough edge.
+- Workaround: ran `npx playwright install chrome`, which installed Google Chrome plus supporting dependencies and allowed browser smoke testing to proceed.
+- Notes: The error was actionable. On fresh VMs, browser automation needs this one-time setup.

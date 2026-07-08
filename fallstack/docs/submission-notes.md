@@ -10,6 +10,11 @@
   - A fall feedback banner after a counted mutation.
   - The daily result card with most cursed zone and useful artifact.
 
+Prepared static browser captures:
+
+- `docs/screenshots/fallstack-first-viewport-static.png`
+- `docs/screenshots/fallstack-result-static.png`
+
 ## Human-Only Steps
 
 - Submit the app listing on developer.reddit.com.
@@ -29,10 +34,11 @@
 - `npm run lint`: passes with non-blocking Fast Refresh warnings on Vite entrypoint files.
 - `npm run build`: passes; Vite still warns that the Phaser client chunk is larger than 500 kB.
 - `npm run dev`: last verified playtest succeeded at version `v0.0.1.5`.
+- Static browser smoke with Playwright/Chrome: `game.html` renders a nonblank Phaser tower, seeded local fallback state, an enabled result card, and a readable result dialog when `/api/init-game` is unavailable.
 
 ## Remaining Owner Checks
 
 - Open the playtest URL on an actual phone and desktop browser.
-- Capture screenshots for the app listing.
+- Capture final production screenshots inside the real Devvit playtest post.
 - Submit the app listing and public demo post.
 - Record the demo video if the submission requires it.
