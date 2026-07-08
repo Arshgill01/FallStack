@@ -587,12 +587,12 @@ function GameApp() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
-  const loadSharedState = useCallback(async (successMessage = '14 falls made this foothold.') => {
+  const loadSharedState = useCallback(async (successMessage: string | null = '14 falls made this foothold.') => {
     const res = await fetch('/api/init-game');
     const data = await parseApiResponse<InitGameResponse>(res);
     window.fallstackSnapshot = data.snapshot;
     setSnapshot(data.snapshot);
-    setMessage(successMessage);
+    if (successMessage) setMessage(successMessage);
   }, []);
 
   const stats = useMemo(() => {
@@ -700,6 +700,24 @@ function GameApp() {
     window.fallstackSnapshot = snapshot;
     sceneRef.current?.refreshSnapshot(snapshot);
   }, [snapshot]);
+
+  useEffect(() => {
+    if (!snapshot) return;
+
+    const refreshQuietly = () => {
+      if (document.visibilityState !== 'visible') return;
+      void loadSharedState(null).catch((error) => {
+        console.error('shared refresh failed', error);
+      });
+    };
+
+    const intervalId = window.setInterval(refreshQuietly, 45_000);
+    document.addEventListener('visibilitychange', refreshQuietly);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshQuietly);
+    };
+  }, [loadSharedState, snapshot]);
 
   useEffect(() => {
     sceneRef.current?.setReducedMotion(reducedMotion);
