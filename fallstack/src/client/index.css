@@ -290,19 +290,10 @@ button:disabled {
   position: relative;
 }
 
-.game-shell:fullscreen {
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
-  margin: 0;
-  background: var(--indigo-deep);
-}
-
 @media (min-width: 600px) {
   .game-shell {
-    max-width: 480px;
-    margin: 0 auto;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    max-width: none;
+    margin: 0;
   }
 }
 
@@ -355,6 +346,7 @@ button:disabled {
 .stats-cluster {
   display: flex;
   gap: 1px;
+  margin: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid rgba(51, 41, 31, 0.15);
@@ -831,21 +823,27 @@ button:disabled {
   .touch-controls {
     display: none !important;
   }
+  .topbar {
+    min-height: 66px;
+    padding: 9px 16px;
+  }
+  .topbar-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .topbar .eyebrow {
+    margin: 0;
+  }
+  .topbar-headline {
+    margin-top: 0;
+    white-space: nowrap;
+  }
   .topbar-actions {
     flex-direction: row !important;
-    flex-wrap: wrap;
-    max-width: 150px;
+    flex-wrap: nowrap;
+    max-width: none;
     justify-content: flex-end;
-  }
-}
-
-.action-btn.fullscreen-btn {
-  display: none;
-}
-
-@media (min-width: 600px) {
-  .action-btn.fullscreen-btn {
-    display: flex;
   }
 }
 

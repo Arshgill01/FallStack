@@ -1353,10 +1353,8 @@ function GameApp() {
   const [muted, setMuted] = useState(() => localStorage.getItem('fallstack:muted') === 'true');
   const [sessionStats, setSessionStats] = useState({ falls: 0, clears: 0, summits: 0 });
   const [mutationVisible, setMutationVisible] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [checkpointVisible, setCheckpointVisible] = useState(false);
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
-  const shellRef = useRef<HTMLElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FallstackScene | null>(null);
   const soundRef = useRef<ProceduralSound | null>(new ProceduralSound(muted));
@@ -1431,26 +1429,6 @@ function GameApp() {
     localStorage.setItem('fallstack:muted', String(muted));
     soundRef.current?.setMuted(muted);
   }, [muted]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const toggleFullscreen = useCallback(async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await shellRef.current?.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (error) {
-      console.error('Fullscreen toggle failed', error);
-    }
-  }, []);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1752,7 +1730,7 @@ function GameApp() {
   }, [currentZoneInfo.statusLabel]);
 
   return (
-    <main ref={shellRef} className="game-shell">
+    <main className="game-shell">
       {/* ── TOP BAR ── */}
       <header className="topbar">
         {/* Hanko stamp + wordmark */}
@@ -1802,14 +1780,6 @@ function GameApp() {
             aria-pressed={muted}
           >
             {muted ? '🔇 Mute' : '🔊 Sound'}
-          </button>
-          <button
-            type="button"
-            className="action-btn fullscreen-btn"
-            onClick={toggleFullscreen}
-            aria-pressed={isFullscreen}
-          >
-            {isFullscreen ? '📺 Normal' : '🖥️ Full'}
           </button>
         </div>
       </header>
