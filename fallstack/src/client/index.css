@@ -290,6 +290,14 @@ button:disabled {
   position: relative;
 }
 
+.game-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  margin: 0;
+  background: var(--indigo-deep);
+}
+
 @media (min-width: 600px) {
   .game-shell {
     max-width: 480px;
@@ -445,8 +453,8 @@ button:disabled {
 
 #game-canvas canvas {
   display: block;
-  /* DO NOT use width/height 100% here — it causes blurriness.
-     Phaser will emit the canvas at the correct device-pixel size. */
+  width: 100%;
+  height: 100%;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   image-rendering: pixelated;

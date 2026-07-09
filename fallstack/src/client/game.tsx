@@ -63,6 +63,7 @@ declare global {
 
 const INITIAL_INPUT: InputState = { left: false, right: false, jump: false };
 const START_POS = { x: 240, y: 5880 };
+const MIN_GAME_WIDTH = WORLD_WIDTH;
 const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   lower_ruins: START_POS,
   bell_shaft: { x: 240, y: 3940 },
@@ -1355,6 +1356,7 @@ function GameApp() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [checkpointVisible, setCheckpointVisible] = useState(false);
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
+  const shellRef = useRef<HTMLElement | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FallstackScene | null>(null);
   const soundRef = useRef<ProceduralSound | null>(new ProceduralSound(muted));
@@ -1441,7 +1443,7 @@ function GameApp() {
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+        await shellRef.current?.requestFullscreen();
       } else {
         await document.exitFullscreen();
       }
@@ -1486,19 +1488,30 @@ function GameApp() {
     };
   }, [summitOpen]);
 
-  // Boot Phaser — CRISP CANVAS: wait for layout to get exact viewport dimensions
+  // Boot Phaser once, then keep it pinned to the real container size.
   useEffect(() => {
     if (gameRef.current) return;
-    let animFrameId: number | null = null;
+    let frameId: number | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     const getDimensions = (container: HTMLElement) => {
       const containerRect = container.getBoundingClientRect();
-      const containerW = Math.round(containerRect.width);
-      const containerH = Math.round(containerRect.height);
-      const isMobile = containerW < 480;
-      const gameW = isMobile ? WORLD_WIDTH : containerW;
-      const gameH = isMobile ? Math.round(containerH * (WORLD_WIDTH / containerW)) : containerH;
-      return { containerW, containerH, gameW, gameH };
+      const containerW = Math.max(0, Math.round(containerRect.width));
+      const containerH = Math.max(0, Math.round(containerRect.height));
+      return {
+        containerW,
+        containerH,
+        gameW: Math.max(MIN_GAME_WIDTH, containerW),
+        gameH: containerH,
+      };
+    };
+
+    const resizeGame = () => {
+      const container = document.getElementById('game-canvas');
+      if (!container || !gameRef.current) return;
+      const { containerW, containerH, gameW, gameH } = getDimensions(container);
+      if (containerW === 0 || containerH === 0) return;
+      gameRef.current.scale.resize(gameW, gameH);
     };
 
     const initGame = () => {
@@ -1508,7 +1521,7 @@ function GameApp() {
 
       // Wait until browser layout has completed and container has dimensions
       if (containerW === 0 || containerH === 0) {
-        animFrameId = requestAnimationFrame(initGame);
+        frameId = requestAnimationFrame(initGame);
         return;
       }
 
@@ -1521,8 +1534,8 @@ function GameApp() {
         width: gameW,
         height: gameH,
         scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
+          mode: Phaser.Scale.NONE,
+          autoCenter: Phaser.Scale.NO_CENTER,
           width: gameW,
           height: gameH,
         },
@@ -1542,30 +1555,35 @@ function GameApp() {
       });
       gameRef.current = game;
 
-      // Apply crisp rendering to the canvas element
-      window.requestAnimationFrame(() => {
+      const styleCanvas = () => {
         const canvas = container.querySelector('canvas');
         if (canvas) {
           canvas.style.imageRendering = 'pixelated';
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
         }
+      };
+
+      frameId = requestAnimationFrame(() => {
+        resizeGame();
+        styleCanvas();
       });
+      resizeObserver = new ResizeObserver(() => {
+        if (frameId) cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(() => {
+          resizeGame();
+          styleCanvas();
+        });
+      });
+      resizeObserver.observe(container);
+      document.fonts?.ready.then(() => resizeGame()).catch(() => {});
     };
 
     initGame();
 
-    const handleResize = () => {
-      const container = document.getElementById('game-canvas');
-      if (!container || !gameRef.current) return;
-      const { containerW, containerH, gameW, gameH } = getDimensions(container);
-      if (containerW === 0 || containerH === 0) return;
-      gameRef.current.scale.resize(gameW, gameH);
-    };
-
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      if (animFrameId) cancelAnimationFrame(animFrameId);
-      window.removeEventListener('resize', handleResize);
+      if (frameId) cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
       gameRef.current?.destroy(true);
       gameRef.current = null;
       sceneRef.current = null;
@@ -1734,7 +1752,7 @@ function GameApp() {
   }, [currentZoneInfo.statusLabel]);
 
   return (
-    <main className="game-shell">
+    <main ref={shellRef} className="game-shell">
       {/* ── TOP BAR ── */}
       <header className="topbar">
         {/* Hanko stamp + wordmark */}
