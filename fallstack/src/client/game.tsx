@@ -69,6 +69,29 @@ const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   moon_roof: { x: 350, y: 942 },
 };
 
+// Badge display names — dry, compact, mildly cursed
+const BADGE_DISPLAY: Record<string, string> = {
+  Quiet: 'Untouched',
+  Haunted: 'Restless',
+  Cursed: 'Overgrown',
+  Reinforced: 'Well-Trodden',
+  Stabilized: 'Blessed',
+};
+
+const STATUS_TO_BADGE_CLASS: Record<string, string> = {
+  Quiet: 'badge-quiet',
+  Haunted: 'badge-haunted',
+  Cursed: 'badge-cursed',
+  Reinforced: 'badge-reinforced',
+  Stabilized: 'badge-stabilized',
+  // also handle the label variants
+  Untouched: 'badge-quiet',
+  Restless: 'badge-haunted',
+  Overgrown: 'badge-cursed',
+  'Well-Trodden': 'badge-reinforced',
+  Blessed: 'badge-stabilized',
+};
+
 class ApiRequestError extends Error {
   constructor(
     message: string,
@@ -108,6 +131,9 @@ async function parseApiResponse<T>(res: Response): Promise<T> {
   return data as T;
 }
 
+/* ======================================================
+   PROCEDURAL SOUND
+   ====================================================== */
 class ProceduralSound {
   private context: AudioContext | null = null;
   private chargeOsc: OscillatorNode | null = null;
@@ -219,11 +245,56 @@ class ProceduralSound {
   }
 }
 
+/* ======================================================
+   THEME PALETTE — mirrors mockup(3) themes exactly
+   ====================================================== */
+const THEMES = {
+  lower_ruins: {
+    skyTop: '#c9a876',
+    skyBot: '#e9d9ae',
+    stone: 0xa9906c,
+    stoneDark: 0x7d6a4c,
+    highlight: 0xf3ead9,
+    accent: 0xc1502f,
+    platformEdge: 0x5f5138,
+  },
+  bell_shaft: {
+    skyTop: '#24303d',
+    skyBot: '#3c4f5e',
+    stone: 0x5c6b74,
+    stoneDark: 0x3a444c,
+    highlight: 0x8fa6b4,
+    accent: 0xe0b25a,
+    platformEdge: 0x28313a,
+  },
+  moon_roof: {
+    skyTop: '#121322',
+    skyBot: '#2b2f45',
+    stone: 0xd8d2bd,
+    stoneDark: 0xa49d84,
+    highlight: 0xefead8,
+    accent: 0xb9a0e0,
+    platformEdge: 0x7d7561,
+  },
+};
+
+type ThemeKey = keyof typeof THEMES;
+
+function zoneTheme(zoneId: ZoneId): ThemeKey {
+  if (zoneId === 'bell_shaft') return 'bell_shaft';
+  if (zoneId === 'moon_roof') return 'moon_roof';
+  return 'lower_ruins';
+}
+
+/* ======================================================
+   PHASER SCENE
+   ====================================================== */
 class FallstackScene extends Phaser.Scene {
   private player?: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
   private platforms?: Phaser.Physics.Arcade.StaticGroup;
   private artifactBodies?: Phaser.Physics.Arcade.StaticGroup;
   private graphics?: Phaser.GameObjects.Graphics;
+  private bgGraphics?: Phaser.GameObjects.Graphics;
   private labels: Phaser.GameObjects.Text[] = [];
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private space: Phaser.Input.Keyboard.Key | undefined;
@@ -244,6 +315,7 @@ class FallstackScene extends Phaser.Scene {
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private towerSeed = createDailySeed().dailySeed;
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed).platforms;
+  private chargeTime = 0;
 
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
@@ -251,15 +323,22 @@ class FallstackScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT + 220);
     this.physics.world.gravity.y = 1550;
 
+    // Two graphics layers: background (drawn behind platforms) and foreground (labels etc.)
+    this.bgGraphics = this.add.graphics();
     this.graphics = this.add.graphics();
+    this.bgGraphics.setDepth(0);
+    this.graphics.setDepth(2);
+
     this.platforms = this.physics.add.staticGroup();
     this.rebuildPlatformBodies();
 
-    this.player = this.add.rectangle(START_POS.x, START_POS.y, 24, 34, 0x2a2118) as Phaser.GameObjects.Rectangle & {
+    // Player — small rounded figure
+    this.player = this.add.rectangle(START_POS.x, START_POS.y, 20, 28, 0xf3ead9) as Phaser.GameObjects.Rectangle & {
       body: Phaser.Physics.Arcade.Body;
     };
+    this.player.setDepth(4);
     this.physics.add.existing(this.player);
-    this.player.body.setSize(24, 34);
+    this.player.body.setSize(20, 28);
     this.player.body.setCollideWorldBounds(true);
     this.player.body.setDragX(850);
     this.player.body.setMaxVelocity(420, 1300);
@@ -303,6 +382,14 @@ class FallstackScene extends Phaser.Scene {
       this.chargeStart = this.time.now;
     }
 
+    if (this.charging) {
+      this.chargeTime = Math.max(0, this.time.now - this.chargeStart);
+      const percent = Phaser.Math.Clamp(0.32 + (this.chargeTime / 900) * 0.68, 0.32, 1);
+      window.dispatchEvent(
+        new CustomEvent('fallstack:charge', { detail: { percent: Math.round(percent * 100) } })
+      );
+    }
+
     if (this.charging && (!input.jump || !onFloor)) {
       const held = Math.max(0, this.time.now - this.chargeStart);
       const percent = Phaser.Math.Clamp(0.32 + (held / 900) * 0.68, 0.32, 1);
@@ -312,15 +399,9 @@ class FallstackScene extends Phaser.Scene {
         window.dispatchEvent(new CustomEvent('fallstack:launch'));
       }
       this.charging = false;
+      this.chargeTime = 0;
       window.dispatchEvent(
-        new CustomEvent('fallstack:charge', { detail: { percent: Math.round(percent * 100) } })
-      );
-    }
-
-    if (this.charging) {
-      const percent = Phaser.Math.Clamp(0.32 + ((this.time.now - this.chargeStart) / 900) * 0.68, 0.32, 1);
-      window.dispatchEvent(
-        new CustomEvent('fallstack:charge', { detail: { percent: Math.round(percent * 100) } })
+        new CustomEvent('fallstack:charge', { detail: { percent: 0 } })
       );
     }
 
@@ -332,6 +413,7 @@ class FallstackScene extends Phaser.Scene {
     this.checkProgress();
     this.checkFall();
     this.updateCamera(deltaMs);
+    this.drawPlayer();
   }
 
   refreshSnapshot(snapshot?: GameSnapshot) {
@@ -455,6 +537,7 @@ class FallstackScene extends Phaser.Scene {
     this.currentAttemptId = newAttemptId('attempt');
     this.highestY = checkpoint.y;
     this.charging = false;
+    this.chargeTime = 0;
     this.lastHelperTouchAt = -Infinity;
     this.lastTouchedHelper = false;
   }
@@ -471,83 +554,184 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private drawWorld() {
-    if (!this.graphics) return;
+    if (!this.graphics || !this.bgGraphics) return;
+    this.bgGraphics.clear();
     this.graphics.clear();
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
-    this.graphics.fillStyle(0xf7efe0, 1).fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-    this.drawZoneBand(260, 900, 0xb8c7d7, 0x516073);
-    this.drawZoneBand(900, 1620, 0xc4b8a0, 0x4c5768);
-    this.drawZoneBand(1620, 2220, 0xd8b58a, 0x65432f);
+    // Background sky gradient (approximate with 3 bands)
+    this.bgGraphics.fillStyle(0xe9d9ae, 1).fillRect(0, 1620, WORLD_WIDTH, 2220 - 1620); // lower ruins sky
+    this.bgGraphics.fillStyle(0x3c4f5e, 1).fillRect(0, 900, WORLD_WIDTH, 1620 - 900);  // bell shaft sky
+    this.bgGraphics.fillStyle(0x2b2f45, 1).fillRect(0, 0, WORLD_WIDTH, 900);           // moon roof sky
 
+    // Zone boundary lines — subtle dividers
+    this.bgGraphics.lineStyle(1, 0x5f5138, 0.3).lineBetween(20, 1620, WORLD_WIDTH - 20, 1620);
+    this.bgGraphics.lineStyle(1, 0x4c6070, 0.3).lineBetween(20, 900, WORLD_WIDTH - 20, 900);
+
+    // Distant mountain silhouette in lower ruins
+    this.bgGraphics.fillStyle(0x8a9770, 0.35);
+    this.bgGraphics.fillTriangle(0, 1900, 160, 1720, 280, 1900);
+    this.bgGraphics.fillTriangle(200, 1900, 380, 1680, 480, 1900);
+
+    // Bell shaft lantern dots
+    this.bgGraphics.fillStyle(0xe0b25a, 0.28);
+    for (let i = 0; i < 4; i++) {
+      const lx = 60 + i * 110;
+      const ly = 950 + (i % 2) * 30;
+      this.bgGraphics.fillEllipse(lx, ly, 14, 18);
+    }
+
+    // Moon in moon_roof zone
+    this.bgGraphics.fillStyle(0xefe7cf, 0.85);
+    this.bgGraphics.fillCircle(340, 280, 38);
+    // Stars
+    this.bgGraphics.fillStyle(0xffffff, 0.6);
+    const starPositions = [[60, 180], [140, 320], [240, 150], [380, 420], [90, 520], [310, 680], [430, 200]];
+    for (const [sx, sy] of starPositions) {
+      this.bgGraphics.fillRect(sx, sy, 2, 2);
+    }
+
+    // Draw all platforms
     for (const platform of this.towerPlatforms) this.drawPlatform(platform);
 
+    // Draw artifacts and zone labels
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     for (const zone of snapshot.zones) {
-      this.addLabel(18, (ZONES.find((candidate) => candidate.id === zone.id)?.yTop ?? 0) + 22, `${zone.name} · ${zone.statusLabel}`, 13, '#2a2118');
+      const zoneData = ZONES.find((candidate) => candidate.id === zone.id);
+      if (zoneData) {
+        // Zone name label — positioned in the zone's sky band
+        const labelY = zoneData.yTop + 18;
+        this.addZoneLabel(14, labelY, zone.name, zone.statusLabel);
+      }
       for (const artifact of zone.artifacts) this.drawArtifact(artifact);
     }
   }
 
-  private drawZoneBand(yTop: number, yBottom: number, fill: number, line: number) {
-    this.graphics?.fillStyle(fill, 0.42).fillRect(0, yTop, WORLD_WIDTH, yBottom - yTop);
-    this.graphics?.lineStyle(2, line, 0.22).lineBetween(24, yTop, WORLD_WIDTH - 24, yTop);
-  }
-
   private drawPlatform(platform: Platform) {
-    const colors: Record<Platform['kind'], number> = {
-      stone: 0x72503a,
-      metal: 0x43536a,
-      moon: 0x5f6878,
-      summit: 0x9b412d,
-    };
-    this.graphics?.fillStyle(colors[platform.kind], 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height, 5);
-    this.graphics?.fillStyle(0xf7efe0, 0.18).fillRect(platform.x + 4, platform.y + 4, platform.width - 8, 3);
+    const zone = zoneForY(platform.y);
+    const th = THEMES[zoneTheme(zone.id)];
+
+    if (platform.kind === 'summit') {
+      // Summit platform — glowing persimmon
+      this.graphics?.fillStyle(0x9c3e23, 1).fillRoundedRect(platform.x, platform.y + 3, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(0xc1502f, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 5);
+      this.graphics?.fillStyle(0xf3ead9, 0.3).fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
+      // "summit" label
+      this.addInlineLabel(platform.x + platform.width / 2 - 18, platform.y - 18, 'summit', 10, '#c1502f');
+      return;
+    }
+
+    // Shadow / depth
+    this.graphics?.fillStyle(th.platformEdge, 0.9).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
+    // Main face
+    this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
+    this.graphics?.fillStyle(th.stone, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
+    // Highlight streak
+    this.graphics?.fillStyle(th.highlight, 0.22).fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
   }
 
   private drawArtifact(artifact: Artifact) {
     if (artifact.type === 'lantern_trail') {
-      this.graphics?.lineStyle(3, 0xd97934, 0.52).beginPath();
+      // Dashed arc showing a successful route
+      this.graphics?.lineStyle(2, 0xd97934, 0.55).beginPath();
       this.graphics?.arc(artifact.x + 60, artifact.y + 10, 72, Math.PI * 1.08, Math.PI * 1.82);
       this.graphics?.strokePath();
-      this.addLabel(artifact.x - 22, artifact.y - 28, artifact.label, 11, '#5c3a22');
+      this.addInlineLabel(artifact.x - 22, artifact.y - 32, artifact.label, 10, '#9c6226');
       return;
     }
 
     if (artifact.type === 'corpse_stack') {
-      this.graphics?.fillStyle(0x8c5835, 1);
-      for (let i = 0; i < 3; i += 1) {
-        this.graphics?.fillRoundedRect(artifact.x + i * 8, artifact.y + i * 7, artifact.width - i * 16, 10, 3);
+      // Stacked worn steps — chunky, layered
+      const colors = [0xa07040, 0xc7ac7c, 0xd4bc8c];
+      for (let i = 2; i >= 0; i -= 1) {
+        this.graphics?.fillStyle(colors[i], 1).fillRoundedRect(
+          artifact.x + i * 4, artifact.y + i * 5,
+          artifact.width - i * 8, 10, 3
+        );
       }
+      this.graphics?.fillStyle(0xf3ead9, 0.25).fillRect(artifact.x + 8, artifact.y, artifact.width - 16, 2);
     } else if (artifact.type === 'mercy_nail') {
+      // Small peg — narrow, visually distinct
       this.graphics?.fillStyle(0x2f4f5f, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 7);
-      this.graphics?.fillStyle(0xd97934, 1).fillCircle(artifact.x + artifact.width - 8, artifact.y + artifact.height / 2, 4);
+      this.graphics?.fillStyle(0xe0b25a, 1).fillCircle(artifact.x + artifact.width - 8, artifact.y + artifact.height / 2, 4);
+      this.graphics?.fillStyle(0x8ab4c8, 0.4).fillRect(artifact.x + 4, artifact.y + 3, artifact.width - 18, 3);
     } else if (artifact.type === 'ghost_platform') {
-      this.graphics?.lineStyle(2, 0x405f78, 0.75).strokeRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
-      this.graphics?.fillStyle(0x9eb7c8, 0.28).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
+      // Translucent, dashed outline
+      this.graphics?.lineStyle(2, 0x6090a8, 0.65).strokeRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
+      this.graphics?.fillStyle(0x9eb7c8, 0.22).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
+      // Glow dots
+      this.graphics?.fillStyle(0xb9d8e0, 0.5);
+      for (let i = 0; i < 3; i++) {
+        this.graphics?.fillCircle(artifact.x + 14 + i * 16, artifact.y + artifact.height / 2, 2);
+      }
     } else {
-      this.graphics?.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 4);
-      this.graphics?.lineStyle(2, 0x2a2118, 0.5).lineBetween(artifact.x + 10, artifact.y + 4, artifact.x + 34, artifact.y + artifact.height - 4);
+      // Cursed brick — cracked, dangerous looking
+      this.graphics?.fillStyle(0x6b3028, 1).fillRoundedRect(artifact.x, artifact.y + 3, artifact.width, artifact.height, 4);
+      this.graphics?.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height - 2, 4);
+      // Crack lines
+      this.graphics?.lineStyle(1, 0x2a1410, 0.7)
+        .lineBetween(artifact.x + 10, artifact.y + 3, artifact.x + 22, artifact.y + artifact.height - 3);
+      this.graphics?.lineStyle(1, 0x2a1410, 0.5)
+        .lineBetween(artifact.x + 30, artifact.y + 2, artifact.x + 24, artifact.y + artifact.height - 2);
     }
-    this.addLabel(artifact.x - 18, artifact.y - 28, artifact.label, 11, '#2a2118');
+
+    this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
   }
 
-  private addLabel(x: number, y: number, text: string, size: number, color: string) {
-    const labelX = Phaser.Math.Clamp(x, 8, WORLD_WIDTH - 220);
-    const wrapWidth = Math.min(210, WORLD_WIDTH - labelX - 12);
-    const label = this.add.text(x, y, text, {
-      fontFamily: 'Georgia, serif',
-      fontSize: `${size}px`,
-      color,
-      backgroundColor: 'rgba(247, 239, 224, 0.76)',
-      padding: { left: 5, right: 5, top: 3, bottom: 3 },
-      wordWrap: { width: wrapWidth },
+  private addZoneLabel(x: number, y: number, name: string, statusLabel: string) {
+    // Zone name text, small, stamped feel
+    const label = this.add.text(x, y, `${name} · ${statusLabel}`, {
+      fontFamily: '"Shippori Mincho", serif',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#c8b89a',
+      alpha: 0.7,
     });
-    label.setX(labelX);
+    label.setDepth(1);
+    label.setAlpha(0.7);
+    this.labels.push(label);
+  }
+
+  private addArtifactLabel(x: number, y: number, text: string) {
+    const clampedX = Phaser.Math.Clamp(x, 4, WORLD_WIDTH - 160);
+    const label = this.add.text(clampedX, y, text, {
+      fontFamily: '"Zen Maru Gothic", sans-serif',
+      fontSize: '9.5px',
+      fontStyle: '700',
+      color: '#5c4a35',
+      backgroundColor: 'rgba(242, 233, 216, 0.9)',
+      padding: { left: 5, right: 5, top: 2, bottom: 2 },
+    });
     label.setDepth(3);
     this.labels.push(label);
+  }
+
+  private addInlineLabel(x: number, y: number, text: string, size: number, color: string) {
+    const label = this.add.text(x, y, text, {
+      fontFamily: '"Zen Maru Gothic", sans-serif',
+      fontSize: `${size}px`,
+      color,
+    });
+    label.setDepth(3);
+    this.labels.push(label);
+  }
+
+  private drawPlayer() {
+    if (!this.player) return;
+    // Player is a rectangle — we tint it based on state
+    const isCharging = this.charging;
+    if (isCharging) {
+      const power = Math.min(this.chargeTime, 900) / 900;
+      // Red-orange tint while charging
+      const r = Math.round(243 - power * 80);
+      const g = Math.round(234 - power * 120);
+      const b = Math.round(217 - power * 100);
+      this.player.setFillStyle(Phaser.Display.Color.GetColor(r, g, b));
+    } else {
+      this.player.setFillStyle(0xf3ead9);
+    }
   }
 
   private rebuildArtifactBodies() {
@@ -570,30 +754,52 @@ class FallstackScene extends Phaser.Scene {
   }
 }
 
+/* ======================================================
+   REACT — GAME APP
+   ====================================================== */
 function GameApp() {
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
-  const [message, setMessage] = useState('The tower is waking.');
+  const [message, setMessage] = useState('');
   const [charge, setCharge] = useState(0);
   const [loading, setLoading] = useState(true);
   const [summitOpen, setSummitOpen] = useState(false);
   const [muted, setMuted] = useState(() => localStorage.getItem('fallstack:muted') === 'true');
   const [sessionStats, setSessionStats] = useState({ falls: 0, clears: 0, summits: 0 });
+  const [mutationVisible, setMutationVisible] = useState(false);
+  const [checkpointVisible, setCheckpointVisible] = useState(false);
+  const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FallstackScene | null>(null);
   const soundRef = useRef<ProceduralSound | null>(new ProceduralSound(muted));
   const resultCloseRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const mutationTimerRef = useRef<number | null>(null);
+  const checkpointTimerRef = useRef<number | null>(null);
   const [reducedMotion, setReducedMotion] = useState(() =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
+
+  const showMutation = useCallback((text: string) => {
+    setMessage(text);
+    setMutationVisible(true);
+    if (mutationTimerRef.current) window.clearTimeout(mutationTimerRef.current);
+    mutationTimerRef.current = window.setTimeout(() => setMutationVisible(false), 3800);
+  }, []);
+
+  const showCheckpoint = useCallback((title: string, sub: string) => {
+    setCheckpointText({ title, sub });
+    setCheckpointVisible(true);
+    if (checkpointTimerRef.current) window.clearTimeout(checkpointTimerRef.current);
+    checkpointTimerRef.current = window.setTimeout(() => setCheckpointVisible(false), 3400);
+  }, []);
 
   const loadSharedState = useCallback(async (successMessage: string | null = '14 falls made this foothold.') => {
     const res = await fetch('/api/init-game');
     const data = await parseApiResponse<InitGameResponse>(res);
     window.fallstackSnapshot = data.snapshot;
     setSnapshot(data.snapshot);
-    if (successMessage) setMessage(successMessage);
-  }, []);
+    if (successMessage) showMutation(successMessage);
+  }, [showMutation]);
 
   const stats = useMemo(() => {
     if (!snapshot) return { falls: 37, clears: 0, summits: 0 };
@@ -602,6 +808,11 @@ function GameApp() {
       clears: snapshot.totalClears,
       summits: snapshot.totalSummits,
     };
+  }, [snapshot]);
+
+  const currentZoneInfo = useMemo(() => {
+    if (!snapshot?.zones?.length) return { name: 'Lower Ruins', statusLabel: 'Untouched' };
+    return snapshot.zones[0];
   }, [snapshot]);
 
   useEffect(() => {
@@ -616,7 +827,7 @@ function GameApp() {
         const localSnapshot = createLocalSnapshot();
         window.fallstackSnapshot = localSnapshot;
         setSnapshot(localSnapshot);
-        setMessage('The mountain remembers locally. Shared marks are delayed.');
+        showMutation('The mountain remembers locally. Shared marks are delayed.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -625,7 +836,7 @@ function GameApp() {
     return () => {
       cancelled = true;
     };
-  }, [loadSharedState]);
+  }, [loadSharedState, showMutation]);
 
   useEffect(() => {
     localStorage.setItem('fallstack:muted', String(muted));
@@ -668,19 +879,30 @@ function GameApp() {
     };
   }, [summitOpen]);
 
+  // Boot Phaser — CRISP CANVAS: use NONE scale mode to avoid CSS stretching blurriness
   useEffect(() => {
     if (gameRef.current) return;
+    const container = document.getElementById('game-canvas');
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const viewH = Math.round(containerRect.height);
+    const dpr = window.devicePixelRatio || 1;
+
     const scene = new FallstackScene('FallstackScene');
     sceneRef.current = scene;
     gameRef.current = new Phaser.Game({
       type: Phaser.AUTO,
       parent: 'game-canvas',
-      backgroundColor: '#f7efe0',
+      backgroundColor: '#1b262f',
+      // Use NONE so Phaser doesn't add any CSS that blurs the canvas.
+      // We size it explicitly to the container at the device pixel ratio.
+      width: WORLD_WIDTH,
+      height: viewH > 0 ? viewH : 560,
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: WORLD_WIDTH,
-        height: 720,
+        height: viewH > 0 ? viewH : 560,
       },
       physics: {
         default: 'arcade',
@@ -689,7 +911,20 @@ function GameApp() {
           debug: false,
         },
       },
+      render: {
+        antialias: false,
+        pixelArt: false,
+        roundPixels: true,
+      },
       scene,
+    });
+
+    // Apply crisp rendering to the canvas element after Phaser creates it
+    window.requestAnimationFrame(() => {
+      const canvas = container.querySelector('canvas');
+      if (canvas) {
+        canvas.style.imageRendering = 'auto';
+      }
     });
 
     return () => {
@@ -730,7 +965,6 @@ function GameApp() {
   const postFall = useCallback(
     async (detail: FallEventDetail) => {
       if (!snapshot) return;
-      setMessage('Your fall is being counted.');
       try {
         setSessionStats((current) => ({ ...current, falls: current.falls + 1 }));
         soundRef.current?.play('fall');
@@ -745,7 +979,7 @@ function GameApp() {
         });
         const data = await parseApiResponse<RecordFallResponse>(res);
         setSnapshot(data.snapshot);
-        setMessage(data.message);
+        showMutation(data.message);
         if (data.counted) soundRef.current?.play('mutation');
       } catch (error) {
         console.error('record-fall failed', error);
@@ -753,10 +987,10 @@ function GameApp() {
           await loadSharedState('A new tower took over. Fresh stones loaded.');
           return;
         }
-        setMessage('Your fall was noticed. The tower did not answer.');
+        showMutation('Your fall was noticed. The tower did not answer.');
       }
     },
-    [loadSharedState, snapshot]
+    [loadSharedState, showMutation, snapshot]
   );
 
   const postClear = useCallback(
@@ -772,17 +1006,18 @@ function GameApp() {
         });
         const data = await parseApiResponse<RecordClearResponse>(res);
         setSnapshot(data.snapshot);
-        setMessage(data.message);
+        showCheckpoint(data.message, '');
+        showMutation(data.message);
       } catch (error) {
         console.error('record-clear failed', error);
         if (error instanceof ApiRequestError && error.status === 409) {
           await loadSharedState('A new tower took over. Fresh stones loaded.');
           return;
         }
-        setMessage('The checkpoint did not hold.');
+        showMutation('The checkpoint did not hold.');
       }
     },
-    [loadSharedState, snapshot]
+    [loadSharedState, showCheckpoint, showMutation, snapshot]
   );
 
   const postSummit = useCallback(
@@ -798,7 +1033,7 @@ function GameApp() {
         });
         const data = await parseApiResponse<RecordSummitResponse>(res);
         setSnapshot(data.snapshot);
-        setMessage(data.message);
+        showMutation(data.message);
         setSummitOpen(true);
       } catch (error) {
         console.error('record-summit failed', error);
@@ -806,16 +1041,16 @@ function GameApp() {
           await loadSharedState('A new tower took over. Fresh stones loaded.');
           return;
         }
-        setMessage('The summit went quiet.');
+        showMutation('The summit went quiet.');
       }
     },
-    [loadSharedState, snapshot]
+    [loadSharedState, showMutation, snapshot]
   );
 
   useEffect(() => {
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
-      if (detail.percent <= 35) soundRef.current?.play('charge-start');
+      if (detail.percent <= 35 && detail.percent > 0) soundRef.current?.play('charge-start');
       setCharge(detail.percent);
     };
     const onLand = (event: Event) => {
@@ -854,79 +1089,153 @@ function GameApp() {
     };
   }, [postClear, postFall, postSummit]);
 
+  // Derive zone status badge class from snapshot
+  const zoneBadgeClass = useMemo(() => {
+    const label = currentZoneInfo.statusLabel ?? 'Untouched';
+    return STATUS_TO_BADGE_CLASS[label] ?? 'badge-quiet';
+  }, [currentZoneInfo.statusLabel]);
+
   return (
     <main className="game-shell">
-      <section className="hud">
-        <div>
-          <p className="eyebrow">Fallstack</p>
-          <h1>{snapshot?.headline ?? "Today's tower has 37 failed climbs in it."}</h1>
-          <p className="hint">Arrows move · Hold Space · Release to leap</p>
-        </div>
-        <div className="hud-actions" aria-label="Game actions">
-          <button type="button" onClick={() => setSummitOpen(true)} disabled={!snapshot}>
-            Result
-          </button>
-          <button type="button" onClick={() => setMuted((value) => !value)} aria-pressed={muted}>
-            {muted ? 'Sound off' : 'Sound on'}
-          </button>
-        </div>
-        <dl className="stats">
-          <div>
-            <dt>Falls</dt>
-            <dd>{stats.falls}</dd>
+      {/* ── TOP BAR ── */}
+      <header className="topbar">
+        {/* Hanko stamp + wordmark */}
+        <div className="topbar-brand">
+          <div className="eyebrow">
+            <span className="hanko" aria-hidden="true">登</span>
+            <span>Fallstack</span>
           </div>
-          <div>
-            <dt>Clears</dt>
-            <dd>{stats.clears}</dd>
+          <div className="topbar-headline">
+            <b>{stats.falls}</b>{' '}
+            {snapshot?.headline
+              ? snapshot.headline.replace(/^Today's tower has \d+ failed climbs in it\.$/, '')
+              : 'travelers slipped on this mountain today.'}
           </div>
-          <div>
-            <dt>Summits</dt>
-            <dd>{stats.summits}</dd>
+        </div>
+
+        {/* Stats cluster */}
+        <dl className="stats-cluster" aria-label="Community climb stats">
+          <div className="stat-cell">
+            <dt className="stat-label">Falls</dt>
+            <dd className="stat-value">{stats.falls}</dd>
+          </div>
+          <div className="stat-cell">
+            <dt className="stat-label">Clears</dt>
+            <dd className="stat-value">{stats.clears}</dd>
+          </div>
+          <div className="stat-cell">
+            <dt className="stat-label">Tops</dt>
+            <dd className="stat-value">{stats.summits}</dd>
           </div>
         </dl>
-      </section>
 
+        {/* Action buttons */}
+        <div className="topbar-actions" aria-label="Game controls">
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => setSummitOpen(true)}
+            disabled={!snapshot}
+          >
+            Result
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => setMuted((value) => !value)}
+            aria-pressed={muted}
+          >
+            {muted ? '🔇 Mute' : '🔊 Sound'}
+          </button>
+        </div>
+      </header>
+
+      {/* ── GAME VIEWPORT ── */}
       <section className="tower-wrap" aria-label="Fallstack tower">
         <div id="game-canvas" />
-        <div className="banner" role="status" aria-live="polite" aria-atomic="true">
-          {loading ? "Loading today's tower." : message}
+
+        {/* Zone tag — top left overlay */}
+        <div className="hud-overlay zone-tag" role="status" aria-label="Current zone">
+          {currentZoneInfo.name}
+          <span className={`zone-badge ${zoneBadgeClass}`}>
+            {BADGE_DISPLAY[currentZoneInfo.statusLabel] ?? currentZoneInfo.statusLabel}
+          </span>
         </div>
-        <div className="charge" aria-label="Jump charge">
-          <span style={{ width: `${charge}%` }} />
+
+        {/* Controls hint */}
+        <div className="hud-overlay controls-hint" aria-hidden="true">
+          Arrows move · Hold Space · Release to leap
         </div>
+
+        {/* Mutation banner */}
+        <div
+          className={`hud-overlay mutation-banner${mutationVisible ? ' visible' : ''}`}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {loading ? "Loading today's tower…" : message}
+        </div>
+
+        {/* Checkpoint banner */}
+        <div
+          className={`hud-overlay checkpoint-banner${checkpointVisible ? ' visible' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="checkpoint-title">{checkpointText.title}</div>
+          {checkpointText.sub && <div className="checkpoint-sub">{checkpointText.sub}</div>}
+        </div>
+
+        {/* Charge bar */}
+        <div className="charge-bar" aria-label={`Jump charge ${charge}%`} aria-valuenow={charge} aria-valuemin={0} aria-valuemax={100} role="progressbar">
+          <span className="charge-fill" style={{ width: `${charge}%` }} />
+        </div>
+
+        {/* Loading overlay */}
+        {loading && (
+          <div className="loading-overlay" aria-hidden="true">
+            <div className="loading-text">Reading the mountain…</div>
+          </div>
+        )}
       </section>
 
-      <TouchControls disabled={summitOpen} />
+      {/* ── TOUCH CONTROLS ── */}
+      <TouchControls disabled={summitOpen} charge={charge} />
 
+      {/* ── RESULT CARD ── */}
       {summitOpen ? (
-        <section className="result-backdrop" role="dialog" aria-modal="true" aria-label="Daily result">
+        <div className="result-backdrop" role="dialog" aria-modal="true" aria-label="Daily result">
           <div className="result-card">
-            <p className="eyebrow">Daily result</p>
+            <p className="eyebrow">
+              <span className="hanko" aria-hidden="true">登</span>
+              Daily result
+            </p>
             <h2>{snapshot?.result.towerName ?? 'The Cursed Stack'}</h2>
             <p className="result-seed">Seed {snapshot?.result.seedLabel ?? 'today'}</p>
             <dl className="result-rows">
-              <div>
+              <div className="result-row">
                 <dt>Summit</dt>
                 <dd>
-                  {snapshot?.result.summitStatus ?? 'Summit Unclaimed'}
+                  {snapshot?.result.summitStatus ?? 'Unclaimed'}
                   {snapshot?.result.firstSummitUsername ? ` · ${snapshot.result.firstSummitUsername}` : ''}
                 </dd>
               </div>
-              <div>
+              <div className="result-row">
                 <dt>Worst memory</dt>
                 <dd>
                   {snapshot?.result.mostCursedZone ?? 'Lower Ruins'} · {snapshot?.result.mostCursedStatus ?? 'Haunted'}
                 </dd>
               </div>
-              <div>
+              <div className="result-row">
                 <dt>Useful scar</dt>
                 <dd>{snapshot?.result.mostUsefulArtifact ?? 'Corpse Stack · Lower Ruins'}</dd>
               </div>
-              <div>
+              <div className="result-row">
                 <dt>Best stabilizer</dt>
                 <dd>{snapshot?.result.bestStabilizerUsername ?? 'No one yet.'}</dd>
               </div>
-              <div>
+              <div className="result-row">
                 <dt>Highest climber</dt>
                 <dd>
                   {snapshot?.result.highestClimberUsername
@@ -934,25 +1243,30 @@ function GameApp() {
                     : 'The roof is still quiet.'}
                 </dd>
               </div>
-              <div>
+              <div className="result-row">
                 <dt>Your session</dt>
                 <dd>
                   {sessionStats.falls} falls · {sessionStats.clears} clears · {sessionStats.summits} summits
                 </dd>
               </div>
             </dl>
-            <p className="tomorrow-hook">{snapshot?.result.tomorrowHook ?? "Tomorrow, today's worst ledge comes back as a relic."}</p>
-            <button ref={resultCloseRef} type="button" onClick={() => setSummitOpen(false)}>
+            <p className="tomorrow-hook">
+              {snapshot?.result.tomorrowHook ?? "Tomorrow, today's worst ledge comes back as a relic."}
+            </p>
+            <button ref={resultCloseRef} type="button" className="result-close-btn" onClick={() => setSummitOpen(false)}>
               Keep climbing
             </button>
           </div>
-        </section>
+        </div>
       ) : null}
     </main>
   );
 }
 
-function TouchControls({ disabled }: { disabled: boolean }) {
+/* ======================================================
+   TOUCH CONTROLS COMPONENT
+   ====================================================== */
+function TouchControls({ disabled, charge }: { disabled: boolean; charge: number }) {
   useEffect(() => {
     if (!disabled) return;
     window.fallstackInput = { ...INITIAL_INPUT };
@@ -990,13 +1304,14 @@ function TouchControls({ disabled }: { disabled: boolean }) {
 
   return (
     <nav className="touch-controls" aria-label="Climb controls">
-      <button type="button" aria-label="Move left" disabled={disabled} {...bind('left')}>
+      <button type="button" className="ctrl-btn" aria-label="Move left" disabled={disabled} {...bind('left')}>
         ◀
       </button>
-      <button type="button" className="jump-button" aria-label="Hold to charge jump" disabled={disabled} {...bind('jump')}>
-        Jump
+      <button type="button" className="jump-btn" aria-label="Hold to charge jump" disabled={disabled} {...bind('jump')}>
+        <span className="jump-charge-fill" style={{ width: `${charge}%` }} />
+        <span className="jump-btn-label">Hold · Space</span>
       </button>
-      <button type="button" aria-label="Move right" disabled={disabled} {...bind('right')}>
+      <button type="button" className="ctrl-btn" aria-label="Move right" disabled={disabled} {...bind('right')}>
         ▶
       </button>
     </nav>
