@@ -295,6 +295,7 @@ class FallstackScene extends Phaser.Scene {
   private artifactBodies?: Phaser.Physics.Arcade.StaticGroup;
   private graphics?: Phaser.GameObjects.Graphics;
   private bgGraphics?: Phaser.GameObjects.Graphics;
+  private dynamicGraphics?: Phaser.GameObjects.Graphics;
   private labels: Phaser.GameObjects.Text[] = [];
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private space: Phaser.Input.Keyboard.Key | undefined;
@@ -317,23 +318,41 @@ class FallstackScene extends Phaser.Scene {
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed).platforms;
   private chargeTime = 0;
 
+  // Visual enhancements
+  private particles: Array<{
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    color: number;
+    alpha: number;
+    size: number;
+    life: number;
+    maxLife: number;
+    type: 'dust' | 'charge' | 'lantern' | 'ghost';
+  }> = [];
+  private stars: Array<{ x: number; y: number; size: number; phase: number; speed: number }> = [];
+
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT + 220);
     this.physics.world.gravity.y = 1550;
 
-    // Two graphics layers: background (drawn behind platforms) and foreground (labels etc.)
+    // Three graphics layers: background, static platforms/labels, dynamic animations
     this.bgGraphics = this.add.graphics();
     this.graphics = this.add.graphics();
+    this.dynamicGraphics = this.add.graphics();
+    
     this.bgGraphics.setDepth(0);
     this.graphics.setDepth(2);
+    this.dynamicGraphics.setDepth(3);
 
     this.platforms = this.physics.add.staticGroup();
     this.rebuildPlatformBodies();
 
-    // Player — small rounded figure
-    this.player = this.add.rectangle(START_POS.x, START_POS.y, 20, 28, 0xf3ead9) as Phaser.GameObjects.Rectangle & {
+    // Player — Physics box is transparent. We draw the animated fox spirit on the dynamic layer.
+    this.player = this.add.rectangle(START_POS.x, START_POS.y, 20, 28, 0xffffff, 0) as Phaser.GameObjects.Rectangle & {
       body: Phaser.Physics.Arcade.Body;
     };
     this.player.setDepth(4);
@@ -351,6 +370,18 @@ class FallstackScene extends Phaser.Scene {
     this.space = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.12, 0, 84);
     this.cameras.main.setZoom(1);
+
+    // Seed stars in the upper sky zone
+    this.stars = [];
+    for (let i = 0; i < 28; i++) {
+      this.stars.push({
+        x: Math.random() * WORLD_WIDTH,
+        y: Math.random() * 900,
+        size: 0.8 + Math.random() * 1.5,
+        phase: Math.random() * Math.PI * 2,
+        speed: 1.2 + Math.random() * 2.2,
+      });
+    }
 
     this.refreshSnapshot(window.fallstackSnapshot);
   }
@@ -407,13 +438,35 @@ class FallstackScene extends Phaser.Scene {
 
     if (!this.wasGrounded && onFloor) {
       window.dispatchEvent(new CustomEvent<LandEventDetail>('fallstack:land', { detail: { zoneId: this.currentZone } }));
+      
+      // Spawn land dust particles
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        this.particles.push({
+          x: this.player.x + Math.cos(angle) * 4,
+          y: this.player.y + 14,
+          vx: Math.cos(angle) * (80 + Math.random() * 60),
+          vy: -15 - Math.random() * 25,
+          color: 0xe6d9bf,
+          alpha: 0.7,
+          size: 1.5 + Math.random() * 1.5,
+          life: 400,
+          maxLife: 400,
+          type: 'dust',
+        });
+      }
     }
     this.wasGrounded = onFloor;
 
     this.checkProgress();
     this.checkFall();
     this.updateCamera(deltaMs);
-    this.drawPlayer();
+    
+    // Clear and draw all animations (particles, fox, swinging lanterns)
+    if (this.dynamicGraphics) {
+      this.dynamicGraphics.clear();
+      this.drawDynamicElements(deltaMs);
+    }
   }
 
   refreshSnapshot(snapshot?: GameSnapshot) {
@@ -560,48 +613,96 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
-    // Background sky gradient (approximate with 3 bands)
-    this.bgGraphics.fillStyle(0xe9d9ae, 1).fillRect(0, 1620, WORLD_WIDTH, 2220 - 1620); // lower ruins sky
-    this.bgGraphics.fillStyle(0x3c4f5e, 1).fillRect(0, 900, WORLD_WIDTH, 1620 - 900);  // bell shaft sky
-    this.bgGraphics.fillStyle(0x2b2f45, 1).fillRect(0, 0, WORLD_WIDTH, 900);           // moon roof sky
+    const colorHex = (hexStr: string) => parseInt(hexStr.replace('#', ''), 16);
 
-    // Zone boundary lines — subtle dividers
-    this.bgGraphics.lineStyle(1, 0x5f5138, 0.3).lineBetween(20, 1620, WORLD_WIDTH - 20, 1620);
-    this.bgGraphics.lineStyle(1, 0x4c6070, 0.3).lineBetween(20, 900, WORLD_WIDTH - 20, 900);
+    // 1. GORGEOUS SKY GRADIENTS (vertical linear simulation via fillGradientStyle)
+    const ruinsTheme = THEMES.lower_ruins;
+    this.bgGraphics.fillGradientStyle(
+      colorHex(ruinsTheme.skyTop), colorHex(ruinsTheme.skyTop),
+      colorHex(ruinsTheme.skyBot), colorHex(ruinsTheme.skyBot),
+      1, 1, 1, 1
+    );
+    this.bgGraphics.fillRect(0, 1620, WORLD_WIDTH, 2220 - 1620);
 
-    // Distant mountain silhouette in lower ruins
-    this.bgGraphics.fillStyle(0x8a9770, 0.35);
-    this.bgGraphics.fillTriangle(0, 1900, 160, 1720, 280, 1900);
-    this.bgGraphics.fillTriangle(200, 1900, 380, 1680, 480, 1900);
+    const bellTheme = THEMES.bell_shaft;
+    this.bgGraphics.fillGradientStyle(
+      colorHex(bellTheme.skyTop), colorHex(bellTheme.skyTop),
+      colorHex(bellTheme.skyBot), colorHex(bellTheme.skyBot),
+      1, 1, 1, 1
+    );
+    this.bgGraphics.fillRect(0, 900, WORLD_WIDTH, 1620 - 900);
 
-    // Bell shaft lantern dots
-    this.bgGraphics.fillStyle(0xe0b25a, 0.28);
-    for (let i = 0; i < 4; i++) {
-      const lx = 60 + i * 110;
-      const ly = 950 + (i % 2) * 30;
-      this.bgGraphics.fillEllipse(lx, ly, 14, 18);
+    const moonTheme = THEMES.moon_roof;
+    this.bgGraphics.fillGradientStyle(
+      colorHex(moonTheme.skyTop), colorHex(moonTheme.skyTop),
+      colorHex(moonTheme.skyBot), colorHex(moonTheme.skyBot),
+      1, 1, 1, 1
+    );
+    this.bgGraphics.fillRect(0, 0, WORLD_WIDTH, 900);
+
+    // Zone boundary lines — subtle ink dividers
+    this.bgGraphics.lineStyle(1.5, 0x5f5138, 0.45).lineBetween(12, 1620, WORLD_WIDTH - 12, 1620);
+    this.bgGraphics.lineStyle(1.5, 0x4c6070, 0.45).lineBetween(12, 900, WORLD_WIDTH - 12, 900);
+
+    // 2. PARALLAX SILHOUETTES
+    // Distant mountain silhouette in lower ruins (Layer 1 - Far)
+    this.bgGraphics.fillStyle(0x8a9770, 0.22);
+    this.bgGraphics.beginPath();
+    this.bgGraphics.moveTo(0, 1920);
+    this.bgGraphics.lineTo(120, 1780);
+    this.bgGraphics.lineTo(240, 1870);
+    this.bgGraphics.lineTo(360, 1740);
+    this.bgGraphics.lineTo(480, 1890);
+    this.bgGraphics.lineTo(480, 2220);
+    this.bgGraphics.lineTo(0, 2220);
+    this.bgGraphics.closePath();
+    this.bgGraphics.fill();
+
+    // Distant mountain silhouette in lower ruins (Layer 2 - Nearer)
+    this.bgGraphics.fillStyle(0x74855f, 0.35);
+    this.bgGraphics.beginPath();
+    this.bgGraphics.moveTo(0, 1960);
+    this.bgGraphics.lineTo(80, 1860);
+    this.bgGraphics.lineTo(200, 1910);
+    this.bgGraphics.lineTo(310, 1800);
+    this.bgGraphics.lineTo(420, 1930);
+    this.bgGraphics.lineTo(480, 1880);
+    this.bgGraphics.lineTo(480, 2220);
+    this.bgGraphics.lineTo(0, 2220);
+    this.bgGraphics.closePath();
+    this.bgGraphics.fill();
+
+    // Bell shaft vertical scaffolding beams (architectural structure walls)
+    this.bgGraphics.fillStyle(0x28313a, 0.38);
+    this.bgGraphics.fillRect(24, 900, 14, 720);
+    this.bgGraphics.fillRect(WORLD_WIDTH - 38, 900, 14, 720);
+    
+    // Diagonal cross supports
+    this.bgGraphics.fillStyle(0x1b262f, 0.4);
+    for (let by = 950; by < 1620; by += 130) {
+      this.bgGraphics.fillRect(24, by, 10, 8);
+      this.bgGraphics.fillRect(WORLD_WIDTH - 34, by, 10, 8);
+      this.bgGraphics.lineStyle(1.5, 0x1b262f, 0.28);
+      this.bgGraphics.lineBetween(38, by + 4, WORLD_WIDTH - 38, by + 12);
     }
 
     // Moon in moon_roof zone
-    this.bgGraphics.fillStyle(0xefe7cf, 0.85);
+    this.bgGraphics.fillStyle(0xefe7cf, 0.88);
     this.bgGraphics.fillCircle(340, 280, 38);
-    // Stars
-    this.bgGraphics.fillStyle(0xffffff, 0.6);
-    const starPositions = [[60, 180], [140, 320], [240, 150], [380, 420], [90, 520], [310, 680], [430, 200]];
-    for (const [sx, sy] of starPositions) {
-      this.bgGraphics.fillRect(sx, sy, 2, 2);
-    }
+    this.bgGraphics.fillStyle(0xefe7cf, 0.15);
+    this.bgGraphics.fillCircle(340, 280, 48);
+    this.bgGraphics.fillStyle(0xefe7cf, 0.06);
+    this.bgGraphics.fillCircle(340, 280, 60);
 
-    // Draw all platforms
+    // 3. DRAW PLATFORMS
     for (const platform of this.towerPlatforms) this.drawPlatform(platform);
 
-    // Draw artifacts and zone labels
+    // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     for (const zone of snapshot.zones) {
       const zoneData = ZONES.find((candidate) => candidate.id === zone.id);
       if (zoneData) {
-        // Zone name label — positioned in the zone's sky band
         const labelY = zoneData.yTop + 18;
         this.addZoneLabel(14, labelY, zone.name, zone.statusLabel);
       }
@@ -613,28 +714,114 @@ class FallstackScene extends Phaser.Scene {
     const zone = zoneForY(platform.y);
     const th = THEMES[zoneTheme(zone.id)];
 
-    if (platform.kind === 'summit') {
-      // Summit platform — glowing persimmon
-      this.graphics?.fillStyle(0x9c3e23, 1).fillRoundedRect(platform.x, platform.y + 3, platform.width, platform.height, 5);
-      this.graphics?.fillStyle(0xc1502f, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 5);
-      this.graphics?.fillStyle(0xf3ead9, 0.3).fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
-      // "summit" label
-      this.addInlineLabel(platform.x + platform.width / 2 - 18, platform.y - 18, 'summit', 10, '#c1502f');
+    // Check if checkpoint to draw Torii Gate
+    const isCheckpoint = platform.id.includes('checkpoint');
+    if (isCheckpoint) {
+      const cx = platform.x + platform.width / 2;
+      const postW = 8;
+      const postH = 46;
+
+      // Platform base
+      this.graphics?.fillStyle(0x1b262f, 1).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(th.stone, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
+
+      // Torii columns
+      this.graphics?.fillStyle(0x9c3e23, 1);
+      this.graphics?.fillRect(cx - platform.width * 0.32 - 1, platform.y - postH, postW + 2, postH);
+      this.graphics?.fillRect(cx + platform.width * 0.32 - postW - 1, platform.y - postH, postW + 2, postH);
+
+      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillRect(cx - platform.width * 0.32, platform.y - postH, postW, postH);
+      this.graphics?.fillRect(cx + platform.width * 0.32 - postW, platform.y - postH, postW, postH);
+
+      // Black stone column bases
+      this.graphics?.fillStyle(0x1b262f, 1);
+      this.graphics?.fillRect(cx - platform.width * 0.32 - 1, platform.y - 4, postW + 2, 4);
+      this.graphics?.fillRect(cx + platform.width * 0.32 - postW - 1, platform.y - 4, postW + 2, 4);
+
+      // Lower crossbeam (Shimaki)
+      this.graphics?.fillStyle(0x9c3e23, 1);
+      this.graphics?.fillRect(cx - platform.width * 0.36, platform.y - postH + 10, platform.width * 0.72, 6);
+      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillRect(cx - platform.width * 0.36, platform.y - postH + 9, platform.width * 0.72, 6);
+
+      // Upper lintel beam (Kasagi) with curved tips
+      this.graphics?.fillStyle(0x1b262f, 1);
+      this.graphics?.fillRoundedRect(cx - platform.width * 0.44, platform.y - postH - 12, platform.width * 0.88, 5, 2);
+      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillRoundedRect(cx - platform.width * 0.42, platform.y - postH - 8, platform.width * 0.84, 9, 3);
+
+      // Center wooden nameboard (Gakuzuka)
+      this.graphics?.fillStyle(0x1b262f, 1);
+      this.graphics?.fillRect(cx - 8, platform.y - postH - 1, 16, 11);
+      this.graphics?.fillStyle(0xc79a3e, 1);
+      this.graphics?.strokeRect(cx - 7, platform.y - postH, 14, 9);
+
+      this.addInlineLabel(cx - 11, platform.y - postH - 24, 'GATE', 9, '#c1502f');
       return;
     }
 
-    // Shadow / depth
+    if (platform.kind === 'summit') {
+      // Summit platform — glowing persimmon temple roof design
+      this.graphics?.fillStyle(0x9c3e23, 1).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(0xc1502f, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 5);
+      this.graphics?.fillStyle(0xf3ead9, 0.3).fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
+      
+      this.graphics?.fillStyle(0xe0b25a, 0.45).fillEllipse(platform.x + platform.width / 2, platform.y - 20, 18, 18);
+      this.addInlineLabel(platform.x + platform.width / 2 - 18, platform.y - 25, 'SUMMIT', 10, '#e0b25a');
+      return;
+    }
+
+    // Regular styled platform with edges
     this.graphics?.fillStyle(th.platformEdge, 0.9).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
-    // Main face
     this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
     this.graphics?.fillStyle(th.stone, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
-    // Highlight streak
     this.graphics?.fillStyle(th.highlight, 0.22).fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
+
+    // Theme details (separators, nails, moss, crystal shapes)
+    if (zone.id === 'lower_ruins') {
+      this.graphics?.lineStyle(1.2, th.stoneDark, 0.35);
+      if (platform.width > 40) {
+        this.graphics?.lineBetween(platform.x + 20, platform.y + 1, platform.x + 20, platform.y + platform.height - 3);
+      }
+      if (platform.width > 80) {
+        this.graphics?.lineBetween(platform.x + 60, platform.y + 1, platform.x + 60, platform.y + platform.height - 3);
+      }
+      // Green moss clumps
+      this.graphics?.fillStyle(0x74855f, 0.7);
+      if (platform.width > 30) this.graphics?.fillEllipse(platform.x + 12, platform.y, 6, 2.5);
+      if (platform.width > 60) this.graphics?.fillEllipse(platform.x + platform.width - 16, platform.y, 8, 3);
+    } else if (zone.id === 'bell_shaft') {
+      // Wooden plank texture lines
+      this.graphics?.lineStyle(1, th.stoneDark, 0.5);
+      this.graphics?.lineBetween(platform.x + 4, platform.y + platform.height / 2, platform.x + platform.width - 4, platform.y + platform.height / 2);
+      // Nail details
+      this.graphics?.fillStyle(0x1b262f, 0.6);
+      this.graphics?.fillCircle(platform.x + 4, platform.y + 4, 1.2);
+      this.graphics?.fillCircle(platform.x + platform.width - 4, platform.y + 4, 1.2);
+      this.graphics?.fillCircle(platform.x + 4, platform.y + platform.height - 6, 1.2);
+      this.graphics?.fillCircle(platform.x + platform.width - 4, platform.y + platform.height - 6, 1.2);
+    } else if (zone.id === 'moon_roof') {
+      // Diamond crystal highlight in center
+      this.graphics?.fillStyle(th.highlight, 0.15);
+      this.graphics?.beginPath();
+      const px = platform.x + platform.width / 2;
+      const py = platform.y + platform.height / 2 - 1;
+      this.graphics?.moveTo(px - 10, py);
+      this.graphics?.lineTo(px, py - 4);
+      this.graphics?.lineTo(px + 10, py);
+      this.graphics?.lineTo(px, py + 4);
+      this.graphics?.closePath();
+      this.graphics?.fill();
+    }
   }
 
   private drawArtifact(artifact: Artifact) {
+    const zone = zoneForY(artifact.y);
+    const th = THEMES[zoneTheme(zone.id)];
+
     if (artifact.type === 'lantern_trail') {
-      // Dashed arc showing a successful route
       this.graphics?.lineStyle(2, 0xd97934, 0.55).beginPath();
       this.graphics?.arc(artifact.x + 60, artifact.y + 10, 72, Math.PI * 1.08, Math.PI * 1.82);
       this.graphics?.strokePath();
@@ -643,45 +830,354 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (artifact.type === 'corpse_stack') {
-      // Stacked worn steps — chunky, layered
-      const colors = [0xa07040, 0xc7ac7c, 0xd4bc8c];
+      // Stacked steps - chunky wooden steps
+      const colors = [0x7d5d3b, 0xc7ac7c, 0xd4bc8c];
       for (let i = 2; i >= 0; i -= 1) {
         this.graphics?.fillStyle(colors[i], 1).fillRoundedRect(
           artifact.x + i * 4, artifact.y + i * 5,
           artifact.width - i * 8, 10, 3
         );
+        this.graphics?.fillStyle(0xf3ead9, 0.22).fillRect(artifact.x + i * 4 + 4, artifact.y + i * 5 + 1, artifact.width - i * 8 - 8, 2);
       }
-      this.graphics?.fillStyle(0xf3ead9, 0.25).fillRect(artifact.x + 8, artifact.y, artifact.width - 16, 2);
-    } else if (artifact.type === 'mercy_nail') {
-      // Small peg — narrow, visually distinct
-      this.graphics?.fillStyle(0x2f4f5f, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 7);
-      this.graphics?.fillStyle(0xe0b25a, 1).fillCircle(artifact.x + artifact.width - 8, artifact.y + artifact.height / 2, 4);
-      this.graphics?.fillStyle(0x8ab4c8, 0.4).fillRect(artifact.x + 4, artifact.y + 3, artifact.width - 18, 3);
-    } else if (artifact.type === 'ghost_platform') {
-      // Translucent, dashed outline
-      this.graphics?.lineStyle(2, 0x6090a8, 0.65).strokeRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
-      this.graphics?.fillStyle(0x9eb7c8, 0.22).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 8);
-      // Glow dots
-      this.graphics?.fillStyle(0xb9d8e0, 0.5);
+      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Worn Step');
+      return;
+    } 
+    
+    if (artifact.type === 'mercy_nail') {
+      // Wooden lucky charm plate
+      this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(artifact.x, artifact.y, 10, artifact.height, 2);
+      this.graphics?.fillStyle(0xc1502f, 1).fillRoundedRect(artifact.x + 8, artifact.y - 2, artifact.width - 8, artifact.height + 4, 3);
+      this.graphics?.lineStyle(1, 0xe0b25a, 0.85).strokeRect(artifact.x + 11, artifact.y, artifact.width - 14, artifact.height);
+      this.graphics?.lineStyle(1.2, 0xf2e9d8, 0.9).lineBetween(artifact.x + 10, artifact.y + artifact.height / 2, artifact.x + 3, artifact.y + artifact.height / 2);
+      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Lucky Charm');
+      return;
+    } 
+    
+    if (artifact.type === 'ghost_platform') {
+      // Translucent glowing dashed box
+      this.graphics?.lineStyle(1.8, th.accent, 0.8).strokeRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 6);
+      this.graphics?.fillStyle(th.accent, 0.2).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height, 6);
+      
+      this.graphics?.fillStyle(0xffffff, 0.65);
       for (let i = 0; i < 3; i++) {
-        this.graphics?.fillCircle(artifact.x + 14 + i * 16, artifact.y + artifact.height / 2, 2);
+        this.graphics?.fillCircle(artifact.x + 12 + i * ((artifact.width - 24) / 2), artifact.y + artifact.height / 2, 2);
       }
-    } else {
-      // Cursed brick — cracked, dangerous looking
-      this.graphics?.fillStyle(0x6b3028, 1).fillRoundedRect(artifact.x, artifact.y + 3, artifact.width, artifact.height, 4);
-      this.graphics?.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x, artifact.y, artifact.width, artifact.height - 2, 4);
-      // Crack lines
-      this.graphics?.lineStyle(1, 0x2a1410, 0.7)
-        .lineBetween(artifact.x + 10, artifact.y + 3, artifact.x + 22, artifact.y + artifact.height - 3);
-      this.graphics?.lineStyle(1, 0x2a1410, 0.5)
-        .lineBetween(artifact.x + 30, artifact.y + 2, artifact.x + 24, artifact.y + artifact.height - 2);
+      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Paper Lantern');
+      return;
     }
 
-    this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
+    if (artifact.type === 'cursed_brick') {
+      // Mossy Stone - drawn dynamically in drawDynamicElements to support shaking/physics
+      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Mossy Stone');
+      return;
+    }
+  }
+
+  private drawDynamicElements(deltaMs: number) {
+    if (!this.dynamicGraphics || !this.player) return;
+    const g = this.dynamicGraphics;
+    const time = this.time.now;
+
+    // 1. UPDATE AND DRAW PARTICLES
+    const activeParticles = [];
+    for (const p of this.particles) {
+      p.life -= deltaMs;
+      if (p.life > 0) {
+        p.x += p.vx * (deltaMs / 1000);
+        p.y += p.vy * (deltaMs / 1000);
+        
+        if (p.type === 'dust') {
+          p.vy += 45 * (deltaMs / 1000); // float down/drift slightly
+          p.vx *= 0.93;
+        } else if (p.type === 'charge') {
+          const dx = this.player.x - p.x;
+          const dy = this.player.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 6) {
+            p.vx += (dx / dist) * 720 * (deltaMs / 1000);
+            p.vy += (dy / dist) * 720 * (deltaMs / 1000);
+          } else {
+            p.life = 0; // consumed on touch
+          }
+        } else if (p.type === 'lantern') {
+          p.vy -= 18 * (deltaMs / 1000);
+          p.vx += Math.sin(time / 200 + p.y) * 0.45;
+        } else if (p.type === 'ghost') {
+          p.vy -= 15 * (deltaMs / 1000);
+          p.vx += Math.sin(time / 300 + p.y) * 0.65;
+        }
+
+        const currentAlpha = (p.life / p.maxLife) * p.alpha;
+        g.fillStyle(p.color, currentAlpha);
+        g.fillCircle(p.x, p.y, p.size);
+        activeParticles.push(p);
+      }
+    }
+    this.particles = activeParticles;
+
+    // 2. SPAWN RUN DUST PARTICLES
+    const body = this.player.body;
+    const onFloor = body.blocked.down || body.touching.down;
+    const vx = body.velocity.x;
+    if (onFloor && Math.abs(vx) > 30) {
+      if (Math.random() < 0.28) {
+        this.particles.push({
+          x: this.player.x - this.facing * 5 + (Math.random() * 6 - 3),
+          y: this.player.y + 14,
+          vx: -this.facing * (50 + Math.random() * 60),
+          vy: -15 - Math.random() * 30,
+          color: 0xe6d9bf,
+          alpha: 0.65,
+          size: 1.2 + Math.random() * 1.6,
+          life: 300,
+          maxLife: 300,
+          type: 'dust',
+        });
+      }
+    }
+
+    // SPAWN CHARGING FOXFIRE
+    if (this.charging) {
+      const power = Math.min(this.chargeTime, 900) / 900;
+      if (Math.random() < 0.42 + power * 0.45) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 24 + Math.random() * 32;
+        const px = this.player.x + Math.cos(angle) * radius;
+        const py = this.player.y + Math.sin(angle) * radius;
+        this.particles.push({
+          x: px,
+          y: py,
+          vx: -Math.cos(angle) * 75,
+          vy: -Math.sin(angle) * 75,
+          color: Math.random() < 0.6 ? 0xc1502f : 0xc79a3e,
+          alpha: 0.8,
+          size: 1.5 + Math.random() * 2.0,
+          life: 450,
+          maxLife: 450,
+          type: 'charge',
+        });
+      }
+    }
+
+    // SPAWN FIELD PARTICLES (twinkling fireflies in shaft / moon roof)
+    const zone = ZONES.find((z) => z.id === this.currentZone);
+    if (zone && (zone.id === 'bell_shaft' || zone.id === 'moon_roof')) {
+      if (Math.random() < 0.05) {
+        const cam = this.cameras.main;
+        const px = cam.scrollX + Math.random() * WORLD_WIDTH;
+        const py = cam.scrollY + cam.height - Math.random() * 160;
+        this.particles.push({
+          x: px,
+          y: py,
+          vx: Math.random() * 24 - 12,
+          vy: -25 - Math.random() * 35,
+          color: zone.id === 'bell_shaft' ? 0xe0b25a : 0xb9a0e0,
+          alpha: 0.45,
+          size: 1.0 + Math.random() * 1.5,
+          life: 2000,
+          maxLife: 2000,
+          type: zone.id === 'bell_shaft' ? 'lantern' : 'ghost',
+        });
+      }
+    }
+
+    // 3. DRAW DYNAMIC SWINGING CHECKPOINT LANTERNS
+    this.drawCheckpointLanterns(g);
+
+    // 4. DRAW DYNAMIC WOBBLING CURSED BRICKS
+    this.drawWobblingCursedBricks(g);
+
+    // 5. DRAW DYNAMIC TWINKLING STARS
+    g.fillStyle(0xffffff, 0.7);
+    for (const star of this.stars) {
+      const alpha = 0.35 + Math.sin(time / 300 * star.speed + star.phase) * 0.35;
+      g.fillStyle(0xffffff, alpha);
+      g.fillPoint(star.x, star.y, star.size);
+    }
+
+    // 6. DRAW FOX-SPIRIT PLAYER
+    this.drawFoxSpirit(g);
+  }
+
+  private drawFoxSpirit(g: Phaser.GameObjects.Graphics) {
+    if (!this.player) return;
+    const cx = this.player.x;
+    const cy = this.player.y;
+    const onFloor = this.player.body.blocked.down || this.player.body.touching.down;
+    const vy = this.player.body.velocity.y;
+    const time = this.time.now;
+
+    // Squash & Stretch
+    let squashX = 1;
+    let squashY = 1;
+    if (this.charging) {
+      const power = Math.min(this.chargeTime, 900) / 900;
+      squashY = 1 - power * 0.28;
+      squashX = 1 + power * 0.22;
+    } else if (!onFloor) {
+      const stretch = Phaser.Math.Clamp(Math.abs(vy) / 1200, 0, 0.26);
+      squashY = 1 + stretch;
+      squashX = 1 - stretch * 0.5;
+    }
+
+    // Charge glow rings
+    if (this.charging) {
+      const power = Math.min(this.chargeTime, 900) / 900;
+      g.fillStyle(0xc1502f, 0.15 + power * 0.35);
+      g.fillCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
+      
+      g.lineStyle(1.5, 0xc79a3e, 0.3 + power * 0.5);
+      g.strokeCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
+    }
+
+    // Ears
+    g.fillStyle(0xf3ead9, 1);
+    g.fillTriangle(
+      cx - 9 * squashX, cy - 8 * squashY,
+      cx - 4 * squashX, cy - 19 * squashY,
+      cx - 1 * squashX, cy - 8 * squashY
+    );
+    g.fillStyle(0xc1502f, 0.85); // inner ear left
+    g.fillTriangle(
+      cx - 7 * squashX, cy - 9 * squashY,
+      cx - 4 * squashX, cy - 16 * squashY,
+      cx - 3 * squashX, cy - 9 * squashY
+    );
+
+    g.fillStyle(0xf3ead9, 1);
+    g.fillTriangle(
+      cx + 9 * squashX, cy - 8 * squashY,
+      cx + 4 * squashX, cy - 19 * squashY,
+      cx + 1 * squashX, cy - 8 * squashY
+    );
+    g.fillStyle(0xc1502f, 0.85); // inner ear right
+    g.fillTriangle(
+      cx + 7 * squashX, cy - 9 * squashY,
+      cx + 4 * squashX, cy - 16 * squashY,
+      cx + 3 * squashX, cy - 9 * squashY
+    );
+
+    // Fluffy waving tail
+    const tailWave = Math.sin(time / 140) * 3.5;
+    const tx = cx - this.facing * (9 + tailWave * 0.2) * squashX;
+    const ty = cy + (5 + tailWave * 0.6) * squashY;
+    
+    g.fillStyle(0xf3ead9, 1);
+    g.fillEllipse(tx, ty, 6 * squashX, 8 * squashY);
+    g.fillStyle(0xc1502f, 1); // tail tip
+    g.fillEllipse(tx - this.facing * 3 * squashX, ty + 1 * squashY, 3 * squashX, 4 * squashY);
+
+    // Body
+    g.fillStyle(0xf3ead9, 1);
+    g.fillEllipse(cx, cy + 2 * squashY, 10 * squashX, 12 * squashY);
+
+    // Blush cheeks
+    g.fillStyle(0xc1502f, 0.38);
+    g.fillCircle(cx - 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
+    g.fillCircle(cx + 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
+
+    // Eyes
+    g.fillStyle(0x33291f, 1);
+    const eyeOffset = this.facing * 2 * squashX;
+    const isBlinking = Math.floor(time / 2800) % 10 === 0;
+
+    if (isBlinking) {
+      g.lineStyle(1.5, 0x33291f, 1);
+      g.lineBetween(cx - 5.5 * squashX + eyeOffset, cy + 0.5 * squashY, cx - 2.5 * squashX + eyeOffset, cy + 0.5 * squashY);
+      g.lineBetween(cx + 2.5 * squashX + eyeOffset, cy + 0.5 * squashY, cx + 5.5 * squashX + eyeOffset, cy + 0.5 * squashY);
+    } else {
+      g.fillCircle(cx - 4 * squashX + eyeOffset, cy + 0.5 * squashY, 1.8 * squashX);
+      g.fillCircle(cx + 4 * squashX + eyeOffset, cy + 0.5 * squashY, 1.8 * squashX);
+    }
+  }
+
+  private drawCheckpointLanterns(g: Phaser.GameObjects.Graphics) {
+    const swingAngle = Math.sin(this.time.now / 380) * 0.16;
+    for (const platform of this.towerPlatforms) {
+      const isCheckpoint = platform.id.includes('checkpoint');
+      if (isCheckpoint) {
+        const cx = platform.x + platform.width / 2;
+        const postH = 46;
+        const leftHangerX = cx - platform.width * 0.32;
+        const rightHangerX = cx + platform.width * 0.32;
+        const hangerY = platform.y - postH + 6;
+        this.drawSingleLantern(g, leftHangerX, hangerY, swingAngle);
+        this.drawSingleLantern(g, rightHangerX, hangerY, -swingAngle);
+      }
+    }
+  }
+
+  private drawSingleLantern(g: Phaser.GameObjects.Graphics, hx: number, hy: number, angle: number) {
+    const len = 12;
+    const lx = hx + Math.sin(angle) * len;
+    const ly = hy + Math.cos(angle) * len;
+
+    // Cord
+    g.lineStyle(1.2, 0x1b262f, 0.85);
+    g.lineBetween(hx, hy, lx, ly);
+
+    // Glow
+    g.fillStyle(0xe0b25a, 0.3);
+    g.fillCircle(lx, ly, 10);
+
+    // Wood cap
+    g.fillStyle(0x1b262f, 1);
+    g.fillRect(lx - 4, ly - 7, 8, 2);
+
+    // Warm glow paper body
+    g.fillStyle(0xf2e9d8, 1);
+    g.fillRoundedRect(lx - 4, ly - 5, 8, 10, 2);
+    g.fillStyle(0xe0b25a, 0.7);
+    g.fillRoundedRect(lx - 3, ly - 4, 6, 8, 1.5);
+
+    // Red tassel
+    g.lineStyle(1.5, 0xc1502f, 0.9);
+    g.lineBetween(lx, ly + 5, lx + Math.sin(angle * 1.5) * 5, ly + 9);
+  }
+
+  private drawWobblingCursedBricks(g: Phaser.GameObjects.Graphics) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot) return;
+    const time = this.time.now;
+
+    for (const zone of snapshot.zones) {
+      for (const artifact of zone.artifacts) {
+        if (artifact.type === 'cursed_brick') {
+          // Touching check
+          let isStanding = false;
+          if (this.player) {
+            const px = this.player.x;
+            const py = this.player.y + 14;
+            if (py >= artifact.y - 4 && py <= artifact.y + 4 && px >= artifact.x - 2 && px <= artifact.x + artifact.width + 2) {
+              isStanding = true;
+            }
+          }
+
+          const amp = isStanding ? 2.2 : 0.6;
+          const freq = isStanding ? 50 : 220;
+          const wobble = Math.sin(time / freq) * amp;
+
+          // Shadow
+          g.fillStyle(0x5c4138, 0.85).fillRoundedRect(artifact.x + wobble, artifact.y + 3, artifact.width, artifact.height, 4);
+          
+          // Brick
+          g.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x + wobble, artifact.y, artifact.width, artifact.height - 2, 4);
+          
+          // Cracks
+          g.lineStyle(1.2, 0x2a1410, 0.75);
+          g.lineBetween(artifact.x + 8 + wobble, artifact.y + 2, artifact.x + 15 + wobble, artifact.y + artifact.height - 3);
+          g.lineBetween(artifact.x + 24 + wobble, artifact.y + 1, artifact.x + 20 + wobble, artifact.y + artifact.height - 2);
+
+          // Moss clumps on top
+          g.fillStyle(0x74855f, 0.85);
+          g.fillEllipse(artifact.x + 10 + wobble, artifact.y, 4, 1.5);
+          g.fillEllipse(artifact.x + 28 + wobble, artifact.y, 6, 2);
+        }
+      }
+    }
   }
 
   private addZoneLabel(x: number, y: number, name: string, statusLabel: string) {
-    // Zone name text, small, stamped feel
     const label = this.add.text(x, y, `${name} · ${statusLabel}`, {
       fontFamily: '"Shippori Mincho", serif',
       fontSize: '11px',
@@ -719,19 +1215,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private drawPlayer() {
-    if (!this.player) return;
-    // Player is a rectangle — we tint it based on state
-    const isCharging = this.charging;
-    if (isCharging) {
-      const power = Math.min(this.chargeTime, 900) / 900;
-      // Red-orange tint while charging
-      const r = Math.round(243 - power * 80);
-      const g = Math.round(234 - power * 120);
-      const b = Math.round(217 - power * 100);
-      this.player.setFillStyle(Phaser.Display.Color.GetColor(r, g, b));
-    } else {
-      this.player.setFillStyle(0xf3ead9);
-    }
+    // Left empty: player shape is drawn dynamically as a animated fox spirit in drawFoxSpirit
   }
 
   private rebuildArtifactBodies() {
@@ -753,6 +1237,7 @@ class FallstackScene extends Phaser.Scene {
     }
   }
 }
+
 
 /* ======================================================
    REACT — GAME APP
@@ -913,7 +1398,7 @@ function GameApp() {
       },
       render: {
         antialias: false,
-        pixelArt: false,
+        pixelArt: true,
         roundPixels: true,
       },
       scene,
@@ -923,7 +1408,7 @@ function GameApp() {
     window.requestAnimationFrame(() => {
       const canvas = container.querySelector('canvas');
       if (canvas) {
-        canvas.style.imageRendering = 'auto';
+        canvas.style.imageRendering = 'pixelated';
       }
     });
 
