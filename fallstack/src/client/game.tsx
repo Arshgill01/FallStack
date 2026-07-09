@@ -1424,54 +1424,65 @@ function GameApp() {
     };
   }, [summitOpen]);
 
-  // Boot Phaser — CRISP CANVAS: use NONE scale mode to avoid CSS stretching blurriness
+  // Boot Phaser — CRISP CANVAS: wait for layout to get exact viewport height
   useEffect(() => {
     if (gameRef.current) return;
-    const container = document.getElementById('game-canvas');
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    const viewH = Math.round(containerRect.height);
+    let animFrameId: number | null = null;
 
-    const scene = new FallstackScene('FallstackScene');
-    sceneRef.current = scene;
-    gameRef.current = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: 'game-canvas',
-      backgroundColor: '#1b262f',
-      // Use NONE so Phaser doesn't add any CSS that blurs the canvas.
-      // We size it explicitly to the container at the device pixel ratio.
-      width: WORLD_WIDTH,
-      height: viewH > 0 ? viewH : 560,
-      scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: WORLD_WIDTH,
-        height: viewH > 0 ? viewH : 560,
-      },
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 1550, x: 0 },
-          debug: false,
-        },
-      },
-      render: {
-        antialias: false,
-        pixelArt: true,
-        roundPixels: true,
-      },
-      scene,
-    });
+    const initGame = () => {
+      const container = document.getElementById('game-canvas');
+      if (!container) return;
+      const containerRect = container.getBoundingClientRect();
+      const viewH = Math.round(containerRect.height);
 
-    // Apply crisp rendering to the canvas element after Phaser creates it
-    window.requestAnimationFrame(() => {
-      const canvas = container.querySelector('canvas');
-      if (canvas) {
-        canvas.style.imageRendering = 'pixelated';
+      // Wait until browser layout has completed and container has height
+      if (viewH === 0) {
+        animFrameId = requestAnimationFrame(initGame);
+        return;
       }
-    });
+
+      const scene = new FallstackScene('FallstackScene');
+      sceneRef.current = scene;
+      gameRef.current = new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'game-canvas',
+        backgroundColor: '#1b262f',
+        width: WORLD_WIDTH,
+        height: viewH,
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: WORLD_WIDTH,
+          height: viewH,
+        },
+        physics: {
+          default: 'arcade',
+          arcade: {
+            gravity: { y: 1550, x: 0 },
+            debug: false,
+          },
+        },
+        render: {
+          antialias: false,
+          pixelArt: true,
+          roundPixels: true,
+        },
+        scene,
+      });
+
+      // Apply crisp rendering to the canvas element
+      window.requestAnimationFrame(() => {
+        const canvas = container.querySelector('canvas');
+        if (canvas) {
+          canvas.style.imageRendering = 'pixelated';
+        }
+      });
+    };
+
+    initGame();
 
     return () => {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
       gameRef.current?.destroy(true);
       gameRef.current = null;
       sceneRef.current = null;
