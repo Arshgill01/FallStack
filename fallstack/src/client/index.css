@@ -282,8 +282,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 480px;
-  margin: 0 auto;
+  width: 100%;
   background: var(--indigo-deep);
   /* Crisp pixel rendering on the entire column */
   image-rendering: -webkit-optimize-contrast;
@@ -801,13 +800,11 @@ button:disabled {
 }
 
 /* =============================================
-   DESKTOP CENTERING
+   TOUCH CONTROLS - HIDE ON DESKTOP
    ============================================= */
-@media (min-width: 520px) {
-  .game-shell {
-    width: 480px;
-    height: 100vh;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+@media (min-width: 600px) {
+  .touch-controls {
+    display: none !important;
   }
 }
 

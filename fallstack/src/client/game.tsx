@@ -368,18 +368,23 @@ class FallstackScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.space = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    // Camera starts facing the player's spawn
+    
+    // Set widescreen bounds
+    const camW = this.cameras.main.width || 480;
+    const minX = camW >= 480 ? -(camW - 480) / 2 : 0;
+    const boundW = camW >= 480 ? camW : WORLD_WIDTH;
+    this.cameras.main.setBounds(minX, 0, boundW, WORLD_HEIGHT);
     this.cameras.main.setZoom(1);
 
-    // Seed stars in the upper sky zone
+    // Seed stars in the upper sky zone (wider bounds for widescreen support)
     this.stars = [];
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 48; i++) {
       this.stars.push({
-        x: Math.random() * WORLD_WIDTH,
+        x: -400 + Math.random() * 1280,
         y: Math.random() * 900,
         size: 0.8 + Math.random() * 1.5,
         phase: Math.random() * Math.PI * 2,
-        speed: 1.2 + Math.random() * 2.2,
+        speed: 0.5 + Math.random() * 1.5,
       });
     }
 
@@ -596,20 +601,35 @@ class FallstackScene extends Phaser.Scene {
 
     // Instantly snap camera scroll to the player spawn point
     const camH = this.cameras.main.height || 480;
+    const camW = this.cameras.main.width || 480;
     const targetY = Phaser.Math.Clamp(checkpoint.y - (camH - 150), 0, WORLD_HEIGHT - camH);
     this.cameras.main.scrollY = targetY;
+
+    if (camW >= 480) {
+      this.cameras.main.scrollX = -(camW - 480) / 2;
+    } else {
+      this.cameras.main.scrollX = 0;
+    }
   }
 
   private updateCamera(deltaMs: number) {
     if (!this.player) return;
     const camH = this.cameras.main.height || 480;
+    const camW = this.cameras.main.width || 480;
     const targetY = Phaser.Math.Clamp(this.player.y - (camH - 150), 0, WORLD_HEIGHT - camH);
+
     if (this.reducedMotion) {
       this.cameras.main.scrollY = targetY;
-      return;
+    } else {
+      const current = this.cameras.main.scrollY;
+      this.cameras.main.scrollY = Phaser.Math.Linear(current, targetY, Math.min(1, deltaMs / 260));
     }
-    const current = this.cameras.main.scrollY;
-    this.cameras.main.scrollY = Phaser.Math.Linear(current, targetY, Math.min(1, deltaMs / 260));
+
+    if (camW >= 480) {
+      this.cameras.main.scrollX = -(camW - 480) / 2;
+    } else {
+      this.cameras.main.scrollX = 0;
+    }
   }
 
   private drawWorld() {
@@ -619,81 +639,94 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
+    const camW = this.cameras.main.width || 480;
+    const minX = camW >= 480 ? -(camW - 480) / 2 : 0;
+    const drawW = camW >= 480 ? camW : WORLD_WIDTH;
+    const maxX = minX + drawW;
+
     // 1. GORGEOUS SKY GRADIENTS (vertical linear bands for 6 sub-themes)
     // Forgotten Ruins (5000 to 6000)
     this.bgGraphics.fillGradientStyle(0x73614c, 0x73614c, 0xbca27f, 0xbca27f, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 5000, WORLD_WIDTH, 1000);
+    this.bgGraphics.fillRect(minX, 5000, drawW, 1000);
 
     // Lush Garden (4000 to 5000)
     this.bgGraphics.fillGradientStyle(0x354b5e, 0x354b5e, 0x838e70, 0x838e70, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 4000, WORLD_WIDTH, 1000);
+    this.bgGraphics.fillRect(minX, 4000, drawW, 1000);
 
     // Crystal Cavern (3000 to 4000)
     this.bgGraphics.fillGradientStyle(0x1a1226, 0x1a1226, 0x32244a, 0x32244a, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 3000, WORLD_WIDTH, 1000);
+    this.bgGraphics.fillRect(minX, 3000, drawW, 1000);
 
     // Hanging Shaft (2000 to 3000)
     this.bgGraphics.fillGradientStyle(0x121b22, 0x121b22, 0x22323f, 0x22323f, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 2000, WORLD_WIDTH, 1000);
+    this.bgGraphics.fillRect(minX, 2000, drawW, 1000);
 
     // Starry Observatory (900 to 2000)
     this.bgGraphics.fillGradientStyle(0x06090e, 0x06090e, 0x18202d, 0x18202d, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 900, WORLD_WIDTH, 1100);
+    this.bgGraphics.fillRect(minX, 900, drawW, 1100);
 
     // Celestial Summit (0 to 900)
     this.bgGraphics.fillGradientStyle(0x0a050f, 0x0a050f, 0xab4a2c, 0xab4a2c, 1, 1, 1, 1);
-    this.bgGraphics.fillRect(0, 0, WORLD_WIDTH, 900);
+    this.bgGraphics.fillRect(minX, 0, drawW, 900);
 
     // Zone boundary lines — subtle dividers
-    this.bgGraphics.lineStyle(1.5, 0x5f5138, 0.45).lineBetween(12, 4000, WORLD_WIDTH - 12, 4000);
-    this.bgGraphics.lineStyle(1.5, 0x4c6070, 0.45).lineBetween(12, 2000, WORLD_WIDTH - 12, 2000);
+    this.bgGraphics.lineStyle(1.5, 0x5f5138, 0.45).lineBetween(minX + 12, 4000, maxX - 12, 4000);
+    this.bgGraphics.lineStyle(1.5, 0x4c6070, 0.45).lineBetween(minX + 12, 2000, maxX - 12, 2000);
 
     // 2. PARALLAX SILHOUETTES
     // Forgotten Ruins (y: 5000 to 6000) - Far mountain ranges
     this.bgGraphics.fillStyle(0x73614c, 0.25);
-    this.bgGraphics.fillTriangle(0, 5600, 140, 5420, 260, 5600);
-    this.bgGraphics.fillTriangle(180, 5600, 350, 5380, 480, 5600);
+    this.bgGraphics.fillTriangle(minX, 5600, minX + drawW * 0.3, 5420, minX + drawW * 0.55, 5600);
+    this.bgGraphics.fillTriangle(minX + drawW * 0.38, 5600, minX + drawW * 0.73, 5380, maxX, 5600);
     this.bgGraphics.fillStyle(0x5c4d3c, 0.38);
-    this.bgGraphics.fillTriangle(0, 5700, 200, 5520, 380, 5700);
-    this.bgGraphics.fillTriangle(260, 5700, 420, 5490, 480, 5700);
+    this.bgGraphics.fillTriangle(minX, 5700, minX + drawW * 0.42, 5520, minX + drawW * 0.8, 5700);
+    this.bgGraphics.fillTriangle(minX + drawW * 0.54, 5700, minX + drawW * 0.88, 5490, maxX, 5700);
 
     // Lush Garden (y: 4000 to 5000) - Silhouetted mossy tree branches
     this.bgGraphics.fillStyle(0x3d4b2e, 0.22);
-    this.bgGraphics.fillEllipse(40, 4400, 50, 90);
-    this.bgGraphics.fillEllipse(WORLD_WIDTH - 40, 4600, 60, 110);
+    this.bgGraphics.fillEllipse(minX + 40, 4400, 50, 90);
+    this.bgGraphics.fillEllipse(maxX - 40, 4600, 60, 110);
     this.bgGraphics.fillStyle(0x4e6a3b, 0.15);
-    for (let i = 0; i < 5; i++) {
-      this.bgGraphics.fillCircle(60 + i * 90, 4120 + (i % 2) * 15, 30);
+    const leafCount = Math.ceil(drawW / 90);
+    for (let i = 0; i < leafCount; i++) {
+      this.bgGraphics.fillCircle(minX + 60 + i * (drawW / leafCount), 4120 + (i % 2) * 15, 30);
     }
 
     // Crystal Cavern (y: 3000 to 4000) - Glowing cavern crystal cluster silhouettes
     this.bgGraphics.fillStyle(0x504573, 0.22);
-    this.bgGraphics.fillTriangle(0, 3400, 45, 3350, 0, 3300);
-    this.bgGraphics.fillTriangle(0, 3700, 60, 3620, 0, 3550);
-    this.bgGraphics.fillTriangle(WORLD_WIDTH, 3500, WORLD_WIDTH - 50, 3450, WORLD_WIDTH, 3400);
-    this.bgGraphics.fillTriangle(WORLD_WIDTH, 3800, WORLD_WIDTH - 55, 3720, WORLD_WIDTH, 3650);
+    this.bgGraphics.fillTriangle(minX, 3400, minX + 45, 3350, minX, 3300);
+    this.bgGraphics.fillTriangle(minX, 3700, minX + 60, 3620, minX, 3550);
+    this.bgGraphics.fillTriangle(maxX, 3500, maxX - 50, 3450, maxX, 3400);
+    this.bgGraphics.fillTriangle(maxX, 3800, maxX - 55, 3720, maxX, 3650);
 
     // Hanging Shaft (y: 2000 to 3000) - Vertical mining scaffolding walls
     this.bgGraphics.fillStyle(0x111922, 0.38);
-    this.bgGraphics.fillRect(24, 2000, 14, 1000);
-    this.bgGraphics.fillRect(WORLD_WIDTH - 38, 2000, 14, 1000);
+    this.bgGraphics.fillRect(minX + 24, 2000, 14, 1000);
+    this.bgGraphics.fillRect(maxX - 38, 2000, 14, 1000);
     this.bgGraphics.lineStyle(1.8, 0x111922, 0.22);
-    this.bgGraphics.lineBetween(100, 2000, 100, 3000);
-    this.bgGraphics.lineBetween(WORLD_WIDTH - 100, 2000, WORLD_WIDTH - 100, 3000);
+    this.bgGraphics.lineBetween(minX + 100, 2000, minX + 100, 3000);
+    this.bgGraphics.lineBetween(maxX - 100, 2000, maxX - 100, 3000);
 
     // Starry Observatory (y: 900 to 2000) - Large glowing crescent moon
+    const moonX = minX + drawW * 0.7;
     this.bgGraphics.fillStyle(0xefe7cf, 0.88);
-    this.bgGraphics.fillCircle(340, 1280, 36);
+    this.bgGraphics.fillCircle(moonX, 1280, 36);
     this.bgGraphics.fillStyle(0xefe7cf, 0.12);
-    this.bgGraphics.fillCircle(340, 1280, 46);
+    this.bgGraphics.fillCircle(moonX, 1280, 46);
 
     // Celestial Summit (y: 0 to 900) - Silhouetted temple pagoda rooftops
     this.bgGraphics.fillStyle(0x2d181c, 0.35);
-    this.bgGraphics.fillRect(30, 480, 110, 15);
-    this.bgGraphics.fillTriangle(10, 480, 85, 430, 160, 480);
+    this.bgGraphics.fillRect(minX + drawW * 0.06, 480, 110, 15);
+    this.bgGraphics.fillTriangle(minX + drawW * 0.02, 480, minX + drawW * 0.18, 430, minX + drawW * 0.33, 480);
     this.bgGraphics.fillStyle(0xd5b060, 0.15);
-    this.bgGraphics.fillEllipse(120, 600, 90, 18);
-    this.bgGraphics.fillEllipse(360, 750, 110, 22);
+    this.bgGraphics.fillEllipse(minX + drawW * 0.25, 600, 90, 18);
+    this.bgGraphics.fillEllipse(minX + drawW * 0.75, 750, 110, 22);
+
+    // Draw playspace boundaries if widescreen to hold the diorama together
+    if (camW >= 480) {
+      this.bgGraphics.lineStyle(3, 0x5f5138, 0.3).lineBetween(0, 0, 0, WORLD_HEIGHT);
+      this.bgGraphics.lineStyle(3, 0x5f5138, 0.3).lineBetween(WORLD_WIDTH, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    }
 
     // 3. DRAW PLATFORMS
     for (const platform of this.towerPlatforms) this.drawPlatform(platform);
@@ -1424,7 +1457,7 @@ function GameApp() {
     };
   }, [summitOpen]);
 
-  // Boot Phaser — CRISP CANVAS: wait for layout to get exact viewport height
+  // Boot Phaser — CRISP CANVAS: wait for layout to get exact viewport dimensions
   useEffect(() => {
     if (gameRef.current) return;
     let animFrameId: number | null = null;
@@ -1433,13 +1466,18 @@ function GameApp() {
       const container = document.getElementById('game-canvas');
       if (!container) return;
       const containerRect = container.getBoundingClientRect();
-      const viewH = Math.round(containerRect.height);
+      const containerW = Math.round(containerRect.width);
+      const containerH = Math.round(containerRect.height);
 
-      // Wait until browser layout has completed and container has height
-      if (viewH === 0) {
+      // Wait until browser layout has completed and container has dimensions
+      if (containerW === 0 || containerH === 0) {
         animFrameId = requestAnimationFrame(initGame);
         return;
       }
+
+      const isMobile = containerW < 480;
+      const gameW = isMobile ? WORLD_WIDTH : containerW;
+      const gameH = isMobile ? Math.round(containerH * (WORLD_WIDTH / containerW)) : containerH;
 
       const scene = new FallstackScene('FallstackScene');
       sceneRef.current = scene;
@@ -1447,13 +1485,13 @@ function GameApp() {
         type: Phaser.AUTO,
         parent: 'game-canvas',
         backgroundColor: '#1b262f',
-        width: WORLD_WIDTH,
-        height: viewH,
+        width: gameW,
+        height: gameH,
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,
-          width: WORLD_WIDTH,
-          height: viewH,
+          width: gameW,
+          height: gameH,
         },
         physics: {
           default: 'arcade',
