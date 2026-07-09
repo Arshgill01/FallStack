@@ -318,7 +318,7 @@ class FallstackScene extends Phaser.Scene {
   private towerSeed = createDailySeed().dailySeed;
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed).platforms;
   private chargeTime = 0;
-  private layoutScale = 1;
+  private readonly platformScale = 1;
 
   // Visual enhancements
   private particles: Array<{
@@ -406,16 +406,14 @@ class FallstackScene extends Phaser.Scene {
 
     if (input.left) this.facing = -1;
     if (input.right) this.facing = 1;
-    const horizontalScale = this.layoutScale;
-
     if (onFloor) {
       body.setAccelerationX(0);
-      body.setVelocityX(input.left ? -155 * horizontalScale : input.right ? 155 * horizontalScale : Phaser.Math.Linear(body.velocity.x, 0, 0.18));
+      body.setVelocityX(input.left ? -155 : input.right ? 155 : Phaser.Math.Linear(body.velocity.x, 0, 0.18));
       this.lastWallBonk = false;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(steer * 620 * horizontalScale);
-      body.setMaxVelocity(390 * horizontalScale, 1300);
+      body.setAccelerationX(steer * 620);
+      body.setMaxVelocity(390, 1300);
       if ((body.blocked.left || body.blocked.right) && body.velocity.y > -720) this.lastWallBonk = true;
     }
 
@@ -437,7 +435,7 @@ class FallstackScene extends Phaser.Scene {
       const percent = Phaser.Math.Clamp(0.32 + (held / 900) * 0.68, 0.32, 1);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
-        body.setVelocity(this.facing * Phaser.Math.Linear(170, 400, percent) * horizontalScale, Phaser.Math.Linear(-560, -1000, percent));
+        body.setVelocity(this.facing * Phaser.Math.Linear(170, 400, percent), Phaser.Math.Linear(-560, -1000, percent));
         window.dispatchEvent(new CustomEvent('fallstack:launch'));
       }
       this.charging = false;
@@ -499,30 +497,29 @@ class FallstackScene extends Phaser.Scene {
     return Math.max(WORLD_WIDTH, this.cameras.main.width || WORLD_WIDTH);
   }
 
-  private layoutX(x: number) {
-    return x * this.layoutScale;
+  private routeOffsetX() {
+    return Math.max(0, (this.gameWidth() - WORLD_WIDTH) / 2);
   }
 
-  private layoutW(width: number) {
-    return width * this.layoutScale;
+  private layoutX(x: number) {
+    return x + this.routeOffsetX();
   }
 
   private layoutPlatform(platform: Platform): Platform {
-    return { ...platform, x: this.layoutX(platform.x), width: this.layoutW(platform.width) };
+    return { ...platform, x: this.layoutX(platform.x), width: platform.width * this.platformScale };
   }
 
   private layoutArtifact(artifact: Artifact): Artifact {
-    return { ...artifact, x: this.layoutX(artifact.x), width: this.layoutW(artifact.width) };
+    return { ...artifact, x: this.layoutX(artifact.x), width: artifact.width * this.platformScale };
   }
 
   private applyViewportLayout(keepPlayerX: boolean) {
-    const previousScale = this.layoutScale;
-    const logicalPlayerX = keepPlayerX && this.player ? this.player.x / previousScale : null;
-    this.layoutScale = this.gameWidth() / WORLD_WIDTH;
-    const worldWidth = this.layoutW(WORLD_WIDTH);
+    const previousOffset = this.routeOffsetX();
+    const playerLogicalX = keepPlayerX && this.player ? this.player.x - previousOffset : null;
+    const worldWidth = this.gameWidth();
     this.cameras.main.setBounds(0, 0, worldWidth, WORLD_HEIGHT);
     this.physics.world.setBounds(0, 0, worldWidth, WORLD_HEIGHT + 220);
-    if (logicalPlayerX !== null && this.player) this.player.setX(this.layoutX(logicalPlayerX));
+    if (playerLogicalX !== null && this.player) this.player.setX(this.layoutX(playerLogicalX));
   }
 
   private cameraBottomPadding() {
