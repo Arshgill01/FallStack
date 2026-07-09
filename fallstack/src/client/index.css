@@ -482,14 +482,21 @@ button:disabled {
 .badge-reinforced   { background: #dbe6d1; color: #4e6a3b; }
 .badge-stabilized   { background: #d7e6df; color: #2f6b57; }
 
-/* Controls hint — bottom-left of viewport */
+/* Controls hint — bottom-left of viewport on desktop only */
 .controls-hint {
-  left: 10px;
-  bottom: 76px;
+  left: 14px;
+  bottom: 14px;
   font-size: 10.5px;
   color: rgba(247, 240, 226, 0.55);
   letter-spacing: 0.2px;
   line-height: 1.4;
+  z-index: 5;
+}
+
+@media (max-width: 600px) {
+  .controls-hint {
+    display: none !important;
+  }
 }
 
 /* Mutation banner — slides down cleanly from below the top header */
