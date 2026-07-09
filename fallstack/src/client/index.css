@@ -79,7 +79,7 @@ html, body {
   padding: 0;
   height: 100%;
   overscroll-behavior: none;
-  background: var(--indigo-deep);
+  background: #0f151b; /* Dark backdrop for desktop */
   color: var(--ink);
   font-family: 'Zen Maru Gothic', 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 15px;
@@ -278,6 +278,7 @@ button:disabled {
 /* =============================================
    GAME SHELL
    ============================================= */
+/*.game-shell*/
 .game-shell {
   display: flex;
   flex-direction: column;
@@ -286,6 +287,15 @@ button:disabled {
   background: var(--indigo-deep);
   /* Crisp pixel rendering on the entire column */
   image-rendering: -webkit-optimize-contrast;
+  position: relative;
+}
+
+@media (min-width: 600px) {
+  .game-shell {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
 }
 
 /* =============================================
@@ -812,6 +822,22 @@ button:disabled {
 @media (min-width: 600px) {
   .touch-controls {
     display: none !important;
+  }
+  .topbar-actions {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    max-width: 150px;
+    justify-content: flex-end;
+  }
+}
+
+.action-btn.fullscreen-btn {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .action-btn.fullscreen-btn {
+    display: flex;
   }
 }
 

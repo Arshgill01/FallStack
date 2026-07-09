@@ -376,6 +376,14 @@ class FallstackScene extends Phaser.Scene {
     this.cameras.main.setBounds(minX, 0, boundW, WORLD_HEIGHT);
     this.cameras.main.setZoom(1);
 
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      const currentCamW = gameSize.width;
+      const currentMinX = currentCamW >= 480 ? -(currentCamW - 480) / 2 : 0;
+      const currentBoundW = currentCamW >= 480 ? currentCamW : WORLD_WIDTH;
+      this.cameras.main.setBounds(currentMinX, 0, currentBoundW, WORLD_HEIGHT);
+      this.drawWorld();
+    });
+
     // Seed stars in the upper sky zone (wider bounds for widescreen support)
     this.stars = [];
     for (let i = 0; i < 48; i++) {
@@ -1344,6 +1352,7 @@ function GameApp() {
   const [muted, setMuted] = useState(() => localStorage.getItem('fallstack:muted') === 'true');
   const [sessionStats, setSessionStats] = useState({ falls: 0, clears: 0, summits: 0 });
   const [mutationVisible, setMutationVisible] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [checkpointVisible, setCheckpointVisible] = useState(false);
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -1422,6 +1431,26 @@ function GameApp() {
   }, [muted]);
 
   useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error('Fullscreen toggle failed', error);
+    }
+  }, []);
+
+  useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onChange = () => setReducedMotion(media.matches);
     onChange();
@@ -1462,12 +1491,20 @@ function GameApp() {
     if (gameRef.current) return;
     let animFrameId: number | null = null;
 
-    const initGame = () => {
-      const container = document.getElementById('game-canvas');
-      if (!container) return;
+    const getDimensions = (container: HTMLElement) => {
       const containerRect = container.getBoundingClientRect();
       const containerW = Math.round(containerRect.width);
       const containerH = Math.round(containerRect.height);
+      const isMobile = containerW < 480;
+      const gameW = isMobile ? WORLD_WIDTH : containerW;
+      const gameH = isMobile ? Math.round(containerH * (WORLD_WIDTH / containerW)) : containerH;
+      return { containerW, containerH, gameW, gameH };
+    };
+
+    const initGame = () => {
+      const container = document.getElementById('game-canvas');
+      if (!container) return;
+      const { containerW, containerH, gameW, gameH } = getDimensions(container);
 
       // Wait until browser layout has completed and container has dimensions
       if (containerW === 0 || containerH === 0) {
@@ -1475,13 +1512,9 @@ function GameApp() {
         return;
       }
 
-      const isMobile = containerW < 480;
-      const gameW = isMobile ? WORLD_WIDTH : containerW;
-      const gameH = isMobile ? Math.round(containerH * (WORLD_WIDTH / containerW)) : containerH;
-
       const scene = new FallstackScene('FallstackScene');
       sceneRef.current = scene;
-      gameRef.current = new Phaser.Game({
+      const game = new Phaser.Game({
         type: Phaser.AUTO,
         parent: 'game-canvas',
         backgroundColor: '#1b262f',
@@ -1507,6 +1540,7 @@ function GameApp() {
         },
         scene,
       });
+      gameRef.current = game;
 
       // Apply crisp rendering to the canvas element
       window.requestAnimationFrame(() => {
@@ -1519,8 +1553,19 @@ function GameApp() {
 
     initGame();
 
+    const handleResize = () => {
+      const container = document.getElementById('game-canvas');
+      if (!container || !gameRef.current) return;
+      const { containerW, containerH, gameW, gameH } = getDimensions(container);
+      if (containerW === 0 || containerH === 0) return;
+      gameRef.current.scale.resize(gameW, gameH);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
       if (animFrameId) cancelAnimationFrame(animFrameId);
+      window.removeEventListener('resize', handleResize);
       gameRef.current?.destroy(true);
       gameRef.current = null;
       sceneRef.current = null;
@@ -1739,6 +1784,14 @@ function GameApp() {
             aria-pressed={muted}
           >
             {muted ? '🔇 Mute' : '🔊 Sound'}
+          </button>
+          <button
+            type="button"
+            className="action-btn fullscreen-btn"
+            onClick={toggleFullscreen}
+            aria-pressed={isFullscreen}
+          >
+            {isFullscreen ? '📺 Normal' : '🖥️ Full'}
           </button>
         </div>
       </header>
