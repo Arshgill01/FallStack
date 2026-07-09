@@ -490,63 +490,87 @@ button:disabled {
   line-height: 1.4;
 }
 
-/* Mutation banner — above controls */
+/* Mutation banner — slides down cleanly from below the top header */
 .mutation-banner {
-  left: 10px;
-  right: 10px;
-  bottom: 72px;
-  padding: 9px 12px 9px 16px;
-  background: rgba(247, 240, 226, 0.96);
-  border-left: 4px solid var(--persimmon);
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  width: calc(100% - 24px);
+  max-width: 360px;
+  padding: 10px 14px 10px 14px;
+  background: rgba(247, 240, 226, 0.98);
+  border-top: 3.5px solid var(--persimmon);
+  border-bottom: 1.5px solid rgba(51, 41, 31, 0.12);
   border-radius: var(--radius-sm);
-  box-shadow: 0 3px 10px var(--shadow-warm);
-  font-size: 12.5px;
-  font-weight: 500;
+  box-shadow: 0 5px 16px var(--shadow-warm), 0 0 0 1.5px rgba(242, 233, 216, 0.5);
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1.4;
   color: var(--ink);
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translate(-50%, -15px);
+  transition: opacity 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   pointer-events: none;
+  text-align: center;
+  z-index: 99;
 }
 
 .mutation-banner.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
-/* Checkpoint banner — center of viewport */
+/* Checkpoint banner — central calligraphy wood plaque Ema card */
 .checkpoint-banner {
   left: 50%;
   top: 38%;
-  transform: translate(-50%, -50%) scale(0.94);
-  min-width: 220px;
-  padding: 16px 24px;
-  background: rgba(247, 240, 226, 0.97);
+  transform: translate(-50%, -50%) scale(0.85);
+  min-width: 240px;
+  padding: 22px 28px;
+  background: linear-gradient(135deg, #fdfbf7, #f7f0e2);
+  border: 2px solid #b8492c;
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 24px var(--shadow-dark);
+  box-shadow: 0 12px 32px var(--shadow-dark), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   text-align: center;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25);
   pointer-events: none;
+  z-index: 100;
+}
+
+/* Decorative silk hanging cord for Ema board */
+.checkpoint-banner::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #c1502f;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }
 
 .checkpoint-banner.visible {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, -50%) scale(1.02);
 }
 
 .checkpoint-title {
   font-family: 'Shippori Mincho', serif;
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.4px;
+  font-size: 16px;
+  letter-spacing: 0.8px;
   color: var(--persimmon-deep);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8);
 }
 
 .checkpoint-sub {
-  font-size: 12px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-weight: 500;
+  font-size: 11.5px;
   color: var(--ink-soft);
 }
 

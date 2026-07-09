@@ -62,11 +62,11 @@ declare global {
 }
 
 const INITIAL_INPUT: InputState = { left: false, right: false, jump: false };
-const START_POS = { x: 112, y: 2128 };
+const START_POS = { x: 240, y: 5880 };
 const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   lower_ruins: START_POS,
-  bell_shaft: { x: 112, y: 1548 },
-  moon_roof: { x: 350, y: 942 },
+  bell_shaft: { x: 240, y: 3940 },
+  moon_roof: { x: 240, y: 1940 },
 };
 
 // Badge display names — dry, compact, mildly cursed
@@ -530,10 +530,10 @@ class FallstackScene extends Phaser.Scene {
 
   private checkProgress() {
     if (!this.player) return;
-    if (this.respawnZone === 'lower_ruins' && this.player.y < 1620 && !this.checkpointed.has('lower_ruins')) {
+    if (this.respawnZone === 'lower_ruins' && this.player.y < 4000 && !this.checkpointed.has('lower_ruins')) {
       this.unlockZone('bell_shaft', 'lower_ruins');
     }
-    if (this.respawnZone === 'bell_shaft' && this.player.y < 900 && !this.checkpointed.has('bell_shaft')) {
+    if (this.respawnZone === 'bell_shaft' && this.player.y < 2000 && !this.checkpointed.has('bell_shaft')) {
       this.unlockZone('moon_roof', 'bell_shaft');
     }
   }
@@ -613,86 +613,81 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
-    const colorHex = (hexStr: string) => parseInt(hexStr.replace('#', ''), 16);
+    // 1. GORGEOUS SKY GRADIENTS (vertical linear bands for 6 sub-themes)
+    // Forgotten Ruins (5000 to 6000)
+    this.bgGraphics.fillGradientStyle(0x73614c, 0x73614c, 0xbca27f, 0xbca27f, 1, 1, 1, 1);
+    this.bgGraphics.fillRect(0, 5000, WORLD_WIDTH, 1000);
 
-    // 1. GORGEOUS SKY GRADIENTS (vertical linear simulation via fillGradientStyle)
-    const ruinsTheme = THEMES.lower_ruins;
-    this.bgGraphics.fillGradientStyle(
-      colorHex(ruinsTheme.skyTop), colorHex(ruinsTheme.skyTop),
-      colorHex(ruinsTheme.skyBot), colorHex(ruinsTheme.skyBot),
-      1, 1, 1, 1
-    );
-    this.bgGraphics.fillRect(0, 1620, WORLD_WIDTH, 2220 - 1620);
+    // Lush Garden (4000 to 5000)
+    this.bgGraphics.fillGradientStyle(0x354b5e, 0x354b5e, 0x838e70, 0x838e70, 1, 1, 1, 1);
+    this.bgGraphics.fillRect(0, 4000, WORLD_WIDTH, 1000);
 
-    const bellTheme = THEMES.bell_shaft;
-    this.bgGraphics.fillGradientStyle(
-      colorHex(bellTheme.skyTop), colorHex(bellTheme.skyTop),
-      colorHex(bellTheme.skyBot), colorHex(bellTheme.skyBot),
-      1, 1, 1, 1
-    );
-    this.bgGraphics.fillRect(0, 900, WORLD_WIDTH, 1620 - 900);
+    // Crystal Cavern (3000 to 4000)
+    this.bgGraphics.fillGradientStyle(0x1a1226, 0x1a1226, 0x32244a, 0x32244a, 1, 1, 1, 1);
+    this.bgGraphics.fillRect(0, 3000, WORLD_WIDTH, 1000);
 
-    const moonTheme = THEMES.moon_roof;
-    this.bgGraphics.fillGradientStyle(
-      colorHex(moonTheme.skyTop), colorHex(moonTheme.skyTop),
-      colorHex(moonTheme.skyBot), colorHex(moonTheme.skyBot),
-      1, 1, 1, 1
-    );
+    // Hanging Shaft (2000 to 3000)
+    this.bgGraphics.fillGradientStyle(0x121b22, 0x121b22, 0x22323f, 0x22323f, 1, 1, 1, 1);
+    this.bgGraphics.fillRect(0, 2000, WORLD_WIDTH, 1000);
+
+    // Starry Observatory (900 to 2000)
+    this.bgGraphics.fillGradientStyle(0x06090e, 0x06090e, 0x18202d, 0x18202d, 1, 1, 1, 1);
+    this.bgGraphics.fillRect(0, 900, WORLD_WIDTH, 1100);
+
+    // Celestial Summit (0 to 900)
+    this.bgGraphics.fillGradientStyle(0x0a050f, 0x0a050f, 0xab4a2c, 0xab4a2c, 1, 1, 1, 1);
     this.bgGraphics.fillRect(0, 0, WORLD_WIDTH, 900);
 
-    // Zone boundary lines — subtle ink dividers
-    this.bgGraphics.lineStyle(1.5, 0x5f5138, 0.45).lineBetween(12, 1620, WORLD_WIDTH - 12, 1620);
-    this.bgGraphics.lineStyle(1.5, 0x4c6070, 0.45).lineBetween(12, 900, WORLD_WIDTH - 12, 900);
+    // Zone boundary lines — subtle dividers
+    this.bgGraphics.lineStyle(1.5, 0x5f5138, 0.45).lineBetween(12, 4000, WORLD_WIDTH - 12, 4000);
+    this.bgGraphics.lineStyle(1.5, 0x4c6070, 0.45).lineBetween(12, 2000, WORLD_WIDTH - 12, 2000);
 
     // 2. PARALLAX SILHOUETTES
-    // Distant mountain silhouette in lower ruins (Layer 1 - Far)
-    this.bgGraphics.fillStyle(0x8a9770, 0.22);
-    this.bgGraphics.beginPath();
-    this.bgGraphics.moveTo(0, 1920);
-    this.bgGraphics.lineTo(120, 1780);
-    this.bgGraphics.lineTo(240, 1870);
-    this.bgGraphics.lineTo(360, 1740);
-    this.bgGraphics.lineTo(480, 1890);
-    this.bgGraphics.lineTo(480, 2220);
-    this.bgGraphics.lineTo(0, 2220);
-    this.bgGraphics.closePath();
-    this.bgGraphics.fill();
+    // Forgotten Ruins (y: 5000 to 6000) - Far mountain ranges
+    this.bgGraphics.fillStyle(0x73614c, 0.25);
+    this.bgGraphics.fillTriangle(0, 5600, 140, 5420, 260, 5600);
+    this.bgGraphics.fillTriangle(180, 5600, 350, 5380, 480, 5600);
+    this.bgGraphics.fillStyle(0x5c4d3c, 0.38);
+    this.bgGraphics.fillTriangle(0, 5700, 200, 5520, 380, 5700);
+    this.bgGraphics.fillTriangle(260, 5700, 420, 5490, 480, 5700);
 
-    // Distant mountain silhouette in lower ruins (Layer 2 - Nearer)
-    this.bgGraphics.fillStyle(0x74855f, 0.35);
-    this.bgGraphics.beginPath();
-    this.bgGraphics.moveTo(0, 1960);
-    this.bgGraphics.lineTo(80, 1860);
-    this.bgGraphics.lineTo(200, 1910);
-    this.bgGraphics.lineTo(310, 1800);
-    this.bgGraphics.lineTo(420, 1930);
-    this.bgGraphics.lineTo(480, 1880);
-    this.bgGraphics.lineTo(480, 2220);
-    this.bgGraphics.lineTo(0, 2220);
-    this.bgGraphics.closePath();
-    this.bgGraphics.fill();
-
-    // Bell shaft vertical scaffolding beams (architectural structure walls)
-    this.bgGraphics.fillStyle(0x28313a, 0.38);
-    this.bgGraphics.fillRect(24, 900, 14, 720);
-    this.bgGraphics.fillRect(WORLD_WIDTH - 38, 900, 14, 720);
-    
-    // Diagonal cross supports
-    this.bgGraphics.fillStyle(0x1b262f, 0.4);
-    for (let by = 950; by < 1620; by += 130) {
-      this.bgGraphics.fillRect(24, by, 10, 8);
-      this.bgGraphics.fillRect(WORLD_WIDTH - 34, by, 10, 8);
-      this.bgGraphics.lineStyle(1.5, 0x1b262f, 0.28);
-      this.bgGraphics.lineBetween(38, by + 4, WORLD_WIDTH - 38, by + 12);
+    // Lush Garden (y: 4000 to 5000) - Silhouetted mossy tree branches
+    this.bgGraphics.fillStyle(0x3d4b2e, 0.22);
+    this.bgGraphics.fillEllipse(40, 4400, 50, 90);
+    this.bgGraphics.fillEllipse(WORLD_WIDTH - 40, 4600, 60, 110);
+    this.bgGraphics.fillStyle(0x4e6a3b, 0.15);
+    for (let i = 0; i < 5; i++) {
+      this.bgGraphics.fillCircle(60 + i * 90, 4120 + (i % 2) * 15, 30);
     }
 
-    // Moon in moon_roof zone
+    // Crystal Cavern (y: 3000 to 4000) - Glowing cavern crystal cluster silhouettes
+    this.bgGraphics.fillStyle(0x504573, 0.22);
+    this.bgGraphics.fillTriangle(0, 3400, 45, 3350, 0, 3300);
+    this.bgGraphics.fillTriangle(0, 3700, 60, 3620, 0, 3550);
+    this.bgGraphics.fillTriangle(WORLD_WIDTH, 3500, WORLD_WIDTH - 50, 3450, WORLD_WIDTH, 3400);
+    this.bgGraphics.fillTriangle(WORLD_WIDTH, 3800, WORLD_WIDTH - 55, 3720, WORLD_WIDTH, 3650);
+
+    // Hanging Shaft (y: 2000 to 3000) - Vertical mining scaffolding walls
+    this.bgGraphics.fillStyle(0x111922, 0.38);
+    this.bgGraphics.fillRect(24, 2000, 14, 1000);
+    this.bgGraphics.fillRect(WORLD_WIDTH - 38, 2000, 14, 1000);
+    this.bgGraphics.lineStyle(1.8, 0x111922, 0.22);
+    this.bgGraphics.lineBetween(100, 2000, 100, 3000);
+    this.bgGraphics.lineBetween(WORLD_WIDTH - 100, 2000, WORLD_WIDTH - 100, 3000);
+
+    // Starry Observatory (y: 900 to 2000) - Large glowing crescent moon
     this.bgGraphics.fillStyle(0xefe7cf, 0.88);
-    this.bgGraphics.fillCircle(340, 280, 38);
-    this.bgGraphics.fillStyle(0xefe7cf, 0.15);
-    this.bgGraphics.fillCircle(340, 280, 48);
-    this.bgGraphics.fillStyle(0xefe7cf, 0.06);
-    this.bgGraphics.fillCircle(340, 280, 60);
+    this.bgGraphics.fillCircle(340, 1280, 36);
+    this.bgGraphics.fillStyle(0xefe7cf, 0.12);
+    this.bgGraphics.fillCircle(340, 1280, 46);
+
+    // Celestial Summit (y: 0 to 900) - Silhouetted temple pagoda rooftops
+    this.bgGraphics.fillStyle(0x2d181c, 0.35);
+    this.bgGraphics.fillRect(30, 480, 110, 15);
+    this.bgGraphics.fillTriangle(10, 480, 85, 430, 160, 480);
+    this.bgGraphics.fillStyle(0xd5b060, 0.15);
+    this.bgGraphics.fillEllipse(120, 600, 90, 18);
+    this.bgGraphics.fillEllipse(360, 750, 110, 22);
 
     // 3. DRAW PLATFORMS
     for (const platform of this.towerPlatforms) this.drawPlatform(platform);
@@ -703,16 +698,66 @@ class FallstackScene extends Phaser.Scene {
     for (const zone of snapshot.zones) {
       const zoneData = ZONES.find((candidate) => candidate.id === zone.id);
       if (zoneData) {
-        const labelY = zoneData.yTop + 18;
-        this.addZoneLabel(14, labelY, zone.name, zone.statusLabel);
+        // Draw sub-theme inline labels inside the tower world
+        if (zone.id === 'lower_ruins') {
+          this.addZoneLabel(14, 5820, 'Lower Ruins', 'Forgotten Path');
+          this.addZoneLabel(14, 4820, 'Overgrown Garden', 'Whispering Leaves');
+        } else if (zone.id === 'bell_shaft') {
+          this.addZoneLabel(14, 3820, 'Crystal Cavern', 'Amethyst Depths');
+          this.addZoneLabel(14, 2820, 'Hanging Shaft', 'Industrial Girders');
+        } else if (zone.id === 'moon_roof') {
+          this.addZoneLabel(14, 1820, 'Observatory', 'Constellation Climb');
+          this.addZoneLabel(14, 820, 'Celestial Summit', 'Holy Dawn');
+        }
       }
       for (const artifact of zone.artifacts) this.drawArtifact(artifact);
     }
   }
 
   private drawPlatform(platform: Platform) {
-    const zone = zoneForY(platform.y);
-    const th = THEMES[zoneTheme(zone.id)];
+    const y = platform.y;
+
+    // Platform sub-theme styling palette
+    let stoneColor = 0xa9906c;
+    let darkColor = 0x7d6a4c;
+    let edgeColor = 0x5f5138;
+    let highlightColor = 0xf3ead9;
+
+    if (y >= 5000) {
+      // 1. Forgotten Ruins
+      stoneColor = 0xa9906c;
+      darkColor = 0x7d6a4c;
+      edgeColor = 0x5f5138;
+    } else if (y >= 4000) {
+      // 2. Lush Overgrown Garden
+      stoneColor = 0x8aa86c;
+      darkColor = 0x5b6b47;
+      edgeColor = 0x3d4b2e;
+    } else if (y >= 3000) {
+      // 3. Crystal Cavern
+      stoneColor = 0x8a7fb0;
+      darkColor = 0x504573;
+      edgeColor = 0x2f264d;
+      highlightColor = 0xebe8ff;
+    } else if (y >= 2000) {
+      // 4. Hanging Shaft
+      stoneColor = 0x8c6b53;
+      darkColor = 0x543e2f;
+      edgeColor = 0x2e2017;
+      highlightColor = 0xf6eae1;
+    } else if (y >= 900) {
+      // 5. Starry Observatory
+      stoneColor = 0x3b4d61;
+      darkColor = 0x212f3e;
+      edgeColor = 0x111922;
+      highlightColor = 0xaecce7;
+    } else {
+      // 6. Celestial Summit
+      stoneColor = 0xd5b060;
+      darkColor = 0x937535;
+      edgeColor = 0x51401a;
+      highlightColor = 0xfffaeb;
+    }
 
     // Check if checkpoint to draw Torii Gate
     const isCheckpoint = platform.id.includes('checkpoint');
@@ -723,8 +768,8 @@ class FallstackScene extends Phaser.Scene {
 
       // Platform base
       this.graphics?.fillStyle(0x1b262f, 1).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
-      this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
-      this.graphics?.fillStyle(th.stone, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
+      this.graphics?.fillStyle(darkColor, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(stoneColor, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
 
       // Torii columns
       this.graphics?.fillStyle(0x9c3e23, 1);
@@ -735,24 +780,24 @@ class FallstackScene extends Phaser.Scene {
       this.graphics?.fillRect(cx - platform.width * 0.32, platform.y - postH, postW, postH);
       this.graphics?.fillRect(cx + platform.width * 0.32 - postW, platform.y - postH, postW, postH);
 
-      // Black stone column bases
+      // Column bases
       this.graphics?.fillStyle(0x1b262f, 1);
       this.graphics?.fillRect(cx - platform.width * 0.32 - 1, platform.y - 4, postW + 2, 4);
       this.graphics?.fillRect(cx + platform.width * 0.32 - postW - 1, platform.y - 4, postW + 2, 4);
 
-      // Lower crossbeam (Shimaki)
+      // Shimaki crossbeam
       this.graphics?.fillStyle(0x9c3e23, 1);
       this.graphics?.fillRect(cx - platform.width * 0.36, platform.y - postH + 10, platform.width * 0.72, 6);
       this.graphics?.fillStyle(0xc1502f, 1);
       this.graphics?.fillRect(cx - platform.width * 0.36, platform.y - postH + 9, platform.width * 0.72, 6);
 
-      // Upper lintel beam (Kasagi) with curved tips
+      // Kasagi lintel
       this.graphics?.fillStyle(0x1b262f, 1);
       this.graphics?.fillRoundedRect(cx - platform.width * 0.44, platform.y - postH - 12, platform.width * 0.88, 5, 2);
       this.graphics?.fillStyle(0xc1502f, 1);
       this.graphics?.fillRoundedRect(cx - platform.width * 0.42, platform.y - postH - 8, platform.width * 0.84, 9, 3);
 
-      // Center wooden nameboard (Gakuzuka)
+      // Center wood stamp nameboard
       this.graphics?.fillStyle(0x1b262f, 1);
       this.graphics?.fillRect(cx - 8, platform.y - postH - 1, 16, 11);
       this.graphics?.fillStyle(0xc79a3e, 1);
@@ -763,48 +808,56 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (platform.kind === 'summit') {
-      // Summit platform — glowing persimmon temple roof design
-      this.graphics?.fillStyle(0x9c3e23, 1).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
-      this.graphics?.fillStyle(0xc1502f, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 5);
-      this.graphics?.fillStyle(0xf3ead9, 0.3).fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
+      // Summit platform — glowing golden celestial arch/temple roof design
+      this.graphics?.fillStyle(0x937535, 1).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
+      this.graphics?.fillStyle(0xd5b060, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 5);
+      this.graphics?.fillStyle(0xffffff, 0.45).fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
       
-      this.graphics?.fillStyle(0xe0b25a, 0.45).fillEllipse(platform.x + platform.width / 2, platform.y - 20, 18, 18);
-      this.addInlineLabel(platform.x + platform.width / 2 - 18, platform.y - 25, 'SUMMIT', 10, '#e0b25a');
+      this.graphics?.fillStyle(0xe0b25a, 0.55).fillEllipse(platform.x + platform.width / 2, platform.y - 20, 20, 20);
+      this.addInlineLabel(platform.x + platform.width / 2 - 18, platform.y - 25, 'SUMMIT', 10, '#ffffff');
       return;
     }
 
-    // Regular styled platform with edges
-    this.graphics?.fillStyle(th.platformEdge, 0.9).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
-    this.graphics?.fillStyle(th.stoneDark, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
-    this.graphics?.fillStyle(th.stone, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
-    this.graphics?.fillStyle(th.highlight, 0.22).fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
+    // Shadow depth
+    this.graphics?.fillStyle(edgeColor, 0.9).fillRoundedRect(platform.x, platform.y + 4, platform.width, platform.height, 5);
+    // Ledge faces
+    this.graphics?.fillStyle(darkColor, 1).fillRoundedRect(platform.x, platform.y + 1, platform.width, platform.height, 5);
+    this.graphics?.fillStyle(stoneColor, 1).fillRoundedRect(platform.x, platform.y, platform.width, platform.height - 2, 4);
+    // Highlights
+    this.graphics?.fillStyle(highlightColor, 0.22).fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
 
-    // Theme details (separators, nails, moss, crystal shapes)
-    if (zone.id === 'lower_ruins') {
-      this.graphics?.lineStyle(1.2, th.stoneDark, 0.35);
-      if (platform.width > 40) {
-        this.graphics?.lineBetween(platform.x + 20, platform.y + 1, platform.x + 20, platform.y + platform.height - 3);
-      }
-      if (platform.width > 80) {
-        this.graphics?.lineBetween(platform.x + 60, platform.y + 1, platform.x + 60, platform.y + platform.height - 3);
-      }
-      // Green moss clumps
-      this.graphics?.fillStyle(0x74855f, 0.7);
+    // Sub-theme specific decorative platform detailing
+    if (y >= 5000) {
+      // Forgotten Ruins: Stone bricks & moss
+      this.graphics?.lineStyle(1.2, darkColor, 0.35);
+      if (platform.width > 40) this.graphics?.lineBetween(platform.x + 20, platform.y + 1, platform.x + 20, platform.y + platform.height - 3);
+      if (platform.width > 80) this.graphics?.lineBetween(platform.x + 60, platform.y + 1, platform.x + 60, platform.y + platform.height - 3);
+      this.graphics?.fillStyle(0x5c6b4a, 0.7);
       if (platform.width > 30) this.graphics?.fillEllipse(platform.x + 12, platform.y, 6, 2.5);
-      if (platform.width > 60) this.graphics?.fillEllipse(platform.x + platform.width - 16, platform.y, 8, 3);
-    } else if (zone.id === 'bell_shaft') {
-      // Wooden plank texture lines
-      this.graphics?.lineStyle(1, th.stoneDark, 0.5);
+    } else if (y >= 4000) {
+      // Lush Overgrown Garden: Vines wraps & leaf details
+      this.graphics?.fillStyle(0x3d4b2e, 0.75);
+      if (platform.width > 30) this.graphics?.fillCircle(platform.x + 15, platform.y + 8, 3.5);
+      if (platform.width > 60) this.graphics?.fillCircle(platform.x + platform.width - 15, platform.y + 8, 3);
+      this.graphics?.lineStyle(1, 0x3d4b2e, 0.5);
+      this.graphics?.lineBetween(platform.x + 10, platform.y + 4, platform.x + 24, platform.y + 12);
+    } else if (y >= 3000) {
+      // Crystal Cavern: Crystal facet lines
+      this.graphics?.lineStyle(1, highlightColor, 0.25);
+      this.graphics?.lineBetween(platform.x + 10, platform.y + 2, platform.x + platform.width - 10, platform.y + platform.height - 4);
+      this.graphics?.lineBetween(platform.x + platform.width - 15, platform.y + 2, platform.x + 15, platform.y + platform.height - 4);
+    } else if (y >= 2000) {
+      // Hanging Shaft: Metal sheet planks & nails
+      this.graphics?.lineStyle(1, darkColor, 0.6);
       this.graphics?.lineBetween(platform.x + 4, platform.y + platform.height / 2, platform.x + platform.width - 4, platform.y + platform.height / 2);
-      // Nail details
-      this.graphics?.fillStyle(0x1b262f, 0.6);
+      this.graphics?.fillStyle(0x1b262f, 0.75);
       this.graphics?.fillCircle(platform.x + 4, platform.y + 4, 1.2);
       this.graphics?.fillCircle(platform.x + platform.width - 4, platform.y + 4, 1.2);
       this.graphics?.fillCircle(platform.x + 4, platform.y + platform.height - 6, 1.2);
       this.graphics?.fillCircle(platform.x + platform.width - 4, platform.y + platform.height - 6, 1.2);
-    } else if (zone.id === 'moon_roof') {
-      // Diamond crystal highlight in center
-      this.graphics?.fillStyle(th.highlight, 0.15);
+    } else if (y >= 900) {
+      // Starry Observatory: Diamond constellations
+      this.graphics?.fillStyle(highlightColor, 0.18);
       this.graphics?.beginPath();
       const px = platform.x + platform.width / 2;
       const py = platform.y + platform.height / 2 - 1;
@@ -814,6 +867,11 @@ class FallstackScene extends Phaser.Scene {
       this.graphics?.lineTo(px, py + 4);
       this.graphics?.closePath();
       this.graphics?.fill();
+    } else {
+      // Celestial Summit: Royal double golden border highlights
+      this.graphics?.fillStyle(highlightColor, 0.35);
+      this.graphics?.fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 1.5);
+      this.graphics?.fillRect(platform.x + 4, platform.y + platform.height - 6, platform.width - 8, 1.5);
     }
   }
 
@@ -833,7 +891,7 @@ class FallstackScene extends Phaser.Scene {
       // Stacked steps - chunky wooden steps
       const colors = [0x7d5d3b, 0xc7ac7c, 0xd4bc8c];
       for (let i = 2; i >= 0; i -= 1) {
-        this.graphics?.fillStyle(colors[i], 1).fillRoundedRect(
+        this.graphics?.fillStyle(colors[i]!, 1).fillRoundedRect(
           artifact.x + i * 4, artifact.y + i * 5,
           artifact.width - i * 8, 10, 3
         );
@@ -1183,7 +1241,6 @@ class FallstackScene extends Phaser.Scene {
       fontSize: '11px',
       fontStyle: 'bold',
       color: '#c8b89a',
-      alpha: 0.7,
     });
     label.setDepth(1);
     label.setAlpha(0.7);
@@ -1214,9 +1271,6 @@ class FallstackScene extends Phaser.Scene {
     this.labels.push(label);
   }
 
-  private drawPlayer() {
-    // Left empty: player shape is drawn dynamically as a animated fox spirit in drawFoxSpirit
-  }
 
   private rebuildArtifactBodies() {
     this.artifactBodies?.clear(true, true);
@@ -1296,8 +1350,8 @@ function GameApp() {
   }, [snapshot]);
 
   const currentZoneInfo = useMemo(() => {
-    if (!snapshot?.zones?.length) return { name: 'Lower Ruins', statusLabel: 'Untouched' };
-    return snapshot.zones[0];
+    if (!snapshot?.zones?.length) return { name: 'Lower Ruins', statusLabel: 'Quiet' };
+    return snapshot.zones[0] ?? { name: 'Lower Ruins', statusLabel: 'Quiet' };
   }, [snapshot]);
 
   useEffect(() => {
@@ -1371,7 +1425,6 @@ function GameApp() {
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     const viewH = Math.round(containerRect.height);
-    const dpr = window.devicePixelRatio || 1;
 
     const scene = new FallstackScene('FallstackScene');
     sceneRef.current = scene;

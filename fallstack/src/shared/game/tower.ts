@@ -1,7 +1,7 @@
 import type { ZoneId } from './mutation';
 
 export const WORLD_WIDTH = 480;
-export const WORLD_HEIGHT = 2280;
+export const WORLD_HEIGHT = 6000;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit';
@@ -53,103 +53,181 @@ export const ZONES: ZoneDefinition[] = [
   {
     id: 'moon_roof',
     name: 'Moon Roof',
-    yTop: 260,
-    yBottom: 900,
-    recoveryY: 936,
-    checkpointY: 900,
+    yTop: 0,
+    yBottom: 2000,
+    recoveryY: 2040,
+    checkpointY: 2000,
   },
   {
     id: 'bell_shaft',
     name: 'Bell Shaft',
-    yTop: 900,
-    yBottom: 1620,
-    recoveryY: 1658,
-    checkpointY: 1620,
+    yTop: 2000,
+    yBottom: 4000,
+    recoveryY: 4040,
+    checkpointY: 4000,
   },
   {
     id: 'lower_ruins',
     name: 'Lower Ruins',
-    yTop: 1620,
-    yBottom: 2220,
-    recoveryY: 2260,
-    checkpointY: 2220,
+    yTop: 4000,
+    yBottom: 6000,
+    recoveryY: 6040,
+    checkpointY: 6000,
   },
 ];
 
-const BASE_PLATFORMS: Platform[] = [
-  { id: 'start', zoneId: 'lower_ruins', x: 44, y: 2164, width: 168, height: 28, kind: 'stone' },
-  { id: 'first-gap', zoneId: 'lower_ruins', x: 262, y: 2076, width: 130, height: 24, kind: 'stone' },
-  { id: 'low-left', zoneId: 'lower_ruins', x: 90, y: 1970, width: 124, height: 24, kind: 'stone' },
-  { id: 'low-right', zoneId: 'lower_ruins', x: 272, y: 1878, width: 118, height: 22, kind: 'stone' },
-  { id: 'ruin-lip', zoneId: 'lower_ruins', x: 118, y: 1778, width: 144, height: 24, kind: 'stone' },
-  { id: 'ruin-checkpoint', zoneId: 'lower_ruins', x: 276, y: 1668, width: 156, height: 24, kind: 'stone' },
+// Helper to check if a y coordinate is in a zone
+export function zoneForY(y: number): ZoneDefinition {
+  return ZONES.find((zone) => y >= zone.yTop && y < zone.yBottom) ?? ZONES[ZONES.length - 1]!;
+}
 
-  { id: 'bell-entry', zoneId: 'bell_shaft', x: 54, y: 1586, width: 132, height: 22, kind: 'metal' },
-  { id: 'bell-right', zoneId: 'bell_shaft', x: 290, y: 1492, width: 100, height: 20, kind: 'metal' },
-  { id: 'bell-mid', zoneId: 'bell_shaft', x: 158, y: 1392, width: 92, height: 20, kind: 'metal' },
-  { id: 'bell-left', zoneId: 'bell_shaft', x: 50, y: 1294, width: 94, height: 20, kind: 'metal' },
-  { id: 'bell-narrow', zoneId: 'bell_shaft', x: 268, y: 1196, width: 88, height: 20, kind: 'metal' },
-  { id: 'bell-checkpoint', zoneId: 'bell_shaft', x: 124, y: 1076, width: 128, height: 22, kind: 'metal' },
+export function zoneById(zoneId: ZoneId): ZoneDefinition {
+  return ZONES.find((zone) => zone.id === zoneId) ?? ZONES[ZONES.length - 1]!;
+}
 
-  { id: 'moon-entry', zoneId: 'moon_roof', x: 302, y: 982, width: 104, height: 20, kind: 'moon' },
-  { id: 'moon-left', zoneId: 'moon_roof', x: 92, y: 882, width: 92, height: 20, kind: 'moon' },
-  { id: 'moon-right', zoneId: 'moon_roof', x: 288, y: 778, width: 84, height: 20, kind: 'moon' },
-  { id: 'moon-shelf', zoneId: 'moon_roof', x: 126, y: 664, width: 86, height: 20, kind: 'moon' },
-  { id: 'moon-last', zoneId: 'moon_roof', x: 276, y: 548, width: 86, height: 20, kind: 'moon' },
-  { id: 'summit', zoneId: 'moon_roof', x: 116, y: 392, width: 172, height: 26, kind: 'summit' },
-];
+export function nextZoneId(zoneId: ZoneId): ZoneId | null {
+  if (zoneId === 'lower_ruins') return 'bell_shaft';
+  if (zoneId === 'bell_shaft') return 'moon_roof';
+  return null;
+}
 
-export const CHUNK_LIBRARY: TowerChunk[] = [
-  makeChunk('lower-ruins-known-good', 'lower_ruins', 1, 3, [
-    'start',
-    'first-gap',
-    'low-left',
-    'low-right',
-    'ruin-lip',
-    'ruin-checkpoint',
-  ]),
-  makeChunk('bell-shaft-known-good', 'bell_shaft', 3, 5, [
-    'bell-entry',
-    'bell-right',
-    'bell-mid',
-    'bell-left',
-    'bell-narrow',
-    'bell-checkpoint',
-  ]),
-  makeChunk('moon-roof-known-good', 'moon_roof', 5, 7, [
-    'moon-entry',
-    'moon-left',
-    'moon-right',
-    'moon-shelf',
-    'moon-last',
-    'summit',
-  ]),
-];
-
-export const PLATFORMS = generateDailyTower(KNOWN_GOOD_SEED).platforms;
-
+// Generate procedurally stitched tower platforms based on a seed
 export function generateDailyTower(seed: string): GeneratedTower {
-  const jitter = seed === KNOWN_GOOD_SEED ? null : createPrng(seed);
-  const chunks = ZONES.slice()
-    .reverse()
-    .map((zone) => {
-      const chunk = CHUNK_LIBRARY.find((candidate) => candidate.theme === zone.id);
-      if (!chunk) throw new Error(`Missing chunk for ${zone.id}`);
-      return chunk;
+  const prng = createPrng(seed);
+  const platforms: Platform[] = [];
+
+  // Start platform at the bottom
+  let prevY = 5940;
+  let prevX = 180;
+  let prevW = 120;
+  let prevCenter = prevX + prevW / 2;
+
+  platforms.push({
+    id: 'start',
+    zoneId: 'lower_ruins',
+    x: prevX,
+    y: prevY,
+    width: prevW,
+    height: 28,
+    kind: 'stone',
+  });
+
+  // Climb up procedurally to the top
+  let count = 1;
+  const checkpointYLevels = [4000, 2000];
+
+  while (prevY > 380) {
+    // Determine target Y for the next platform
+    let nextY = prevY - Math.round(115 + prng() * 32);
+
+    // If crossing a checkpoint level, force a checkpoint platform there
+    for (const cpY of checkpointYLevels) {
+      if (prevY > cpY && nextY <= cpY) {
+        nextY = cpY;
+        break;
+      }
+    }
+
+    const zone = zoneForY(nextY);
+    let pWidth = Math.round(80 + prng() * 25);
+    
+    // Checkpoints are wider/more forgiving
+    const isCP = checkpointYLevels.includes(nextY);
+    if (isCP) {
+      pWidth = 136;
+    }
+
+    // Set horizontal coordinate based on reachability (prevCenter ± 160px)
+    const maxOffset = 160;
+    
+    // As we get close to the summit, gradually pull the target center towards 240
+    let centerTarget = prevCenter;
+    if (nextY < 800) {
+      const pull = Math.min(1, (800 - nextY) / 450);
+      centerTarget = prevCenter + (240 - prevCenter) * pull;
+    }
+
+    const minCenter = Math.max(30 + pWidth / 2, centerTarget - maxOffset);
+    const maxCenter = Math.min(WORLD_WIDTH - 30 - pWidth / 2, centerTarget + maxOffset);
+    const nextCenter = Math.round(minCenter + prng() * (maxCenter - minCenter));
+    const nextX = nextCenter - pWidth / 2;
+
+    const kind: PlatformKind = zone.id === 'lower_ruins' ? 'stone' : zone.id === 'bell_shaft' ? 'metal' : 'moon';
+    const pId = isCP ? `${zone.id}-checkpoint` : `ledge-${zone.id}-${count}`;
+
+    platforms.push({
+      id: pId,
+      zoneId: zone.id,
+      x: nextX,
+      y: nextY,
+      width: pWidth,
+      height: 22,
+      kind,
     });
 
-  const platforms = BASE_PLATFORMS.map((platform) => varyPlatform(platform, jitter));
-  const tower = {
+    prevY = nextY;
+    prevX = nextX;
+    prevW = pWidth;
+    prevCenter = nextCenter;
+    count++;
+  }
+
+  // Add a transition platform at y = 300 perfectly aligned to help bridge to the summit
+  const transitionY = 300;
+  const transitionW = 90;
+  const transitionX = 240 - transitionW / 2; // Centered at 240
+  platforms.push({
+    id: 'ledge-moon_roof-summit-connector',
+    zoneId: 'moon_roof',
+    x: transitionX,
+    y: transitionY,
+    width: transitionW,
+    height: 22,
+    kind: 'moon',
+  });
+
+  // Force Summit platform at the very top (y = 240)
+  const summitY = 240;
+  const summitW = 160;
+  const summitX = 240 - summitW / 2; // Centered at 240
+  
+  platforms.push({
+    id: 'summit',
+    zoneId: 'moon_roof',
+    x: summitX,
+    y: summitY,
+    width: summitW,
+    height: 26,
+    kind: 'summit',
+  });
+
+  // Setup mock chunks so CHUNK_LIBRARY compatibility holds
+  const chunks: TowerChunk[] = ZONES.map((zone) => {
+    const zoneLedges = platforms.filter((p) => p.zoneId === zone.id);
+    const entrance = zoneLedges[0] ?? platforms[0]!;
+    const exit = zoneLedges[zoneLedges.length - 1] ?? platforms[platforms.length - 1]!;
+    return {
+      id: `${zone.id}-chunk-gen`,
+      theme: zone.id,
+      difficultyMin: 2,
+      difficultyMax: 6,
+      height: Math.abs(exit.y - entrance.y),
+      entranceConnector: { xMin: entrance.x, xMax: entrance.x + entrance.width, y: entrance.y },
+      exitConnector: { xMin: exit.x, xMax: exit.x + exit.width, y: exit.y },
+      ledges: zoneLedges,
+    };
+  });
+
+  return {
     seed,
     zones: ZONES,
     platforms,
     chunks,
   };
-
-  if (validateTower(tower)) return tower;
-  if (seed === KNOWN_GOOD_SEED) return tower;
-  return generateDailyTower(KNOWN_GOOD_SEED);
 }
+
+export const CHUNK_LIBRARY: TowerChunk[] = generateDailyTower(KNOWN_GOOD_SEED).chunks;
+export const PLATFORMS = generateDailyTower(KNOWN_GOOD_SEED).platforms;
 
 export function validateTower(tower: GeneratedTower): boolean {
   const byZone = new Map<ZoneId, Platform[]>();
@@ -173,78 +251,14 @@ export function validateTower(tower: GeneratedTower): boolean {
   return true;
 }
 
-export function zoneForY(y: number): ZoneDefinition {
-  return ZONES.find((zone) => y >= zone.yTop && y < zone.yBottom) ?? ZONES[ZONES.length - 1]!;
-}
-
-export function zoneById(zoneId: ZoneId): ZoneDefinition {
-  return ZONES.find((zone) => zone.id === zoneId) ?? ZONES[ZONES.length - 1]!;
-}
-
-export function nextZoneId(zoneId: ZoneId): ZoneId | null {
-  if (zoneId === 'lower_ruins') return 'bell_shaft';
-  if (zoneId === 'bell_shaft') return 'moon_roof';
-  return null;
-}
-
-function makeChunk(
-  id: string,
-  theme: ZoneId,
-  difficultyMin: number,
-  difficultyMax: number,
-  ledgeIds: string[]
-): TowerChunk {
-  const ledges = ledgeIds.map((ledgeId) => {
-    const platform = BASE_PLATFORMS.find((candidate) => candidate.id === ledgeId);
-    if (!platform) throw new Error(`Missing platform ${ledgeId}`);
-    return platform;
-  });
-  const ordered = [...ledges].sort((a, b) => b.y - a.y);
-  const entrance = ordered[0]!;
-  const exit = ordered[ordered.length - 1]!;
-
-  return {
-    id,
-    theme,
-    difficultyMin,
-    difficultyMax,
-    height: Math.abs(exit.y - entrance.y),
-    entranceConnector: connectorFor(entrance),
-    exitConnector: connectorFor(exit),
-    ledges,
-  };
-}
-
-function connectorFor(platform: Platform): Connector {
-  return {
-    xMin: platform.x,
-    xMax: platform.x + platform.width,
-    y: platform.y,
-  };
-}
-
-function varyPlatform(platform: Platform, random: (() => number) | null): Platform {
-  if (!random || platform.id === 'start' || platform.id === 'summit') return { ...platform };
-
-  const xOffset = Math.round((random() - 0.5) * 14);
-  const widthOffset = Math.round((random() - 0.5) * 18);
-  const width = clamp(platform.width + widthOffset, platform.width - 10, platform.width + 10);
-  const x = clamp(platform.x + xOffset, 16, WORLD_WIDTH - width - 16);
-
-  return {
-    ...platform,
-    x,
-    width,
-  };
-}
-
 function isReachable(from: Platform, to: Platform): boolean {
   const fromCenter = from.x + from.width / 2;
   const toCenter = to.x + to.width / 2;
   const horizontal = Math.abs(toCenter - fromCenter);
   const vertical = from.y - to.y;
 
-  return horizontal <= 275 && vertical >= 0 && vertical <= 170;
+  // Max jump parameters from the phaser settings
+  return horizontal <= 260 && vertical >= 0 && vertical <= 165;
 }
 
 function createPrng(seed: string): () => number {
@@ -261,8 +275,4 @@ function createPrng(seed: string): () => number {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

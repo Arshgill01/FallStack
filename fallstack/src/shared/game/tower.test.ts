@@ -55,8 +55,8 @@ void test('zone progression is finite and ordered', () => {
   assert.equal(nextZoneId('lower_ruins'), 'bell_shaft');
   assert.equal(nextZoneId('bell_shaft'), 'moon_roof');
   assert.equal(nextZoneId('moon_roof'), null);
-  assert.equal(zoneForY(2164).id, 'lower_ruins');
-  assert.equal(zoneForY(1280).id, 'bell_shaft');
-  assert.equal(zoneForY(620).id, 'moon_roof');
+  assert.equal(zoneForY(5000).id, 'lower_ruins');
+  assert.equal(zoneForY(3000).id, 'bell_shaft');
+  assert.equal(zoneForY(1000).id, 'moon_roof');
   assert.equal(ZONES.length, 3);
 });
