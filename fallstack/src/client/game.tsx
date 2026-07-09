@@ -765,9 +765,9 @@ class FallstackScene extends Phaser.Scene {
     const y = platform.y;
 
     // Platform sub-theme styling palette
-    let stoneColor = 0xa9906c;
-    let darkColor = 0x7d6a4c;
-    let edgeColor = 0x5f5138;
+    let stoneColor: number;
+    let darkColor: number;
+    let edgeColor: number;
     let highlightColor = 0xf3ead9;
 
     if (y >= 5000) {

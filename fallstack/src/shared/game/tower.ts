@@ -98,8 +98,8 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
   // Start platform at the bottom
   let prevY = 5940;
-  let prevX = 180;
-  let prevW = 120;
+  const prevX = 180;
+  const prevW = 120;
   let prevCenter = prevX + prevW / 2;
 
   platforms.push({
@@ -166,8 +166,6 @@ export function generateDailyTower(seed: string): GeneratedTower {
     });
 
     prevY = nextY;
-    prevX = nextX;
-    prevW = pWidth;
     prevCenter = nextCenter;
     count++;
   }
