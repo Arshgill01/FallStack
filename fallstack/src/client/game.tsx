@@ -318,6 +318,7 @@ class FallstackScene extends Phaser.Scene {
   private towerSeed = createDailySeed().dailySeed;
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed).platforms;
   private chargeTime = 0;
+  private layoutScale = 1;
 
   // Visual enhancements
   private particles: Array<{
@@ -336,8 +337,7 @@ class FallstackScene extends Phaser.Scene {
 
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
-    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT + 220);
+    this.applyViewportLayout(false);
     this.physics.world.gravity.y = 1550;
 
     // Three graphics layers: background, static platforms/labels, dynamic animations
@@ -353,7 +353,7 @@ class FallstackScene extends Phaser.Scene {
     this.rebuildPlatformBodies();
 
     // Player — Physics box is transparent. We draw the animated fox spirit on the dynamic layer.
-    this.player = this.add.rectangle(START_POS.x, START_POS.y, 20, 28, 0xffffff, 0) as Phaser.GameObjects.Rectangle & {
+    this.player = this.add.rectangle(this.layoutX(START_POS.x), START_POS.y, 20, 28, 0xffffff, 0) as Phaser.GameObjects.Rectangle & {
       body: Phaser.Physics.Arcade.Body;
     };
     this.player.setDepth(4);
@@ -370,19 +370,14 @@ class FallstackScene extends Phaser.Scene {
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.space = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     
-    // Set widescreen bounds
-    const camW = this.cameras.main.width || 480;
-    const minX = camW >= 480 ? -(camW - 480) / 2 : 0;
-    const boundW = camW >= 480 ? camW : WORLD_WIDTH;
-    this.cameras.main.setBounds(minX, 0, boundW, WORLD_HEIGHT);
     this.cameras.main.setZoom(1);
 
-    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-      const currentCamW = gameSize.width;
-      const currentMinX = currentCamW >= 480 ? -(currentCamW - 480) / 2 : 0;
-      const currentBoundW = currentCamW >= 480 ? currentCamW : WORLD_WIDTH;
-      this.cameras.main.setBounds(currentMinX, 0, currentBoundW, WORLD_HEIGHT);
+    this.scale.on('resize', () => {
+      this.applyViewportLayout(true);
+      this.rebuildPlatformBodies();
       this.drawWorld();
+      this.rebuildArtifactBodies();
+      this.snapCameraToPlayer();
     });
 
     // Seed stars in the upper sky zone (wider bounds for widescreen support)
@@ -398,6 +393,7 @@ class FallstackScene extends Phaser.Scene {
     }
 
     this.refreshSnapshot(window.fallstackSnapshot);
+    this.snapCameraToPlayer();
   }
 
   override update(_time: number, deltaMs: number) {
@@ -410,15 +406,16 @@ class FallstackScene extends Phaser.Scene {
 
     if (input.left) this.facing = -1;
     if (input.right) this.facing = 1;
+    const horizontalScale = this.layoutScale;
 
     if (onFloor) {
       body.setAccelerationX(0);
-      body.setVelocityX(input.left ? -155 : input.right ? 155 : Phaser.Math.Linear(body.velocity.x, 0, 0.18));
+      body.setVelocityX(input.left ? -155 * horizontalScale : input.right ? 155 * horizontalScale : Phaser.Math.Linear(body.velocity.x, 0, 0.18));
       this.lastWallBonk = false;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(steer * 620);
-      body.setMaxVelocity(390, 1300);
+      body.setAccelerationX(steer * 620 * horizontalScale);
+      body.setMaxVelocity(390 * horizontalScale, 1300);
       if ((body.blocked.left || body.blocked.right) && body.velocity.y > -720) this.lastWallBonk = true;
     }
 
@@ -440,7 +437,7 @@ class FallstackScene extends Phaser.Scene {
       const percent = Phaser.Math.Clamp(0.32 + (held / 900) * 0.68, 0.32, 1);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
-        body.setVelocity(this.facing * Phaser.Math.Linear(170, 400, percent), Phaser.Math.Linear(-560, -1000, percent));
+        body.setVelocity(this.facing * Phaser.Math.Linear(170, 400, percent) * horizontalScale, Phaser.Math.Linear(-560, -1000, percent));
         window.dispatchEvent(new CustomEvent('fallstack:launch'));
       }
       this.charging = false;
@@ -498,12 +495,58 @@ class FallstackScene extends Phaser.Scene {
     this.reducedMotion = reducedMotion;
   }
 
+  private gameWidth() {
+    return Math.max(WORLD_WIDTH, this.cameras.main.width || WORLD_WIDTH);
+  }
+
+  private layoutX(x: number) {
+    return x * this.layoutScale;
+  }
+
+  private layoutW(width: number) {
+    return width * this.layoutScale;
+  }
+
+  private layoutPlatform(platform: Platform): Platform {
+    return { ...platform, x: this.layoutX(platform.x), width: this.layoutW(platform.width) };
+  }
+
+  private layoutArtifact(artifact: Artifact): Artifact {
+    return { ...artifact, x: this.layoutX(artifact.x), width: this.layoutW(artifact.width) };
+  }
+
+  private applyViewportLayout(keepPlayerX: boolean) {
+    const previousScale = this.layoutScale;
+    const logicalPlayerX = keepPlayerX && this.player ? this.player.x / previousScale : null;
+    this.layoutScale = this.gameWidth() / WORLD_WIDTH;
+    const worldWidth = this.layoutW(WORLD_WIDTH);
+    this.cameras.main.setBounds(0, 0, worldWidth, WORLD_HEIGHT);
+    this.physics.world.setBounds(0, 0, worldWidth, WORLD_HEIGHT + 220);
+    if (logicalPlayerX !== null && this.player) this.player.setX(this.layoutX(logicalPlayerX));
+  }
+
+  private cameraBottomPadding() {
+    return this.gameWidth() > WORLD_WIDTH ? 260 : 150;
+  }
+
+  private cameraTargetY(y: number) {
+    const camH = this.cameras.main.height || 480;
+    return Phaser.Math.Clamp(y - (camH - this.cameraBottomPadding()), 0, WORLD_HEIGHT - camH);
+  }
+
+  private snapCameraToPlayer() {
+    if (!this.player) return;
+    this.cameras.main.scrollX = 0;
+    this.cameras.main.scrollY = this.cameraTargetY(this.player.y);
+  }
+
   private addPlatform(platform: Platform) {
+    const layout = this.layoutPlatform(platform);
     const rect = this.add.rectangle(
-      platform.x + platform.width / 2,
-      platform.y + platform.height / 2,
-      platform.width,
-      platform.height,
+      layout.x + layout.width / 2,
+      layout.y + layout.height / 2,
+      layout.width,
+      layout.height,
       0xffffff,
       0
     );
@@ -597,7 +640,7 @@ class FallstackScene extends Phaser.Scene {
   private respawn() {
     if (!this.player) return;
     const checkpoint = CHECKPOINTS[this.respawnZone];
-    this.player.setPosition(checkpoint.x, checkpoint.y);
+    this.player.setPosition(this.layoutX(checkpoint.x), checkpoint.y);
     this.player.body.setVelocity(0, 0);
     this.player.body.setAcceleration(0, 0);
     this.currentZone = this.respawnZone;
@@ -609,23 +652,12 @@ class FallstackScene extends Phaser.Scene {
     this.lastTouchedHelper = false;
 
     // Instantly snap camera scroll to the player spawn point
-    const camH = this.cameras.main.height || 480;
-    const camW = this.cameras.main.width || 480;
-    const targetY = Phaser.Math.Clamp(checkpoint.y - (camH - 150), 0, WORLD_HEIGHT - camH);
-    this.cameras.main.scrollY = targetY;
-
-    if (camW >= 480) {
-      this.cameras.main.scrollX = -(camW - 480) / 2;
-    } else {
-      this.cameras.main.scrollX = 0;
-    }
+    this.snapCameraToPlayer();
   }
 
   private updateCamera(deltaMs: number) {
     if (!this.player) return;
-    const camH = this.cameras.main.height || 480;
-    const camW = this.cameras.main.width || 480;
-    const targetY = Phaser.Math.Clamp(this.player.y - (camH - 150), 0, WORLD_HEIGHT - camH);
+    const targetY = this.cameraTargetY(this.player.y);
 
     if (this.reducedMotion) {
       this.cameras.main.scrollY = targetY;
@@ -634,11 +666,7 @@ class FallstackScene extends Phaser.Scene {
       this.cameras.main.scrollY = Phaser.Math.Linear(current, targetY, Math.min(1, deltaMs / 260));
     }
 
-    if (camW >= 480) {
-      this.cameras.main.scrollX = -(camW - 480) / 2;
-    } else {
-      this.cameras.main.scrollX = 0;
-    }
+    this.cameras.main.scrollX = 0;
   }
 
   private drawWorld() {
@@ -648,9 +676,8 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
-    const camW = this.cameras.main.width || 480;
-    const minX = camW >= 480 ? -(camW - 480) / 2 : 0;
-    const drawW = camW >= 480 ? camW : WORLD_WIDTH;
+    const minX = 0;
+    const drawW = this.gameWidth();
     const maxX = minX + drawW;
 
     // 1. GORGEOUS SKY GRADIENTS (vertical linear bands for 6 sub-themes)
@@ -731,14 +758,11 @@ class FallstackScene extends Phaser.Scene {
     this.bgGraphics.fillEllipse(minX + drawW * 0.25, 600, 90, 18);
     this.bgGraphics.fillEllipse(minX + drawW * 0.75, 750, 110, 22);
 
-    // Draw playspace boundaries if widescreen to hold the diorama together
-    if (camW >= 480) {
-      this.bgGraphics.lineStyle(3, 0x5f5138, 0.3).lineBetween(0, 0, 0, WORLD_HEIGHT);
-      this.bgGraphics.lineStyle(3, 0x5f5138, 0.3).lineBetween(WORLD_WIDTH, 0, WORLD_WIDTH, WORLD_HEIGHT);
-    }
+    this.bgGraphics.lineStyle(3, 0x5f5138, 0.24).lineBetween(0, 0, 0, WORLD_HEIGHT);
+    this.bgGraphics.lineStyle(3, 0x5f5138, 0.24).lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
 
     // 3. DRAW PLATFORMS
-    for (const platform of this.towerPlatforms) this.drawPlatform(platform);
+    for (const platform of this.towerPlatforms) this.drawPlatform(this.layoutPlatform(platform));
 
     // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
@@ -748,17 +772,17 @@ class FallstackScene extends Phaser.Scene {
       if (zoneData) {
         // Draw sub-theme inline labels inside the tower world
         if (zone.id === 'lower_ruins') {
-          this.addZoneLabel(14, 5820, 'Lower Ruins', 'Forgotten Path');
-          this.addZoneLabel(14, 4820, 'Overgrown Garden', 'Whispering Leaves');
+          this.addZoneLabel(this.layoutX(14), 5820, 'Lower Ruins', 'Forgotten Path');
+          this.addZoneLabel(this.layoutX(14), 4820, 'Overgrown Garden', 'Whispering Leaves');
         } else if (zone.id === 'bell_shaft') {
-          this.addZoneLabel(14, 3820, 'Crystal Cavern', 'Amethyst Depths');
-          this.addZoneLabel(14, 2820, 'Hanging Shaft', 'Industrial Girders');
+          this.addZoneLabel(this.layoutX(14), 3820, 'Crystal Cavern', 'Amethyst Depths');
+          this.addZoneLabel(this.layoutX(14), 2820, 'Hanging Shaft', 'Industrial Girders');
         } else if (zone.id === 'moon_roof') {
-          this.addZoneLabel(14, 1820, 'Observatory', 'Constellation Climb');
-          this.addZoneLabel(14, 820, 'Celestial Summit', 'Holy Dawn');
+          this.addZoneLabel(this.layoutX(14), 1820, 'Observatory', 'Constellation Climb');
+          this.addZoneLabel(this.layoutX(14), 820, 'Celestial Summit', 'Holy Dawn');
         }
       }
-      for (const artifact of zone.artifacts) this.drawArtifact(artifact);
+      for (const artifact of zone.artifacts) this.drawArtifact(this.layoutArtifact(artifact));
     }
   }
 
@@ -1070,7 +1094,7 @@ class FallstackScene extends Phaser.Scene {
     if (zone && (zone.id === 'bell_shaft' || zone.id === 'moon_roof')) {
       if (Math.random() < 0.05) {
         const cam = this.cameras.main;
-        const px = cam.scrollX + Math.random() * WORLD_WIDTH;
+        const px = cam.scrollX + Math.random() * this.gameWidth();
         const py = cam.scrollY + cam.height - Math.random() * 160;
         this.particles.push({
           x: px,
@@ -1200,13 +1224,14 @@ class FallstackScene extends Phaser.Scene {
   private drawCheckpointLanterns(g: Phaser.GameObjects.Graphics) {
     const swingAngle = Math.sin(this.time.now / 380) * 0.16;
     for (const platform of this.towerPlatforms) {
-      const isCheckpoint = platform.id.includes('checkpoint');
+      const layout = this.layoutPlatform(platform);
+      const isCheckpoint = layout.id.includes('checkpoint');
       if (isCheckpoint) {
-        const cx = platform.x + platform.width / 2;
+        const cx = layout.x + layout.width / 2;
         const postH = 46;
-        const leftHangerX = cx - platform.width * 0.32;
-        const rightHangerX = cx + platform.width * 0.32;
-        const hangerY = platform.y - postH + 6;
+        const leftHangerX = cx - layout.width * 0.32;
+        const rightHangerX = cx + layout.width * 0.32;
+        const hangerY = layout.y - postH + 6;
         this.drawSingleLantern(g, leftHangerX, hangerY, swingAngle);
         this.drawSingleLantern(g, rightHangerX, hangerY, -swingAngle);
       }
@@ -1249,12 +1274,13 @@ class FallstackScene extends Phaser.Scene {
     for (const zone of snapshot.zones) {
       for (const artifact of zone.artifacts) {
         if (artifact.type === 'cursed_brick') {
+          const layout = this.layoutArtifact(artifact);
           // Touching check
           let isStanding = false;
           if (this.player) {
             const px = this.player.x;
             const py = this.player.y + 14;
-            if (py >= artifact.y - 4 && py <= artifact.y + 4 && px >= artifact.x - 2 && px <= artifact.x + artifact.width + 2) {
+            if (py >= layout.y - 4 && py <= layout.y + 4 && px >= layout.x - 2 && px <= layout.x + layout.width + 2) {
               isStanding = true;
             }
           }
@@ -1264,20 +1290,20 @@ class FallstackScene extends Phaser.Scene {
           const wobble = Math.sin(time / freq) * amp;
 
           // Shadow
-          g.fillStyle(0x5c4138, 0.85).fillRoundedRect(artifact.x + wobble, artifact.y + 3, artifact.width, artifact.height, 4);
+          g.fillStyle(0x5c4138, 0.85).fillRoundedRect(layout.x + wobble, layout.y + 3, layout.width, layout.height, 4);
           
           // Brick
-          g.fillStyle(0x8e2f27, 1).fillRoundedRect(artifact.x + wobble, artifact.y, artifact.width, artifact.height - 2, 4);
+          g.fillStyle(0x8e2f27, 1).fillRoundedRect(layout.x + wobble, layout.y, layout.width, layout.height - 2, 4);
           
           // Cracks
           g.lineStyle(1.2, 0x2a1410, 0.75);
-          g.lineBetween(artifact.x + 8 + wobble, artifact.y + 2, artifact.x + 15 + wobble, artifact.y + artifact.height - 3);
-          g.lineBetween(artifact.x + 24 + wobble, artifact.y + 1, artifact.x + 20 + wobble, artifact.y + artifact.height - 2);
+          g.lineBetween(layout.x + 8 + wobble, layout.y + 2, layout.x + 15 + wobble, layout.y + layout.height - 3);
+          g.lineBetween(layout.x + 24 + wobble, layout.y + 1, layout.x + 20 + wobble, layout.y + layout.height - 2);
 
           // Moss clumps on top
           g.fillStyle(0x74855f, 0.85);
-          g.fillEllipse(artifact.x + 10 + wobble, artifact.y, 4, 1.5);
-          g.fillEllipse(artifact.x + 28 + wobble, artifact.y, 6, 2);
+          g.fillEllipse(layout.x + 10 + wobble, layout.y, 4, 1.5);
+          g.fillEllipse(layout.x + 28 + wobble, layout.y, 6, 2);
         }
       }
     }
@@ -1296,7 +1322,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private addArtifactLabel(x: number, y: number, text: string) {
-    const clampedX = Phaser.Math.Clamp(x, 4, WORLD_WIDTH - 160);
+    const clampedX = Phaser.Math.Clamp(x, 4, this.gameWidth() - 160);
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
       fontSize: '9.5px',
@@ -1326,11 +1352,12 @@ class FallstackScene extends Phaser.Scene {
     if (!snapshot || !this.artifactBodies) return;
     for (const artifact of snapshot.zones.flatMap((zone) => zone.artifacts)) {
       if (!artifact.solid) continue;
+      const layout = this.layoutArtifact(artifact);
       const rect = this.add.rectangle(
-        artifact.x + artifact.width / 2,
-        artifact.y + artifact.height / 2,
-        artifact.width,
-        artifact.height,
+        layout.x + layout.width / 2,
+        layout.y + layout.height / 2,
+        layout.width,
+        layout.height,
         0xffffff,
         0
       );
