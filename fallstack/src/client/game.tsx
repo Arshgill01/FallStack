@@ -368,7 +368,7 @@ class FallstackScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.space = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.cameras.main.startFollow(this.player, true, 0.08, 0.12, 0, 84);
+    // Camera starts facing the player's spawn
     this.cameras.main.setZoom(1);
 
     // Seed stars in the upper sky zone
@@ -593,11 +593,17 @@ class FallstackScene extends Phaser.Scene {
     this.chargeTime = 0;
     this.lastHelperTouchAt = -Infinity;
     this.lastTouchedHelper = false;
+
+    // Instantly snap camera scroll to the player spawn point
+    const camH = this.cameras.main.height || 480;
+    const targetY = Phaser.Math.Clamp(checkpoint.y - (camH - 150), 0, WORLD_HEIGHT - camH);
+    this.cameras.main.scrollY = targetY;
   }
 
   private updateCamera(deltaMs: number) {
     if (!this.player) return;
-    const targetY = Phaser.Math.Clamp(this.player.y - 120, 0, WORLD_HEIGHT);
+    const camH = this.cameras.main.height || 480;
+    const targetY = Phaser.Math.Clamp(this.player.y - (camH - 150), 0, WORLD_HEIGHT - camH);
     if (this.reducedMotion) {
       this.cameras.main.scrollY = targetY;
       return;
