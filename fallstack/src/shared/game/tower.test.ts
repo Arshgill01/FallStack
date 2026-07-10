@@ -3,6 +3,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  chargePowerForHeldMs,
+  chargeRatioForHeldMs,
+  MOVEMENT_TUNING,
+} from './movement.js';
+import {
   CHUNK_LIBRARY,
   KNOWN_GOOD_SEED,
   PLATFORMS,
@@ -19,6 +24,20 @@ void test('known-good tower has finite dimensions and a summit', () => {
   assert.equal(WORLD_WIDTH, 480);
   assert.ok(WORLD_HEIGHT > 2000);
   assert.ok(PLATFORMS.some((platform) => platform.id === 'summit' && platform.kind === 'summit'));
+});
+
+void test('movement tuning supports generated tower reachability', () => {
+  assert.ok(MOVEMENT_TUNING.generatedHorizontalStep < MOVEMENT_TUNING.reachableHorizontal);
+  assert.ok(MOVEMENT_TUNING.reachableVertical >= 147);
+  assert.ok(MOVEMENT_TUNING.minChargePercent > 0);
+  assert.ok(MOVEMENT_TUNING.minChargePercent < 1);
+  assert.ok(MOVEMENT_TUNING.minLaunchVelocityX < MOVEMENT_TUNING.maxLaunchVelocityX);
+  assert.ok(MOVEMENT_TUNING.maxLaunchVelocityY < MOVEMENT_TUNING.minLaunchVelocityY);
+  assert.equal(chargePowerForHeldMs(0), 0);
+  assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs), 1);
+  assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs * 2), 1);
+  assert.equal(chargeRatioForHeldMs(0), MOVEMENT_TUNING.minChargePercent);
+  assert.equal(chargeRatioForHeldMs(MOVEMENT_TUNING.chargeMs), 1);
 });
 
 void test('all platforms live inside the logical world', () => {
@@ -59,8 +78,8 @@ void test('summit connector stays reachable from awkward top seeds', () => {
   assert.ok(connector);
   assert.equal(summit?.id, 'summit');
   assert.equal(validateTower(tower), true);
-  assert.ok(horizontalGap(previous, connector) <= 260);
-  assert.ok(horizontalGap(connector, summit) <= 260);
+  assert.ok(horizontalGap(previous, connector) <= MOVEMENT_TUNING.reachableHorizontal);
+  assert.ok(horizontalGap(connector, summit) <= MOVEMENT_TUNING.reachableHorizontal);
 });
 
 void test('summit pull keeps moon roof ledges within horizontal reach', () => {
@@ -77,7 +96,10 @@ void test('summit pull keeps moon roof ledges within horizontal reach', () => {
 
   assert.ok(hardest);
   assert.equal(validateTower(tower), true);
-  assert.ok(hardest.gap <= 260, `${hardest.from.id} to ${hardest.to.id}`);
+  assert.ok(
+    hardest.gap <= MOVEMENT_TUNING.reachableHorizontal,
+    `${hardest.from.id} to ${hardest.to.id}`
+  );
 });
 
 void test('tower validation catches unreachable zone stitches', () => {

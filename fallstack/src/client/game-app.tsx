@@ -14,6 +14,11 @@ import {
   type ZoneId,
 } from '../shared/game/mutation';
 import {
+  chargePowerForHeldMs,
+  chargeRatioForHeldMs,
+  MOVEMENT_TUNING,
+} from '../shared/game/movement.js';
+import {
   generateDailyTower,
   WORLD_HEIGHT,
   WORLD_WIDTH,
@@ -164,7 +169,7 @@ class FallstackScene extends Phaser.Scene {
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
     this.applyViewportLayout(false);
-    this.physics.world.gravity.y = 1550;
+    this.physics.world.gravity.y = MOVEMENT_TUNING.gravityY;
 
     // Three graphics layers: background, static platforms/labels, dynamic animations
     this.bgGraphics = this.add.graphics();
@@ -193,8 +198,11 @@ class FallstackScene extends Phaser.Scene {
     this.physics.add.existing(this.player);
     this.player.body.setSize(20, 28);
     this.player.body.setCollideWorldBounds(true);
-    this.player.body.setDragX(850);
-    this.player.body.setMaxVelocity(420, 1300);
+    this.player.body.setDragX(MOVEMENT_TUNING.groundDragX);
+    this.player.body.setMaxVelocity(
+      MOVEMENT_TUNING.initialMaxVelocityX,
+      MOVEMENT_TUNING.maxVelocityY
+    );
     this.physics.add.collider(
       this.player,
       this.platforms,
@@ -258,17 +266,23 @@ class FallstackScene extends Phaser.Scene {
       body.setAccelerationX(0);
       body.setVelocityX(
         input.left
-          ? -155
+          ? -MOVEMENT_TUNING.groundSpeed
           : input.right
-            ? 155
+            ? MOVEMENT_TUNING.groundSpeed
             : Phaser.Math.Linear(body.velocity.x, 0, 0.18)
       );
       this.lastWallBonk = false;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(steer * 620);
-      body.setMaxVelocity(390, 1300);
-      if ((body.blocked.left || body.blocked.right) && body.velocity.y > -720)
+      body.setAccelerationX(steer * MOVEMENT_TUNING.airSteerAccelerationX);
+      body.setMaxVelocity(
+        MOVEMENT_TUNING.airMaxVelocityX,
+        MOVEMENT_TUNING.maxVelocityY
+      );
+      if (
+        (body.blocked.left || body.blocked.right) &&
+        body.velocity.y > MOVEMENT_TUNING.wallBonkVelocityYThreshold
+      )
         this.lastWallBonk = true;
     }
 
@@ -279,11 +293,7 @@ class FallstackScene extends Phaser.Scene {
 
     if (this.charging) {
       this.chargeTime = Math.max(0, this.time.now - this.chargeStart);
-      const percent = Phaser.Math.Clamp(
-        0.32 + (this.chargeTime / 900) * 0.68,
-        0.32,
-        1
-      );
+      const percent = chargeRatioForHeldMs(this.chargeTime);
       window.dispatchEvent(
         new CustomEvent('fallstack:charge', {
           detail: { percent: Math.round(percent * 100) },
@@ -293,12 +303,21 @@ class FallstackScene extends Phaser.Scene {
 
     if (this.charging && (!input.jump || !onFloor)) {
       const held = Math.max(0, this.time.now - this.chargeStart);
-      const percent = Phaser.Math.Clamp(0.32 + (held / 900) * 0.68, 0.32, 1);
+      const percent = chargeRatioForHeldMs(held);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
         body.setVelocity(
-          this.facing * Phaser.Math.Linear(170, 400, percent),
-          Phaser.Math.Linear(-560, -1000, percent)
+          this.facing *
+            Phaser.Math.Linear(
+              MOVEMENT_TUNING.minLaunchVelocityX,
+              MOVEMENT_TUNING.maxLaunchVelocityX,
+              percent
+            ),
+          Phaser.Math.Linear(
+            MOVEMENT_TUNING.minLaunchVelocityY,
+            MOVEMENT_TUNING.maxLaunchVelocityY,
+            percent
+          )
         );
         window.dispatchEvent(new CustomEvent('fallstack:launch'));
       }
@@ -1380,7 +1399,7 @@ class FallstackScene extends Phaser.Scene {
 
     // SPAWN CHARGING FOXFIRE
     if (this.charging) {
-      const power = Math.min(this.chargeTime, 900) / 900;
+      const power = chargePowerForHeldMs(this.chargeTime);
       if (Math.random() < 0.42 + power * 0.45) {
         const angle = Math.random() * Math.PI * 2;
         const radius = 24 + Math.random() * 32;
@@ -1455,7 +1474,7 @@ class FallstackScene extends Phaser.Scene {
     let squashX = 1;
     let squashY = 1;
     if (this.charging) {
-      const power = Math.min(this.chargeTime, 900) / 900;
+      const power = chargePowerForHeldMs(this.chargeTime);
       squashY = 1 - power * 0.28;
       squashX = 1 + power * 0.22;
     } else if (!onFloor) {
@@ -1466,7 +1485,7 @@ class FallstackScene extends Phaser.Scene {
 
     // Charge glow rings
     if (this.charging) {
-      const power = Math.min(this.chargeTime, 900) / 900;
+      const power = chargePowerForHeldMs(this.chargeTime);
       g.fillStyle(0xc1502f, 0.15 + power * 0.35);
       g.fillCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
 
@@ -1968,7 +1987,7 @@ export function GameApp() {
         physics: {
           default: 'arcade',
           arcade: {
-            gravity: { y: 1550, x: 0 },
+            gravity: { y: MOVEMENT_TUNING.gravityY, x: 0 },
             debug: false,
           },
         },

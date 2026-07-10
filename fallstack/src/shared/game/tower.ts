@@ -1,12 +1,9 @@
 import type { ZoneId } from './mutation';
+import { MOVEMENT_TUNING } from './movement.js';
 
 export const WORLD_WIDTH = 480;
 export const WORLD_HEIGHT = 6000;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
-const MAX_REACHABLE_HORIZONTAL = 260;
-const MAX_REACHABLE_VERTICAL = 165;
-const GENERATED_HORIZONTAL_STEP = 160;
-const TOP_CONNECTOR_Y = 300;
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit';
 
@@ -120,7 +117,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   let count = 1;
   const checkpointYLevels = [4000, 2000];
 
-  while (prevY > TOP_CONNECTOR_Y + MAX_REACHABLE_VERTICAL - 10) {
+  while (prevY > MOVEMENT_TUNING.topConnectorY + MOVEMENT_TUNING.reachableVertical - 10) {
     // Determine target Y for the next platform
     let nextY = prevY - Math.round(115 + prng() * 32);
 
@@ -141,8 +138,8 @@ export function generateDailyTower(seed: string): GeneratedTower {
       pWidth = 136;
     }
 
-    // Set horizontal coordinate based on reachability (prevCenter ± 160px)
-    const maxOffset = GENERATED_HORIZONTAL_STEP;
+    // Set horizontal coordinate based on the shared movement reachability budget.
+    const maxOffset = MOVEMENT_TUNING.generatedHorizontalStep;
     
     // As we get close to the summit, gradually pull the target center towards 240
     let centerTarget = prevCenter;
@@ -186,15 +183,15 @@ export function generateDailyTower(seed: string): GeneratedTower {
   const transitionW = 90;
   const transitionCenter = clamp(
     240,
-    prevCenter - GENERATED_HORIZONTAL_STEP,
-    prevCenter + GENERATED_HORIZONTAL_STEP
+    prevCenter - MOVEMENT_TUNING.generatedHorizontalStep,
+    prevCenter + MOVEMENT_TUNING.generatedHorizontalStep
   );
   const transitionX = transitionCenter - transitionW / 2;
   platforms.push({
     id: 'ledge-moon_roof-summit-connector',
     zoneId: 'moon_roof',
     x: transitionX,
-    y: TOP_CONNECTOR_Y,
+    y: MOVEMENT_TUNING.topConnectorY,
     width: transitionW,
     height: 22,
     kind: 'moon',
@@ -277,11 +274,10 @@ function isReachable(from: Platform, to: Platform): boolean {
   const horizontal = Math.abs(toCenter - fromCenter);
   const vertical = from.y - to.y;
 
-  // Max jump parameters from the phaser settings
   return (
-    horizontal <= MAX_REACHABLE_HORIZONTAL &&
+    horizontal <= MOVEMENT_TUNING.reachableHorizontal &&
     vertical >= 0 &&
-    vertical <= MAX_REACHABLE_VERTICAL
+    vertical <= MOVEMENT_TUNING.reachableVertical
   );
 }
 
