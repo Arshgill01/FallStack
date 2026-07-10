@@ -546,50 +546,49 @@ button:disabled {
   transform: translate(-50%, 0);
 }
 
-/* Checkpoint banner — central calligraphy wood plaque Ema card */
+/* Checkpoint banner — compact route update that avoids the active jump space */
 .checkpoint-banner {
   left: 50%;
-  top: 38%;
-  transform: translate(-50%, -50%) scale(0.85);
-  min-width: 240px;
-  padding: 22px 28px;
+  top: 54px;
+  transform: translate(-50%, -8px);
+  width: calc(100% - 24px);
+  max-width: 320px;
+  padding: 10px 14px 11px;
   background: linear-gradient(135deg, #fdfbf7, #f7f0e2);
-  border: 2px solid #b8492c;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px var(--shadow-dark), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  border: 1.5px solid #b8492c;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 5px 16px var(--shadow-warm), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
   text-align: center;
   opacity: 0;
-  transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+  transition: opacity 0.28s ease, transform 0.28s ease;
   pointer-events: none;
   z-index: 100;
 }
 
-/* Decorative silk hanging cord for Ema board */
 .checkpoint-banner::before {
   content: '';
   position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+  top: 8px;
+  left: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
   background: #c1502f;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transform: rotate(-5deg);
 }
 
 .checkpoint-banner.visible {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1.02);
+  transform: translate(-50%, 0);
 }
 
 .checkpoint-title {
   font-family: 'Shippori Mincho', serif;
   font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.8px;
+  font-size: 13px;
+  letter-spacing: 0.4px;
   color: var(--persimmon-deep);
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   text-shadow: 0 1px 0 rgba(255,255,255,0.8);
 }
 
@@ -797,7 +796,7 @@ button:disabled {
   margin-top: 14px;
   padding: 10px 12px;
   background: var(--moss-bg);
-  border-left: 3px solid var(--moss);
+  border: 1px solid rgba(116, 133, 95, 0.28);
   border-radius: var(--radius-sm);
   font-size: 12px;
   color: #47543a;

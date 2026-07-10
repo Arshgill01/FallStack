@@ -2101,7 +2101,6 @@ export function GameApp() {
         setSnapshot(nextSnapshot);
         const message = localClearMessage(nextSnapshot, detail);
         showCheckpoint(message, '');
-        showMutation(message);
         return;
       }
 
@@ -2118,7 +2117,6 @@ export function GameApp() {
         const data = await parseApiResponse<RecordClearResponse>(res);
         setSnapshot(data.snapshot);
         showCheckpoint(data.message, '');
-        showMutation(data.message);
       } catch (error) {
         console.error('record-clear failed', error);
         if (error instanceof ApiRequestError && error.status === 409) {
