@@ -3,6 +3,10 @@ import type { ZoneId } from './mutation';
 export const WORLD_WIDTH = 480;
 export const WORLD_HEIGHT = 6000;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
+const MAX_REACHABLE_HORIZONTAL = 260;
+const MAX_REACHABLE_VERTICAL = 165;
+const GENERATED_HORIZONTAL_STEP = 160;
+const TOP_CONNECTOR_Y = 300;
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit';
 
@@ -116,7 +120,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   let count = 1;
   const checkpointYLevels = [4000, 2000];
 
-  while (prevY > 380) {
+  while (prevY > TOP_CONNECTOR_Y + MAX_REACHABLE_VERTICAL - 10) {
     // Determine target Y for the next platform
     let nextY = prevY - Math.round(115 + prng() * 32);
 
@@ -138,7 +142,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
     }
 
     // Set horizontal coordinate based on reachability (prevCenter ± 160px)
-    const maxOffset = 160;
+    const maxOffset = GENERATED_HORIZONTAL_STEP;
     
     // As we get close to the summit, gradually pull the target center towards 240
     let centerTarget = prevCenter;
@@ -147,8 +151,16 @@ export function generateDailyTower(seed: string): GeneratedTower {
       centerTarget = prevCenter + (240 - prevCenter) * pull;
     }
 
-    const minCenter = Math.max(30 + pWidth / 2, centerTarget - maxOffset);
-    const maxCenter = Math.min(WORLD_WIDTH - 30 - pWidth / 2, centerTarget + maxOffset);
+    const minCenter = Math.max(
+      30 + pWidth / 2,
+      centerTarget - maxOffset,
+      prevCenter - maxOffset
+    );
+    const maxCenter = Math.min(
+      WORLD_WIDTH - 30 - pWidth / 2,
+      centerTarget + maxOffset,
+      prevCenter + maxOffset
+    );
     const nextCenter = Math.round(minCenter + prng() * (maxCenter - minCenter));
     const nextX = nextCenter - pWidth / 2;
 
@@ -170,15 +182,19 @@ export function generateDailyTower(seed: string): GeneratedTower {
     count++;
   }
 
-  // Add a transition platform at y = 300 perfectly aligned to help bridge to the summit
-  const transitionY = 300;
+  // Bridge the last generated ledge to the fixed summit without breaking reachability.
   const transitionW = 90;
-  const transitionX = 240 - transitionW / 2; // Centered at 240
+  const transitionCenter = clamp(
+    240,
+    prevCenter - GENERATED_HORIZONTAL_STEP,
+    prevCenter + GENERATED_HORIZONTAL_STEP
+  );
+  const transitionX = transitionCenter - transitionW / 2;
   platforms.push({
     id: 'ledge-moon_roof-summit-connector',
     zoneId: 'moon_roof',
     x: transitionX,
-    y: transitionY,
+    y: TOP_CONNECTOR_Y,
     width: transitionW,
     height: 22,
     kind: 'moon',
@@ -262,7 +278,15 @@ function isReachable(from: Platform, to: Platform): boolean {
   const vertical = from.y - to.y;
 
   // Max jump parameters from the phaser settings
-  return horizontal <= 260 && vertical >= 0 && vertical <= 165;
+  return (
+    horizontal <= MAX_REACHABLE_HORIZONTAL &&
+    vertical >= 0 &&
+    vertical <= MAX_REACHABLE_VERTICAL
+  );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function createPrng(seed: string): () => number {
