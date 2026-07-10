@@ -19,5 +19,6 @@ Stack:
 - `npm run login`: Logs the Devvit CLI into Reddit.
 - `npm run type-check`: Runs TypeScript project checks.
 - `npm run lint`: Runs ESLint.
+- `npm test`: Runs type-checking and compiled shared/client tests.
 
 Current playtest subreddit: `r/fallstack_dev`.
