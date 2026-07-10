@@ -6,7 +6,7 @@ product
 
 ## Users
 
-Reddit users encountering an interactive post in a subreddit feed, plus judges evaluating a Devvit hackathon submission on mobile and desktop. They need to understand quickly that today's tower has been physically changed by community failures, make one climb attempt, see their fall or success matter, and understand why the community would return tomorrow.
+Reddit users encountering an interactive post in a subreddit feed on mobile or desktop. They need to understand quickly that today's tower has been physically changed by community failures, make one climb attempt, see their fall or success matter, and understand why the community would return tomorrow.
 
 ## Product Purpose
 
