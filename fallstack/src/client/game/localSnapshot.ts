@@ -4,6 +4,7 @@ import {
   deriveSnapshot,
   fallFeedback,
   ZERO_COUNTERS,
+  type AchievementState,
   type GameSnapshot,
   type ZoneId,
   type ZoneMutationCounters,
@@ -27,7 +28,7 @@ export function applyLocalFall(
     totalFalls: snapshot.totalFalls + 1,
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits,
-    achievements: createInitialAchievements(),
+    achievements: achievementsFromSnapshot(snapshot),
   });
 }
 
@@ -47,12 +48,12 @@ export function applyLocalClear(
     totalFalls: snapshot.totalFalls,
     totalClears: snapshot.totalClears + 1,
     totalSummits: snapshot.totalSummits,
-    achievements: createInitialAchievements(),
+    achievements: achievementsFromSnapshot(snapshot),
   });
 }
 
 export function applyLocalSummit(snapshot: GameSnapshot): GameSnapshot {
-  const achievements = createInitialAchievements();
+  const achievements = achievementsFromSnapshot(snapshot);
   achievements.firstSummitUsername = 'you';
   achievements.firstSummitAt = Date.now();
   achievements.highestClimberUsername = 'you';
@@ -110,4 +111,27 @@ function countersFromSnapshot(
       return [zone.id, { ...ZERO_COUNTERS, ...current?.counters }];
     })
   ) as Record<ZoneId, ZoneMutationCounters>;
+}
+
+function achievementsFromSnapshot(snapshot: GameSnapshot): AchievementState {
+  const achievements = createInitialAchievements();
+  if (snapshot.result.firstSummitUsername) {
+    achievements.firstSummitUsername = snapshot.result.firstSummitUsername;
+  }
+  if (snapshot.result.bestStabilizerUsername) {
+    achievements.bestStabilizerUsername = snapshot.result.bestStabilizerUsername;
+    achievements.bestStabilizerClears = Math.max(
+      ...snapshot.zones.map((zone) => zone.counters.successfulClears),
+      0
+    );
+  }
+  if (snapshot.result.highestClimberUsername) {
+    achievements.highestClimberUsername = snapshot.result.highestClimberUsername;
+    achievements.highestClimberZone = zoneIdForName(snapshot.result.highestClimberZone);
+  }
+  return achievements;
+}
+
+function zoneIdForName(name: string): ZoneId {
+  return ZONES.find((zone) => zone.name === name)?.id ?? 'lower_ruins';
 }
