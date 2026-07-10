@@ -5,7 +5,7 @@ import {
   createSeededCounters,
   deriveSnapshot,
   SEEDED_TOTAL_FALLS,
-} from '../../shared/game/mutation';
+} from '../../shared/game/mutation.js';
 
 export class ApiRequestError extends Error {
   constructor(
@@ -29,8 +29,19 @@ export function createLocalSnapshot() {
 }
 
 export function newAttemptId(prefix: string) {
-  const random = Math.random().toString(36).slice(2, 10);
-  return `${prefix}_${Date.now().toString(36)}_${random}`;
+  return `${prefix}_${Date.now().toString(36)}_${randomAttemptToken()}`;
+}
+
+function randomAttemptToken(): string {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint32Array(3);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (value) => value.toString(36)).join('-');
+  }
+
+  return Math.random().toString(36).slice(2, 14);
 }
 
 export async function parseApiResponse<T>(res: Response): Promise<T> {
