@@ -11,6 +11,7 @@ import {
   fallFeedback,
   type ZoneMutationCounters,
 } from './mutation.js';
+import { zoneForY } from './tower.js';
 
 void test('daily seed is stable for a UTC date', () => {
   assert.deepEqual(createDailySeed(new Date('2026-07-08T12:34:00Z')), {
@@ -33,6 +34,42 @@ void test('seeded snapshot opens with visible shared mutation hook', () => {
   assert.equal(snapshot.headline, "Today's tower has 37 failed climbs in it.");
   assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
   assert.ok(snapshot.zones.some((zone) => zone.artifacts.some((artifact) => artifact.label.includes('falls'))));
+});
+
+void test('seeded artifacts live in their owning tower zones', () => {
+  const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
+  const snapshot = deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+
+  for (const zone of snapshot.zones) {
+    for (const artifact of zone.artifacts) {
+      assert.equal(zoneForY(artifact.y).id, artifact.zoneId, artifact.id);
+    }
+  }
+});
+
+void test('seeded lower ruins artifacts are visible in the opening viewport', () => {
+  const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
+  const snapshot = deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const lowerRuins = snapshot.zones.find((zone) => zone.id === 'lower_ruins');
+
+  assert.ok(lowerRuins);
+  assert.ok(lowerRuins.artifacts.length >= 2);
+  assert.ok(lowerRuins.artifacts.every((artifact) => artifact.y >= 5200));
+  assert.ok(lowerRuins.artifacts.some((artifact) => artifact.label.includes('falls')));
 });
 
 void test('zone status display labels do not leak internal state names', () => {

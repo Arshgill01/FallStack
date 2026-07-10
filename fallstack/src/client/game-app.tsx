@@ -1230,7 +1230,7 @@ class FallstackScene extends Phaser.Scene {
             2
           );
       }
-      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Worn Step');
+      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
       return;
     }
 
@@ -1264,7 +1264,7 @@ class FallstackScene extends Phaser.Scene {
           artifact.x + 3,
           artifact.y + artifact.height / 2
         );
-      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Lucky Charm');
+      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
       return;
     }
 
@@ -1297,13 +1297,13 @@ class FallstackScene extends Phaser.Scene {
           2
         );
       }
-      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Paper Lantern');
+      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
       return;
     }
 
     if (artifact.type === 'cursed_brick') {
       // Mossy Stone - drawn dynamically in drawDynamicElements to support shaking/physics
-      this.addArtifactLabel(artifact.x, artifact.y - 30, 'Mossy Stone');
+      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
       return;
     }
   }
@@ -1701,7 +1701,8 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private addArtifactLabel(x: number, y: number, text: string) {
-    const clampedX = Phaser.Math.Clamp(x, 4, this.gameWidth() - 160);
+    const labelWidth = 150;
+    const clampedX = Phaser.Math.Clamp(x, 4, this.gameWidth() - labelWidth - 8);
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
       fontSize: '9.5px',
@@ -1709,6 +1710,7 @@ class FallstackScene extends Phaser.Scene {
       color: '#5c4a35',
       backgroundColor: 'rgba(242, 233, 216, 0.9)',
       padding: { left: 5, right: 5, top: 2, bottom: 2 },
+      wordWrap: { width: labelWidth - 10, useAdvancedWrap: true },
     });
     label.setDepth(3);
     this.labels.push(label);

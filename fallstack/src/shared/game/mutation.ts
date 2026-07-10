@@ -104,25 +104,25 @@ const ARTIFACT_SLOTS: Record<
   Record<FailureBucket | 'successful_clear', Pick<Artifact, 'x' | 'y' | 'width' | 'height'>>
 > = {
   lower_ruins: {
-    short_jump: { x: 256, y: 2052, width: 74, height: 26 },
-    overjump: { x: 340, y: 1902, width: 72, height: 24 },
-    wall_bonk: { x: 92, y: 1810, width: 92, height: 18 },
-    helper_overuse: { x: 166, y: 1962, width: 52, height: 24 },
-    successful_clear: { x: 96, y: 1730, width: 128, height: 12 },
+    short_jump: { x: 128, y: 5848, width: 74, height: 26 },
+    overjump: { x: 304, y: 5766, width: 72, height: 24 },
+    wall_bonk: { x: 40, y: 5718, width: 92, height: 18 },
+    helper_overuse: { x: 214, y: 5668, width: 52, height: 24 },
+    successful_clear: { x: 82, y: 5586, width: 128, height: 12 },
   },
   bell_shaft: {
-    short_jump: { x: 84, y: 1406, width: 70, height: 25 },
-    overjump: { x: 296, y: 1280, width: 66, height: 24 },
-    wall_bonk: { x: 318, y: 1478, width: 96, height: 18 },
-    helper_overuse: { x: 176, y: 1322, width: 54, height: 24 },
-    successful_clear: { x: 256, y: 1160, width: 130, height: 12 },
+    short_jump: { x: 244, y: 3830, width: 70, height: 25 },
+    overjump: { x: 52, y: 3702, width: 66, height: 24 },
+    wall_bonk: { x: 310, y: 3568, width: 96, height: 18 },
+    helper_overuse: { x: 176, y: 3420, width: 54, height: 24 },
+    successful_clear: { x: 248, y: 3218, width: 130, height: 12 },
   },
   moon_roof: {
-    short_jump: { x: 292, y: 738, width: 68, height: 24 },
-    overjump: { x: 88, y: 620, width: 68, height: 24 },
-    wall_bonk: { x: 270, y: 520, width: 96, height: 18 },
-    helper_overuse: { x: 190, y: 694, width: 54, height: 24 },
-    successful_clear: { x: 100, y: 388, width: 132, height: 12 },
+    short_jump: { x: 284, y: 1720, width: 68, height: 24 },
+    overjump: { x: 78, y: 1338, width: 68, height: 24 },
+    wall_bonk: { x: 270, y: 1198, width: 96, height: 18 },
+    helper_overuse: { x: 190, y: 930, width: 54, height: 24 },
+    successful_clear: { x: 96, y: 388, width: 132, height: 12 },
   },
 };
 
