@@ -414,10 +414,11 @@ function parseAchievements(value: string): Partial<AchievementState> {
 
 async function seenEvent(state: StoredDailyState, eventId: string): Promise<boolean> {
   const key = keyFor(state, `event:${eventId}`);
-  const existing = await redis.get(key);
-  if (existing) return true;
-  await setDailyKey(key, '1');
-  return false;
+  const created = await redis.set(key, '1', {
+    expiration: dailyExpiration(),
+    nx: true,
+  });
+  return !created;
 }
 
 async function incrementDailyKey(key: string): Promise<number> {
@@ -427,8 +428,11 @@ async function incrementDailyKey(key: string): Promise<number> {
 }
 
 async function setDailyKey(key: string, value: string): Promise<void> {
-  await redis.set(key, value);
-  await redis.expire(key, DAILY_KEY_TTL_SECONDS);
+  await redis.set(key, value, { expiration: dailyExpiration() });
+}
+
+function dailyExpiration(): Date {
+  return new Date(Date.now() + DAILY_KEY_TTL_SECONDS * 1000);
 }
 
 function updateHighestClimber(
