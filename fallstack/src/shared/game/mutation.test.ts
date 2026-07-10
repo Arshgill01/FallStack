@@ -9,6 +9,7 @@ import {
   deriveSnapshot,
   displayZoneStatus,
   fallFeedback,
+  mergeAchievementState,
   type ZoneMutationCounters,
 } from './mutation.js';
 import { zoneForY } from './tower.js';
@@ -132,4 +133,48 @@ void test('fall feedback is short, specific, and cap-aware', () => {
     }),
     'Moon Roof has heard enough from you today.'
   );
+});
+
+void test('achievement merges preserve monotonic community records', () => {
+  const current = {
+    ...createInitialAchievements(),
+    firstSummitUsername: 'u/first',
+    firstSummitAt: 100,
+    highestClimberUsername: 'u/highest',
+    highestClimberZone: 'bell_shaft' as const,
+    highestClimberY: 1200,
+    bestStabilizerUsername: 'u/stable',
+    bestStabilizerClears: 2,
+  };
+
+  const merged = mergeAchievementState(current, {
+    firstSummitUsername: 'u/late',
+    firstSummitAt: 200,
+    highestClimberUsername: 'u/summit',
+    highestClimberZone: 'moon_roof',
+    highestClimberY: 260,
+    bestStabilizerUsername: 'u/steadier',
+    bestStabilizerClears: 4,
+  });
+
+  assert.equal(merged.firstSummitUsername, 'u/first');
+  assert.equal(merged.firstSummitAt, 100);
+  assert.equal(merged.highestClimberUsername, 'u/summit');
+  assert.equal(merged.highestClimberZone, 'moon_roof');
+  assert.equal(merged.highestClimberY, 260);
+  assert.equal(merged.bestStabilizerUsername, 'u/steadier');
+  assert.equal(merged.bestStabilizerClears, 4);
+});
+
+void test('achievement merges ignore stale or incomplete records', () => {
+  const current = createInitialAchievements();
+
+  const merged = mergeAchievementState(current, {
+    highestClimberUsername: 'u/missing-zone',
+    highestClimberZone: 'bad_zone',
+    highestClimberY: 100,
+    bestStabilizerClears: 3,
+  } as unknown as Parameters<typeof mergeAchievementState>[1]);
+
+  assert.deepEqual(merged, current);
 });

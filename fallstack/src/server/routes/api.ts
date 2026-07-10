@@ -17,6 +17,7 @@ import {
   deriveSnapshot,
   fallFeedback,
   clearFeedback,
+  mergeAchievementState,
   SEEDED_TOTAL_FALLS,
   ZERO_COUNTERS,
   type GameSnapshot,
@@ -44,6 +45,11 @@ type StoredDailyState = {
   totalClears: number;
   totalSummits: number;
   achievements: AchievementState;
+};
+
+type FirstSummitClaim = {
+  username: string;
+  at: number;
 };
 
 export const api = new Hono();
@@ -229,10 +235,7 @@ api.post('/record-summit', async (c) => {
     const username = await currentDisplayUsername();
 
     if (counted) {
-      if (!state.achievements.firstSummitUsername) {
-        state.achievements.firstSummitUsername = username;
-        state.achievements.firstSummitAt = Date.now();
-      }
+      await claimFirstSummit(state, username);
       updateHighestClimber(state, username, 'moon_roof', 392);
       await incrementDailyKey(totalKey(state, 'summits'));
       await saveAchievements(state);
@@ -302,6 +305,8 @@ function reviveState(
 }
 
 async function saveAchievements(state: StoredDailyState): Promise<void> {
+  const current = await loadAchievements(state);
+  state.achievements = mergeAchievementState(current, state.achievements);
   await setDailyKey(achievementKey(state.dateKey), JSON.stringify(state.achievements));
 }
 
@@ -315,6 +320,10 @@ function stateKey(dateKey: string): string {
 
 function achievementKey(dateKey: string): string {
   return `fallstack:daily:${dateKey}:achievements`;
+}
+
+function firstSummitKey(dateKey: string): string {
+  return `fallstack:daily:${dateKey}:achievement:first-summit`;
 }
 
 function keyFor(state: StoredDailyState, suffix: string): string {
@@ -358,10 +367,21 @@ async function loadTotalDeltas(seed: { dateKey: string }): Promise<{
   return { falls, clears, summits };
 }
 
-async function loadAchievements(seed: { dateKey: string }): Promise<Partial<AchievementState>> {
-  const stored = await redis.get(achievementKey(seed.dateKey));
-  if (!stored) return {};
-  return parseAchievements(stored);
+async function loadAchievements(seed: { dateKey: string }): Promise<AchievementState> {
+  const [stored, firstSummit] = await Promise.all([
+    redis.get(achievementKey(seed.dateKey)),
+    readFirstSummitClaim(seed),
+  ]);
+  const storedAchievements = stored ? parseAchievements(stored) : {};
+  return mergeAchievementState(createInitialAchievements(), {
+    ...storedAchievements,
+    ...(firstSummit
+      ? {
+          firstSummitUsername: firstSummit.username,
+          firstSummitAt: firstSummit.at,
+        }
+      : {}),
+  });
 }
 
 async function readNumber(key: string): Promise<number> {
@@ -412,6 +432,22 @@ function parseAchievements(value: string): Partial<AchievementState> {
   }
 }
 
+function parseFirstSummitClaim(value: string): FirstSummitClaim | null {
+  try {
+    const parsed = JSON.parse(value) as Partial<FirstSummitClaim>;
+    if (
+      typeof parsed.username === 'string' &&
+      typeof parsed.at === 'number' &&
+      Number.isFinite(parsed.at)
+    ) {
+      return { username: parsed.username, at: parsed.at };
+    }
+  } catch (error) {
+    console.error('Ignoring malformed first summit claim', error);
+  }
+  return null;
+}
+
 async function seenEvent(state: StoredDailyState, eventId: string): Promise<boolean> {
   const key = keyFor(state, `event:${eventId}`);
   const created = await redis.set(key, '1', {
@@ -419,6 +455,26 @@ async function seenEvent(state: StoredDailyState, eventId: string): Promise<bool
     nx: true,
   });
   return !created;
+}
+
+async function claimFirstSummit(state: StoredDailyState, username: string): Promise<void> {
+  if (state.achievements.firstSummitUsername) return;
+
+  const claim = { username, at: Date.now() };
+  const created = await redis.set(firstSummitKey(state.dateKey), JSON.stringify(claim), {
+    expiration: dailyExpiration(),
+    nx: true,
+  });
+  const firstSummit = created ? claim : await readFirstSummitClaim(state);
+  if (!firstSummit) return;
+
+  state.achievements.firstSummitUsername = firstSummit.username;
+  state.achievements.firstSummitAt = firstSummit.at;
+}
+
+async function readFirstSummitClaim(seed: { dateKey: string }): Promise<FirstSummitClaim | null> {
+  const stored = await redis.get(firstSummitKey(seed.dateKey));
+  return stored ? parseFirstSummitClaim(stored) : null;
 }
 
 async function incrementDailyKey(key: string): Promise<number> {

@@ -198,6 +198,45 @@ export function createInitialAchievements(): AchievementState {
   };
 }
 
+export function mergeAchievementState(
+  current: AchievementState,
+  incoming: Partial<AchievementState>
+): AchievementState {
+  const merged: AchievementState = { ...current };
+
+  if (!merged.firstSummitUsername && incoming.firstSummitUsername) {
+    merged.firstSummitUsername = incoming.firstSummitUsername;
+    merged.firstSummitAt =
+      typeof incoming.firstSummitAt === 'number' && Number.isFinite(incoming.firstSummitAt)
+        ? incoming.firstSummitAt
+        : null;
+  }
+
+  if (
+    typeof incoming.highestClimberY === 'number' &&
+    Number.isFinite(incoming.highestClimberY) &&
+    incoming.highestClimberY < merged.highestClimberY &&
+    incoming.highestClimberUsername &&
+    isZoneId(incoming.highestClimberZone)
+  ) {
+    merged.highestClimberY = incoming.highestClimberY;
+    merged.highestClimberZone = incoming.highestClimberZone;
+    merged.highestClimberUsername = incoming.highestClimberUsername;
+  }
+
+  if (
+    typeof incoming.bestStabilizerClears === 'number' &&
+    Number.isFinite(incoming.bestStabilizerClears) &&
+    incoming.bestStabilizerClears > merged.bestStabilizerClears &&
+    incoming.bestStabilizerUsername
+  ) {
+    merged.bestStabilizerClears = incoming.bestStabilizerClears;
+    merged.bestStabilizerUsername = incoming.bestStabilizerUsername;
+  }
+
+  return merged;
+}
+
 export function deriveZone(zoneId: ZoneId, counters: ZoneMutationCounters): ZoneSnapshot {
   const rawStatus = deriveRawStatus(counters);
   const status = counters.successfulClears >= 6 ? 'Stabilized' : counters.successfulClears >= 3 ? 'Reinforced' : rawStatus;
