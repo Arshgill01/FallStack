@@ -21,6 +21,8 @@ export function applyLocalFall(
     ...counters[detail.zoneId],
     [detail.failureBucket]: counters[detail.zoneId][detail.failureBucket] + 1,
   };
+  const achievements = achievementsFromSnapshot(snapshot);
+  updateLocalHighestClimber(achievements, detail.zoneId, detail.highestY);
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
@@ -28,7 +30,7 @@ export function applyLocalFall(
     totalFalls: snapshot.totalFalls + 1,
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits,
-    achievements: achievementsFromSnapshot(snapshot),
+    achievements,
   });
 }
 
@@ -41,6 +43,9 @@ export function applyLocalClear(
     ...counters[detail.zoneId],
     successfulClears: counters[detail.zoneId].successfulClears + 1,
   };
+  const achievements = achievementsFromSnapshot(snapshot);
+  updateLocalHighestClimber(achievements, detail.zoneId, detail.highestY);
+  updateLocalBestStabilizer(achievements, counters[detail.zoneId].successfulClears);
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
@@ -48,7 +53,7 @@ export function applyLocalClear(
     totalFalls: snapshot.totalFalls,
     totalClears: snapshot.totalClears + 1,
     totalSummits: snapshot.totalSummits,
-    achievements: achievementsFromSnapshot(snapshot),
+    achievements,
   });
 }
 
@@ -128,10 +133,35 @@ function achievementsFromSnapshot(snapshot: GameSnapshot): AchievementState {
   if (snapshot.result.highestClimberUsername) {
     achievements.highestClimberUsername = snapshot.result.highestClimberUsername;
     achievements.highestClimberZone = zoneIdForName(snapshot.result.highestClimberZone);
+    achievements.highestClimberY = zoneTopForName(snapshot.result.highestClimberZone);
   }
   return achievements;
 }
 
 function zoneIdForName(name: string): ZoneId {
   return ZONES.find((zone) => zone.name === name)?.id ?? 'lower_ruins';
+}
+
+function zoneTopForName(name: string): number {
+  return ZONES.find((zone) => zone.name === name)?.yTop ?? createInitialAchievements().highestClimberY;
+}
+
+function updateLocalHighestClimber(
+  achievements: AchievementState,
+  zoneId: ZoneId,
+  highestY: number | undefined
+) {
+  if (typeof highestY !== 'number' || Number.isNaN(highestY)) return;
+  if (highestY < achievements.highestClimberY) {
+    achievements.highestClimberY = Math.max(260, highestY);
+    achievements.highestClimberZone = zoneId;
+    achievements.highestClimberUsername = 'you';
+  }
+}
+
+function updateLocalBestStabilizer(achievements: AchievementState, clearCount: number) {
+  if (clearCount > achievements.bestStabilizerClears) {
+    achievements.bestStabilizerClears = clearCount;
+    achievements.bestStabilizerUsername = 'you';
+  }
 }

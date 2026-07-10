@@ -66,6 +66,7 @@ void test('local clear and summit update result summary', () => {
   assert.equal(summit.totalSummits, 1);
   assert.equal(summit.result.summitStatus, 'Summit Cleared');
   assert.equal(summit.result.firstSummitUsername, 'you');
+  assert.equal(cleared.result.bestStabilizerUsername, 'you');
 });
 
 void test('local events preserve existing local result achievements', () => {
@@ -86,6 +87,28 @@ void test('local events preserve existing local result achievements', () => {
   assert.equal(afterFall.totalSummits, 1);
   assert.equal(afterFall.result.firstSummitUsername, 'you');
   assert.equal(afterFall.result.highestClimberUsername, 'you');
+  assert.equal(afterFall.result.highestClimberZone, 'Moon Roof');
   assert.equal(afterClear.result.firstSummitUsername, 'you');
   assert.equal(afterClear.result.highestClimberUsername, 'you');
+  assert.equal(afterClear.result.highestClimberZone, 'Moon Roof');
+});
+
+void test('local falls and clears update highest climber when progress improves', () => {
+  const afterFall = applyLocalFall(baseSnapshot(), {
+    attemptId: 'attempt_local_high_fall',
+    zoneId: 'bell_shaft',
+    failureBucket: 'short_jump',
+    chargePercent: 81,
+    highestY: 1900,
+  });
+  const afterLowerClear = applyLocalClear(afterFall, {
+    attemptId: 'attempt_local_lower_clear',
+    zoneId: 'lower_ruins',
+    highestY: 3990,
+  });
+
+  assert.equal(afterFall.result.highestClimberUsername, 'you');
+  assert.equal(afterFall.result.highestClimberZone, 'Bell Shaft');
+  assert.equal(afterLowerClear.result.highestClimberUsername, 'you');
+  assert.equal(afterLowerClear.result.highestClimberZone, 'Bell Shaft');
 });
