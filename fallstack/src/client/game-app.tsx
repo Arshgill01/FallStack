@@ -19,6 +19,10 @@ import {
   MOVEMENT_TUNING,
 } from '../shared/game/movement.js';
 import {
+  fallZoneForRespawn,
+  shouldEndRunAtY,
+} from '../shared/game/progression.js';
+import {
   generateDailyTower,
   WORLD_HEIGHT,
   ZONES,
@@ -525,13 +529,10 @@ class FallstackScene extends Phaser.Scene {
 
   private checkFall() {
     if (!this.player) return;
-    const recovery =
-      ZONES.find((zone) => zone.id === this.currentZone)?.recoveryY ??
-      WORLD_HEIGHT + 120;
-    if (this.player.y < recovery) return;
+    if (!shouldEndRunAtY(this.player.y, this.respawnZone)) return;
 
     const failureBucket = this.classifyFailure();
-    const zoneId = this.currentZone;
+    const zoneId = fallZoneForRespawn(this.respawnZone);
     window.dispatchEvent(
       new CustomEvent<FallEventDetail>('fallstack:fall', {
         detail: {
