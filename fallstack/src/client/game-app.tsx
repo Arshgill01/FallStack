@@ -21,7 +21,6 @@ import {
 import {
   generateDailyTower,
   WORLD_HEIGHT,
-  WORLD_WIDTH,
   ZONES,
   zoneForY,
   type Platform,
@@ -42,6 +41,12 @@ import type {
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
+  cameraBottomPaddingForGameWidth,
+  computeGameDimensions,
+  gameWorldWidth,
+  routeOffsetForGameWidth,
+} from './game/layout';
+import {
   applyLocalClear,
   applyLocalFall,
   applyLocalSummit,
@@ -59,7 +64,6 @@ declare global {
 }
 
 const START_POS = { x: 240, y: 5880 };
-const MIN_GAME_WIDTH = WORLD_WIDTH;
 const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   lower_ruins: START_POS,
   bell_shaft: { x: 240, y: 3940 },
@@ -381,11 +385,11 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private gameWidth() {
-    return Math.max(WORLD_WIDTH, this.cameras.main.width || WORLD_WIDTH);
+    return gameWorldWidth(this.cameras.main.width);
   }
 
   private routeOffsetX() {
-    return Math.max(0, (this.gameWidth() - WORLD_WIDTH) / 2);
+    return routeOffsetForGameWidth(this.gameWidth());
   }
 
   private layoutX(x: number) {
@@ -420,7 +424,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private cameraBottomPadding() {
-    return this.gameWidth() > WORLD_WIDTH ? 260 : 150;
+    return cameraBottomPaddingForGameWidth(this.gameWidth());
   }
 
   private cameraTargetY(y: number) {
@@ -1939,22 +1943,11 @@ export function GameApp() {
     let frameId: number | null = null;
     let resizeObserver: ResizeObserver | null = null;
 
-    const getDimensions = (container: HTMLElement) => {
-      const containerRect = container.getBoundingClientRect();
-      const containerW = Math.max(0, Math.round(containerRect.width));
-      const containerH = Math.max(0, Math.round(containerRect.height));
-      return {
-        containerW,
-        containerH,
-        gameW: Math.max(MIN_GAME_WIDTH, containerW),
-        gameH: containerH,
-      };
-    };
-
     const resizeGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container || !gameRef.current) return;
-      const { containerW, containerH, gameW, gameH } = getDimensions(container);
+      const { containerW, containerH, gameW, gameH } =
+        computeGameDimensions(container.getBoundingClientRect());
       if (containerW === 0 || containerH === 0) return;
       gameRef.current.scale.resize(gameW, gameH);
     };
@@ -1962,7 +1955,8 @@ export function GameApp() {
     const initGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container) return;
-      const { containerW, containerH, gameW, gameH } = getDimensions(container);
+      const { containerW, containerH, gameW, gameH } =
+        computeGameDimensions(container.getBoundingClientRect());
 
       // Wait until browser layout has completed and container has dimensions
       if (containerW === 0 || containerH === 0) {
