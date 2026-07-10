@@ -85,6 +85,8 @@ export function validateRecordSummitRequest(
   if (!body) return invalid('Invalid summit event.');
   if (!isDailySeed(body.dailySeed)) return invalid('Invalid summit event.');
   if (!validAttemptId(body.attemptId)) return invalid('Invalid summit event.');
+  if (!isNumberInRange(body.highestY, 0, MOVEMENT_TUNING.topConnectorY))
+    return invalid('Invalid summit event.');
   if (!isPlausibleTimestamp(body.timestamp, now)) return invalid('Invalid summit event.');
 
   return {
@@ -92,6 +94,7 @@ export function validateRecordSummitRequest(
     value: {
       dailySeed: body.dailySeed,
       attemptId: body.attemptId,
+      highestY: body.highestY,
       timestamp: body.timestamp,
     },
   };

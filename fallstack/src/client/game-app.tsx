@@ -482,7 +482,10 @@ class FallstackScene extends Phaser.Scene {
       this.summitSent = true;
       window.dispatchEvent(
         new CustomEvent<SummitEventDetail>('fallstack:summit', {
-          detail: { attemptId: this.currentAttemptId },
+          detail: {
+            attemptId: this.currentAttemptId,
+            highestY: this.highestY,
+          },
         })
       );
     }

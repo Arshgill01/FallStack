@@ -51,6 +51,7 @@ export type RecordClearResponse = {
 export type RecordSummitRequest = {
   dailySeed: string;
   attemptId: string;
+  highestY: number;
   timestamp: number;
 };
 

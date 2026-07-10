@@ -1,4 +1,8 @@
-import type { RecordClearRequest, RecordFallRequest } from '../../shared/api';
+import type {
+  RecordClearRequest,
+  RecordFallRequest,
+  RecordSummitRequest,
+} from '../../shared/api';
 import type { ZoneId } from '../../shared/game/mutation';
 
 export type FallEventDetail = Omit<
@@ -9,7 +13,10 @@ export type ClearEventDetail = Omit<
   RecordClearRequest,
   'dailySeed' | 'timestamp'
 >;
-export type SummitEventDetail = { attemptId: string };
+export type SummitEventDetail = Omit<
+  RecordSummitRequest,
+  'dailySeed' | 'timestamp'
+>;
 export type LandEventDetail = { zoneId: ZoneId };
 export type ZoneEventDetail = { zoneId: ZoneId };
 export type SoundId =

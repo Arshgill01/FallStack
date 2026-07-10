@@ -146,13 +146,21 @@ void test('clear event validation only accepts playable checkpoint transitions',
   );
 });
 
-void test('summit event validation requires a fresh seed and attempt identity', () => {
-  assert.equal(validateRecordSummitRequest(base, now).ok, true);
+void test('summit event validation requires fresh bounded summit progress', () => {
+  assert.equal(
+    validateRecordSummitRequest({ ...base, highestY: 260 }, now).ok,
+    true
+  );
   assert.equal(
     validateRecordSummitRequest(
-      { ...base, dailySeed: '', attemptId: 'bad space' },
+      { ...base, dailySeed: '', attemptId: 'bad space', highestY: 260 },
       now
     ).ok,
     false
   );
+  assert.equal(
+    validateRecordSummitRequest({ ...base, highestY: 301 }, now).ok,
+    false
+  );
+  assert.equal(validateRecordSummitRequest(base, now).ok, false);
 });
