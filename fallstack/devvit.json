@@ -20,7 +20,7 @@
   "menu": {
     "items": [
       {
-        "label": "Create Fallstack demo post",
+        "label": "Create Fallstack daily post",
         "description": "Post today's shared cursed tower",
         "location": "subreddit",
         "forUserType": "moderator",

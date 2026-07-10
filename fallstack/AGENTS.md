@@ -12,8 +12,9 @@ You are writing a Devvit Web Phaser application that runs on Reddit.com.
 - `/src/client`: client code executed inside Reddit's iframe.
   - `splash.html`: lightweight inline/feed entrypoint.
   - `game.html`: expanded playable game entrypoint.
-  - `game.ts`: Phaser bootstrap.
-  - `scenes/`: Phaser scenes.
+  - `game.tsx`: expanded React entrypoint that mounts `GameApp`.
+  - `game-app.tsx`: current Phaser scene, shell UI, and event wiring. Keep pure logic out of this file.
+  - `game/`: small client helpers for input, API parsing, touch controls, sound, local fallback, and UI constants.
 - `/src/server`: backend endpoints.
   - Access `redis`, `reddit`, and `context` here via `@devvit/web/server`.
   - All persistent mutation writes, contribution caps, user identity, and Reddit API calls belong here.
