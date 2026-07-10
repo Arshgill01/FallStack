@@ -16,18 +16,74 @@ const base = {
 };
 
 void test('fall event validation accepts bounded structured payloads', () => {
-  const result = validateRecordFallRequest(
-    {
-      ...base,
-      zoneId: 'lower_ruins',
-      failureBucket: 'short_jump',
-      chargePercent: 74,
-      highestY: 5420,
-    },
-    now
+  assert.equal(
+    validateRecordFallRequest(
+      {
+        ...base,
+        zoneId: 'lower_ruins',
+        failureBucket: 'short_jump',
+        chargePercent: 74,
+        highestY: 5420,
+      },
+      now
+    ).ok,
+    true
   );
+  assert.equal(
+    validateRecordFallRequest(
+      {
+        ...base,
+        zoneId: 'bell_shaft',
+        failureBucket: 'wall_bonk',
+        chargePercent: 58,
+        highestY: 2164,
+      },
+      now
+    ).ok,
+    true
+  );
+});
 
-  assert.equal(result.ok, true);
+void test('fall event validation rejects forged cross-zone progress', () => {
+  assert.equal(
+    validateRecordFallRequest(
+      {
+        ...base,
+        zoneId: 'lower_ruins',
+        failureBucket: 'short_jump',
+        chargePercent: 74,
+        highestY: 3999,
+      },
+      now
+    ).ok,
+    false
+  );
+  assert.equal(
+    validateRecordFallRequest(
+      {
+        ...base,
+        zoneId: 'bell_shaft',
+        failureBucket: 'short_jump',
+        chargePercent: 74,
+        highestY: 1999,
+      },
+      now
+    ).ok,
+    false
+  );
+  assert.equal(
+    validateRecordFallRequest(
+      {
+        ...base,
+        zoneId: 'moon_roof',
+        failureBucket: 'short_jump',
+        chargePercent: 74,
+        highestY: 2001,
+      },
+      now
+    ).ok,
+    false
+  );
 });
 
 void test('fall event validation rejects forged numeric fields', () => {

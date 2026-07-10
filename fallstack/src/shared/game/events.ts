@@ -29,6 +29,10 @@ export function validateRecordFallRequest(
   if (!isNumberInRange(body.highestY, 0, WORLD_HEIGHT)) return invalid('Invalid fall event.');
   if (!isPlausibleTimestamp(body.timestamp, now)) return invalid('Invalid fall event.');
 
+  const zone = zoneById(body.zoneId);
+  if (!isNumberInRange(body.highestY, zone.yTop, zone.yBottom))
+    return invalid('Invalid fall event.');
+
   return {
     ok: true,
     value: {
