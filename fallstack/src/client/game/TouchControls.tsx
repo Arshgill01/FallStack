@@ -70,7 +70,7 @@ export function TouchControls({ disabled, charge }: TouchControlsProps) {
           className="jump-charge-fill"
           style={{ transform: `scaleX(${charge / 100})` }}
         />
-        <span className="jump-btn-label">Hold · Space</span>
+        <span className="jump-btn-label">Hold Jump</span>
       </button>
       <button
         type="button"
