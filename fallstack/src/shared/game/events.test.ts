@@ -55,6 +55,13 @@ void test('clear event validation only accepts playable checkpoint transitions',
   );
   assert.equal(
     validateRecordClearRequest(
+      { ...base, zoneId: 'lower_ruins', highestY: 3835 },
+      now
+    ).ok,
+    true
+  );
+  assert.equal(
+    validateRecordClearRequest(
       { ...base, zoneId: 'moon_roof', highestY: 0 },
       now
     ).ok,
@@ -63,6 +70,20 @@ void test('clear event validation only accepts playable checkpoint transitions',
   assert.equal(
     validateRecordClearRequest(
       { ...base, zoneId: 'bell_shaft', highestY: 2500 },
+      now
+    ).ok,
+    false
+  );
+  assert.equal(
+    validateRecordClearRequest(
+      { ...base, zoneId: 'lower_ruins', highestY: 3834 },
+      now
+    ).ok,
+    false
+  );
+  assert.equal(
+    validateRecordClearRequest(
+      { ...base, zoneId: 'lower_ruins', highestY: 0 },
       now
     ).ok,
     false

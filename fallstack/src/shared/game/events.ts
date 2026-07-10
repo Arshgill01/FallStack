@@ -4,10 +4,12 @@ import type {
   RecordSummitRequest,
 } from '../api';
 import { isFailureBucket, isZoneId } from './mutation.js';
+import { MOVEMENT_TUNING } from './movement.js';
 import { nextZoneId, WORLD_HEIGHT, zoneById } from './tower.js';
 
 const MAX_FUTURE_EVENT_MS = 10 * 60 * 1000;
 const MAX_PAST_EVENT_MS = 24 * 60 * 60 * 1000;
+const CLEAR_BOUNDARY_OVERSHOOT_Y = MOVEMENT_TUNING.reachableVertical;
 
 type ValidationResult<T> =
   | { ok: true; value: T }
@@ -56,6 +58,8 @@ export function validateRecordClearRequest(
 
   const zone = zoneById(body.zoneId);
   if (body.highestY > zone.yTop) return invalid('Invalid clear event.');
+  if (body.highestY < zone.yTop - CLEAR_BOUNDARY_OVERSHOOT_Y)
+    return invalid('Invalid clear event.');
 
   return {
     ok: true,
