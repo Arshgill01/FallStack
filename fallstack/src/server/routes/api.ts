@@ -17,8 +17,6 @@ import {
   deriveSnapshot,
   fallFeedback,
   clearFeedback,
-  isFailureBucket,
-  isZoneId,
   SEEDED_TOTAL_FALLS,
   ZERO_COUNTERS,
   type GameSnapshot,
@@ -27,6 +25,11 @@ import {
   type ZoneMutationCounters,
 } from '../../shared/game/mutation';
 import { nextZoneId } from '../../shared/game/tower';
+import {
+  validateRecordClearRequest,
+  validateRecordFallRequest,
+  validateRecordSummitRequest,
+} from '../../shared/game/events';
 
 const USER_BUCKET_CAP = 3;
 const USER_DAILY_FAILURE_CAP = 10;
@@ -69,10 +72,11 @@ api.post('/record-fall', async (c) => {
   const postId = context.postId;
   if (!postId) return error(c, 'postId is required but missing from context');
 
-  const body = await c.req.json<Partial<RecordFallRequest>>().catch(() => null);
-  if (!body || !validAttemptId(body.attemptId) || !isZoneId(body.zoneId) || !isFailureBucket(body.failureBucket)) {
-    return error(c, 'Invalid fall event.');
-  }
+  const parsed = validateRecordFallRequest(
+    await c.req.json<Partial<RecordFallRequest>>().catch(() => null)
+  );
+  if (!parsed.ok) return error(c, parsed.message);
+  const body = parsed.value;
 
   try {
     const state = await loadDailyState();
@@ -137,8 +141,11 @@ api.post('/record-clear', async (c) => {
   const postId = context.postId;
   if (!postId) return error(c, 'postId is required but missing from context');
 
-  const body = await c.req.json<Partial<RecordClearRequest>>().catch(() => null);
-  if (!body || !validAttemptId(body.attemptId) || !isZoneId(body.zoneId)) return error(c, 'Invalid clear event.');
+  const parsed = validateRecordClearRequest(
+    await c.req.json<Partial<RecordClearRequest>>().catch(() => null)
+  );
+  if (!parsed.ok) return error(c, parsed.message);
+  const body = parsed.value;
 
   try {
     const state = await loadDailyState();
@@ -195,14 +202,17 @@ api.post('/record-summit', async (c) => {
   const postId = context.postId;
   if (!postId) return error(c, 'postId is required but missing from context');
 
-  const body = await c.req.json<Partial<RecordSummitRequest>>().catch(() => null);
+  const parsed = validateRecordSummitRequest(
+    await c.req.json<Partial<RecordSummitRequest>>().catch(() => null)
+  );
+  if (!parsed.ok) return error(c, parsed.message);
+  const body = parsed.value;
 
   try {
     const state = await loadDailyState();
-    if (body?.dailySeed && body.dailySeed !== state.dailySeed) {
+    if (body.dailySeed !== state.dailySeed) {
       return error(c, 'Stale tower seed.', 409);
     }
-    if (!validAttemptId(body?.attemptId)) return error(c, 'Invalid summit event.');
     const duplicate = await seenEvent(state, `summit:${body.attemptId}`);
     if (duplicate) {
       return c.json<RecordSummitResponse>({
@@ -449,10 +459,6 @@ async function currentDisplayUsername(): Promise<string> {
 
 function contributorKey(): string {
   return context.userId ?? context.loid ?? 'anonymous';
-}
-
-function validAttemptId(value: unknown): value is string {
-  return typeof value === 'string' && /^[a-zA-Z0-9:_-]{8,80}$/.test(value);
 }
 
 function error(c: HonoContext, message: string, status: 400 | 409 | 500 = 400) {
