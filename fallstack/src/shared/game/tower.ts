@@ -239,7 +239,13 @@ export function validateTower(tower: GeneratedTower): boolean {
 
   if (!tower.platforms.some((platform) => platform.id === 'summit' && platform.kind === 'summit')) return false;
 
+  const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+  for (let i = 0; i < route.length - 1; i += 1) {
+    if (!isReachable(route[i]!, route[i + 1]!)) return false;
+  }
+
   for (const platforms of byZone.values()) {
+    if (platforms.length === 0) return false;
     const ordered = [...platforms].sort((a, b) => b.y - a.y);
     for (let i = 0; i < ordered.length - 1; i += 1) {
       if (!isReachable(ordered[i]!, ordered[i + 1]!)) return false;

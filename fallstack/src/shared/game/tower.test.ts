@@ -37,6 +37,17 @@ void test('daily tower generation is deterministic by seed', () => {
   assert.equal(validateTower(first), true);
 });
 
+void test('tower validation catches unreachable zone stitches', () => {
+  const tower = generateDailyTower('fallstack-2026-07-08');
+  const firstBellPlatform = tower.platforms
+    .filter((platform) => platform.zoneId === 'bell_shaft')
+    .sort((a, b) => b.y - a.y)[0];
+
+  assert.ok(firstBellPlatform);
+  firstBellPlatform.x = 400;
+  assert.equal(validateTower(tower), false);
+});
+
 void test('different daily seeds can vary the known-good tower subtly', () => {
   const first = generateDailyTower('fallstack-2026-07-08');
   const second = generateDailyTower('fallstack-2026-07-09');
