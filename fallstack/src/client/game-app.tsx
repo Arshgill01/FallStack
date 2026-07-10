@@ -2334,7 +2334,10 @@ export function GameApp() {
           aria-valuemax={100}
           role="progressbar"
         >
-          <span className="charge-fill" style={{ width: `${charge}%` }} />
+          <span
+            className="charge-fill"
+            style={{ transform: `scaleX(${charge / 100})` }}
+          />
         </div>
 
         {/* Loading overlay */}

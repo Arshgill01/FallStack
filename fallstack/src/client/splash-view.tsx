@@ -1,6 +1,8 @@
 import { context, requestExpandedMode } from '@devvit/web/client';
 
 export function Splash() {
+  const username = context?.username;
+
   return (
     <main className="splash-shell">
       <section className="splash-tower" aria-hidden="true">
@@ -27,7 +29,7 @@ export function Splash() {
           Climb today's tower
         </button>
         <span className="splash-user">
-          {context.username ? `u/${context.username}` : 'anonymous climber'}
+          {username ? `u/${username}` : 'anonymous climber'}
         </span>
       </section>
     </main>

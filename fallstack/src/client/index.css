@@ -133,10 +133,17 @@ button:disabled {
       rgba(43, 58, 69, 0.35) 88% 92%,
       transparent 92%
     ),
-    repeating-linear-gradient(
+    linear-gradient(
       180deg,
-      transparent 0 88px,
-      rgba(27, 38, 47, 0.22) 88px 110px
+      transparent 0 17%,
+      rgba(27, 38, 47, 0.22) 17% 20%,
+      transparent 20% 39%,
+      rgba(27, 38, 47, 0.18) 39% 42%,
+      transparent 42% 61%,
+      rgba(27, 38, 47, 0.2) 61% 64%,
+      transparent 64% 80%,
+      rgba(27, 38, 47, 0.16) 80% 82%,
+      transparent 82%
     );
 }
 
@@ -535,7 +542,7 @@ button:disabled {
   color: var(--ink);
   opacity: 0;
   transform: translate(-50%, -15px);
-  transition: opacity 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   text-align: center;
   z-index: 99;
@@ -614,10 +621,12 @@ button:disabled {
 .charge-fill {
   display: block;
   height: 100%;
-  width: 0%;
+  width: 100%;
   background: linear-gradient(90deg, var(--persimmon-deep), var(--persimmon));
   border-radius: inherit;
-  transition: width 60ms linear;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 60ms linear;
 }
 
 /* Loading state */
@@ -713,9 +722,11 @@ button:disabled {
   left: 0;
   bottom: 0;
   top: 0;
-  width: 0%;
+  width: 100%;
   background: rgba(193, 80, 47, 0.28);
-  transition: width 0.03s linear;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.03s linear;
 }
 
 .jump-btn-label {
