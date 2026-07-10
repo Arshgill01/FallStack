@@ -10,7 +10,7 @@ import {
   type ZoneMutationCounters,
 } from '../../shared/game/mutation.js';
 import { nextZoneId, ZONES } from '../../shared/game/tower.js';
-import type { ClearEventDetail, FallEventDetail } from './events.js';
+import type { ClearEventDetail, FallEventDetail, SummitEventDetail } from './events.js';
 
 export function applyLocalFall(
   snapshot: GameSnapshot,
@@ -57,13 +57,16 @@ export function applyLocalClear(
   });
 }
 
-export function applyLocalSummit(snapshot: GameSnapshot): GameSnapshot {
+export function applyLocalSummit(
+  snapshot: GameSnapshot,
+  detail: SummitEventDetail
+): GameSnapshot {
   const achievements = achievementsFromSnapshot(snapshot);
-  achievements.firstSummitUsername = 'you';
-  achievements.firstSummitAt = Date.now();
-  achievements.highestClimberUsername = 'you';
-  achievements.highestClimberZone = 'moon_roof';
-  achievements.highestClimberY = 260;
+  if (!achievements.firstSummitUsername) {
+    achievements.firstSummitUsername = 'you';
+    achievements.firstSummitAt = Date.now();
+  }
+  updateLocalHighestClimber(achievements, 'moon_roof', detail.highestY);
 
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,

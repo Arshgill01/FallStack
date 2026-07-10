@@ -55,7 +55,10 @@ void test('local clear and summit update result summary', () => {
     zoneId: 'lower_ruins',
     highestY: 3990,
   });
-  const summit = applyLocalSummit(cleared);
+  const summit = applyLocalSummit(cleared, {
+    attemptId: 'attempt_local_summit',
+    highestY: 280,
+  });
 
   assert.equal(cleared.totalClears, 1);
   assert.equal(
@@ -66,11 +69,16 @@ void test('local clear and summit update result summary', () => {
   assert.equal(summit.totalSummits, 1);
   assert.equal(summit.result.summitStatus, 'Summit Cleared');
   assert.equal(summit.result.firstSummitUsername, 'you');
+  assert.equal(summit.result.highestClimberUsername, 'you');
+  assert.equal(summit.result.highestClimberZone, 'Moon Roof');
   assert.equal(cleared.result.bestStabilizerUsername, 'you');
 });
 
 void test('local events preserve existing local result achievements', () => {
-  const summit = applyLocalSummit(baseSnapshot());
+  const summit = applyLocalSummit(baseSnapshot(), {
+    attemptId: 'attempt_local_summit',
+    highestY: 260,
+  });
   const afterFall = applyLocalFall(summit, {
     attemptId: 'attempt_after_summit_fall',
     zoneId: 'moon_roof',

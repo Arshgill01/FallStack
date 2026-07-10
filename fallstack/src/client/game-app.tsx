@@ -2156,7 +2156,7 @@ export function GameApp() {
       soundRef.current?.play('checkpoint');
 
       if (!sharedAvailable) {
-        setSnapshot(applyLocalSummit(snapshot));
+        setSnapshot(applyLocalSummit(snapshot, detail));
         showMutation('The summit remembers you locally.');
         setSummitOpen(true);
         return;
