@@ -199,7 +199,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
     kind: 'summit',
   });
 
-  // Setup mock chunks so CHUNK_LIBRARY compatibility holds
+  // Expose generated zone chunks for validation and downstream metadata.
   const chunks: TowerChunk[] = ZONES.map((zone) => {
     const zoneLedges = platforms.filter((p) => p.zoneId === zone.id);
     const entrance = zoneLedges[0] ?? platforms[0]!;
