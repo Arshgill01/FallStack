@@ -64,20 +64,6 @@
 - Severity: praise.
 - Notes: Rebuild and upload remained reliable after server route/config changes. The large Phaser bundle still triggers Vite's chunk-size warning, but upload completed.
 
-## 2026-07-08 00:00 UTC — Local custom Codex UI/UX skills install path
-
-- Environment: Ubuntu VM, local tarball `/home/arshdeepsingh/codex-ui-ux-skills.tgz`.
-- Task attempted: install local/custom UI design skills that are not in the public `openai/skills` index.
-- Commands:
-  - `mkdir -p ~/.codex/skills`
-  - `tar -xzf /home/arshdeepsingh/codex-ui-ux-skills.tgz -C ~/.codex/skills`
-  - `find ~/.codex/skills -maxdepth 2 -name SKILL.md | sort`
-- Expected result: each skill directory appears under `$CODEX_HOME/skills`.
-- Actual result: local skills installed, including `frontend-design`, `impeccable`, `web-design-guidelines`, `agent-browser`, and related UI/UX skills.
-- Severity: docs gap.
-- Workaround: install from the tarball directly rather than using the public skill installer lookup.
-- Notes: Public skill discovery only finds published curated skills. Local/custom skills need direct copy or tar extraction into `$CODEX_HOME/skills`.
-
 ## 2026-07-08 00:00 UTC — Final local validation pass
 
 - Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7.
@@ -86,7 +72,7 @@
   - `npm test`
   - `npm run lint`
   - `npm run build`
-- Expected result: automated tests, lint, and production build pass before submission packaging.
+- Expected result: automated tests, lint, and production build pass before release packaging.
 - Actual result: all commands passed. Lint reports only Fast Refresh warnings for Vite entrypoint-local components. Build reports the known Phaser chunk-size warning.
 - Severity: praise.
 - Notes: The scaffold's TypeScript project references made it straightforward to run pure shared game tests without launching Phaser or Devvit after adding a `node --test` script against emitted shared JS.

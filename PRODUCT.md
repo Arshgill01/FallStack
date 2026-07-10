@@ -18,7 +18,7 @@ Tactile, cursed, compact, and legible. The experience should feel like a damaged
 
 ## Anti-References
 
-Avoid progress-bar cores, vote-to-win mechanics, Reddit/karma/Snoo theming, bot summaries, fake comments, fake demo labels, generic pixel-art fantasy, neon gradients, long tutorials, desktop-first layouts, endless-mode scope creep, and roadmap features on the judging path.
+Avoid progress-bar cores, vote-to-win mechanics, Reddit/karma/Snoo theming, bot summaries, fake comments, fake demo labels, generic pixel-art fantasy, neon gradients, long tutorials, desktop-first layouts, endless-mode scope creep, and roadmap features in the first-session path.
 
 ## Design Principles
 

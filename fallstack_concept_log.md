@@ -1,32 +1,17 @@
 # Fallstack Concept Log
 
-## Hackathon Target
+## Product Target
 
-Verified on 2026-07-07 from the Reddit's Games with a Hook Devpost page.
+Target surface: **a Reddit Devvit Web game using Interactive Posts**.
 
-Target: **Reddit's Games with a Hook Hackathon**.
-
-Submission deadline: **July 15, 2026 at 6:00 PM PDT**.
-
-Required submission surface:
-
-- Devvit Web game using Interactive Posts.
-- App listing on developer.reddit.com.
-- Public demo post running the game.
-
-Judging lens:
+Required product qualities:
 
 - **Delightful UX**: exciting layout/theme, easy and fun to uncover.
-- **Polish**: close to publishable, self-explanatory from example posts, Devvit Rules compliant.
-- **Reddit-y**: community-minded, fresh, identity-driven, not just Reddit references.
-- **Hook-y**: reason to return regularly through anticipation, goals, evolving state, or fresh opportunities.
+- **Polish**: close to publishable, self-explanatory from the first session, Devvit Rules compliant.
+- **Reddit-native**: community-minded, fresh, identity-driven, not just Reddit references.
+- **Return hook**: reason to return regularly through anticipation, goals, evolving state, or fresh opportunities.
 
-Prize strategy:
-
-- Primary realistic target: **Honorable Mention**.
-- Secondary targets if execution supports them: **Best Use of Retention Mechanics**, **Best Use of User Contributions**, and possibly **Best Use of Phaser**.
-
-Important Devpost warnings to design against:
+Important warnings to design against:
 
 - No obvious AI slop.
 - No on-the-nose Reddit theming.
@@ -45,7 +30,7 @@ Keep:
 - funny failure,
 - comment fuel,
 - daily/recurring return loop,
-- self-explanatory demo post.
+- self-explanatory first session.
 
 Avoid:
 
@@ -75,7 +60,7 @@ Implication:
 - Every major feature must serve visible shared mutation, comment material, retention, or arcade readability.
 - If a feature only improves solo platforming, it is secondary.
 
-Judging rationale:
+Product rationale:
 
 - This protects the idea from being dismissed as a common simple platformer.
 - It directly supports the Reddit-y, Hook-y, recurring-content, and user-contribution criteria.
@@ -119,7 +104,7 @@ Implications:
 
 Important tension:
 
-- Devvit judging will include mobile quality, so keyboard-only controls cannot be the only production input.
+- Devvit iframe use includes mobile contexts, so keyboard-only controls cannot be the only production input.
 - The mobile version needs an equivalent on-screen control scheme that preserves the same commitment loop without becoming drag-aiming.
 
 Recommended implementation framing:
@@ -142,12 +127,12 @@ Required proof in the first session:
 - The first screen must show existing community artifacts before the player jumps.
 - The player's first fall must visibly alter the tower or zone state.
 - Mutation history is more important than a generic leaderboard.
-- If a judge can play for 10 seconds and describe it only as a platformer, the design failed.
+- If a first-time player can play for 10 seconds and describe it only as a platformer, the design failed.
 
 Reason:
 
 - Familiar controls reduce onboarding friction.
-- The honorable-mention-worthy part is the Reddit-native shared mutation layer.
+- The product-defining part is the Reddit-native shared mutation layer.
 
 ### 5. First 10 Seconds
 
@@ -167,7 +152,7 @@ Required opening beat:
 Reason:
 
 - The shared mutation hook cannot wait for a result screen.
-- A judge should understand that the tower is community-shaped before making the first input.
+- A first-time player should understand that the tower is community-shaped before making the first input.
 
 ### 6. Fall And Respawn Rule
 
@@ -260,28 +245,28 @@ Per-zone caps:
 
 Reason:
 
-- Low thresholds make the demo feel alive with small traffic.
+- Low thresholds make the tower feel alive with small traffic.
 - Caps prevent high-traffic posts from becoming unreadable.
-- The specific numbers can be tuned, but v1 needs visible change within a judge session or a seeded demo state.
+- The specific numbers can be tuned, but v1 needs visible change within a first session or seeded daily state.
 
-### 10. Seeded Demo State
+### 10. Seeded Daily State
 
 Decision:
 
-> The submitted demo post starts from a believable seeded cursed tower state, and all judge actions mutate real state from that point onward.
+> Each daily tower can start from a believable seeded cursed state, and all player actions mutate real state from that point onward.
 
 Concrete rule:
 
 - The post opens with "37 climbers have already cursed today's tower."
 - Starting state includes 2-3 visible artifacts and one cursed zone.
-- The seed appears as normal game state, not as a visible "demo mode."
+- The seed appears as normal game state, not as a visible fake mode.
 - The player's own fall visibly increments or mutates something real.
 - If real activity exists, merge it into the same counters rather than replacing the seed.
 
 Reason:
 
 - An empty tower hides the shared-mutation hook.
-- Fake-looking demo mode hurts polish and trust.
+- Fake-looking seeded state hurts polish and trust.
 - Seeded state is acceptable when it presents the intended daily state as the product's natural state.
 
 ### 11. Retention Loop
@@ -672,7 +657,7 @@ Rules:
 
 Reason:
 
-- Judging will reward polish and immediate legibility.
+- The first session depends on polish and immediate legibility.
 - The game should look like a tactile object the subreddit damaged together, not a platformer template with labels added.
 
 ### 26. Rendering Technology
@@ -687,7 +672,7 @@ Why Phaser fits Fallstack:
 - Camera follow up a vertical tower is natural.
 - Artifacts can be real physics or collision objects.
 - Phaser helps the core feel tactile instead of DOM-like.
-- There is a Devpost Phaser category, so it is strategically relevant.
+- Phaser has current official support and fits the game runtime better than a custom DOM or canvas loop.
 
 Architecture constraint:
 
@@ -697,7 +682,7 @@ Architecture constraint:
 
 Reason:
 
-- Phaser is now tied to core feel, not just prize chasing.
+- Phaser is tied to core feel, not external positioning.
 
 ### 27. Architecture Split
 
@@ -829,22 +814,22 @@ Reason:
 
 Decision:
 
-> The first daily tower should be hard enough to produce falls quickly, but forgiving enough that a judge reaches the first checkpoint in under 60-90 seconds.
+> The first daily tower should be hard enough to produce falls quickly, but forgiving enough that a new player reaches the first checkpoint in under 60-90 seconds.
 
 Tuning targets:
 
 - First fall likely within 10-20 seconds.
 - First visible mutation feedback within 30 seconds.
-- First checkpoint reachable by an average judge within 60-90 seconds.
+- First checkpoint reachable by an average new player within 60-90 seconds.
 - Summit should be hard but not streamer-hard.
 - Early zones teach control and mutation.
 - Later zones test mastery and community artifacts.
-- Seeded artifacts should help the judge experience success even if they are not good at platformers.
+- Seeded artifacts should help new players experience success even if they are not good at platformers.
 
 Reason:
 
 - The game needs failure.
-- The hackathon demo cannot depend on the judge loving punishing platformers.
+- The first session cannot depend on players loving punishing platformers.
 - The first minute must show the loop, not just a skill wall.
 
 ### 33. Checkpoint Behavior
@@ -905,28 +890,28 @@ Reason:
 
 Decision:
 
-> If procedural generation is not stable in time for submission, fallback to a locked known-good seed generated by the same chunk system.
+> If procedural generation is not stable enough for production, fallback to a locked known-good seed generated by the same chunk system.
 
 Fallback behavior:
 
 - Keep the procedural architecture.
-- Use a fixed known-good seed for the submitted demo.
+- Use a fixed known-good seed for the published daily tower.
 - Generate from the same chunk system, but lock the seed.
 - Validate and polish that seed heavily.
 - Still present it as today's tower.
-- After submission, unlock daily seed variation.
+- Unlock daily seed variation only after validation proves generated towers are fair.
 
 Reason:
 
 - This preserves the procedural claim and architecture.
-- It protects the judged build from a bad random layout.
+- It protects the published build from a bad random layout.
 - The fallback is not "throw away procedural generation"; it is "lock generation to a known-good daily seed."
 
-### 36. Devpost Demo Video Beats
+### 36. Product Walkthrough Beats
 
 Decision:
 
-> The demo video must show the community mutation loop visually in the first 60 seconds.
+> Any product walkthrough must show the community mutation loop visually in the first 60 seconds.
 
 Required beats:
 
@@ -941,14 +926,14 @@ Required beats:
 
 Reason:
 
-- The video should not spend time explaining architecture, procedural generation, or controls.
+- The walkthrough should not spend time explaining architecture, procedural generation, or controls.
 - It should make the shared mutation loop undeniable.
 
-### 37. Pre-Submission Cuts
+### 37. Scope Cuts
 
 Decision:
 
-> Do not build anything before submission that competes with the polished shared-mutation climbing loop.
+> Do not build anything that competes with the polished shared-mutation climbing loop.
 
 Hard cuts:
 
@@ -970,7 +955,7 @@ Hard cuts:
 
 Reason:
 
-- These features compete with the actual judging path: polished playable loop, visible shared mutation, mobile quality, and a clean demo story.
+- These features compete with the actual product path: polished playable loop, visible shared mutation, mobile quality, and a clean daily story.
 
 ### 38. Pre-Implementation Proofs
 
@@ -988,7 +973,7 @@ Proof 2: Generation validity
 
 - Generate 10-20 seeded towers from chunks.
 - Confirm checkpoint-to-checkpoint reachability.
-- Lock one known-good seed for the demo path if needed.
+- Lock one known-good seed for the daily path if needed.
 
 Proof 3: Mutation readability
 
@@ -1015,7 +1000,7 @@ The better direction is to start from a single physical toy:
 
 > A frustrating one-button climbing game where every failed attempt changes the shared daily tower for everyone else.
 
-This fits the hackathon better because it has:
+This fits the Reddit interactive-post surface because it has:
 
 - an immediate action,
 - visible shared contribution,
@@ -1092,9 +1077,9 @@ curseLevel
 stabilityLevel
 ```
 
-## Demo Problem
+## Seeded-State Problem
 
-> *Resolved by §10 (Seeded Demo State). Seed with believable state, no "demo mode" label, judge actions mutate real state.*
+> *Resolved by §10 (Seeded Daily State). Seed with believable state, no fake-mode label, player actions mutate real state.*
 
 ## Theme Direction
 
