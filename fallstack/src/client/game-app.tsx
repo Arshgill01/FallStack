@@ -1264,7 +1264,11 @@ class FallstackScene extends Phaser.Scene {
             2
           );
       }
-      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
+      this.addArtifactLabel(
+        artifact.x + artifact.width / 2,
+        artifact.y - 6,
+        artifact.label
+      );
       return;
     }
 
@@ -1298,7 +1302,11 @@ class FallstackScene extends Phaser.Scene {
           artifact.x + 3,
           artifact.y + artifact.height / 2
         );
-      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
+      this.addArtifactLabel(
+        artifact.x + artifact.width / 2,
+        artifact.y - 6,
+        artifact.label
+      );
       return;
     }
 
@@ -1331,13 +1339,21 @@ class FallstackScene extends Phaser.Scene {
           2
         );
       }
-      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
+      this.addArtifactLabel(
+        artifact.x + artifact.width / 2,
+        artifact.y - 6,
+        artifact.label
+      );
       return;
     }
 
     if (artifact.type === 'cursed_brick') {
       // Mossy Stone - drawn dynamically in drawDynamicElements to support shaking/physics
-      this.addArtifactLabel(artifact.x, artifact.y - 30, artifact.label);
+      this.addArtifactLabel(
+        artifact.x + artifact.width / 2,
+        artifact.y - 6,
+        artifact.label
+      );
       return;
     }
   }
@@ -1727,26 +1743,31 @@ class FallstackScene extends Phaser.Scene {
       fontFamily: '"Shippori Mincho", serif',
       fontSize: '11px',
       fontStyle: 'bold',
-      color: '#c8b89a',
+      color: '#5f5138',
     });
     label.setDepth(1);
-    label.setAlpha(0.7);
+    label.setAlpha(0.58);
     this.labels.push(label);
   }
 
-  private addArtifactLabel(x: number, y: number, text: string) {
-    const labelWidth = 150;
-    const clampedX = Phaser.Math.Clamp(x, 4, this.gameWidth() - labelWidth - 8);
+  private addArtifactLabel(centerX: number, y: number, text: string) {
+    const labelWidth = 128;
+    const clampedX = Phaser.Math.Clamp(
+      centerX,
+      labelWidth / 2 + 6,
+      this.gameWidth() - labelWidth / 2 - 6
+    );
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
-      fontSize: '9.5px',
+      fontSize: '10px',
       fontStyle: '700',
-      color: '#5c4a35',
-      backgroundColor: 'rgba(242, 233, 216, 0.9)',
-      padding: { left: 5, right: 5, top: 2, bottom: 2 },
-      wordWrap: { width: labelWidth - 10, useAdvancedWrap: true },
+      color: '#33291f',
+      backgroundColor: 'rgba(247, 240, 226, 0.96)',
+      padding: { left: 6, right: 6, top: 3, bottom: 3 },
+      wordWrap: { width: labelWidth, useAdvancedWrap: true },
     });
-    label.setDepth(3);
+    label.setOrigin(0.5, 1);
+    label.setDepth(4);
     this.labels.push(label);
   }
 
