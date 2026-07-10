@@ -33,6 +33,7 @@ import type {
   FallEventDetail,
   LandEventDetail,
   SummitEventDetail,
+  ZoneEventDetail,
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import { ProceduralSound } from './game/sound';
@@ -116,6 +117,7 @@ class FallstackScene extends Phaser.Scene {
   private lastChargePercent = 0;
   private lastWallBonk = false;
   private currentZone: ZoneId = 'lower_ruins';
+  private publishedZone: ZoneId = 'lower_ruins';
   private respawnZone: ZoneId = 'lower_ruins';
   private currentAttemptId = newAttemptId('attempt');
   private highestY = START_POS.y;
@@ -231,6 +233,7 @@ class FallstackScene extends Phaser.Scene {
     }
 
     this.refreshSnapshot(window.fallstackSnapshot);
+    this.publishZone();
     this.snapCameraToPlayer();
   }
 
@@ -239,7 +242,7 @@ class FallstackScene extends Phaser.Scene {
     const input = this.readInput();
     const body = this.player.body;
     const onFloor = body.blocked.down || body.touching.down;
-    this.currentZone = zoneForY(this.player.y).id;
+    this.updateCurrentZone();
     this.highestY = Math.min(this.highestY, this.player.y);
 
     if (input.left) this.facing = -1;
@@ -528,6 +531,7 @@ class FallstackScene extends Phaser.Scene {
     this.player.body.setVelocity(0, 0);
     this.player.body.setAcceleration(0, 0);
     this.currentZone = this.respawnZone;
+    this.publishZone();
     this.currentAttemptId = newAttemptId('attempt');
     this.highestY = checkpoint.y;
     this.charging = false;
@@ -555,6 +559,23 @@ class FallstackScene extends Phaser.Scene {
     }
 
     this.cameras.main.scrollX = 0;
+  }
+
+  private updateCurrentZone() {
+    const zoneId = zoneForY(this.player?.y ?? START_POS.y).id;
+    if (zoneId === this.currentZone) return;
+    this.currentZone = zoneId;
+    this.publishZone();
+  }
+
+  private publishZone() {
+    if (this.publishedZone === this.currentZone) return;
+    this.publishedZone = this.currentZone;
+    window.dispatchEvent(
+      new CustomEvent<ZoneEventDetail>('fallstack:zone', {
+        detail: { zoneId: this.currentZone },
+      })
+    );
   }
 
   private drawWorld() {
@@ -1737,6 +1758,7 @@ export function GameApp() {
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [message, setMessage] = useState('');
   const [charge, setCharge] = useState(0);
+  const [currentZoneId, setCurrentZoneId] = useState<ZoneId>('lower_ruins');
   const [loading, setLoading] = useState(true);
   const [summitOpen, setSummitOpen] = useState(false);
   const [muted, setMuted] = useState(
@@ -1805,8 +1827,11 @@ export function GameApp() {
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
       return { name: 'Lower Ruins', statusLabel: 'Quiet' };
-    return snapshot.zones[0] ?? { name: 'Lower Ruins', statusLabel: 'Quiet' };
-  }, [snapshot]);
+    return (
+      snapshot.zones.find((zone) => zone.id === currentZoneId) ??
+      snapshot.zones[0] ?? { name: 'Lower Ruins', statusLabel: 'Quiet' }
+    );
+  }, [currentZoneId, snapshot]);
 
   useEffect(() => {
     resetSharedInput();
@@ -2112,6 +2137,7 @@ export function GameApp() {
   useEffect(() => {
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
+      if (detail.percent <= 0) soundRef.current?.stopCharge();
       if (detail.percent <= 35 && detail.percent > 0)
         soundRef.current?.play('charge-start');
       setCharge(detail.percent);
@@ -2136,12 +2162,17 @@ export function GameApp() {
       const detail = (event as CustomEvent<SummitEventDetail>).detail;
       void postSummit(detail);
     };
+    const onZone = (event: Event) => {
+      const detail = (event as CustomEvent<ZoneEventDetail>).detail;
+      setCurrentZoneId(detail.zoneId);
+    };
     window.addEventListener('fallstack:charge', onCharge);
     window.addEventListener('fallstack:land', onLand);
     window.addEventListener('fallstack:launch', onLaunch);
     window.addEventListener('fallstack:fall', onFall);
     window.addEventListener('fallstack:clear', onClear);
     window.addEventListener('fallstack:summit', onSummit);
+    window.addEventListener('fallstack:zone', onZone);
     return () => {
       window.removeEventListener('fallstack:charge', onCharge);
       window.removeEventListener('fallstack:land', onLand);
@@ -2149,6 +2180,7 @@ export function GameApp() {
       window.removeEventListener('fallstack:fall', onFall);
       window.removeEventListener('fallstack:clear', onClear);
       window.removeEventListener('fallstack:summit', onSummit);
+      window.removeEventListener('fallstack:zone', onZone);
     };
   }, [postClear, postFall, postSummit]);
 
@@ -2171,13 +2203,7 @@ export function GameApp() {
             <span>Fallstack</span>
           </div>
           <div className="topbar-headline">
-            <b>{stats.falls}</b>{' '}
-            {snapshot?.headline
-              ? snapshot.headline.replace(
-                  /^Today's tower has \d+ failed climbs in it\.$/,
-                  ''
-                )
-              : 'travelers slipped on this mountain today.'}
+            <b>{stats.falls}</b> failed climbs today
           </div>
         </div>
 
@@ -2226,7 +2252,7 @@ export function GameApp() {
         <div
           className="hud-overlay zone-tag"
           role="status"
-          aria-label="Current zone"
+          aria-label={`Current zone: ${currentZoneInfo.name}, ${currentZoneInfo.statusLabel}`}
         >
           {currentZoneInfo.name}
           <span className={`zone-badge ${zoneBadgeClass}`}>

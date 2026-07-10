@@ -34,11 +34,21 @@ export function newAttemptId(prefix: string) {
 }
 
 export async function parseApiResponse<T>(res: Response): Promise<T> {
-  const data = (await res.json()) as T | ApiErrorResponse;
+  const text = await res.text();
+  const data = parseResponseBody<T>(text);
   if (!res.ok) {
     const message =
       (data as ApiErrorResponse).message ?? 'The tower did not answer.';
     throw new ApiRequestError(message, res.status);
   }
   return data as T;
+}
+
+function parseResponseBody<T>(text: string): T | ApiErrorResponse {
+  if (!text.trim()) return { status: 'error', message: 'The tower did not answer.' };
+  try {
+    return JSON.parse(text) as T | ApiErrorResponse;
+  } catch {
+    return { status: 'error', message: 'The tower did not answer.' };
+  }
 }

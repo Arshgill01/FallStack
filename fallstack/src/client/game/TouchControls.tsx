@@ -29,11 +29,13 @@ export function TouchControls({ disabled, charge }: TouchControlsProps) {
     },
     onPointerUp: (event: PointerEvent<HTMLButtonElement>) => {
       if (disabled) return;
-      event.currentTarget.releasePointerCapture(event.pointerId);
       set(key, false);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
     },
     onPointerCancel: () => set(key, false),
-    onPointerLeave: () => set(key, false),
+    onLostPointerCapture: () => set(key, false),
     onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();

@@ -11,6 +11,7 @@ export type ClearEventDetail = Omit<
 >;
 export type SummitEventDetail = { attemptId: string };
 export type LandEventDetail = { zoneId: ZoneId };
+export type ZoneEventDetail = { zoneId: ZoneId };
 export type SoundId =
   | 'charge-start'
   | 'launch'
