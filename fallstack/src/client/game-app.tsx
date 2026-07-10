@@ -36,6 +36,13 @@ import type {
   ZoneEventDetail,
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
+import {
+  applyLocalClear,
+  applyLocalFall,
+  applyLocalSummit,
+  localClearMessage,
+  localFallMessage,
+} from './game/localSnapshot';
 import { ProceduralSound } from './game/sound';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
 
@@ -1761,6 +1768,7 @@ export function GameApp() {
   const [message, setMessage] = useState('');
   const [charge, setCharge] = useState(0);
   const [currentZoneId, setCurrentZoneId] = useState<ZoneId>('lower_ruins');
+  const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [summitOpen, setSummitOpen] = useState(false);
   const [muted, setMuted] = useState(
@@ -1810,6 +1818,7 @@ export function GameApp() {
     async (successMessage: string | null = '14 falls made this foothold.') => {
       const res = await fetch('/api/init-game');
       const data = await parseApiResponse<InitGameResponse>(res);
+      setSharedAvailable(true);
       window.fallstackSnapshot = data.snapshot;
       setSnapshot(data.snapshot);
       if (successMessage) showMutation(successMessage);
@@ -1845,6 +1854,7 @@ export function GameApp() {
       } catch (error) {
         console.error('init-game failed', error);
         const localSnapshot = createLocalSnapshot();
+        setSharedAvailable(false);
         window.fallstackSnapshot = localSnapshot;
         setSnapshot(localSnapshot);
         showMutation(
@@ -2013,7 +2023,7 @@ export function GameApp() {
   }, [snapshot]);
 
   useEffect(() => {
-    if (!snapshot) return;
+    if (!snapshot || !sharedAvailable) return;
 
     const refreshQuietly = () => {
       if (document.visibilityState !== 'visible') return;
@@ -2028,7 +2038,7 @@ export function GameApp() {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', refreshQuietly);
     };
-  }, [loadSharedState, snapshot]);
+  }, [loadSharedState, sharedAvailable, snapshot]);
 
   useEffect(() => {
     sceneRef.current?.setReducedMotion(reducedMotion);
@@ -2037,12 +2047,21 @@ export function GameApp() {
   const postFall = useCallback(
     async (detail: FallEventDetail) => {
       if (!snapshot) return;
+      setSessionStats((current) => ({
+        ...current,
+        falls: current.falls + 1,
+      }));
+      soundRef.current?.play('fall');
+
+      if (!sharedAvailable) {
+        const nextSnapshot = applyLocalFall(snapshot, detail);
+        setSnapshot(nextSnapshot);
+        showMutation(localFallMessage(nextSnapshot, detail));
+        soundRef.current?.play('mutation');
+        return;
+      }
+
       try {
-        setSessionStats((current) => ({
-          ...current,
-          falls: current.falls + 1,
-        }));
-        soundRef.current?.play('fall');
         const res = await fetch('/api/record-fall', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2065,18 +2084,28 @@ export function GameApp() {
         showMutation('Your fall was noticed. The tower did not answer.');
       }
     },
-    [loadSharedState, showMutation, snapshot]
+    [loadSharedState, sharedAvailable, showMutation, snapshot]
   );
 
   const postClear = useCallback(
     async (detail: ClearEventDetail) => {
       if (!snapshot) return;
+      setSessionStats((current) => ({
+        ...current,
+        clears: current.clears + 1,
+      }));
+      soundRef.current?.play('checkpoint');
+
+      if (!sharedAvailable) {
+        const nextSnapshot = applyLocalClear(snapshot, detail);
+        setSnapshot(nextSnapshot);
+        const message = localClearMessage(nextSnapshot, detail);
+        showCheckpoint(message, '');
+        showMutation(message);
+        return;
+      }
+
       try {
-        setSessionStats((current) => ({
-          ...current,
-          clears: current.clears + 1,
-        }));
-        soundRef.current?.play('checkpoint');
         const res = await fetch('/api/record-clear', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2099,18 +2128,26 @@ export function GameApp() {
         showMutation('The checkpoint did not hold.');
       }
     },
-    [loadSharedState, showCheckpoint, showMutation, snapshot]
+    [loadSharedState, sharedAvailable, showCheckpoint, showMutation, snapshot]
   );
 
   const postSummit = useCallback(
     async (detail: SummitEventDetail) => {
       if (!snapshot) return;
+      setSessionStats((current) => ({
+        ...current,
+        summits: current.summits + 1,
+      }));
+      soundRef.current?.play('checkpoint');
+
+      if (!sharedAvailable) {
+        setSnapshot(applyLocalSummit(snapshot));
+        showMutation('The summit remembers you locally.');
+        setSummitOpen(true);
+        return;
+      }
+
       try {
-        setSessionStats((current) => ({
-          ...current,
-          summits: current.summits + 1,
-        }));
-        soundRef.current?.play('checkpoint');
         const res = await fetch('/api/record-summit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2133,7 +2170,7 @@ export function GameApp() {
         showMutation('The summit went quiet.');
       }
     },
-    [loadSharedState, showMutation, snapshot]
+    [loadSharedState, sharedAvailable, showMutation, snapshot]
   );
 
   useEffect(() => {
