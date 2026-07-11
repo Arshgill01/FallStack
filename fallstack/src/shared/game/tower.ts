@@ -1,8 +1,15 @@
-import type { ZoneId } from './mutation';
+import {
+  BOTTOM_ZONE_ID,
+  TOP_ZONE_ID,
+  ZONE_HEIGHT,
+  ZONE_IDS,
+  ZONE_NAMES,
+  type ZoneId,
+} from './mutation.js';
 import { MOVEMENT_TUNING } from './movement.js';
 
 export const WORLD_WIDTH = 480;
-export const WORLD_HEIGHT = 6000;
+export const WORLD_HEIGHT = ZONE_IDS.length * ZONE_HEIGHT;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
 export const CHECKPOINT_RESPAWN_CENTER_X = 240;
 
@@ -51,32 +58,20 @@ export type ZoneDefinition = {
   checkpointY: number;
 };
 
-export const ZONES: ZoneDefinition[] = [
-  {
-    id: 'moon_roof',
-    name: 'Moon Roof',
-    yTop: 0,
-    yBottom: 2000,
-    recoveryY: 2040,
-    checkpointY: 2000,
-  },
-  {
-    id: 'bell_shaft',
-    name: 'Bell Shaft',
-    yTop: 2000,
-    yBottom: 4000,
-    recoveryY: 4040,
-    checkpointY: 4000,
-  },
-  {
-    id: 'lower_ruins',
-    name: 'Lower Ruins',
-    yTop: 4000,
-    yBottom: 6000,
-    recoveryY: 6040,
-    checkpointY: 6000,
-  },
-];
+export const ZONES: ZoneDefinition[] = [...ZONE_IDS]
+  .map((zoneId, index) => {
+    const yBottom = WORLD_HEIGHT - index * ZONE_HEIGHT;
+    const yTop = yBottom - ZONE_HEIGHT;
+    return {
+      id: zoneId,
+      name: ZONE_NAMES[zoneId],
+      yTop,
+      yBottom,
+      recoveryY: yBottom + 40,
+      checkpointY: yBottom,
+    };
+  })
+  .reverse();
 
 // Helper to check if a y coordinate is in a zone
 export function zoneForY(y: number): ZoneDefinition {
@@ -88,9 +83,8 @@ export function zoneById(zoneId: ZoneId): ZoneDefinition {
 }
 
 export function nextZoneId(zoneId: ZoneId): ZoneId | null {
-  if (zoneId === 'lower_ruins') return 'bell_shaft';
-  if (zoneId === 'bell_shaft') return 'moon_roof';
-  return null;
+  const index = ZONE_IDS.indexOf(zoneId);
+  return index >= 0 ? (ZONE_IDS[index + 1] ?? null) : null;
 }
 
 // Generate procedurally stitched tower platforms based on a seed
@@ -99,14 +93,14 @@ export function generateDailyTower(seed: string): GeneratedTower {
   const platforms: Platform[] = [];
 
   // Start platform at the bottom
-  let prevY = 5940;
+  let prevY = WORLD_HEIGHT - 60;
   const prevX = 180;
   const prevW = 120;
   let prevCenter = prevX + prevW / 2;
 
   platforms.push({
     id: 'start',
-    zoneId: 'lower_ruins',
+    zoneId: BOTTOM_ZONE_ID,
     x: prevX,
     y: prevY,
     width: prevW,
@@ -116,7 +110,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
   // Climb up procedurally to the top
   let count = 1;
-  const checkpointYLevels = [4000, 2000];
+  const checkpointYLevels = ZONES.map((zone) => zone.yTop).filter((y) => y > 0);
 
   while (prevY > MOVEMENT_TUNING.topConnectorY + MOVEMENT_TUNING.reachableVertical - 10) {
     // Determine target Y for the next platform
@@ -161,7 +155,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
         });
     const nextX = nextCenter - pWidth / 2;
 
-    const kind: PlatformKind = zone.id === 'lower_ruins' ? 'stone' : zone.id === 'bell_shaft' ? 'metal' : 'moon';
+    const kind = platformKindForZone(zone.id);
     const pId = isCP ? `${zone.id}-checkpoint` : `ledge-${zone.id}-${count}`;
 
     platforms.push({
@@ -188,8 +182,8 @@ export function generateDailyTower(seed: string): GeneratedTower {
   );
   const transitionX = transitionCenter - transitionW / 2;
   platforms.push({
-    id: 'ledge-moon_roof-summit-connector',
-    zoneId: 'moon_roof',
+    id: `ledge-${TOP_ZONE_ID}-summit-connector`,
+    zoneId: TOP_ZONE_ID,
     x: transitionX,
     y: MOVEMENT_TUNING.topConnectorY,
     width: transitionW,
@@ -204,7 +198,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   
   platforms.push({
     id: 'summit',
-    zoneId: 'moon_roof',
+    zoneId: TOP_ZONE_ID,
     x: summitX,
     y: summitY,
     width: summitW,
@@ -235,6 +229,13 @@ export function generateDailyTower(seed: string): GeneratedTower {
     platforms,
     chunks,
   };
+}
+
+function platformKindForZone(zoneId: ZoneId): PlatformKind {
+  const index = ZONE_IDS.indexOf(zoneId);
+  if (index >= 8) return 'moon';
+  if (index >= 4) return 'metal';
+  return 'stone';
 }
 
 export const CHUNK_LIBRARY: TowerChunk[] = generateDailyTower(KNOWN_GOOD_SEED).chunks;

@@ -3,16 +3,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  BOTTOM_ZONE_ID,
+  TOP_ZONE_ID,
+  ZONE_IDS,
   createInitialAchievements,
   createSeededCounters,
   deriveSnapshot,
+  type ZoneId,
 } from '../../shared/game/mutation.js';
+import { zoneById } from '../../shared/game/tower.js';
 import {
   applyLocalClear,
   applyLocalFall,
   applyLocalSummit,
   localFallMessage,
 } from './localSnapshot.js';
+
+const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
 
 const baseSnapshot = () =>
   deriveSnapshot({
@@ -26,34 +33,36 @@ const baseSnapshot = () =>
   });
 
 void test('local fall updates derived counters without server state', () => {
+  const mid = zoneById(MID_ZONE_ID);
   const next = applyLocalFall(baseSnapshot(), {
     attemptId: 'attempt_local_fall',
-    zoneId: 'bell_shaft',
+    zoneId: MID_ZONE_ID,
     failureBucket: 'wall_bonk',
     chargePercent: 63,
-    highestY: 3500,
+    highestY: mid.yBottom - 500,
   });
-  const bell = next.zones.find((zone) => zone.id === 'bell_shaft');
+  const midZone = next.zones.find((zone) => zone.id === MID_ZONE_ID);
 
   assert.equal(next.totalFalls, 38);
-  assert.equal(bell?.counters.wall_bonk, 4);
+  assert.equal(midZone?.counters.wall_bonk, 3);
   assert.match(
     localFallMessage(next, {
       attemptId: 'attempt_local_fall',
-      zoneId: 'bell_shaft',
+      zoneId: MID_ZONE_ID,
       failureBucket: 'wall_bonk',
       chargePercent: 63,
-      highestY: 3500,
+      highestY: mid.yBottom - 500,
     }),
-    /counted here/
+    /spawned Ghost Platform/
   );
 });
 
 void test('local clear and summit update result summary', () => {
+  const bottom = zoneById(BOTTOM_ZONE_ID);
   const cleared = applyLocalClear(baseSnapshot(), {
     attemptId: 'attempt_local_clear',
-    zoneId: 'lower_ruins',
-    highestY: 3990,
+    zoneId: BOTTOM_ZONE_ID,
+    highestY: bottom.yTop - 10,
   });
   const summit = applyLocalSummit(cleared, {
     attemptId: 'attempt_local_summit',
@@ -62,7 +71,7 @@ void test('local clear and summit update result summary', () => {
 
   assert.equal(cleared.totalClears, 1);
   assert.equal(
-    cleared.zones.find((zone) => zone.id === 'lower_ruins')?.counters
+    cleared.zones.find((zone) => zone.id === BOTTOM_ZONE_ID)?.counters
       .successfulClears,
     3
   );
@@ -70,7 +79,7 @@ void test('local clear and summit update result summary', () => {
   assert.equal(summit.result.summitStatus, 'Summit Cleared');
   assert.equal(summit.result.firstSummitUsername, 'you');
   assert.equal(summit.result.highestClimberUsername, 'you');
-  assert.equal(summit.result.highestClimberZone, 'Moon Roof');
+  assert.equal(summit.result.highestClimberZone, zoneById(TOP_ZONE_ID).name);
   assert.equal(cleared.result.bestStabilizerUsername, 'you');
 });
 
@@ -81,42 +90,44 @@ void test('local events preserve existing local result achievements', () => {
   });
   const afterFall = applyLocalFall(summit, {
     attemptId: 'attempt_after_summit_fall',
-    zoneId: 'moon_roof',
+    zoneId: TOP_ZONE_ID,
     failureBucket: 'short_jump',
     chargePercent: 72,
     highestY: 900,
   });
   const afterClear = applyLocalClear(afterFall, {
     attemptId: 'attempt_after_summit_clear',
-    zoneId: 'bell_shaft',
-    highestY: 1900,
+    zoneId: MID_ZONE_ID,
+    highestY: zoneById(MID_ZONE_ID).yTop - 10,
   });
 
   assert.equal(afterFall.totalSummits, 1);
   assert.equal(afterFall.result.firstSummitUsername, 'you');
   assert.equal(afterFall.result.highestClimberUsername, 'you');
-  assert.equal(afterFall.result.highestClimberZone, 'Moon Roof');
+  assert.equal(afterFall.result.highestClimberZone, zoneById(TOP_ZONE_ID).name);
   assert.equal(afterClear.result.firstSummitUsername, 'you');
   assert.equal(afterClear.result.highestClimberUsername, 'you');
-  assert.equal(afterClear.result.highestClimberZone, 'Moon Roof');
+  assert.equal(afterClear.result.highestClimberZone, zoneById(TOP_ZONE_ID).name);
 });
 
 void test('local falls and clears update highest climber when progress improves', () => {
+  const mid = zoneById(MID_ZONE_ID);
+  const bottom = zoneById(BOTTOM_ZONE_ID);
   const afterFall = applyLocalFall(baseSnapshot(), {
     attemptId: 'attempt_local_high_fall',
-    zoneId: 'bell_shaft',
+    zoneId: MID_ZONE_ID,
     failureBucket: 'short_jump',
     chargePercent: 81,
-    highestY: 1900,
+    highestY: mid.yTop + 200,
   });
   const afterLowerClear = applyLocalClear(afterFall, {
     attemptId: 'attempt_local_lower_clear',
-    zoneId: 'lower_ruins',
-    highestY: 3990,
+    zoneId: BOTTOM_ZONE_ID,
+    highestY: bottom.yTop - 10,
   });
 
   assert.equal(afterFall.result.highestClimberUsername, 'you');
-  assert.equal(afterFall.result.highestClimberZone, 'Bell Shaft');
+  assert.equal(afterFall.result.highestClimberZone, mid.name);
   assert.equal(afterLowerClear.result.highestClimberUsername, 'you');
-  assert.equal(afterLowerClear.result.highestClimberZone, 'Bell Shaft');
+  assert.equal(afterLowerClear.result.highestClimberZone, mid.name);
 });

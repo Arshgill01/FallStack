@@ -7,6 +7,7 @@ import {
   chargeRatioForHeldMs,
   MOVEMENT_TUNING,
 } from './movement.js';
+import { BOTTOM_ZONE_ID, TOP_ZONE_ID, ZONE_HEIGHT, ZONE_IDS } from './mutation.js';
 import {
   CHUNK_LIBRARY,
   CHECKPOINT_RESPAWN_CENTER_X,
@@ -23,7 +24,10 @@ import {
 
 void test('known-good tower has finite dimensions and a summit', () => {
   assert.equal(WORLD_WIDTH, 480);
-  assert.ok(WORLD_HEIGHT > 2000);
+  assert.ok(WORLD_HEIGHT >= 72000);
+  assert.equal(ZONES.length, 12);
+  assert.equal(WORLD_HEIGHT, ZONE_IDS.length * ZONE_HEIGHT);
+  assert.ok(PLATFORMS.length >= 560);
   assert.ok(PLATFORMS.some((platform) => platform.id === 'summit' && platform.kind === 'summit'));
 });
 
@@ -75,7 +79,7 @@ void test('generated checkpoints cover the fixed respawn position', () => {
       platform.id.includes('checkpoint')
     );
 
-    assert.equal(checkpoints.length, 2, tower.seed);
+    assert.equal(checkpoints.length, ZONES.length - 1, tower.seed);
     for (const checkpoint of checkpoints) {
       assert.ok(
         checkpoint.x <= CHECKPOINT_RESPAWN_CENTER_X &&
@@ -105,21 +109,23 @@ void test('daily tower generation avoids near-vertical ledge traps', () => {
   }
 });
 
-void test('current Bell Shaft checkpoint does not respawn over empty air', () => {
+void test('current first checkpoint does not respawn over empty air', () => {
   const tower = generateDailyTower('fallstack-2026-07-11');
-  const lowerCheckpoint = tower.platforms.find(
-    (platform) => platform.id === 'lower_ruins-checkpoint'
+  const firstCheckpoint = tower.platforms.find(
+    (platform) => platform.id === `${BOTTOM_ZONE_ID}-checkpoint`
   );
+  const bottomZone = ZONES.find((zone) => zone.id === BOTTOM_ZONE_ID);
 
-  assert.ok(lowerCheckpoint);
-  assert.equal(lowerCheckpoint.y, 4000);
-  assert.equal(lowerCheckpoint.x + lowerCheckpoint.width / 2, CHECKPOINT_RESPAWN_CENTER_X);
+  assert.ok(firstCheckpoint);
+  assert.ok(bottomZone);
+  assert.equal(firstCheckpoint.y, bottomZone.yTop);
+  assert.equal(firstCheckpoint.x + firstCheckpoint.width / 2, CHECKPOINT_RESPAWN_CENTER_X);
 });
 
-void test('current opening route gives the first level meaningful ledge separation', () => {
+void test('current opening route gives the first biome meaningful ledge separation', () => {
   const tower = generateDailyTower('fallstack-2026-07-11');
   const lowerRoute = tower.platforms
-    .filter((platform) => platform.zoneId === 'lower_ruins')
+    .filter((platform) => platform.zoneId === BOTTOM_ZONE_ID)
     .sort((a, b) => b.y - a.y)
     .slice(0, 8);
 
@@ -138,7 +144,7 @@ void test('summit connector stays reachable from awkward top seeds', () => {
   const tower = generateDailyTower('fallstack-2026-07-10-149');
   const route = [...tower.platforms].sort((a, b) => b.y - a.y);
   const connectorIndex = route.findIndex(
-    (platform) => platform.id === 'ledge-moon_roof-summit-connector'
+    (platform) => platform.id === `ledge-${TOP_ZONE_ID}-summit-connector`
   );
   const previous = route[connectorIndex - 1];
   const connector = route[connectorIndex];
@@ -152,7 +158,7 @@ void test('summit connector stays reachable from awkward top seeds', () => {
   assert.ok(horizontalGap(connector, summit) <= MOVEMENT_TUNING.reachableHorizontal);
 });
 
-void test('summit pull keeps moon roof ledges within horizontal reach', () => {
+void test('summit pull keeps top-zone ledges within horizontal reach', () => {
   const tower = generateDailyTower('fallstack-2026-07-20-215');
   const route = [...tower.platforms].sort((a, b) => b.y - a.y);
   const hardest = route
@@ -174,12 +180,13 @@ void test('summit pull keeps moon roof ledges within horizontal reach', () => {
 
 void test('tower validation catches unreachable zone stitches', () => {
   const tower = generateDailyTower('fallstack-2026-07-08');
-  const firstBellPlatform = tower.platforms
-    .filter((platform) => platform.zoneId === 'bell_shaft')
+  const secondZone = ZONE_IDS[1]!;
+  const firstUpperPlatform = tower.platforms
+    .filter((platform) => platform.zoneId === secondZone)
     .sort((a, b) => b.y - a.y)[0];
 
-  assert.ok(firstBellPlatform);
-  firstBellPlatform.x = 400;
+  assert.ok(firstUpperPlatform);
+  firstUpperPlatform.x = 400;
   assert.equal(validateTower(tower), false);
 });
 
@@ -193,18 +200,18 @@ void test('different daily seeds can vary the known-good tower subtly', () => {
 void test('known-good seed reproduces the reference route', () => {
   const knownGood = generateDailyTower(KNOWN_GOOD_SEED);
   assert.deepEqual(knownGood.platforms, PLATFORMS);
-  assert.equal(knownGood.chunks.length, 3);
+  assert.equal(knownGood.chunks.length, ZONES.length);
   assert.equal(CHUNK_LIBRARY.every((chunk) => chunk.ledges.length > 0), true);
 });
 
 void test('zone progression is finite and ordered', () => {
-  assert.equal(nextZoneId('lower_ruins'), 'bell_shaft');
-  assert.equal(nextZoneId('bell_shaft'), 'moon_roof');
-  assert.equal(nextZoneId('moon_roof'), null);
-  assert.equal(zoneForY(5000).id, 'lower_ruins');
-  assert.equal(zoneForY(3000).id, 'bell_shaft');
-  assert.equal(zoneForY(1000).id, 'moon_roof');
-  assert.equal(ZONES.length, 3);
+  for (let index = 0; index < ZONE_IDS.length - 1; index += 1) {
+    assert.equal(nextZoneId(ZONE_IDS[index]!), ZONE_IDS[index + 1]);
+  }
+  assert.equal(nextZoneId(TOP_ZONE_ID), null);
+  assert.equal(zoneForY(WORLD_HEIGHT - 1000).id, BOTTOM_ZONE_ID);
+  assert.equal(zoneForY(1000).id, TOP_ZONE_ID);
+  assert.equal(ZONES.length, ZONE_IDS.length);
 });
 
 function horizontalGap(

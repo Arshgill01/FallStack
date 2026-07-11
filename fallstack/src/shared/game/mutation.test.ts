@@ -3,6 +3,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  BOTTOM_ZONE_ID,
+  TOP_ZONE_ID,
+  ZONE_HEIGHT,
+  ZONE_IDS,
   createDailySeed,
   createInitialAchievements,
   createSeededCounters,
@@ -11,9 +15,12 @@ import {
   fallFeedback,
   clearFeedback,
   mergeAchievementState,
+  type ZoneId,
   type ZoneMutationCounters,
 } from './mutation.js';
 import { zoneForY } from './tower.js';
+
+const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
 
 void test('daily seed is stable for a UTC date', () => {
   assert.deepEqual(createDailySeed(new Date('2026-07-08T12:34:00Z')), {
@@ -56,7 +63,7 @@ void test('seeded artifacts live in their owning tower zones', () => {
   }
 });
 
-void test('seeded lower ruins artifacts are visible in the opening viewport', () => {
+void test('seeded bottom-zone artifacts are visible in the opening viewport', () => {
   const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
   const snapshot = deriveSnapshot({
     ...seed,
@@ -66,12 +73,16 @@ void test('seeded lower ruins artifacts are visible in the opening viewport', ()
     totalSummits: 0,
     achievements: createInitialAchievements(),
   });
-  const lowerRuins = snapshot.zones.find((zone) => zone.id === 'lower_ruins');
+  const bottomZone = snapshot.zones.find((zone) => zone.id === BOTTOM_ZONE_ID);
 
-  assert.ok(lowerRuins);
-  assert.ok(lowerRuins.artifacts.length >= 2);
-  assert.ok(lowerRuins.artifacts.every((artifact) => artifact.y >= 5200));
-  assert.ok(lowerRuins.artifacts.some((artifact) => artifact.label.includes('falls')));
+  assert.ok(bottomZone);
+  assert.ok(bottomZone.artifacts.length >= 2);
+  assert.ok(
+    bottomZone.artifacts.every(
+      (artifact) => artifact.y >= (ZONE_IDS.length - 1) * ZONE_HEIGHT
+    )
+  );
+  assert.ok(bottomZone.artifacts.some((artifact) => artifact.label.includes('falls')));
 });
 
 void test('zone status display labels do not leak internal state names', () => {
@@ -93,11 +104,9 @@ void test('artifact derivation stays capped per zone under high traffic', () => 
   const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
   const snapshot = deriveSnapshot({
     ...seed,
-    counters: {
-      lower_ruins: busyCounters,
-      bell_shaft: busyCounters,
-      moon_roof: busyCounters,
-    },
+    counters: Object.fromEntries(
+      ZONE_IDS.map((zoneId) => [zoneId, { ...busyCounters }])
+    ) as Record<ZoneId, ZoneMutationCounters>,
     totalFalls: 1500,
     totalClears: 500,
     totalSummits: 1,
@@ -190,8 +199,8 @@ void test('achievement merges preserve monotonic community records', () => {
     firstSummitUsername: 'u/first',
     firstSummitAt: 100,
     highestClimberUsername: 'u/highest',
-    highestClimberZone: 'bell_shaft' as const,
-    highestClimberY: 1200,
+    highestClimberZone: MID_ZONE_ID,
+    highestClimberY: zoneTopForTest(MID_ZONE_ID) + 300,
     bestStabilizerUsername: 'u/stable',
     bestStabilizerClears: 2,
   };
@@ -200,7 +209,7 @@ void test('achievement merges preserve monotonic community records', () => {
     firstSummitUsername: 'u/late',
     firstSummitAt: 200,
     highestClimberUsername: 'u/summit',
-    highestClimberZone: 'moon_roof',
+    highestClimberZone: TOP_ZONE_ID,
     highestClimberY: 260,
     bestStabilizerUsername: 'u/steadier',
     bestStabilizerClears: 4,
@@ -209,7 +218,7 @@ void test('achievement merges preserve monotonic community records', () => {
   assert.equal(merged.firstSummitUsername, 'u/first');
   assert.equal(merged.firstSummitAt, 100);
   assert.equal(merged.highestClimberUsername, 'u/summit');
-  assert.equal(merged.highestClimberZone, 'moon_roof');
+  assert.equal(merged.highestClimberZone, TOP_ZONE_ID);
   assert.equal(merged.highestClimberY, 260);
   assert.equal(merged.bestStabilizerUsername, 'u/steadier');
   assert.equal(merged.bestStabilizerClears, 4);
@@ -227,3 +236,8 @@ void test('achievement merges ignore stale or incomplete records', () => {
 
   assert.deepEqual(merged, current);
 });
+
+function zoneTopForTest(zoneId: ZoneId): number {
+  const bottomUpIndex = ZONE_IDS.indexOf(zoneId);
+  return (ZONE_IDS.length - bottomUpIndex - 1) * ZONE_HEIGHT;
+}

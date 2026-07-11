@@ -7,6 +7,7 @@ import type {
   RecordSummitResponse,
 } from '../shared/api';
 import {
+  BOTTOM_ZONE_ID,
   createDailySeed,
   type Artifact,
   type FailureBucket,
@@ -24,8 +25,10 @@ import {
 } from '../shared/game/progression.js';
 import {
   generateDailyTower,
+  nextZoneId,
   WORLD_HEIGHT,
   ZONES,
+  zoneById,
   zoneForY,
   type Platform,
 } from '../shared/game/tower';
@@ -67,49 +70,153 @@ declare global {
   }
 }
 
-const START_POS = { x: 240, y: 5880 };
-const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
-  lower_ruins: START_POS,
-  bell_shaft: { x: 240, y: 3940 },
-  moon_roof: { x: 240, y: 1940 },
+const START_POS = { x: 240, y: WORLD_HEIGHT - 120 };
+
+function checkpointForZone(zoneId: ZoneId): { x: number; y: number } {
+  if (zoneId === BOTTOM_ZONE_ID) return START_POS;
+  return { x: 240, y: zoneById(zoneId).yBottom - 60 };
+}
+
+type Theme = {
+  skyTop: string;
+  skyBot: string;
+  stone: number;
+  stoneDark: number;
+  highlight: number;
+  accent: number;
+  platformEdge: number;
+  label: string;
 };
 
-const THEMES = {
-  lower_ruins: {
-    skyTop: '#241016',
-    skyBot: '#4b1d24',
-    stone: 0x6f2b31,
-    stoneDark: 0x31161a,
+const THEMES: Record<ZoneId, Theme> = {
+  orbital_scrapyard: {
+    skyTop: '#091314',
+    skyBot: '#4a1a24',
+    stone: 0x7a2d36,
+    stoneDark: 0x341018,
     highlight: 0xf2d7a0,
-    accent: 0x6ec6a4,
-    platformEdge: 0x160b0e,
+    accent: 0x62d0c4,
+    platformEdge: 0x120608,
+    label: 'Rust Orbit',
   },
-  bell_shaft: {
+  crater_foundry: {
+    skyTop: '#170c14',
+    skyBot: '#4c2026',
+    stone: 0x9c503b,
+    stoneDark: 0x39141a,
+    highlight: 0xffb870,
+    accent: 0x7ee0c6,
+    platformEdge: 0x120608,
+    label: 'Basalt Heat',
+  },
+  comet_reef: {
     skyTop: '#071923',
     skyBot: '#0f3d42',
-    stone: 0x9d7b43,
-    stoneDark: 0x493d2e,
-    highlight: 0xf1c96b,
-    accent: 0x62d0c4,
-    platformEdge: 0x091013,
+    stone: 0x287668,
+    stoneDark: 0x12332f,
+    highlight: 0x9ee6c9,
+    accent: 0xffd36a,
+    platformEdge: 0x071613,
+    label: 'Ice Coral',
   },
-  moon_roof: {
-    skyTop: '#080814',
-    skyBot: '#1e183a',
+  nebula_vault: {
+    skyTop: '#12091f',
+    skyBot: '#3a1f55',
+    stone: 0x6f5697,
+    stoneDark: 0x211833,
+    highlight: 0xdcc7ff,
+    accent: 0xff6fbc,
+    platformEdge: 0x0b0612,
+    label: 'Ion Mist',
+  },
+  ring_citadel: {
+    skyTop: '#070d18',
+    skyBot: '#26334d',
+    stone: 0xb18b45,
+    stoneDark: 0x413421,
+    highlight: 0xf1d17d,
+    accent: 0x6ec6ff,
+    platformEdge: 0x090d14,
+    label: 'Halo Brass',
+  },
+  dwarf_garden: {
+    skyTop: '#10130b',
+    skyBot: '#354219',
+    stone: 0x769a46,
+    stoneDark: 0x263319,
+    highlight: 0xd8f197,
+    accent: 0xff7b55,
+    platformEdge: 0x090c07,
+    label: 'Redleaf Gravity',
+  },
+  pulsar_spine: {
+    skyTop: '#060914',
+    skyBot: '#122b5c',
+    stone: 0x38666d,
+    stoneDark: 0x182b33,
+    highlight: 0x62d0c4,
+    accent: 0xfff07a,
+    platformEdge: 0x060a0d,
+    label: 'Pulse Metal',
+  },
+  neutron_forge: {
+    skyTop: '#07080f',
+    skyBot: '#2f3448',
+    stone: 0xa5afc2,
+    stoneDark: 0x3a4055,
+    highlight: 0xffffff,
+    accent: 0x74f7ff,
+    platformEdge: 0x090a10,
+    label: 'White Iron',
+  },
+  black_hole_chapel: {
+    skyTop: '#010104',
+    skyBot: '#16051f',
+    stone: 0x443052,
+    stoneDark: 0x110816,
+    highlight: 0xd8b6ff,
+    accent: 0xffbe5c,
+    platformEdge: 0x030104,
+    label: 'Event Stone',
+  },
+  galaxy_reef: {
+    skyTop: '#02091b',
+    skyBot: '#193b6e',
+    stone: 0x5d7fd6,
+    stoneDark: 0x1d2b58,
+    highlight: 0xbfd7ff,
+    accent: 0xff88d0,
+    platformEdge: 0x050915,
+    label: 'Star Coral',
+  },
+  dying_star_garden: {
+    skyTop: '#1e0705',
+    skyBot: '#6a2218',
+    stone: 0xc45d4f,
+    stoneDark: 0x61222b,
+    highlight: 0xffd49a,
+    accent: 0x8df0ff,
+    platformEdge: 0x15070b,
+    label: 'Solar Ash',
+  },
+  event_horizon_crown: {
+    skyTop: '#030006',
+    skyBot: '#210017',
     stone: 0xbec7d8,
     stoneDark: 0x4b526b,
     highlight: 0xf6f0d4,
     accent: 0xff6f5f,
-    platformEdge: 0x11101f,
+    platformEdge: 0x08020a,
+    label: 'Crown Matter',
   },
 };
 
-type ThemeKey = keyof typeof THEMES;
+function themeForZone(zoneId: ZoneId): Theme {
+  return THEMES[zoneId];
+}
 
-function zoneTheme(zoneId: ZoneId): ThemeKey {
-  if (zoneId === 'bell_shaft') return 'bell_shaft';
-  if (zoneId === 'moon_roof') return 'moon_roof';
-  return 'lower_ruins';
+function colorNumber(hex: string): number {
+  return Number.parseInt(hex.slice(1), 16);
 }
 
 /* ======================================================
@@ -133,9 +240,9 @@ class FallstackScene extends Phaser.Scene {
   private chargeStart = 0;
   private lastChargePercent = 0;
   private lastWallBonk = false;
-  private currentZone: ZoneId = 'lower_ruins';
-  private publishedZone: ZoneId = 'lower_ruins';
-  private respawnZone: ZoneId = 'lower_ruins';
+  private currentZone: ZoneId = BOTTOM_ZONE_ID;
+  private publishedZone: ZoneId = BOTTOM_ZONE_ID;
+  private respawnZone: ZoneId = BOTTOM_ZONE_ID;
   private currentAttemptId = newAttemptId('attempt');
   private highestY = START_POS.y;
   private checkpointed = new Set<ZoneId>();
@@ -499,19 +606,11 @@ class FallstackScene extends Phaser.Scene {
 
   private checkProgress() {
     if (!this.player) return;
-    if (
-      this.respawnZone === 'lower_ruins' &&
-      this.player.y < 4000 &&
-      !this.checkpointed.has('lower_ruins')
-    ) {
-      this.unlockZone('bell_shaft', 'lower_ruins');
-    }
-    if (
-      this.respawnZone === 'bell_shaft' &&
-      this.player.y < 2000 &&
-      !this.checkpointed.has('bell_shaft')
-    ) {
-      this.unlockZone('moon_roof', 'bell_shaft');
+    const zone = zoneById(this.respawnZone);
+    const nextZone = nextZoneId(this.respawnZone);
+    if (!nextZone) return;
+    if (this.player.y < zone.yTop && !this.checkpointed.has(this.respawnZone)) {
+      this.unlockZone(nextZone, this.respawnZone);
     }
   }
 
@@ -559,7 +658,7 @@ class FallstackScene extends Phaser.Scene {
 
   private respawn() {
     if (!this.player) return;
-    const checkpoint = CHECKPOINTS[this.respawnZone];
+    const checkpoint = checkpointForZone(this.respawnZone);
     this.player.setPosition(this.layoutX(checkpoint.x), checkpoint.y);
     this.player.body.setVelocity(0, 0);
     this.player.body.setAcceleration(0, 0);
@@ -622,179 +721,26 @@ class FallstackScene extends Phaser.Scene {
     const drawW = this.gameWidth();
     const maxX = minX + drawW;
 
-    // Lacquer Catacombs
-    this.bgGraphics.fillGradientStyle(
-      0x091314,
-      0x091314,
-      0x4a1a24,
-      0x4a1a24,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 5000, drawW, 1000);
-
-    // Rootglass Grotto
-    this.bgGraphics.fillGradientStyle(
-      0x102326,
-      0x102326,
-      0x1f5c50,
-      0x1f5c50,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 4000, drawW, 1000);
-
-    // Verdigris Bellworks
-    this.bgGraphics.fillGradientStyle(
-      0x071923,
-      0x071923,
-      0x11474a,
-      0x11474a,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 3000, drawW, 1000);
-
-    // Chainwell
-    this.bgGraphics.fillGradientStyle(
-      0x0c1117,
-      0x0c1117,
-      0x17313a,
-      0x17313a,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 2000, drawW, 1000);
-
-    // Lunar Reliquary
-    this.bgGraphics.fillGradientStyle(
-      0x050713,
-      0x050713,
-      0x1b1e46,
-      0x1b1e46,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 900, drawW, 1100);
-
-    // Eclipse Altar
-    this.bgGraphics.fillGradientStyle(
-      0x080612,
-      0x080612,
-      0x4e1220,
-      0x4e1220,
-      1,
-      1,
-      1,
-      1
-    );
-    this.bgGraphics.fillRect(minX, 0, drawW, 900);
-
-    // Zone boundary lines — subtle dividers
-    this.bgGraphics
-      .lineStyle(1.5, 0x7a2d36, 0.5)
-      .lineBetween(minX + 12, 4000, maxX - 12, 4000);
-    this.bgGraphics
-      .lineStyle(1.5, 0x33a69a, 0.4)
-      .lineBetween(minX + 12, 2000, maxX - 12, 2000);
-
-    this.bgGraphics.fillStyle(0x04100f, 0.4);
-    this.bgGraphics.fillTriangle(
-      minX,
-      5600,
-      minX + drawW * 0.3,
-      5420,
-      minX + drawW * 0.55,
-      5600
-    );
-    this.bgGraphics.fillTriangle(
-      minX + drawW * 0.38,
-      5600,
-      minX + drawW * 0.73,
-      5380,
-      maxX,
-      5600
-    );
-    this.bgGraphics.fillStyle(0x240b13, 0.5);
-    this.bgGraphics.fillTriangle(
-      minX,
-      5700,
-      minX + drawW * 0.42,
-      5520,
-      minX + drawW * 0.8,
-      5700
-    );
-    this.bgGraphics.fillTriangle(
-      minX + drawW * 0.54,
-      5700,
-      minX + drawW * 0.88,
-      5490,
-      maxX,
-      5700
-    );
-    this.bgGraphics.fillStyle(0x102326, 0.22);
-    this.bgGraphics.fillRect(minX, 5000, drawW, 210);
-    this.bgGraphics.lineStyle(2.2, 0x62d0c4, 0.16);
-    const veinCount = Math.max(3, Math.ceil(drawW / 150));
-    for (let i = 0; i < veinCount; i++) {
-      const veinX = minX + 24 + i * (drawW / veinCount);
-      this.bgGraphics.lineBetween(veinX, 5100, veinX + 56, 6000);
-      this.bgGraphics.lineBetween(veinX + 12, 5360, veinX - 30, 5900);
+    for (const zone of ZONES) {
+      const theme = themeForZone(zone.id);
+      const top = colorNumber(theme.skyTop);
+      const bottom = colorNumber(theme.skyBot);
+      const height = zone.yBottom - zone.yTop;
+      this.bgGraphics.fillGradientStyle(top, top, bottom, bottom, 1, 1, 1, 1);
+      this.bgGraphics.fillRect(minX, zone.yTop, drawW, height);
+      this.drawBiomeDetails(zone.id, zone.yTop, zone.yBottom, minX, maxX, drawW);
+      if (zone.yTop > 0) {
+        this.bgGraphics
+          .lineStyle(1.5, theme.accent, 0.36)
+          .lineBetween(minX + 12, zone.yTop, maxX - 12, zone.yTop);
+      }
+      this.addZoneLabel(
+        this.layoutX(14),
+        zone.yBottom - 1180,
+        zone.name,
+        theme.label
+      );
     }
-
-    this.bgGraphics.fillStyle(0x0b302f, 0.42);
-    const rootCount = Math.ceil(drawW / 130);
-    for (let i = 0; i < rootCount; i++) {
-      const rootX = minX + 30 + i * (drawW / rootCount);
-      this.bgGraphics.fillEllipse(rootX, 4380 + (i % 2) * 90, 22, 180);
-      this.bgGraphics.fillEllipse(rootX + 42, 4540, 14, 130);
-    }
-
-    this.bgGraphics.fillStyle(0x9d7b43, 0.18);
-    this.bgGraphics.fillRect(minX + 36, 3240, drawW - 72, 12);
-    this.bgGraphics.fillCircle(minX + drawW * 0.28, 3450, 44);
-    this.bgGraphics.fillCircle(minX + drawW * 0.72, 3660, 54);
-    this.bgGraphics.fillStyle(0x071923, 0.78);
-    this.bgGraphics.fillCircle(minX + drawW * 0.28, 3450, 34);
-    this.bgGraphics.fillCircle(minX + drawW * 0.72, 3660, 42);
-
-    this.bgGraphics.fillStyle(0x03080c, 0.55);
-    this.bgGraphics.fillRect(minX + 24, 2000, 10, 1000);
-    this.bgGraphics.fillRect(maxX - 34, 2000, 10, 1000);
-    this.bgGraphics.lineStyle(2, 0x62d0c4, 0.16);
-    this.bgGraphics.lineBetween(minX + 100, 2000, minX + 100, 3000);
-    this.bgGraphics.lineBetween(maxX - 100, 2000, maxX - 100, 3000);
-
-    const moonX = minX + drawW * 0.7;
-    this.bgGraphics.fillStyle(0xf6f0d4, 0.82);
-    this.bgGraphics.fillCircle(moonX, 1280, 38);
-    this.bgGraphics.fillStyle(0x1b1e46, 0.9);
-    this.bgGraphics.fillCircle(moonX + 16, 1272, 35);
-    this.bgGraphics.fillStyle(0xf6f0d4, 0.12);
-    this.bgGraphics.fillCircle(moonX, 1280, 62);
-
-    this.bgGraphics.fillStyle(0x0a0610, 0.65);
-    this.bgGraphics.fillRect(minX + drawW * 0.08, 500, drawW * 0.26, 12);
-    this.bgGraphics.fillTriangle(
-      minX + drawW * 0.04,
-      500,
-      minX + drawW * 0.2,
-      444,
-      minX + drawW * 0.38,
-      500
-    );
-    this.bgGraphics.fillStyle(0xff6f5f, 0.22);
-    this.bgGraphics.fillEllipse(minX + drawW * 0.5, 670, 160, 24);
 
     this.bgGraphics
       .lineStyle(3, 0x0a0508, 0.55)
@@ -811,88 +757,95 @@ class FallstackScene extends Phaser.Scene {
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     for (const zone of snapshot.zones) {
-      const zoneData = ZONES.find((candidate) => candidate.id === zone.id);
-      if (zoneData) {
-        // Draw sub-theme inline labels inside the tower world
-        if (zone.id === 'lower_ruins') {
-          this.addZoneLabel(
-            this.layoutX(14),
-            4820,
-            'Rootglass Grotto',
-            'Wet Green Shine'
-          );
-        } else if (zone.id === 'bell_shaft') {
-          this.addZoneLabel(
-            this.layoutX(14),
-            3820,
-            'Verdigris Bellworks',
-            'Oiled Bronze'
-          );
-          this.addZoneLabel(
-            this.layoutX(14),
-            2820,
-            'Chainwell',
-            'Cold Links'
-          );
-        } else if (zone.id === 'moon_roof') {
-          this.addZoneLabel(
-            this.layoutX(14),
-            1820,
-            'Lunar Reliquary',
-            'Ashlight'
-          );
-          this.addZoneLabel(
-            this.layoutX(14),
-            820,
-            'Eclipse Altar',
-            'Red Corona'
-          );
-        }
-      }
       for (const artifact of zone.artifacts)
         this.drawArtifact(this.layoutArtifact(artifact));
     }
   }
 
+  private drawBiomeDetails(
+    zoneId: ZoneId,
+    yTop: number,
+    yBottom: number,
+    minX: number,
+    maxX: number,
+    drawW: number
+  ) {
+    const theme = themeForZone(zoneId);
+    const midY = yTop + (yBottom - yTop) * 0.52;
+    const index = ZONES.findIndex((zone) => zone.id === zoneId);
+
+    this.bgGraphics?.fillStyle(theme.platformEdge, 0.42);
+    this.bgGraphics?.fillTriangle(
+      minX,
+      yBottom - 900,
+      minX + drawW * (0.22 + (index % 3) * 0.08),
+      midY,
+      minX + drawW * 0.62,
+      yBottom - 900
+    );
+    this.bgGraphics?.fillTriangle(
+      minX + drawW * 0.38,
+      yBottom - 720,
+      minX + drawW * (0.72 - (index % 2) * 0.08),
+      yTop + 820,
+      maxX,
+      yBottom - 720
+    );
+    this.bgGraphics?.fillStyle(theme.highlight, 0.11);
+    this.bgGraphics?.fillCircle(minX + drawW * 0.74, yBottom - 620, 46);
+    this.bgGraphics?.fillStyle(theme.platformEdge, 0.72);
+    this.bgGraphics?.fillCircle(minX + drawW * 0.74 + 18, yBottom - 628, 40);
+    this.bgGraphics?.lineStyle(3, theme.accent, 0.2);
+    this.bgGraphics?.strokeEllipse(
+      minX + drawW * 0.74,
+      yBottom - 620,
+      142,
+      28
+    );
+    this.bgGraphics?.fillStyle(theme.accent, 0.24);
+    for (let i = 0; i < 5; i += 1) {
+      const chipX = minX + drawW * (0.16 + i * 0.16);
+      const chipY = yBottom - 760 + (i % 2) * 130;
+      this.bgGraphics?.fillRect(chipX, chipY, 18 + (i % 3) * 10, 4);
+    }
+
+    if (index % 4 === 0) {
+      this.bgGraphics?.lineStyle(2, theme.accent, 0.18);
+      for (let i = 0; i < 5; i += 1) {
+        const x = minX + 30 + i * (drawW / 5);
+        this.bgGraphics?.lineBetween(x, yTop, x + 80, yBottom);
+      }
+    } else if (index % 4 === 1) {
+      this.bgGraphics?.fillStyle(theme.highlight, 0.16);
+      for (let i = 0; i < 4; i += 1) {
+        this.bgGraphics?.fillEllipse(
+          minX + drawW * (0.18 + i * 0.21),
+          yTop + 980 + i * 260,
+          72 + i * 12,
+          18
+        );
+      }
+    } else if (index % 4 === 2) {
+      this.bgGraphics?.fillStyle(theme.accent, 0.16);
+      this.bgGraphics?.fillCircle(minX + drawW * 0.72, yTop + 1260, 62);
+      this.bgGraphics?.fillStyle(theme.platformEdge, 0.7);
+      this.bgGraphics?.fillCircle(minX + drawW * 0.72 + 22, yTop + 1248, 54);
+    } else {
+      this.bgGraphics?.lineStyle(3, theme.highlight, 0.14);
+      this.bgGraphics?.lineBetween(minX + 60, midY, maxX - 60, midY - 260);
+      this.bgGraphics?.lineBetween(minX + 80, midY + 180, maxX - 120, midY + 60);
+    }
+  }
+
   private drawPlatform(platform: Platform) {
     const y = platform.y;
-
-    // Platform sub-theme styling palette
-    let stoneColor: number;
-    let darkColor: number;
-    let edgeColor: number;
-    let highlightColor = 0xf2d7a0;
-
-    if (y >= 5000) {
-      stoneColor = 0x7a2d36;
-      darkColor = 0x341018;
-      edgeColor = 0x120608;
-    } else if (y >= 4000) {
-      stoneColor = 0x287668;
-      darkColor = 0x12332f;
-      edgeColor = 0x071613;
-      highlightColor = 0x9ee6c9;
-    } else if (y >= 3000) {
-      stoneColor = 0x9d7b43;
-      darkColor = 0x493d2e;
-      edgeColor = 0x16110b;
-      highlightColor = 0xf1c96b;
-    } else if (y >= 2000) {
-      stoneColor = 0x38666d;
-      darkColor = 0x182b33;
-      edgeColor = 0x060a0d;
-      highlightColor = 0x62d0c4;
-    } else if (y >= 900) {
-      stoneColor = 0x69708d;
-      darkColor = 0x2b3048;
-      edgeColor = 0x0b0d18;
-      highlightColor = 0xdfe6ff;
-    } else {
-      stoneColor = 0xc45d4f;
-      darkColor = 0x61222b;
-      edgeColor = 0x15070b;
-      highlightColor = 0xffd49a;
-    }
+    const zoneId = zoneForY(y).id;
+    const theme = themeForZone(zoneId);
+    const zoneIndex = ZONES.findIndex((zone) => zone.id === zoneId);
+    const stoneColor = theme.stone;
+    const darkColor = theme.stoneDark;
+    const edgeColor = theme.platformEdge;
+    const highlightColor = theme.highlight;
 
     // Check if checkpoint to draw Torii Gate
     const isCheckpoint = platform.id.includes('checkpoint');
@@ -931,7 +884,7 @@ class FallstackScene extends Phaser.Scene {
         );
 
       // Torii columns
-      this.graphics?.fillStyle(0x132326, 1);
+      this.graphics?.fillStyle(theme.platformEdge, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.32 - 1,
         platform.y - postH,
@@ -945,7 +898,7 @@ class FallstackScene extends Phaser.Scene {
         postH
       );
 
-      this.graphics?.fillStyle(0x2c8b7e, 1);
+      this.graphics?.fillStyle(theme.accent, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.32,
         platform.y - postH,
@@ -975,14 +928,14 @@ class FallstackScene extends Phaser.Scene {
       );
 
       // Shimaki crossbeam
-      this.graphics?.fillStyle(0x132326, 1);
+      this.graphics?.fillStyle(theme.platformEdge, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.36,
         platform.y - postH + 10,
         platform.width * 0.72,
         6
       );
-      this.graphics?.fillStyle(0x2c8b7e, 1);
+      this.graphics?.fillStyle(theme.accent, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.36,
         platform.y - postH + 9,
@@ -999,7 +952,7 @@ class FallstackScene extends Phaser.Scene {
         5,
         2
       );
-      this.graphics?.fillStyle(0x2c8b7e, 1);
+      this.graphics?.fillStyle(theme.accent, 1);
       this.graphics?.fillRoundedRect(
         cx - platform.width * 0.42,
         platform.y - postH - 8,
@@ -1011,7 +964,7 @@ class FallstackScene extends Phaser.Scene {
       // Center wood stamp nameboard
       this.graphics?.fillStyle(0x1b262f, 1);
       this.graphics?.fillRect(cx - 8, platform.y - postH - 1, 16, 11);
-      this.graphics?.fillStyle(0xf1c96b, 1);
+      this.graphics?.fillStyle(theme.highlight, 1);
       this.graphics?.strokeRect(cx - 7, platform.y - postH, 14, 9);
 
       this.addInlineLabel(
@@ -1019,7 +972,7 @@ class FallstackScene extends Phaser.Scene {
         platform.y - postH - 24,
         'GATE',
         9,
-        '#62d0c4'
+        theme.skyBot
       );
       return;
     }
@@ -1027,7 +980,7 @@ class FallstackScene extends Phaser.Scene {
     if (platform.kind === 'summit') {
       // Summit platform — glowing golden celestial arch/temple roof design
       this.graphics
-        ?.fillStyle(0x3a1020, 1)
+        ?.fillStyle(theme.platformEdge, 1)
         .fillRoundedRect(
           platform.x,
           platform.y + 4,
@@ -1036,7 +989,7 @@ class FallstackScene extends Phaser.Scene {
           5
         );
       this.graphics
-        ?.fillStyle(0xc45d4f, 1)
+        ?.fillStyle(theme.stone, 1)
         .fillRoundedRect(
           platform.x,
           platform.y,
@@ -1049,7 +1002,7 @@ class FallstackScene extends Phaser.Scene {
         .fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
 
       this.graphics
-        ?.fillStyle(0xffd49a, 0.55)
+        ?.fillStyle(theme.highlight, 0.55)
         .fillEllipse(platform.x + platform.width / 2, platform.y - 20, 20, 20);
       this.addInlineLabel(
         platform.x + platform.width / 2 - 18,
@@ -1096,7 +1049,7 @@ class FallstackScene extends Phaser.Scene {
       .fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
 
     // Sub-theme specific decorative platform detailing
-    if (y >= 5000) {
+    if (zoneIndex % 6 === 0) {
       this.graphics?.lineStyle(1.2, darkColor, 0.35);
       if (platform.width > 40)
         this.graphics?.lineBetween(
@@ -1112,11 +1065,11 @@ class FallstackScene extends Phaser.Scene {
           platform.x + 60,
           platform.y + platform.height - 3
         );
-      this.graphics?.fillStyle(0x6ec6a4, 0.7);
+      this.graphics?.fillStyle(theme.accent, 0.7);
       if (platform.width > 30)
         this.graphics?.fillEllipse(platform.x + 12, platform.y, 6, 2.5);
-    } else if (y >= 4000) {
-      this.graphics?.fillStyle(0x9ee6c9, 0.7);
+    } else if (zoneIndex % 6 === 1) {
+      this.graphics?.fillStyle(theme.highlight, 0.7);
       if (platform.width > 30)
         this.graphics?.fillCircle(platform.x + 15, platform.y + 8, 3.5);
       if (platform.width > 60)
@@ -1125,14 +1078,14 @@ class FallstackScene extends Phaser.Scene {
           platform.y + 8,
           3
         );
-      this.graphics?.lineStyle(1, 0x9ee6c9, 0.45);
+      this.graphics?.lineStyle(1, theme.highlight, 0.45);
       this.graphics?.lineBetween(
         platform.x + 10,
         platform.y + 4,
         platform.x + 24,
         platform.y + 12
       );
-    } else if (y >= 3000) {
+    } else if (zoneIndex % 6 === 2) {
       this.graphics?.lineStyle(1, highlightColor, 0.25);
       this.graphics?.lineBetween(
         platform.x + 10,
@@ -1146,7 +1099,7 @@ class FallstackScene extends Phaser.Scene {
         platform.x + 15,
         platform.y + platform.height - 4
       );
-    } else if (y >= 2000) {
+    } else if (zoneIndex % 6 === 3) {
       this.graphics?.lineStyle(1, darkColor, 0.6);
       this.graphics?.lineBetween(
         platform.x + 4,
@@ -1154,7 +1107,7 @@ class FallstackScene extends Phaser.Scene {
         platform.x + platform.width - 4,
         platform.y + platform.height / 2
       );
-      this.graphics?.fillStyle(0x071923, 0.75);
+      this.graphics?.fillStyle(theme.platformEdge, 0.75);
       this.graphics?.fillCircle(platform.x + 4, platform.y + 4, 1.2);
       this.graphics?.fillCircle(
         platform.x + platform.width - 4,
@@ -1171,7 +1124,7 @@ class FallstackScene extends Phaser.Scene {
         platform.y + platform.height - 6,
         1.2
       );
-    } else if (y >= 900) {
+    } else if (zoneIndex % 6 === 4) {
       this.graphics?.fillStyle(highlightColor, 0.18);
       this.graphics?.beginPath();
       const px = platform.x + platform.width / 2;
@@ -1201,10 +1154,10 @@ class FallstackScene extends Phaser.Scene {
 
   private drawArtifact(artifact: Artifact) {
     const zone = zoneForY(artifact.y);
-    const th = THEMES[zoneTheme(zone.id)];
+    const th = themeForZone(zone.id);
 
     if (artifact.type === 'lantern_trail') {
-      this.graphics?.lineStyle(2, 0x62d0c4, 0.6).beginPath();
+      this.graphics?.lineStyle(2, th.accent, 0.6).beginPath();
       this.graphics?.arc(
         artifact.x + 60,
         artifact.y + 10,
@@ -1218,13 +1171,13 @@ class FallstackScene extends Phaser.Scene {
         artifact.y - 32,
         artifact.label,
         10,
-        '#12524b'
+        th.skyBot
       );
       return;
     }
 
     if (artifact.type === 'corpse_stack') {
-      const colors = [0x341018, 0x7a2d36, 0xa3494a];
+      const colors = [th.stoneDark, th.stone, th.highlight];
       for (let i = 2; i >= 0; i -= 1) {
         this.graphics
           ?.fillStyle(colors[i]!, 1)
@@ -1257,7 +1210,7 @@ class FallstackScene extends Phaser.Scene {
         ?.fillStyle(th.stoneDark, 1)
         .fillRoundedRect(artifact.x, artifact.y, 10, artifact.height, 2);
       this.graphics
-        ?.fillStyle(0x2c8b7e, 1)
+        ?.fillStyle(th.accent, 1)
         .fillRoundedRect(
           artifact.x + 8,
           artifact.y - 2,
@@ -1266,7 +1219,7 @@ class FallstackScene extends Phaser.Scene {
           3
         );
       this.graphics
-        ?.lineStyle(1, 0xf1c96b, 0.85)
+        ?.lineStyle(1, th.highlight, 0.85)
         .strokeRect(
           artifact.x + 11,
           artifact.y,
@@ -1421,24 +1374,25 @@ class FallstackScene extends Phaser.Scene {
       }
     }
 
-    // SPAWN FIELD PARTICLES (twinkling fireflies in shaft / moon roof)
     const zone = ZONES.find((z) => z.id === this.currentZone);
-    if (zone && (zone.id === 'bell_shaft' || zone.id === 'moon_roof')) {
+    if (zone && zone.id !== BOTTOM_ZONE_ID) {
       if (Math.random() < 0.05) {
         const cam = this.cameras.main;
         const px = cam.scrollX + Math.random() * this.gameWidth();
         const py = cam.scrollY + cam.height - Math.random() * 160;
+        const theme = themeForZone(zone.id);
+        const zoneIndex = ZONES.findIndex((candidate) => candidate.id === zone.id);
         this.particles.push({
           x: px,
           y: py,
           vx: Math.random() * 24 - 12,
           vy: -25 - Math.random() * 35,
-          color: zone.id === 'bell_shaft' ? 0xf1c96b : 0xff6f5f,
+          color: zoneIndex % 2 === 0 ? theme.highlight : theme.accent,
           alpha: 0.45,
           size: 1.0 + Math.random() * 1.5,
           life: 2000,
           maxLife: 2000,
-          type: zone.id === 'bell_shaft' ? 'lantern' : 'ghost',
+          type: zoneIndex % 2 === 0 ? 'lantern' : 'ghost',
         });
       }
     }
@@ -1792,7 +1746,7 @@ export function GameApp() {
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [message, setMessage] = useState('');
   const [charge, setCharge] = useState(0);
-  const [currentZoneId, setCurrentZoneId] = useState<ZoneId>('lower_ruins');
+  const [currentZoneId, setCurrentZoneId] = useState<ZoneId>(BOTTOM_ZONE_ID);
   const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [summitOpen, setSummitOpen] = useState(false);
@@ -1869,10 +1823,10 @@ export function GameApp() {
 
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
-      return { name: 'Lower Ruins', statusLabel: 'Quiet' };
+      return { name: zoneById(BOTTOM_ZONE_ID).name, statusLabel: 'Quiet' };
     return (
       snapshot.zones.find((zone) => zone.id === currentZoneId) ??
-      snapshot.zones[0] ?? { name: 'Lower Ruins', statusLabel: 'Quiet' }
+      snapshot.zones[0] ?? { name: zoneById(BOTTOM_ZONE_ID).name, statusLabel: 'Quiet' }
     );
   }, [currentZoneId, snapshot]);
 

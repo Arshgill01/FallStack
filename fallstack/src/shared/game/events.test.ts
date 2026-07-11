@@ -3,10 +3,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  BOTTOM_ZONE_ID,
+  TOP_ZONE_ID,
+  ZONE_IDS,
+  type ZoneId,
+} from './mutation.js';
+import {
   validateRecordClearRequest,
   validateRecordFallRequest,
   validateRecordSummitRequest,
 } from './events.js';
+import { nextZoneId, zoneById } from './tower.js';
 
 const now = Date.parse('2026-07-10T12:00:00Z');
 const base = {
@@ -14,16 +21,19 @@ const base = {
   attemptId: 'attempt_abc12345',
   timestamp: now,
 };
+const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
 
 void test('fall event validation accepts bounded structured payloads', () => {
+  const bottom = zoneById(BOTTOM_ZONE_ID);
+  const mid = zoneById(MID_ZONE_ID);
   assert.equal(
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: 'lower_ruins',
+        zoneId: BOTTOM_ZONE_ID,
         failureBucket: 'short_jump',
         chargePercent: 74,
-        highestY: 5420,
+        highestY: bottom.yBottom - 580,
       },
       now
     ).ok,
@@ -33,10 +43,10 @@ void test('fall event validation accepts bounded structured payloads', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: 'bell_shaft',
+        zoneId: MID_ZONE_ID,
         failureBucket: 'wall_bonk',
         chargePercent: 58,
-        highestY: 2164,
+        highestY: mid.yTop + 164,
       },
       now
     ).ok,
@@ -45,14 +55,17 @@ void test('fall event validation accepts bounded structured payloads', () => {
 });
 
 void test('fall event validation rejects forged cross-zone progress', () => {
+  const bottom = zoneById(BOTTOM_ZONE_ID);
+  const mid = zoneById(MID_ZONE_ID);
+  const top = zoneById(TOP_ZONE_ID);
   assert.equal(
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: 'lower_ruins',
+        zoneId: BOTTOM_ZONE_ID,
         failureBucket: 'short_jump',
         chargePercent: 74,
-        highestY: 3999,
+        highestY: bottom.yTop - 1,
       },
       now
     ).ok,
@@ -62,10 +75,10 @@ void test('fall event validation rejects forged cross-zone progress', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: 'bell_shaft',
+        zoneId: MID_ZONE_ID,
         failureBucket: 'short_jump',
         chargePercent: 74,
-        highestY: 1999,
+        highestY: mid.yTop - 1,
       },
       now
     ).ok,
@@ -75,10 +88,10 @@ void test('fall event validation rejects forged cross-zone progress', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: 'moon_roof',
+        zoneId: TOP_ZONE_ID,
         failureBucket: 'short_jump',
         chargePercent: 74,
-        highestY: 2001,
+        highestY: top.yBottom + 1,
       },
       now
     ).ok,
@@ -88,9 +101,9 @@ void test('fall event validation rejects forged cross-zone progress', () => {
 
 void test('fall event validation rejects forged numeric fields', () => {
   const result = validateRecordFallRequest(
-    {
-      ...base,
-      zoneId: 'lower_ruins',
+      {
+        ...base,
+      zoneId: BOTTOM_ZONE_ID,
       failureBucket: 'short_jump',
       chargePercent: 740,
       highestY: -100,
@@ -102,48 +115,55 @@ void test('fall event validation rejects forged numeric fields', () => {
 });
 
 void test('clear event validation only accepts playable checkpoint transitions', () => {
+  const bottom = zoneById(BOTTOM_ZONE_ID);
+  const mid = zoneById(MID_ZONE_ID);
+  const top = zoneById(TOP_ZONE_ID);
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'lower_ruins', highestY: 3998 },
+      { ...base, zoneId: BOTTOM_ZONE_ID, highestY: bottom.yTop - 2 },
       now
     ).ok,
     true
   );
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'lower_ruins', highestY: 3835 },
+      { ...base, zoneId: BOTTOM_ZONE_ID, highestY: bottom.yTop - 165 },
       now
     ).ok,
     true
   );
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'moon_roof', highestY: 0 },
+      { ...base, zoneId: TOP_ZONE_ID, highestY: top.yTop },
       now
     ).ok,
     false
   );
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'bell_shaft', highestY: 2500 },
+      { ...base, zoneId: MID_ZONE_ID, highestY: mid.yTop + 500 },
       now
     ).ok,
     false
   );
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'lower_ruins', highestY: 3834 },
+      { ...base, zoneId: BOTTOM_ZONE_ID, highestY: bottom.yTop - 166 },
       now
     ).ok,
     false
   );
   assert.equal(
     validateRecordClearRequest(
-      { ...base, zoneId: 'lower_ruins', highestY: 0 },
+      { ...base, zoneId: BOTTOM_ZONE_ID, highestY: 0 },
       now
     ).ok,
     false
   );
+});
+
+void test('test fixtures still cover a clearable middle zone', () => {
+  assert.ok(nextZoneId(MID_ZONE_ID));
 });
 
 void test('summit event validation requires fresh bounded summit progress', () => {

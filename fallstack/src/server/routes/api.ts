@@ -19,6 +19,7 @@ import {
   clearFeedback,
   mergeAchievementState,
   SEEDED_TOTAL_FALLS,
+  TOP_ZONE_ID,
   ZERO_COUNTERS,
   type GameSnapshot,
   type AchievementState,
@@ -236,7 +237,7 @@ api.post('/record-summit', async (c) => {
 
     if (counted) {
       await claimFirstSummit(state, username);
-      updateHighestClimber(state, username, 'moon_roof', body.highestY);
+      updateHighestClimber(state, username, TOP_ZONE_ID, body.highestY);
       await incrementDailyKey(totalKey(state, 'summits'));
       await saveAchievements(state);
     }

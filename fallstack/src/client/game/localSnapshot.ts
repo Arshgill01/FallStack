@@ -1,8 +1,10 @@
 import {
+  BOTTOM_ZONE_ID,
   clearFeedback,
   createInitialAchievements,
   deriveSnapshot,
   fallFeedback,
+  TOP_ZONE_ID,
   ZERO_COUNTERS,
   type AchievementState,
   type GameSnapshot,
@@ -66,7 +68,7 @@ export function applyLocalSummit(
     achievements.firstSummitUsername = 'you';
     achievements.firstSummitAt = Date.now();
   }
-  updateLocalHighestClimber(achievements, 'moon_roof', detail.highestY);
+  updateLocalHighestClimber(achievements, TOP_ZONE_ID, detail.highestY);
 
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
@@ -142,7 +144,7 @@ function achievementsFromSnapshot(snapshot: GameSnapshot): AchievementState {
 }
 
 function zoneIdForName(name: string): ZoneId {
-  return ZONES.find((zone) => zone.name === name)?.id ?? 'lower_ruins';
+  return ZONES.find((zone) => zone.name === name)?.id ?? BOTTOM_ZONE_ID;
 }
 
 function zoneTopForName(name: string): number {

@@ -1,5 +1,21 @@
-export const ZONE_IDS = ['lower_ruins', 'bell_shaft', 'moon_roof'] as const;
+export const ZONE_IDS = [
+  'orbital_scrapyard',
+  'crater_foundry',
+  'comet_reef',
+  'nebula_vault',
+  'ring_citadel',
+  'dwarf_garden',
+  'pulsar_spine',
+  'neutron_forge',
+  'black_hole_chapel',
+  'galaxy_reef',
+  'dying_star_garden',
+  'event_horizon_crown',
+] as const;
 export type ZoneId = (typeof ZONE_IDS)[number];
+export const BOTTOM_ZONE_ID: ZoneId = ZONE_IDS[0];
+export const TOP_ZONE_ID: ZoneId = ZONE_IDS[ZONE_IDS.length - 1]!;
+export const ZONE_HEIGHT = 6000;
 
 export const FAILURE_BUCKETS = [
   'short_jump',
@@ -93,62 +109,56 @@ export const ZERO_COUNTERS: ZoneMutationCounters = {
   successfulClears: 0,
 };
 
-const ZONE_NAMES: Record<ZoneId, string> = {
-  lower_ruins: 'Lower Ruins',
-  bell_shaft: 'Bell Shaft',
-  moon_roof: 'Moon Roof',
+export const ZONE_NAMES: Record<ZoneId, string> = {
+  orbital_scrapyard: 'Orbital Scrapyard',
+  crater_foundry: 'Crater Foundry',
+  comet_reef: 'Comet Reef',
+  nebula_vault: 'Nebula Vault',
+  ring_citadel: 'Ring Citadel',
+  dwarf_garden: 'Dwarf Garden',
+  pulsar_spine: 'Pulsar Spine',
+  neutron_forge: 'Neutron Forge',
+  black_hole_chapel: 'Black Hole Chapel',
+  galaxy_reef: 'Galaxy Reef',
+  dying_star_garden: 'Dying Star Garden',
+  event_horizon_crown: 'Event Horizon Crown',
 };
 
 const ARTIFACT_SLOTS: Record<
   ZoneId,
   Record<FailureBucket | 'successful_clear', Pick<Artifact, 'x' | 'y' | 'width' | 'height'>>
-> = {
-  lower_ruins: {
-    short_jump: { x: 128, y: 5848, width: 74, height: 26 },
-    overjump: { x: 304, y: 5766, width: 72, height: 24 },
-    wall_bonk: { x: 40, y: 5718, width: 92, height: 18 },
-    helper_overuse: { x: 214, y: 5668, width: 52, height: 24 },
-    successful_clear: { x: 82, y: 5586, width: 128, height: 12 },
-  },
-  bell_shaft: {
-    short_jump: { x: 244, y: 3830, width: 70, height: 25 },
-    overjump: { x: 52, y: 3702, width: 66, height: 24 },
-    wall_bonk: { x: 310, y: 3568, width: 96, height: 18 },
-    helper_overuse: { x: 176, y: 3420, width: 54, height: 24 },
-    successful_clear: { x: 248, y: 3218, width: 130, height: 12 },
-  },
-  moon_roof: {
-    short_jump: { x: 284, y: 1720, width: 68, height: 24 },
-    overjump: { x: 78, y: 1338, width: 68, height: 24 },
-    wall_bonk: { x: 270, y: 1198, width: 96, height: 18 },
-    helper_overuse: { x: 190, y: 930, width: 54, height: 24 },
-    successful_clear: { x: 96, y: 388, width: 132, height: 12 },
-  },
-};
+> = Object.fromEntries(
+  ZONE_IDS.map((zoneId, index) => {
+    const zoneBottom = (ZONE_IDS.length - index) * ZONE_HEIGHT;
+    const drift = (index % 4) * 18;
+    return [
+      zoneId,
+      {
+        short_jump: { x: 112 + drift, y: zoneBottom - 168, width: 74, height: 26 },
+        overjump: { x: 286 - drift, y: zoneBottom - 276, width: 72, height: 24 },
+        wall_bonk: { x: 44 + drift, y: zoneBottom - 424, width: 92, height: 18 },
+        helper_overuse: { x: 214 - drift / 2, y: zoneBottom - 584, width: 52, height: 24 },
+        successful_clear: { x: 92 + drift, y: zoneBottom - 820, width: 128, height: 12 },
+      },
+    ];
+  })
+) as Record<
+  ZoneId,
+  Record<FailureBucket | 'successful_clear', Pick<Artifact, 'x' | 'y' | 'width' | 'height'>>
+>;
 
-const seededCounters: Record<ZoneId, ZoneMutationCounters> = {
-  lower_ruins: {
-    short_jump: 14,
-    overjump: 3,
-    wall_bonk: 2,
-    helper_overuse: 1,
-    successfulClears: 2,
-  },
-  bell_shaft: {
-    short_jump: 6,
-    overjump: 5,
-    wall_bonk: 3,
-    helper_overuse: 1,
-    successfulClears: 1,
-  },
-  moon_roof: {
-    short_jump: 2,
-    overjump: 3,
-    wall_bonk: 0,
-    helper_overuse: 0,
-    successfulClears: 0,
-  },
-};
+const seededCounters: Record<ZoneId, ZoneMutationCounters> = Object.fromEntries(
+  ZONE_IDS.map((zoneId, index) => [
+    zoneId,
+    {
+      short_jump: Math.max(1, 14 - index),
+      overjump: index % 3 === 0 ? 3 : 1,
+      wall_bonk: index % 2 === 0 ? 2 : 0,
+      helper_overuse: index < 4 ? 1 : 0,
+      successfulClears: index < 2 ? 2 - index : 0,
+    },
+  ])
+) as Record<ZoneId, ZoneMutationCounters>;
 
 export const SEEDED_TOTAL_FALLS = 37;
 
@@ -191,8 +201,8 @@ export function createInitialAchievements(): AchievementState {
     firstSummitUsername: null,
     firstSummitAt: null,
     highestClimberUsername: null,
-    highestClimberZone: 'lower_ruins',
-    highestClimberY: 2164,
+    highestClimberZone: BOTTOM_ZONE_ID,
+    highestClimberY: (ZONE_IDS.length - 1) * ZONE_HEIGHT + 164,
     bestStabilizerUsername: null,
     bestStabilizerClears: 0,
   };

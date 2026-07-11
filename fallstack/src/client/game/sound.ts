@@ -1,4 +1,4 @@
-import type { ZoneId } from '../../shared/game/mutation';
+import { ZONE_IDS, type ZoneId } from '../../shared/game/mutation';
 import type { SoundId } from './events';
 
 declare global {
@@ -208,8 +208,11 @@ export class ProceduralSound {
   }
 
   private land(zoneId?: ZoneId) {
-    if (zoneId === 'bell_shaft') return this.ping(760, 0.12, 0.022);
-    if (zoneId === 'moon_roof') return this.ping(980, 0.18, 0.018);
+    const zoneIndex = zoneId ? ZONE_IDS.indexOf(zoneId) : 0;
+    if (zoneIndex >= ZONE_IDS.length * 0.66)
+      return this.ping(980, 0.18, 0.018);
+    if (zoneIndex >= ZONE_IDS.length * 0.33)
+      return this.ping(760, 0.12, 0.022);
     return this.noise(0.06, 260, 0.035);
   }
 
