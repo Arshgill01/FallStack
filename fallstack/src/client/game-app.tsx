@@ -74,36 +74,33 @@ const CHECKPOINTS: Record<ZoneId, { x: number; y: number }> = {
   moon_roof: { x: 240, y: 1940 },
 };
 
-/* ======================================================
-   THEME PALETTE — mirrors mockup(3) themes exactly
-   ====================================================== */
 const THEMES = {
   lower_ruins: {
-    skyTop: '#c9a876',
-    skyBot: '#e9d9ae',
-    stone: 0xa9906c,
-    stoneDark: 0x7d6a4c,
-    highlight: 0xf3ead9,
-    accent: 0xc1502f,
-    platformEdge: 0x5f5138,
+    skyTop: '#241016',
+    skyBot: '#4b1d24',
+    stone: 0x6f2b31,
+    stoneDark: 0x31161a,
+    highlight: 0xf2d7a0,
+    accent: 0x6ec6a4,
+    platformEdge: 0x160b0e,
   },
   bell_shaft: {
-    skyTop: '#24303d',
-    skyBot: '#3c4f5e',
-    stone: 0x5c6b74,
-    stoneDark: 0x3a444c,
-    highlight: 0x8fa6b4,
-    accent: 0xe0b25a,
-    platformEdge: 0x28313a,
+    skyTop: '#071923',
+    skyBot: '#0f3d42',
+    stone: 0x9d7b43,
+    stoneDark: 0x493d2e,
+    highlight: 0xf1c96b,
+    accent: 0x62d0c4,
+    platformEdge: 0x091013,
   },
   moon_roof: {
-    skyTop: '#121322',
-    skyBot: '#2b2f45',
-    stone: 0xd8d2bd,
-    stoneDark: 0xa49d84,
-    highlight: 0xefead8,
-    accent: 0xb9a0e0,
-    platformEdge: 0x7d7561,
+    skyTop: '#080814',
+    skyBot: '#1e183a',
+    stone: 0xbec7d8,
+    stoneDark: 0x4b526b,
+    highlight: 0xf6f0d4,
+    accent: 0xff6f5f,
+    platformEdge: 0x11101f,
   },
 };
 
@@ -625,13 +622,12 @@ class FallstackScene extends Phaser.Scene {
     const drawW = this.gameWidth();
     const maxX = minX + drawW;
 
-    // 1. GORGEOUS SKY GRADIENTS (vertical linear bands for 6 sub-themes)
-    // Forgotten Ruins (5000 to 6000)
+    // Lacquer Catacombs
     this.bgGraphics.fillGradientStyle(
-      0x73614c,
-      0x73614c,
-      0xbca27f,
-      0xbca27f,
+      0x091314,
+      0x091314,
+      0x4a1a24,
+      0x4a1a24,
       1,
       1,
       1,
@@ -639,12 +635,12 @@ class FallstackScene extends Phaser.Scene {
     );
     this.bgGraphics.fillRect(minX, 5000, drawW, 1000);
 
-    // Lush Garden (4000 to 5000)
+    // Rootglass Grotto
     this.bgGraphics.fillGradientStyle(
-      0x354b5e,
-      0x354b5e,
-      0x838e70,
-      0x838e70,
+      0x102326,
+      0x102326,
+      0x1f5c50,
+      0x1f5c50,
       1,
       1,
       1,
@@ -652,12 +648,12 @@ class FallstackScene extends Phaser.Scene {
     );
     this.bgGraphics.fillRect(minX, 4000, drawW, 1000);
 
-    // Crystal Cavern (3000 to 4000)
+    // Verdigris Bellworks
     this.bgGraphics.fillGradientStyle(
-      0x1a1226,
-      0x1a1226,
-      0x32244a,
-      0x32244a,
+      0x071923,
+      0x071923,
+      0x11474a,
+      0x11474a,
       1,
       1,
       1,
@@ -665,12 +661,12 @@ class FallstackScene extends Phaser.Scene {
     );
     this.bgGraphics.fillRect(minX, 3000, drawW, 1000);
 
-    // Hanging Shaft (2000 to 3000)
+    // Chainwell
     this.bgGraphics.fillGradientStyle(
-      0x121b22,
-      0x121b22,
-      0x22323f,
-      0x22323f,
+      0x0c1117,
+      0x0c1117,
+      0x17313a,
+      0x17313a,
       1,
       1,
       1,
@@ -678,12 +674,12 @@ class FallstackScene extends Phaser.Scene {
     );
     this.bgGraphics.fillRect(minX, 2000, drawW, 1000);
 
-    // Starry Observatory (900 to 2000)
+    // Lunar Reliquary
     this.bgGraphics.fillGradientStyle(
-      0x06090e,
-      0x06090e,
-      0x18202d,
-      0x18202d,
+      0x050713,
+      0x050713,
+      0x1b1e46,
+      0x1b1e46,
       1,
       1,
       1,
@@ -691,12 +687,12 @@ class FallstackScene extends Phaser.Scene {
     );
     this.bgGraphics.fillRect(minX, 900, drawW, 1100);
 
-    // Celestial Summit (0 to 900)
+    // Eclipse Altar
     this.bgGraphics.fillGradientStyle(
-      0x0a050f,
-      0x0a050f,
-      0xab4a2c,
-      0xab4a2c,
+      0x080612,
+      0x080612,
+      0x4e1220,
+      0x4e1220,
       1,
       1,
       1,
@@ -706,15 +702,13 @@ class FallstackScene extends Phaser.Scene {
 
     // Zone boundary lines — subtle dividers
     this.bgGraphics
-      .lineStyle(1.5, 0x5f5138, 0.45)
+      .lineStyle(1.5, 0x7a2d36, 0.5)
       .lineBetween(minX + 12, 4000, maxX - 12, 4000);
     this.bgGraphics
-      .lineStyle(1.5, 0x4c6070, 0.45)
+      .lineStyle(1.5, 0x33a69a, 0.4)
       .lineBetween(minX + 12, 2000, maxX - 12, 2000);
 
-    // 2. PARALLAX SILHOUETTES
-    // Forgotten Ruins (y: 5000 to 6000) - Far mountain ranges
-    this.bgGraphics.fillStyle(0x73614c, 0.25);
+    this.bgGraphics.fillStyle(0x04100f, 0.4);
     this.bgGraphics.fillTriangle(
       minX,
       5600,
@@ -731,7 +725,7 @@ class FallstackScene extends Phaser.Scene {
       maxX,
       5600
     );
-    this.bgGraphics.fillStyle(0x5c4d3c, 0.38);
+    this.bgGraphics.fillStyle(0x240b13, 0.5);
     this.bgGraphics.fillTriangle(
       minX,
       5700,
@@ -748,63 +742,65 @@ class FallstackScene extends Phaser.Scene {
       maxX,
       5700
     );
-
-    // Lush Garden (y: 4000 to 5000) - Silhouetted mossy tree branches
-    this.bgGraphics.fillStyle(0x3d4b2e, 0.22);
-    this.bgGraphics.fillEllipse(minX + 40, 4400, 50, 90);
-    this.bgGraphics.fillEllipse(maxX - 40, 4600, 60, 110);
-    this.bgGraphics.fillStyle(0x4e6a3b, 0.15);
-    const leafCount = Math.ceil(drawW / 90);
-    for (let i = 0; i < leafCount; i++) {
-      this.bgGraphics.fillCircle(
-        minX + 60 + i * (drawW / leafCount),
-        4120 + (i % 2) * 15,
-        30
-      );
+    this.bgGraphics.fillStyle(0x102326, 0.22);
+    this.bgGraphics.fillRect(minX, 5000, drawW, 210);
+    this.bgGraphics.lineStyle(2.2, 0x62d0c4, 0.16);
+    const veinCount = Math.max(3, Math.ceil(drawW / 150));
+    for (let i = 0; i < veinCount; i++) {
+      const veinX = minX + 24 + i * (drawW / veinCount);
+      this.bgGraphics.lineBetween(veinX, 5100, veinX + 56, 6000);
+      this.bgGraphics.lineBetween(veinX + 12, 5360, veinX - 30, 5900);
     }
 
-    // Crystal Cavern (y: 3000 to 4000) - Glowing cavern crystal cluster silhouettes
-    this.bgGraphics.fillStyle(0x504573, 0.22);
-    this.bgGraphics.fillTriangle(minX, 3400, minX + 45, 3350, minX, 3300);
-    this.bgGraphics.fillTriangle(minX, 3700, minX + 60, 3620, minX, 3550);
-    this.bgGraphics.fillTriangle(maxX, 3500, maxX - 50, 3450, maxX, 3400);
-    this.bgGraphics.fillTriangle(maxX, 3800, maxX - 55, 3720, maxX, 3650);
+    this.bgGraphics.fillStyle(0x0b302f, 0.42);
+    const rootCount = Math.ceil(drawW / 130);
+    for (let i = 0; i < rootCount; i++) {
+      const rootX = minX + 30 + i * (drawW / rootCount);
+      this.bgGraphics.fillEllipse(rootX, 4380 + (i % 2) * 90, 22, 180);
+      this.bgGraphics.fillEllipse(rootX + 42, 4540, 14, 130);
+    }
 
-    // Hanging Shaft (y: 2000 to 3000) - Vertical mining scaffolding walls
-    this.bgGraphics.fillStyle(0x111922, 0.38);
-    this.bgGraphics.fillRect(minX + 24, 2000, 14, 1000);
-    this.bgGraphics.fillRect(maxX - 38, 2000, 14, 1000);
-    this.bgGraphics.lineStyle(1.8, 0x111922, 0.22);
+    this.bgGraphics.fillStyle(0x9d7b43, 0.18);
+    this.bgGraphics.fillRect(minX + 36, 3240, drawW - 72, 12);
+    this.bgGraphics.fillCircle(minX + drawW * 0.28, 3450, 44);
+    this.bgGraphics.fillCircle(minX + drawW * 0.72, 3660, 54);
+    this.bgGraphics.fillStyle(0x071923, 0.78);
+    this.bgGraphics.fillCircle(minX + drawW * 0.28, 3450, 34);
+    this.bgGraphics.fillCircle(minX + drawW * 0.72, 3660, 42);
+
+    this.bgGraphics.fillStyle(0x03080c, 0.55);
+    this.bgGraphics.fillRect(minX + 24, 2000, 10, 1000);
+    this.bgGraphics.fillRect(maxX - 34, 2000, 10, 1000);
+    this.bgGraphics.lineStyle(2, 0x62d0c4, 0.16);
     this.bgGraphics.lineBetween(minX + 100, 2000, minX + 100, 3000);
     this.bgGraphics.lineBetween(maxX - 100, 2000, maxX - 100, 3000);
 
-    // Starry Observatory (y: 900 to 2000) - Large glowing crescent moon
     const moonX = minX + drawW * 0.7;
-    this.bgGraphics.fillStyle(0xefe7cf, 0.88);
-    this.bgGraphics.fillCircle(moonX, 1280, 36);
-    this.bgGraphics.fillStyle(0xefe7cf, 0.12);
-    this.bgGraphics.fillCircle(moonX, 1280, 46);
+    this.bgGraphics.fillStyle(0xf6f0d4, 0.82);
+    this.bgGraphics.fillCircle(moonX, 1280, 38);
+    this.bgGraphics.fillStyle(0x1b1e46, 0.9);
+    this.bgGraphics.fillCircle(moonX + 16, 1272, 35);
+    this.bgGraphics.fillStyle(0xf6f0d4, 0.12);
+    this.bgGraphics.fillCircle(moonX, 1280, 62);
 
-    // Celestial Summit (y: 0 to 900) - Silhouetted temple pagoda rooftops
-    this.bgGraphics.fillStyle(0x2d181c, 0.35);
-    this.bgGraphics.fillRect(minX + drawW * 0.06, 480, 110, 15);
+    this.bgGraphics.fillStyle(0x0a0610, 0.65);
+    this.bgGraphics.fillRect(minX + drawW * 0.08, 500, drawW * 0.26, 12);
     this.bgGraphics.fillTriangle(
-      minX + drawW * 0.02,
-      480,
-      minX + drawW * 0.18,
-      430,
-      minX + drawW * 0.33,
-      480
+      minX + drawW * 0.04,
+      500,
+      minX + drawW * 0.2,
+      444,
+      minX + drawW * 0.38,
+      500
     );
-    this.bgGraphics.fillStyle(0xd5b060, 0.15);
-    this.bgGraphics.fillEllipse(minX + drawW * 0.25, 600, 90, 18);
-    this.bgGraphics.fillEllipse(minX + drawW * 0.75, 750, 110, 22);
+    this.bgGraphics.fillStyle(0xff6f5f, 0.22);
+    this.bgGraphics.fillEllipse(minX + drawW * 0.5, 670, 160, 24);
 
     this.bgGraphics
-      .lineStyle(3, 0x5f5138, 0.24)
+      .lineStyle(3, 0x0a0508, 0.55)
       .lineBetween(0, 0, 0, WORLD_HEIGHT);
     this.bgGraphics
-      .lineStyle(3, 0x5f5138, 0.24)
+      .lineStyle(3, 0x0a0508, 0.55)
       .lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
 
     // 3. DRAW PLATFORMS
@@ -822,34 +818,34 @@ class FallstackScene extends Phaser.Scene {
           this.addZoneLabel(
             this.layoutX(14),
             4820,
-            'Overgrown Garden',
-            'Whispering Leaves'
+            'Rootglass Grotto',
+            'Wet Green Shine'
           );
         } else if (zone.id === 'bell_shaft') {
           this.addZoneLabel(
             this.layoutX(14),
             3820,
-            'Crystal Cavern',
-            'Amethyst Depths'
+            'Verdigris Bellworks',
+            'Oiled Bronze'
           );
           this.addZoneLabel(
             this.layoutX(14),
             2820,
-            'Hanging Shaft',
-            'Industrial Girders'
+            'Chainwell',
+            'Cold Links'
           );
         } else if (zone.id === 'moon_roof') {
           this.addZoneLabel(
             this.layoutX(14),
             1820,
-            'Observatory',
-            'Constellation Climb'
+            'Lunar Reliquary',
+            'Ashlight'
           );
           this.addZoneLabel(
             this.layoutX(14),
             820,
-            'Celestial Summit',
-            'Holy Dawn'
+            'Eclipse Altar',
+            'Red Corona'
           );
         }
       }
@@ -865,42 +861,37 @@ class FallstackScene extends Phaser.Scene {
     let stoneColor: number;
     let darkColor: number;
     let edgeColor: number;
-    let highlightColor = 0xf3ead9;
+    let highlightColor = 0xf2d7a0;
 
     if (y >= 5000) {
-      // 1. Forgotten Ruins
-      stoneColor = 0xa9906c;
-      darkColor = 0x7d6a4c;
-      edgeColor = 0x5f5138;
+      stoneColor = 0x7a2d36;
+      darkColor = 0x341018;
+      edgeColor = 0x120608;
     } else if (y >= 4000) {
-      // 2. Lush Overgrown Garden
-      stoneColor = 0x8aa86c;
-      darkColor = 0x5b6b47;
-      edgeColor = 0x3d4b2e;
+      stoneColor = 0x287668;
+      darkColor = 0x12332f;
+      edgeColor = 0x071613;
+      highlightColor = 0x9ee6c9;
     } else if (y >= 3000) {
-      // 3. Crystal Cavern
-      stoneColor = 0x8a7fb0;
-      darkColor = 0x504573;
-      edgeColor = 0x2f264d;
-      highlightColor = 0xebe8ff;
+      stoneColor = 0x9d7b43;
+      darkColor = 0x493d2e;
+      edgeColor = 0x16110b;
+      highlightColor = 0xf1c96b;
     } else if (y >= 2000) {
-      // 4. Hanging Shaft
-      stoneColor = 0x8c6b53;
-      darkColor = 0x543e2f;
-      edgeColor = 0x2e2017;
-      highlightColor = 0xf6eae1;
+      stoneColor = 0x38666d;
+      darkColor = 0x182b33;
+      edgeColor = 0x060a0d;
+      highlightColor = 0x62d0c4;
     } else if (y >= 900) {
-      // 5. Starry Observatory
-      stoneColor = 0x3b4d61;
-      darkColor = 0x212f3e;
-      edgeColor = 0x111922;
-      highlightColor = 0xaecce7;
+      stoneColor = 0x69708d;
+      darkColor = 0x2b3048;
+      edgeColor = 0x0b0d18;
+      highlightColor = 0xdfe6ff;
     } else {
-      // 6. Celestial Summit
-      stoneColor = 0xd5b060;
-      darkColor = 0x937535;
-      edgeColor = 0x51401a;
-      highlightColor = 0xfffaeb;
+      stoneColor = 0xc45d4f;
+      darkColor = 0x61222b;
+      edgeColor = 0x15070b;
+      highlightColor = 0xffd49a;
     }
 
     // Check if checkpoint to draw Torii Gate
@@ -940,7 +931,7 @@ class FallstackScene extends Phaser.Scene {
         );
 
       // Torii columns
-      this.graphics?.fillStyle(0x9c3e23, 1);
+      this.graphics?.fillStyle(0x132326, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.32 - 1,
         platform.y - postH,
@@ -954,7 +945,7 @@ class FallstackScene extends Phaser.Scene {
         postH
       );
 
-      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillStyle(0x2c8b7e, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.32,
         platform.y - postH,
@@ -984,14 +975,14 @@ class FallstackScene extends Phaser.Scene {
       );
 
       // Shimaki crossbeam
-      this.graphics?.fillStyle(0x9c3e23, 1);
+      this.graphics?.fillStyle(0x132326, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.36,
         platform.y - postH + 10,
         platform.width * 0.72,
         6
       );
-      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillStyle(0x2c8b7e, 1);
       this.graphics?.fillRect(
         cx - platform.width * 0.36,
         platform.y - postH + 9,
@@ -1008,7 +999,7 @@ class FallstackScene extends Phaser.Scene {
         5,
         2
       );
-      this.graphics?.fillStyle(0xc1502f, 1);
+      this.graphics?.fillStyle(0x2c8b7e, 1);
       this.graphics?.fillRoundedRect(
         cx - platform.width * 0.42,
         platform.y - postH - 8,
@@ -1020,7 +1011,7 @@ class FallstackScene extends Phaser.Scene {
       // Center wood stamp nameboard
       this.graphics?.fillStyle(0x1b262f, 1);
       this.graphics?.fillRect(cx - 8, platform.y - postH - 1, 16, 11);
-      this.graphics?.fillStyle(0xc79a3e, 1);
+      this.graphics?.fillStyle(0xf1c96b, 1);
       this.graphics?.strokeRect(cx - 7, platform.y - postH, 14, 9);
 
       this.addInlineLabel(
@@ -1028,7 +1019,7 @@ class FallstackScene extends Phaser.Scene {
         platform.y - postH - 24,
         'GATE',
         9,
-        '#c1502f'
+        '#62d0c4'
       );
       return;
     }
@@ -1036,7 +1027,7 @@ class FallstackScene extends Phaser.Scene {
     if (platform.kind === 'summit') {
       // Summit platform — glowing golden celestial arch/temple roof design
       this.graphics
-        ?.fillStyle(0x937535, 1)
+        ?.fillStyle(0x3a1020, 1)
         .fillRoundedRect(
           platform.x,
           platform.y + 4,
@@ -1045,7 +1036,7 @@ class FallstackScene extends Phaser.Scene {
           5
         );
       this.graphics
-        ?.fillStyle(0xd5b060, 1)
+        ?.fillStyle(0xc45d4f, 1)
         .fillRoundedRect(
           platform.x,
           platform.y,
@@ -1058,7 +1049,7 @@ class FallstackScene extends Phaser.Scene {
         .fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
 
       this.graphics
-        ?.fillStyle(0xe0b25a, 0.55)
+        ?.fillStyle(0xffd49a, 0.55)
         .fillEllipse(platform.x + platform.width / 2, platform.y - 20, 20, 20);
       this.addInlineLabel(
         platform.x + platform.width / 2 - 18,
@@ -1106,7 +1097,6 @@ class FallstackScene extends Phaser.Scene {
 
     // Sub-theme specific decorative platform detailing
     if (y >= 5000) {
-      // Forgotten Ruins: Stone bricks & moss
       this.graphics?.lineStyle(1.2, darkColor, 0.35);
       if (platform.width > 40)
         this.graphics?.lineBetween(
@@ -1122,12 +1112,11 @@ class FallstackScene extends Phaser.Scene {
           platform.x + 60,
           platform.y + platform.height - 3
         );
-      this.graphics?.fillStyle(0x5c6b4a, 0.7);
+      this.graphics?.fillStyle(0x6ec6a4, 0.7);
       if (platform.width > 30)
         this.graphics?.fillEllipse(platform.x + 12, platform.y, 6, 2.5);
     } else if (y >= 4000) {
-      // Lush Overgrown Garden: Vines wraps & leaf details
-      this.graphics?.fillStyle(0x3d4b2e, 0.75);
+      this.graphics?.fillStyle(0x9ee6c9, 0.7);
       if (platform.width > 30)
         this.graphics?.fillCircle(platform.x + 15, platform.y + 8, 3.5);
       if (platform.width > 60)
@@ -1136,7 +1125,7 @@ class FallstackScene extends Phaser.Scene {
           platform.y + 8,
           3
         );
-      this.graphics?.lineStyle(1, 0x3d4b2e, 0.5);
+      this.graphics?.lineStyle(1, 0x9ee6c9, 0.45);
       this.graphics?.lineBetween(
         platform.x + 10,
         platform.y + 4,
@@ -1144,7 +1133,6 @@ class FallstackScene extends Phaser.Scene {
         platform.y + 12
       );
     } else if (y >= 3000) {
-      // Crystal Cavern: Crystal facet lines
       this.graphics?.lineStyle(1, highlightColor, 0.25);
       this.graphics?.lineBetween(
         platform.x + 10,
@@ -1159,7 +1147,6 @@ class FallstackScene extends Phaser.Scene {
         platform.y + platform.height - 4
       );
     } else if (y >= 2000) {
-      // Hanging Shaft: Metal sheet planks & nails
       this.graphics?.lineStyle(1, darkColor, 0.6);
       this.graphics?.lineBetween(
         platform.x + 4,
@@ -1167,7 +1154,7 @@ class FallstackScene extends Phaser.Scene {
         platform.x + platform.width - 4,
         platform.y + platform.height / 2
       );
-      this.graphics?.fillStyle(0x1b262f, 0.75);
+      this.graphics?.fillStyle(0x071923, 0.75);
       this.graphics?.fillCircle(platform.x + 4, platform.y + 4, 1.2);
       this.graphics?.fillCircle(
         platform.x + platform.width - 4,
@@ -1185,7 +1172,6 @@ class FallstackScene extends Phaser.Scene {
         1.2
       );
     } else if (y >= 900) {
-      // Starry Observatory: Diamond constellations
       this.graphics?.fillStyle(highlightColor, 0.18);
       this.graphics?.beginPath();
       const px = platform.x + platform.width / 2;
@@ -1197,7 +1183,6 @@ class FallstackScene extends Phaser.Scene {
       this.graphics?.closePath();
       this.graphics?.fill();
     } else {
-      // Celestial Summit: Royal double golden border highlights
       this.graphics?.fillStyle(highlightColor, 0.35);
       this.graphics?.fillRect(
         platform.x + 4,
@@ -1219,7 +1204,7 @@ class FallstackScene extends Phaser.Scene {
     const th = THEMES[zoneTheme(zone.id)];
 
     if (artifact.type === 'lantern_trail') {
-      this.graphics?.lineStyle(2, 0xd97934, 0.55).beginPath();
+      this.graphics?.lineStyle(2, 0x62d0c4, 0.6).beginPath();
       this.graphics?.arc(
         artifact.x + 60,
         artifact.y + 10,
@@ -1233,14 +1218,13 @@ class FallstackScene extends Phaser.Scene {
         artifact.y - 32,
         artifact.label,
         10,
-        '#9c6226'
+        '#12524b'
       );
       return;
     }
 
     if (artifact.type === 'corpse_stack') {
-      // Stacked steps - chunky wooden steps
-      const colors = [0x7d5d3b, 0xc7ac7c, 0xd4bc8c];
+      const colors = [0x341018, 0x7a2d36, 0xa3494a];
       for (let i = 2; i >= 0; i -= 1) {
         this.graphics
           ?.fillStyle(colors[i]!, 1)
@@ -1252,7 +1236,7 @@ class FallstackScene extends Phaser.Scene {
             3
           );
         this.graphics
-          ?.fillStyle(0xf3ead9, 0.22)
+          ?.fillStyle(0xf6f0d4, 0.24)
           .fillRect(
             artifact.x + i * 4 + 4,
             artifact.y + i * 5 + 1,
@@ -1269,12 +1253,11 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (artifact.type === 'mercy_nail') {
-      // Wooden lucky charm plate
       this.graphics
         ?.fillStyle(th.stoneDark, 1)
         .fillRoundedRect(artifact.x, artifact.y, 10, artifact.height, 2);
       this.graphics
-        ?.fillStyle(0xc1502f, 1)
+        ?.fillStyle(0x2c8b7e, 1)
         .fillRoundedRect(
           artifact.x + 8,
           artifact.y - 2,
@@ -1283,7 +1266,7 @@ class FallstackScene extends Phaser.Scene {
           3
         );
       this.graphics
-        ?.lineStyle(1, 0xe0b25a, 0.85)
+        ?.lineStyle(1, 0xf1c96b, 0.85)
         .strokeRect(
           artifact.x + 11,
           artifact.y,
@@ -1291,7 +1274,7 @@ class FallstackScene extends Phaser.Scene {
           artifact.height
         );
       this.graphics
-        ?.lineStyle(1.2, 0xf2e9d8, 0.9)
+        ?.lineStyle(1.2, 0xe8fff5, 0.9)
         .lineBetween(
           artifact.x + 10,
           artifact.y + artifact.height / 2,
@@ -1307,7 +1290,6 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (artifact.type === 'ghost_platform') {
-      // Translucent glowing dashed box
       this.graphics
         ?.lineStyle(1.8, th.accent, 0.8)
         .strokeRoundedRect(
@@ -1327,7 +1309,7 @@ class FallstackScene extends Phaser.Scene {
           6
         );
 
-      this.graphics?.fillStyle(0xffffff, 0.65);
+      this.graphics?.fillStyle(0xe8fff5, 0.75);
       for (let i = 0; i < 3; i++) {
         this.graphics?.fillCircle(
           artifact.x + 12 + i * ((artifact.width - 24) / 2),
@@ -1344,7 +1326,6 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (artifact.type === 'cursed_brick') {
-      // Mossy Stone - drawn dynamically in drawDynamicElements to support shaking/physics
       this.addArtifactLabel(
         artifact.x + artifact.width / 2,
         artifact.y - 6,
@@ -1407,7 +1388,7 @@ class FallstackScene extends Phaser.Scene {
           y: this.player.y + 14,
           vx: -this.facing * (50 + Math.random() * 60),
           vy: -15 - Math.random() * 30,
-          color: 0xe6d9bf,
+          color: 0xf1c96b,
           alpha: 0.65,
           size: 1.2 + Math.random() * 1.6,
           life: 300,
@@ -1430,7 +1411,7 @@ class FallstackScene extends Phaser.Scene {
           y: py,
           vx: -Math.cos(angle) * 75,
           vy: -Math.sin(angle) * 75,
-          color: Math.random() < 0.6 ? 0xc1502f : 0xc79a3e,
+          color: Math.random() < 0.6 ? 0xff6f5f : 0x62d0c4,
           alpha: 0.8,
           size: 1.5 + Math.random() * 2.0,
           life: 450,
@@ -1452,7 +1433,7 @@ class FallstackScene extends Phaser.Scene {
           y: py,
           vx: Math.random() * 24 - 12,
           vy: -25 - Math.random() * 35,
-          color: zone.id === 'bell_shaft' ? 0xe0b25a : 0xb9a0e0,
+          color: zone.id === 'bell_shaft' ? 0xf1c96b : 0xff6f5f,
           alpha: 0.45,
           size: 1.0 + Math.random() * 1.5,
           life: 2000,
@@ -1506,15 +1487,15 @@ class FallstackScene extends Phaser.Scene {
     // Charge glow rings
     if (this.charging) {
       const power = chargePowerForHeldMs(this.chargeTime);
-      g.fillStyle(0xc1502f, 0.15 + power * 0.35);
+      g.fillStyle(0xff6f5f, 0.15 + power * 0.35);
       g.fillCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
 
-      g.lineStyle(1.5, 0xc79a3e, 0.3 + power * 0.5);
+      g.lineStyle(1.5, 0x62d0c4, 0.3 + power * 0.5);
       g.strokeCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
     }
 
     // Ears
-    g.fillStyle(0xf3ead9, 1);
+    g.fillStyle(0xf6f0d4, 1);
     g.fillTriangle(
       cx - 9 * squashX,
       cy - 8 * squashY,
@@ -1523,7 +1504,7 @@ class FallstackScene extends Phaser.Scene {
       cx - 1 * squashX,
       cy - 8 * squashY
     );
-    g.fillStyle(0xc1502f, 0.85); // inner ear left
+    g.fillStyle(0xff6f5f, 0.85);
     g.fillTriangle(
       cx - 7 * squashX,
       cy - 9 * squashY,
@@ -1533,7 +1514,7 @@ class FallstackScene extends Phaser.Scene {
       cy - 9 * squashY
     );
 
-    g.fillStyle(0xf3ead9, 1);
+    g.fillStyle(0xf6f0d4, 1);
     g.fillTriangle(
       cx + 9 * squashX,
       cy - 8 * squashY,
@@ -1542,7 +1523,7 @@ class FallstackScene extends Phaser.Scene {
       cx + 1 * squashX,
       cy - 8 * squashY
     );
-    g.fillStyle(0xc1502f, 0.85); // inner ear right
+    g.fillStyle(0xff6f5f, 0.85);
     g.fillTriangle(
       cx + 7 * squashX,
       cy - 9 * squashY,
@@ -1557,9 +1538,9 @@ class FallstackScene extends Phaser.Scene {
     const tx = cx - this.facing * (9 + tailWave * 0.2) * squashX;
     const ty = cy + (5 + tailWave * 0.6) * squashY;
 
-    g.fillStyle(0xf3ead9, 1);
+    g.fillStyle(0xf6f0d4, 1);
     g.fillEllipse(tx, ty, 6 * squashX, 8 * squashY);
-    g.fillStyle(0xc1502f, 1); // tail tip
+    g.fillStyle(0xff6f5f, 1);
     g.fillEllipse(
       tx - this.facing * 3 * squashX,
       ty + 1 * squashY,
@@ -1568,11 +1549,11 @@ class FallstackScene extends Phaser.Scene {
     );
 
     // Body
-    g.fillStyle(0xf3ead9, 1);
+    g.fillStyle(0xf6f0d4, 1);
     g.fillEllipse(cx, cy + 2 * squashY, 10 * squashX, 12 * squashY);
 
     // Blush cheeks
-    g.fillStyle(0xc1502f, 0.38);
+    g.fillStyle(0xff6f5f, 0.38);
     g.fillCircle(cx - 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
     g.fillCircle(cx + 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
 
@@ -1637,25 +1618,25 @@ class FallstackScene extends Phaser.Scene {
     const ly = hy + Math.cos(angle) * len;
 
     // Cord
-    g.lineStyle(1.2, 0x1b262f, 0.85);
+    g.lineStyle(1.2, 0x071923, 0.85);
     g.lineBetween(hx, hy, lx, ly);
 
     // Glow
-    g.fillStyle(0xe0b25a, 0.3);
+    g.fillStyle(0x62d0c4, 0.28);
     g.fillCircle(lx, ly, 10);
 
     // Wood cap
-    g.fillStyle(0x1b262f, 1);
+    g.fillStyle(0x071923, 1);
     g.fillRect(lx - 4, ly - 7, 8, 2);
 
     // Warm glow paper body
-    g.fillStyle(0xf2e9d8, 1);
+    g.fillStyle(0xe8fff5, 1);
     g.fillRoundedRect(lx - 4, ly - 5, 8, 10, 2);
-    g.fillStyle(0xe0b25a, 0.7);
+    g.fillStyle(0x62d0c4, 0.62);
     g.fillRoundedRect(lx - 3, ly - 4, 6, 8, 1.5);
 
     // Red tassel
-    g.lineStyle(1.5, 0xc1502f, 0.9);
+    g.lineStyle(1.5, 0xff6f5f, 0.9);
     g.lineBetween(lx, ly + 5, lx + Math.sin(angle * 1.5) * 5, ly + 9);
   }
 
@@ -1688,7 +1669,7 @@ class FallstackScene extends Phaser.Scene {
           const wobble = Math.sin(time / freq) * amp;
 
           // Shadow
-          g.fillStyle(0x5c4138, 0.85).fillRoundedRect(
+          g.fillStyle(0x120608, 0.9).fillRoundedRect(
             layout.x + wobble,
             layout.y + 3,
             layout.width,
@@ -1697,7 +1678,7 @@ class FallstackScene extends Phaser.Scene {
           );
 
           // Brick
-          g.fillStyle(0x8e2f27, 1).fillRoundedRect(
+          g.fillStyle(0x6a1b2e, 1).fillRoundedRect(
             layout.x + wobble,
             layout.y,
             layout.width,
@@ -1706,7 +1687,7 @@ class FallstackScene extends Phaser.Scene {
           );
 
           // Cracks
-          g.lineStyle(1.2, 0x2a1410, 0.75);
+          g.lineStyle(1.2, 0x0a0508, 0.8);
           g.lineBetween(
             layout.x + 8 + wobble,
             layout.y + 2,
@@ -1721,7 +1702,7 @@ class FallstackScene extends Phaser.Scene {
           );
 
           // Moss clumps on top
-          g.fillStyle(0x74855f, 0.85);
+          g.fillStyle(0x62d0c4, 0.75);
           g.fillEllipse(layout.x + 10 + wobble, layout.y, 4, 1.5);
           g.fillEllipse(layout.x + 28 + wobble, layout.y, 6, 2);
         }
@@ -1739,7 +1720,7 @@ class FallstackScene extends Phaser.Scene {
       fontFamily: '"Shippori Mincho", serif',
       fontSize: '11px',
       fontStyle: 'bold',
-      color: '#5f5138',
+      color: '#9ee6c9',
     });
     label.setDepth(1);
     label.setAlpha(0.58);
@@ -1757,8 +1738,8 @@ class FallstackScene extends Phaser.Scene {
       fontFamily: '"Zen Maru Gothic", sans-serif',
       fontSize: '11px',
       fontStyle: '700',
-      color: '#33291f',
-      backgroundColor: 'rgba(247, 240, 226, 0.96)',
+      color: '#120608',
+      backgroundColor: 'rgba(232, 255, 245, 0.94)',
       padding: { left: 6, right: 6, top: 3, bottom: 3 },
       wordWrap: { width: labelWidth, useAdvancedWrap: true },
     });
@@ -1815,8 +1796,13 @@ export function GameApp() {
   const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [summitOpen, setSummitOpen] = useState(false);
-  const [muted, setMuted] = useState(
-    () => localStorage.getItem('fallstack:muted') === 'true'
+  const [gameplayMuted, setGameplayMuted] = useState(
+    () =>
+      localStorage.getItem('fallstack:gameplay-muted') === 'true' ||
+      localStorage.getItem('fallstack:muted') === 'true'
+  );
+  const [musicMuted, setMusicMuted] = useState(
+    () => localStorage.getItem('fallstack:music-muted') === 'true'
   );
   const [sessionStats, setSessionStats] = useState({
     falls: 0,
@@ -1828,7 +1814,9 @@ export function GameApp() {
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FallstackScene | null>(null);
-  const soundRef = useRef<ProceduralSound | null>(new ProceduralSound(muted));
+  const soundRef = useRef<ProceduralSound | null>(
+    new ProceduralSound({ gameplayMuted, musicMuted })
+  );
   const resultCloseRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const mutationTimerRef = useRef<number | null>(null);
@@ -1915,9 +1903,14 @@ export function GameApp() {
   }, [loadSharedState, showMutation]);
 
   useEffect(() => {
-    localStorage.setItem('fallstack:muted', String(muted));
-    soundRef.current?.setMuted(muted);
-  }, [muted]);
+    localStorage.setItem('fallstack:gameplay-muted', String(gameplayMuted));
+    soundRef.current?.setGameplayMuted(gameplayMuted);
+  }, [gameplayMuted]);
+
+  useEffect(() => {
+    localStorage.setItem('fallstack:music-muted', String(musicMuted));
+    soundRef.current?.setMusicMuted(musicMuted);
+  }, [musicMuted]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -2307,10 +2300,18 @@ export function GameApp() {
           <button
             type="button"
             className="action-btn"
-            onClick={() => setMuted((value) => !value)}
-            aria-pressed={muted}
+            onClick={() => setGameplayMuted((value) => !value)}
+            aria-pressed={gameplayMuted}
           >
-            {muted ? '🔇 Mute' : '🔊 Sound'}
+            {gameplayMuted ? 'SFX Off' : 'SFX On'}
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => setMusicMuted((value) => !value)}
+            aria-pressed={musicMuted}
+          >
+            {musicMuted ? 'Music Off' : 'Music On'}
           </button>
         </div>
       </header>
