@@ -275,12 +275,43 @@ export function fallFeedback(args: {
 }): string {
   if (!args.counted) return `${args.zoneName} has heard enough from you today.`;
 
-  const threshold = nextThreshold(args.count);
-  if (!threshold) return `Your fall counted. ${args.zoneName} is Cursed.`;
+  if (args.count === 3) {
+    return `Your fall spawned ${bucketArtifactName(args.bucket, args.count)} in ${args.zoneName}.`;
+  }
+  if (args.count === 6) {
+    return `Your fall upgraded ${bucketArtifactName(args.bucket, args.count)} in ${args.zoneName}.`;
+  }
+  if (args.count >= 10) {
+    return `Your fall counted. ${args.zoneName} is overgrown with failures.`;
+  }
 
-  const artifact = bucketArtifactName(args.bucket, args.count + 1);
+  const threshold = nextThreshold(args.count);
+  if (!threshold) return `Your fall counted. ${args.zoneName} is overgrown with failures.`;
+
   const remaining = threshold - args.count;
-  return `Your fall counted. ${remaining} more ${bucketLabel(args.bucket)} spawn ${artifact}.`;
+  if (threshold === 10) {
+    return `Your fall counted. ${remaining} more ${bucketLabel(args.bucket, remaining)} will overgrow ${args.zoneName}.`;
+  }
+
+  const artifact = bucketArtifactName(args.bucket, threshold);
+  const verb = remaining === 1 ? 'spawns' : 'spawn';
+  return `Your fall counted. ${remaining} more ${bucketLabel(args.bucket, remaining)} ${verb} ${artifact}.`;
+}
+
+function bucketLabel(bucket: FailureBucket, count: number): string {
+  const plural =
+    bucket === 'short_jump'
+      ? 'short jumps'
+      : bucket === 'overjump'
+        ? 'overjumps'
+        : bucket === 'wall_bonk'
+          ? 'wall bonks'
+          : 'helper slips';
+  if (count !== 1) return plural;
+  if (bucket === 'short_jump') return 'short jump';
+  if (bucket === 'overjump') return 'overjump';
+  if (bucket === 'wall_bonk') return 'wall bonk';
+  return 'helper slip';
 }
 
 export function clearFeedback(args: {
@@ -441,13 +472,6 @@ function bucketArtifactName(bucket: FailureBucket, nextCount: number): string {
   if (bucket === 'wall_bonk') return 'Ghost Platform';
   if (bucket === 'overjump') return 'Cursed Brick';
   return 'cursed helper';
-}
-
-function bucketLabel(bucket: FailureBucket): string {
-  if (bucket === 'short_jump') return 'short jumps';
-  if (bucket === 'overjump') return 'overjumps';
-  if (bucket === 'wall_bonk') return 'wall bonks';
-  return 'helper slips';
 }
 
 function artifactLabel(type: ArtifactType, count: number): string {

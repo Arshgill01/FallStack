@@ -122,7 +122,34 @@ void test('fall feedback is short, specific, and cap-aware', () => {
       count: 2,
       counted: true,
     }),
-    'Your fall counted. 1 more wall bonks spawn Ghost Platform.'
+    'Your fall counted. 1 more wall bonk spawns Ghost Platform.'
+  );
+  assert.equal(
+    fallFeedback({
+      zoneName: 'Bell Shaft',
+      bucket: 'wall_bonk',
+      count: 3,
+      counted: true,
+    }),
+    'Your fall spawned Ghost Platform in Bell Shaft.'
+  );
+  assert.equal(
+    fallFeedback({
+      zoneName: 'Lower Ruins',
+      bucket: 'short_jump',
+      count: 6,
+      counted: true,
+    }),
+    'Your fall upgraded Mercy Nail in Lower Ruins.'
+  );
+  assert.equal(
+    fallFeedback({
+      zoneName: 'Moon Roof',
+      bucket: 'overjump',
+      count: 9,
+      counted: true,
+    }),
+    'Your fall counted. 1 more overjump will overgrow Moon Roof.'
   );
   assert.equal(
     fallFeedback({

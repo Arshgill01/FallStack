@@ -6,6 +6,7 @@
     "entrypoints": {
       "default": {
         "inline": true,
+        "height": "tall",
         "entry": "splash.html"
       },
       "game": {
@@ -16,6 +17,9 @@
   "server": {
     "dir": "dist/server",
     "entry": "index.cjs"
+  },
+  "permissions": {
+    "redis": true
   },
   "menu": {
     "items": [
