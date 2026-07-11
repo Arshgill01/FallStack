@@ -9,6 +9,7 @@ import {
   deriveSnapshot,
   displayZoneStatus,
   fallFeedback,
+  clearFeedback,
   mergeAchievementState,
   type ZoneMutationCounters,
 } from './mutation.js';
@@ -153,12 +154,33 @@ void test('fall feedback is short, specific, and cap-aware', () => {
   );
   assert.equal(
     fallFeedback({
+      zoneName: 'Lower Ruins',
+      bucket: 'helper_overuse',
+      count: 2,
+      counted: true,
+    }),
+    'Your fall counted. 1 more helper slip spawns Cursed Helper.'
+  );
+  assert.equal(
+    fallFeedback({
       zoneName: 'Moon Roof',
       bucket: 'overjump',
       count: 10,
       counted: false,
     }),
     'Moon Roof has heard enough from you today.'
+  );
+});
+
+void test('clear feedback uses player-facing zone status labels', () => {
+  assert.equal(
+    clearFeedback({
+      zoneName: 'Lower Ruins',
+      clears: 1,
+      counted: true,
+      nextZoneStatus: 'Quiet',
+    }),
+    'Lower Ruins cleared. Next: Untouched.'
   );
 });
 

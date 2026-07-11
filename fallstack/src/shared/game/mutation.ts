@@ -324,7 +324,7 @@ export function clearFeedback(args: {
   if (args.clears >= 6) return `${args.zoneName} stabilized by clean climbs.`;
   if (args.clears >= 3) return `${args.zoneName} is Reinforced. Keep climbing.`;
   if (args.nextZoneStatus) {
-    return `${args.zoneName} cleared. Next: ${args.nextZoneStatus}.`;
+    return `${args.zoneName} cleared. Next: ${displayZoneStatus(args.nextZoneStatus)}.`;
   }
   return `${args.zoneName} cleared.`;
 }
@@ -471,7 +471,7 @@ function bucketArtifactName(bucket: FailureBucket, nextCount: number): string {
   if (bucket === 'short_jump') return nextCount >= 6 ? 'Mercy Nail' : 'Corpse Stack';
   if (bucket === 'wall_bonk') return 'Ghost Platform';
   if (bucket === 'overjump') return 'Cursed Brick';
-  return 'cursed helper';
+  return 'Cursed Helper';
 }
 
 function artifactLabel(type: ArtifactType, count: number): string {
