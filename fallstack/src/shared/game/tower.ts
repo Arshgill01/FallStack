@@ -119,7 +119,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
   while (prevY > MOVEMENT_TUNING.topConnectorY + MOVEMENT_TUNING.reachableVertical - 10) {
     // Determine target Y for the next platform
-    let nextY = prevY - Math.round(115 + prng() * 32);
+    let nextY = prevY - Math.round(96 + prng() * 28);
 
     // If crossing a checkpoint level, force a checkpoint platform there
     for (const cpY of checkpointYLevels) {
@@ -130,17 +130,17 @@ export function generateDailyTower(seed: string): GeneratedTower {
     }
 
     const zone = zoneForY(nextY);
-    let pWidth = Math.round(80 + prng() * 25);
+    let pWidth = Math.round(94 + prng() * 28);
     
     // Checkpoints are wider/more forgiving
     const isCP = checkpointYLevels.includes(nextY);
     if (isCP) {
-      pWidth = 136;
+      pWidth = 148;
     }
 
     // Set horizontal coordinate based on the shared movement reachability budget.
     const maxOffset = MOVEMENT_TUNING.generatedHorizontalStep;
-    
+
     // As we get close to the summit, gradually pull the target center towards 240
     let centerTarget = prevCenter;
     if (nextY < 800) {
@@ -148,17 +148,14 @@ export function generateDailyTower(seed: string): GeneratedTower {
       centerTarget = prevCenter + (240 - prevCenter) * pull;
     }
 
-    const minCenter = Math.max(
-      30 + pWidth / 2,
-      centerTarget - maxOffset,
-      prevCenter - maxOffset
-    );
-    const maxCenter = Math.min(
-      WORLD_WIDTH - 30 - pWidth / 2,
-      centerTarget + maxOffset,
-      prevCenter + maxOffset
-    );
-    const nextCenter = Math.round(minCenter + prng() * (maxCenter - minCenter));
+    const nextCenter = chooseNextCenter({
+      centerTarget,
+      maxOffset,
+      minOffset: MOVEMENT_TUNING.generatedMinHorizontalStep,
+      platformWidth: pWidth,
+      prevCenter,
+      prng,
+    });
     const nextX = nextCenter - pWidth / 2;
 
     const kind: PlatformKind = zone.id === 'lower_ruins' ? 'stone' : zone.id === 'bell_shaft' ? 'metal' : 'moon';
@@ -283,6 +280,34 @@ function isReachable(from: Platform, to: Platform): boolean {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function chooseNextCenter(args: {
+  centerTarget: number;
+  maxOffset: number;
+  minOffset: number;
+  platformWidth: number;
+  prevCenter: number;
+  prng: () => number;
+}): number {
+  const minBound = 30 + args.platformWidth / 2;
+  const maxBound = WORLD_WIDTH - 30 - args.platformWidth / 2;
+  const left = {
+    min: Math.max(minBound, args.centerTarget - args.maxOffset, args.prevCenter - args.maxOffset),
+    max: Math.min(maxBound, args.centerTarget + args.maxOffset, args.prevCenter - args.minOffset),
+  };
+  const right = {
+    min: Math.max(minBound, args.centerTarget - args.maxOffset, args.prevCenter + args.minOffset),
+    max: Math.min(maxBound, args.centerTarget + args.maxOffset, args.prevCenter + args.maxOffset),
+  };
+  const ranges = args.prng() < 0.5 ? [left, right] : [right, left];
+  const range = ranges.find((candidate) => candidate.max >= candidate.min);
+
+  if (!range) {
+    return Math.round(clamp(args.centerTarget, minBound, maxBound));
+  }
+
+  return Math.round(range.min + args.prng() * (range.max - range.min));
 }
 
 function createPrng(seed: string): () => number {

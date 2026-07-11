@@ -15,7 +15,8 @@ export const MOVEMENT_TUNING = {
   maxLaunchVelocityY: -1000,
   reachableHorizontal: 260,
   reachableVertical: 165,
-  generatedHorizontalStep: 160,
+  generatedMinHorizontalStep: 68,
+  generatedHorizontalStep: 145,
   topConnectorY: 300,
 } as const;
 

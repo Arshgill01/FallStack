@@ -28,6 +28,8 @@ void test('known-good tower has finite dimensions and a summit', () => {
 
 void test('movement tuning supports generated tower reachability', () => {
   assert.ok(MOVEMENT_TUNING.generatedHorizontalStep < MOVEMENT_TUNING.reachableHorizontal);
+  assert.ok(MOVEMENT_TUNING.generatedMinHorizontalStep > 0);
+  assert.ok(MOVEMENT_TUNING.generatedMinHorizontalStep < MOVEMENT_TUNING.generatedHorizontalStep);
   assert.ok(MOVEMENT_TUNING.reachableVertical >= 147);
   assert.ok(MOVEMENT_TUNING.minChargePercent > 0);
   assert.ok(MOVEMENT_TUNING.minChargePercent < 1);
@@ -61,6 +63,43 @@ void test('daily tower generation keeps sampled seeds reachable', () => {
     const day = String((index % 28) + 1).padStart(2, '0');
     const tower = generateDailyTower(`fallstack-2026-07-${day}-${index}`);
     assert.equal(validateTower(tower), true, `seed ${tower.seed}`);
+  }
+});
+
+void test('daily tower generation avoids near-vertical ledge traps', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const day = String((index % 28) + 1).padStart(2, '0');
+    const tower = generateDailyTower(`fallstack-2026-07-${day}-${index}`);
+    const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+
+    for (let routeIndex = 0; routeIndex < route.length - 1; routeIndex += 1) {
+      const from = route[routeIndex]!;
+      const to = route[routeIndex + 1]!;
+      if (from.id.includes('summit') || to.id.includes('summit')) continue;
+      if (from.id.includes('checkpoint') || to.id.includes('checkpoint')) continue;
+      assert.ok(
+        horizontalGap(from, to) >= MOVEMENT_TUNING.generatedMinHorizontalStep,
+        `${tower.seed}: ${from.id} to ${to.id}`
+      );
+    }
+  }
+});
+
+void test('current opening route gives the first level meaningful ledge separation', () => {
+  const tower = generateDailyTower('fallstack-2026-07-11');
+  const lowerRoute = tower.platforms
+    .filter((platform) => platform.zoneId === 'lower_ruins')
+    .sort((a, b) => b.y - a.y)
+    .slice(0, 8);
+
+  for (let index = 0; index < lowerRoute.length - 1; index += 1) {
+    const from = lowerRoute[index]!;
+    const to = lowerRoute[index + 1]!;
+    assert.ok(
+      horizontalGap(from, to) >= MOVEMENT_TUNING.generatedMinHorizontalStep,
+      `${from.id} to ${to.id}`
+    );
+    assert.ok(from.y - to.y <= 124, `${from.id} to ${to.id}`);
   }
 });
 
