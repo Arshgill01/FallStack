@@ -9,6 +9,7 @@ import {
 } from './movement.js';
 import {
   CHUNK_LIBRARY,
+  CHECKPOINT_RESPAWN_CENTER_X,
   KNOWN_GOOD_SEED,
   PLATFORMS,
   WORLD_HEIGHT,
@@ -66,6 +67,25 @@ void test('daily tower generation keeps sampled seeds reachable', () => {
   }
 });
 
+void test('generated checkpoints cover the fixed respawn position', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const day = String((index % 28) + 1).padStart(2, '0');
+    const tower = generateDailyTower(`fallstack-2026-07-${day}-${index}`);
+    const checkpoints = tower.platforms.filter((platform) =>
+      platform.id.includes('checkpoint')
+    );
+
+    assert.equal(checkpoints.length, 2, tower.seed);
+    for (const checkpoint of checkpoints) {
+      assert.ok(
+        checkpoint.x <= CHECKPOINT_RESPAWN_CENTER_X &&
+          checkpoint.x + checkpoint.width >= CHECKPOINT_RESPAWN_CENTER_X,
+        `${tower.seed}: ${checkpoint.id} misses respawn x`
+      );
+    }
+  }
+});
+
 void test('daily tower generation avoids near-vertical ledge traps', () => {
   for (let index = 0; index < 120; index += 1) {
     const day = String((index % 28) + 1).padStart(2, '0');
@@ -83,6 +103,17 @@ void test('daily tower generation avoids near-vertical ledge traps', () => {
       );
     }
   }
+});
+
+void test('current Bell Shaft checkpoint does not respawn over empty air', () => {
+  const tower = generateDailyTower('fallstack-2026-07-11');
+  const lowerCheckpoint = tower.platforms.find(
+    (platform) => platform.id === 'lower_ruins-checkpoint'
+  );
+
+  assert.ok(lowerCheckpoint);
+  assert.equal(lowerCheckpoint.y, 4000);
+  assert.equal(lowerCheckpoint.x + lowerCheckpoint.width / 2, CHECKPOINT_RESPAWN_CENTER_X);
 });
 
 void test('current opening route gives the first level meaningful ledge separation', () => {

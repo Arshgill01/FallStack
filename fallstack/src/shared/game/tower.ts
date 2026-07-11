@@ -4,6 +4,7 @@ import { MOVEMENT_TUNING } from './movement.js';
 export const WORLD_WIDTH = 480;
 export const WORLD_HEIGHT = 6000;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
+export const CHECKPOINT_RESPAWN_CENTER_X = 240;
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit';
 
@@ -148,14 +149,16 @@ export function generateDailyTower(seed: string): GeneratedTower {
       centerTarget = prevCenter + (240 - prevCenter) * pull;
     }
 
-    const nextCenter = chooseNextCenter({
-      centerTarget,
-      maxOffset,
-      minOffset: MOVEMENT_TUNING.generatedMinHorizontalStep,
-      platformWidth: pWidth,
-      prevCenter,
-      prng,
-    });
+    const nextCenter = isCP
+      ? CHECKPOINT_RESPAWN_CENTER_X
+      : chooseNextCenter({
+          centerTarget,
+          maxOffset,
+          minOffset: MOVEMENT_TUNING.generatedMinHorizontalStep,
+          platformWidth: pWidth,
+          prevCenter,
+          prng,
+        });
     const nextX = nextCenter - pWidth / 2;
 
     const kind: PlatformKind = zone.id === 'lower_ruins' ? 'stone' : zone.id === 'bell_shaft' ? 'metal' : 'moon';
