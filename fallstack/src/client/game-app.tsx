@@ -151,6 +151,7 @@ class FallstackScene extends Phaser.Scene {
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed)
     .platforms;
   private chargeTime = 0;
+  private currentRouteOffset = 0;
   private readonly platformScale = 1;
 
   // Visual enhancements
@@ -393,7 +394,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private routeOffsetX() {
-    return routeOffsetForGameWidth(this.gameWidth());
+    return this.currentRouteOffset;
   }
 
   private layoutX(x: number) {
@@ -417,10 +418,11 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private applyViewportLayout(keepPlayerX: boolean) {
-    const previousOffset = this.routeOffsetX();
+    const previousOffset = this.currentRouteOffset;
     const playerLogicalX =
       keepPlayerX && this.player ? this.player.x - previousOffset : null;
     const worldWidth = this.gameWidth();
+    this.currentRouteOffset = routeOffsetForGameWidth(worldWidth);
     this.cameras.main.setBounds(0, 0, worldWidth, WORLD_HEIGHT);
     this.physics.world.setBounds(0, 0, worldWidth, WORLD_HEIGHT + 220);
     if (playerLogicalX !== null && this.player)
@@ -817,12 +819,6 @@ class FallstackScene extends Phaser.Scene {
       if (zoneData) {
         // Draw sub-theme inline labels inside the tower world
         if (zone.id === 'lower_ruins') {
-          this.addZoneLabel(
-            this.layoutX(14),
-            5820,
-            'Lower Ruins',
-            'Forgotten Path'
-          );
           this.addZoneLabel(
             this.layoutX(14),
             4820,
@@ -1751,7 +1747,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private addArtifactLabel(centerX: number, y: number, text: string) {
-    const labelWidth = 128;
+    const labelWidth = 148;
     const clampedX = Phaser.Math.Clamp(
       centerX,
       labelWidth / 2 + 6,
@@ -1759,7 +1755,7 @@ class FallstackScene extends Phaser.Scene {
     );
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
-      fontSize: '10px',
+      fontSize: '11px',
       fontStyle: '700',
       color: '#33291f',
       backgroundColor: 'rgba(247, 240, 226, 0.96)',
