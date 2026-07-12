@@ -87,11 +87,12 @@ Direction C wins because the tower reads as a physical object, community mutatio
 | Three Figma directions | Complete | Native Figma file plus validated 375×812 frames `2:86`, `2:87`, and `2:88` |
 | Direction selection | Complete | Weighted scorecard, explicit user selection, and selected v2 frame `2:88` |
 | Art bible | Complete | [`art-bible.md`](art-bible.md), Figma page `14:2`, eight mobile states, two desktop adaptations, representative screenshot validation |
-| Provider bake-off | In progress | Equal brief/fallback locked; Scenario/Layer outputs require authenticated paid access |
+| Provider bake-off | Complete | Scenario/Layer correctly skipped without paid access; repository-native fallback selected, implemented, documented, and scored |
 | Phaser compatibility proof | Complete | Phaser 4.2.1, procedural fallback modules, browser captures, reduced-motion proof, full checks |
 | Opening-zone vertical slice | Complete | Real first-fall/respawn capture, 90/100 scorecard, 48 tests, full checks |
 | Full expanded-game migration | Complete | Distinct three-zone contracts, checkpoint/summit/platform families, reliquary loading/controls/results, mobile/desktop browser evidence, 49 tests |
 | Inline splash | Complete | Lightweight CSS reliquary, visible seeded foothold promise, preserved expansion action, mobile/desktop browser evidence, no Phaser request |
+| Full validation and cleanup | Complete | 51 tests, screenshot matrix, input/reduced-motion/focus/contrast/reload checks, 96/100 score, legacy renderer removed; hosted Devvit playtest blocked by login |
 
 ## Validation log
 
@@ -127,4 +128,13 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - M6 splash migration (2026-07-13) — replaced the unrelated celestial gradient with the same framed burgundy cavity, indigo arch, washi/gold platform family, stacked-failure artifact, climber silhouette, typography, and persimmon action used by the expanded game. The promise `14 falls made this foothold.` is exposed before expansion.
 - M6 browser proof (2026-07-13) — production `splash.html` rendered at 375×812 and 1280×800; archived `m6-splash-mobile.png` and `m6-splash-desktop.png`. The CTA measured 202×48 CSS px, the accessibility tree exposed the community-shaped opening region and action, and loaded scripts contained only `default.js`; no `game.js` request was observed.
 - M6 project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 49 tests passed.
+- M7 fresh screenshot matrix (2026-07-13) — `node take_screenshots.js` passed against the production build and refreshed splash, 375×812 mobile, 1280×800 desktop, and fullscreen evidence in `docs/screenshots/`.
+- M7 input/focus checks (2026-07-13) — agent-browser sent keyboard ArrowRight/Space events, Tab focused Result, and a real pointer hold on Jump reached 100% charge before returning to 0 on release. All fixed touch targets remain at least 50 px tall.
+- M7 reduced-motion/fallback checks (2026-07-13) — emulated `prefers-reduced-motion: reduce` at load; one canvas and all five controls remained exposed. Nonessential artifact oscillation, ambient particle spawning, checkpoint swing, and curse wobble are disabled. Local `/api/init-game` 404 produced the expected local snapshot rather than a blank/error screen.
+- M7 accessibility evidence (2026-07-13) — representative contrast ratios: ink/washi 16.48:1, washi/indigo 12.90:1, ink/persimmon 5.58:1, gold/indigo 7.50:1, ghost/burgundy 12.80:1. Artifact collision meanings use distinct silhouettes; count upgrades add one or three physical memory beads, not color alone. Labels have tested horizontal bounds.
+- M7 lifecycle/performance evidence (2026-07-13) — two consecutive production reloads leave exactly one 480×688 Phaser canvas. `game.js` is 1,433,086 bytes uncompressed after cleanup versus 1,448,088 bytes at M3 (15,002 bytes smaller); `default.js` is 126,292 bytes and the splash loads no game bundle. The existing >500 kB warning remains because Phaser is isolated to the expanded entrypoint.
+- M7 final weighted scorecard (2026-07-13) — 96/100: shared mutation 5/5, tower composition 5/5, tactile depth 4/5, collision readability 5/5, opening jump/feedback 5/5, mobile/accessibility 5/5, coherence 5/5, runtime feasibility 4/5. No first-five criterion is below 4.
+- M7 Devvit check (2026-07-13) — `npx devvit whoami` failed with `Not currently logged in. Try devvit login first`; a hosted playtest could not be run without user credentials. Local production/browser behavior and `devvit.json` entrypoint separation were validated; no upload, deployment, or production state was changed.
+- M8 cleanup (2026-07-13) — removed 1,295 lines of superseded celestial biome/platform/artifact/player rendering, removed the unused `game/themes.ts`, replaced remaining dynamic colors with reliquary tokens, and retained physics/input/camera/event/persistence ownership unchanged.
+- M8 final project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 51 tests passed. `rg` found no remaining legacy theme/biome/fox renderer references in production code.
 - No repository build, test, lint, or type-check was run for Gate 2 because production code was not changed.

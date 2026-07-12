@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   ARTIFACT_COLLISION_CLASS,
+  artifactVisualTier,
+  clampedArtifactLabelCenter,
   RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
   playerVisualState,
@@ -20,6 +22,18 @@ void test('every artifact has a distinct collision presentation contract', () =>
     cursed_brick: 'hazardous',
     lantern_trail: 'visual-only',
   });
+});
+
+void test('artifact counts map to stable visible intensity tiers', () => {
+  assert.equal(artifactVisualTier(1), 'base');
+  assert.equal(artifactVisualTier(6), 'remembered');
+  assert.equal(artifactVisualTier(12), 'saturated');
+});
+
+void test('artifact labels stay inside narrow and wide tower bounds', () => {
+  assert.equal(clampedArtifactLabelCenter(-20, 375), 80);
+  assert.equal(clampedArtifactLabelCenter(500, 375), 295);
+  assert.equal(clampedArtifactLabelCenter(240, 480), 240);
 });
 
 void test('twelve persistence segments resolve to three visual zones', () => {

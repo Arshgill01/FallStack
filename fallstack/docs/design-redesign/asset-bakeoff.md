@@ -100,7 +100,7 @@ Score 1–5 with evidence.
 
 ## Repository-native fallback
 
-The fallback is approved for reversible proof work while provider access is absent. It uses no new dependency and does not pre-judge the final provider decision.
+The repository-native fallback is the selected production path for this redesign while provider access is absent. It uses no new dependency and remains replaceable behind the focused renderer boundaries.
 
 - Build silhouettes from Phaser Graphics and small repository-owned SVG source shapes.
 - Rasterize only when the Phaser proof shows a measured benefit; otherwise retain procedural geometry behind typed renderers.
@@ -117,5 +117,16 @@ Fallback passes Gate 5 only if its normalized proof scores at least 80/100 and m
 | --- | --- | --- | --- | ---: | --- |
 | Scenario | Not supplied | Pending | Pending | — | External handoff |
 | Layer | Not supplied | Pending | Pending | — | External handoff |
-| Repository-native fallback | Available | Not yet produced | Not yet produced | — | Proceed to reversible Phaser proof |
+| Repository-native fallback | Selected | Implemented in `renderTower.ts`, `renderArtifacts.ts`, and `renderPlayer.ts` | 96/100 final product scorecard | Repository-authored procedural geometry; BSD-3-Clause repository license | Production path; no external asset payload |
 
+## Production manifest and replacement workflow
+
+This pass intentionally ships no external texture files, atlases, or provider output. The production manifest is therefore the three repository-authored renderer modules above plus the palette/state contract in `art-direction.ts`; there are no binary checksums or third-party licenses to record.
+
+To add or replace a future asset safely:
+
+1. Add the stable lowercase kebab-case source and record provider, prompt/version, rights, cleanup, export size, filename, and checksum in this document before it enters a production folder.
+2. Keep collision geometry in shared tower/artifact data. Align the visual top edge to that body; never derive a body from pixels.
+3. Preserve the world scale, origins, alpha padding, and mobile silhouette rules in the art bible.
+4. Add a typed texture key/preload seam only when the first accepted texture exists. Do not weaken the procedural renderer fallback.
+5. Run the artifact/state tests, full project commands, missing-asset fallback check, and mobile/desktop screenshot matrix before adoption.

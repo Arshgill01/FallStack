@@ -28,6 +28,25 @@ export type PlayerVisualState =
   | 'airborne'
   | 'fall';
 
+export type ArtifactVisualTier = 'base' | 'remembered' | 'saturated';
+
+export function artifactVisualTier(count: number): ArtifactVisualTier {
+  if (count >= 12) return 'saturated';
+  if (count >= 6) return 'remembered';
+  return 'base';
+}
+
+export function clampedArtifactLabelCenter(
+  centerX: number,
+  gameWidth: number,
+  labelWidth = 148,
+  gutter = 6
+): number {
+  const minimum = labelWidth / 2 + gutter;
+  const maximum = Math.max(minimum, gameWidth - labelWidth / 2 - gutter);
+  return Math.min(maximum, Math.max(minimum, centerX));
+}
+
 export type MotionDecision = {
   parallax: boolean;
   particles: boolean;

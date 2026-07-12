@@ -49,6 +49,8 @@ import type {
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
+  clampedArtifactLabelCenter,
+  RELIQUARY_COLORS,
   reliquaryZoneFor,
   reliquaryZoneName,
 } from './game/art-direction';
@@ -72,7 +74,6 @@ import {
   localFallMessage,
 } from './game/localSnapshot';
 import { ProceduralSound } from './game/sound';
-import { colorNumber, themeForZone } from './game/themes';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
 
 declare global {
@@ -131,7 +132,6 @@ class FallstackScene extends Phaser.Scene {
   private controlsReady = false;
   private currentRouteOffset = 0;
   private readonly platformScale = 1;
-  private readonly useReliquaryRenderer = true;
 
   // Visual enhancements
   private particles: Array<{
@@ -145,13 +145,6 @@ class FallstackScene extends Phaser.Scene {
     life: number;
     maxLife: number;
     type: 'dust' | 'charge' | 'lantern' | 'ghost';
-  }> = [];
-  private stars: Array<{
-    x: number;
-    y: number;
-    size: number;
-    phase: number;
-    speed: number;
   }> = [];
 
   create() {
@@ -222,18 +215,6 @@ class FallstackScene extends Phaser.Scene {
       this.rebuildArtifactBodies();
       this.snapCameraToPlayer();
     });
-
-    // Seed stars in the upper sky zone (wider bounds for widescreen support)
-    this.stars = [];
-    for (let i = 0; i < 48; i++) {
-      this.stars.push({
-        x: -400 + Math.random() * 1280,
-        y: Math.random() * 900,
-        size: 0.8 + Math.random() * 1.5,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.5 + Math.random() * 1.5,
-      });
-    }
 
     this.refreshSnapshot(window.fallstackSnapshot);
     this.publishZone();
@@ -674,65 +655,26 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.labels) label.destroy();
     this.labels = [];
 
-    const minX = 0;
     const drawW = this.gameWidth();
-    const maxX = minX + drawW;
 
     const activeZoneIds = this.activeZoneIds();
     const activeZones = ZONES.filter((zone) => activeZoneIds.has(zone.id));
 
-    if (this.useReliquaryRenderer) {
-      for (const zone of activeZones) {
-        renderReliquaryBackdrop(this.bgGraphics, {
-          zoneTop: zone.yTop,
-          zoneBottom: zone.yBottom,
-          gameWidth: drawW,
-          routeOffset: this.currentRouteOffset,
-          zone: reliquaryZoneFor(zone.id),
-        });
-        this.addZoneLabel(
-          this.layoutX(42),
-          zone.yBottom - 1180,
-          reliquaryZoneName(zone.id),
-          window.fallstackSnapshot?.zones.find((item) => item.id === zone.id)
-            ?.statusLabel ?? 'Untouched'
-        );
-      }
-    } else for (const zone of activeZones) {
-      const theme = themeForZone(zone.id);
-      const top = colorNumber(theme.skyTop);
-      const bottom = colorNumber(theme.skyBot);
-      const height = zone.yBottom - zone.yTop;
-      this.bgGraphics.fillGradientStyle(top, top, bottom, bottom, 1, 1, 1, 1);
-      this.bgGraphics.fillRect(minX, zone.yTop, drawW, height);
-      this.drawBiomeDetails(
-        zone.id,
-        zone.yTop,
-        zone.yBottom,
-        minX,
-        maxX,
-        drawW
-      );
-      if (zone.yTop > 0) {
-        this.bgGraphics
-          .lineStyle(1.5, theme.accent, 0.36)
-          .lineBetween(minX + 12, zone.yTop, maxX - 12, zone.yTop);
-      }
+    for (const zone of activeZones) {
+      renderReliquaryBackdrop(this.bgGraphics, {
+        zoneTop: zone.yTop,
+        zoneBottom: zone.yBottom,
+        gameWidth: drawW,
+        routeOffset: this.currentRouteOffset,
+        zone: reliquaryZoneFor(zone.id),
+      });
       this.addZoneLabel(
-        this.layoutX(14),
+        this.layoutX(42),
         zone.yBottom - 1180,
-        zone.name,
-        theme.label
+        reliquaryZoneName(zone.id),
+        window.fallstackSnapshot?.zones.find((item) => item.id === zone.id)
+          ?.statusLabel ?? 'Untouched'
       );
-    }
-
-    if (!this.useReliquaryRenderer) {
-      this.bgGraphics
-        .lineStyle(3, 0x0a0508, 0.55)
-        .lineBetween(0, 0, 0, WORLD_HEIGHT);
-      this.bgGraphics
-        .lineStyle(3, 0x0a0508, 0.55)
-        .lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
     }
 
     // 3. DRAW PLATFORMS
@@ -751,732 +693,25 @@ class FallstackScene extends Phaser.Scene {
     }
   }
 
-  private drawBiomeDetails(
-    zoneId: ZoneId,
-    yTop: number,
-    yBottom: number,
-    minX: number,
-    maxX: number,
-    drawW: number
-  ) {
-    const theme = themeForZone(zoneId);
-    const midY = yTop + (yBottom - yTop) * 0.52;
-    const index = ZONES.findIndex((zone) => zone.id === zoneId);
-
-    this.bgGraphics?.fillStyle(theme.platformEdge, 0.42);
-    this.bgGraphics?.fillTriangle(
-      minX,
-      yBottom - 900,
-      minX + drawW * (0.22 + (index % 3) * 0.08),
-      midY,
-      minX + drawW * 0.62,
-      yBottom - 900
-    );
-    this.bgGraphics?.fillTriangle(
-      minX + drawW * 0.38,
-      yBottom - 720,
-      minX + drawW * (0.72 - (index % 2) * 0.08),
-      yTop + 820,
-      maxX,
-      yBottom - 720
-    );
-    this.bgGraphics?.fillStyle(theme.highlight, 0.11);
-    this.bgGraphics?.fillCircle(minX + drawW * 0.74, yBottom - 620, 46);
-    this.bgGraphics?.fillStyle(theme.platformEdge, 0.72);
-    this.bgGraphics?.fillCircle(minX + drawW * 0.74 + 18, yBottom - 628, 40);
-    this.bgGraphics?.lineStyle(3, theme.accent, 0.2);
-    this.bgGraphics?.strokeEllipse(minX + drawW * 0.74, yBottom - 620, 142, 28);
-    this.bgGraphics?.fillStyle(theme.accent, 0.24);
-    for (let i = 0; i < 5; i += 1) {
-      const chipX = minX + drawW * (0.16 + i * 0.16);
-      const chipY = yBottom - 760 + (i % 2) * 130;
-      this.bgGraphics?.fillRect(chipX, chipY, 18 + (i % 3) * 10, 4);
-    }
-
-    if (index % 4 === 0) {
-      this.bgGraphics?.lineStyle(2, theme.accent, 0.18);
-      for (let i = 0; i < 5; i += 1) {
-        const x = minX + 30 + i * (drawW / 5);
-        this.bgGraphics?.lineBetween(x, yTop, x + 80, yBottom);
-      }
-    } else if (index % 4 === 1) {
-      this.bgGraphics?.fillStyle(theme.highlight, 0.16);
-      for (let i = 0; i < 4; i += 1) {
-        this.bgGraphics?.fillEllipse(
-          minX + drawW * (0.18 + i * 0.21),
-          yTop + 980 + i * 260,
-          72 + i * 12,
-          18
-        );
-      }
-    } else if (index % 4 === 2) {
-      this.bgGraphics?.fillStyle(theme.accent, 0.16);
-      this.bgGraphics?.fillCircle(minX + drawW * 0.72, yTop + 1260, 62);
-      this.bgGraphics?.fillStyle(theme.platformEdge, 0.7);
-      this.bgGraphics?.fillCircle(minX + drawW * 0.72 + 22, yTop + 1248, 54);
-    } else {
-      this.bgGraphics?.lineStyle(3, theme.highlight, 0.14);
-      this.bgGraphics?.lineBetween(minX + 60, midY, maxX - 60, midY - 260);
-      this.bgGraphics?.lineBetween(
-        minX + 80,
-        midY + 180,
-        maxX - 120,
-        midY + 60
-      );
-    }
-
-    this.drawCelestialLandmark(zoneId, yBottom, minX, drawW);
-  }
-
-  private drawCelestialLandmark(
-    zoneId: ZoneId,
-    yBottom: number,
-    minX: number,
-    drawW: number
-  ) {
-    const g = this.bgGraphics;
-    if (!g) return;
-    const theme = themeForZone(zoneId);
-    const cx = minX + drawW * 0.5;
-    // Put the landmark inside the first cameraful of each zone so entering a
-    // biome changes the composition immediately instead of several jumps later.
-    const cy = yBottom - 520;
-
-    switch (zoneId) {
-      case 'orbital_scrapyard':
-        g.lineStyle(10, theme.platformEdge, 0.68);
-        g.strokeEllipse(cx, cy, drawW * 0.72, 118);
-        g.lineStyle(3, theme.accent, 0.34);
-        g.strokeEllipse(cx, cy, drawW * 0.66, 86);
-        for (let i = -2; i <= 2; i += 1) {
-          g.fillStyle(i === 0 ? theme.highlight : theme.stone, 0.5);
-          g.fillRect(cx + i * 58 - 12, cy - 14 + Math.abs(i) * 8, 24, 28);
-        }
-        break;
-      case 'crater_foundry':
-        g.fillStyle(theme.platformEdge, 0.72);
-        g.fillCircle(cx, cy, 116);
-        g.fillStyle(theme.stoneDark, 0.95);
-        g.fillCircle(cx, cy - 18, 92);
-        g.lineStyle(6, theme.accent, 0.26);
-        g.arc(cx, cy, 108, Math.PI * 0.08, Math.PI * 0.92);
-        g.strokePath();
-        break;
-      case 'comet_reef':
-      case 'galaxy_reef':
-        for (let i = 0; i < 5; i += 1) {
-          const reefX = minX + drawW * (0.16 + i * 0.17);
-          const reefY = cy + (i % 2) * 84;
-          g.lineStyle(7, i % 2 ? theme.accent : theme.highlight, 0.2);
-          g.lineBetween(reefX, reefY + 130, reefX, reefY);
-          g.lineBetween(reefX, reefY + 42, reefX - 30, reefY + 8);
-          g.lineBetween(reefX, reefY + 68, reefX + 34, reefY + 22);
-        }
-        break;
-      case 'nebula_vault':
-      case 'dwarf_garden':
-        for (let i = 0; i < 4; i += 1) {
-          g.fillStyle(i % 2 ? theme.accent : theme.highlight, 0.08 + i * 0.025);
-          g.fillEllipse(
-            cx + (i - 1.5) * 34,
-            cy + i * 22,
-            drawW * (0.78 - i * 0.09),
-            176 - i * 20
-          );
-        }
-        break;
-      case 'ring_citadel':
-        g.fillStyle(theme.stoneDark, 0.78);
-        g.fillCircle(cx, cy, 78);
-        g.lineStyle(12, theme.platformEdge, 0.62);
-        g.strokeEllipse(cx, cy, drawW * 0.82, 96);
-        g.lineStyle(4, theme.highlight, 0.34);
-        g.strokeEllipse(cx, cy, drawW * 0.74, 66);
-        break;
-      case 'pulsar_spine':
-      case 'neutron_forge':
-        g.fillStyle(theme.highlight, 0.42);
-        g.fillCircle(cx, cy, 30);
-        g.lineStyle(9, theme.accent, 0.2);
-        g.lineBetween(cx, cy - 360, cx, cy + 360);
-        g.lineStyle(2, theme.highlight, 0.34);
-        for (let i = 1; i <= 4; i += 1) g.strokeCircle(cx, cy, 36 + i * 34);
-        break;
-      case 'black_hole_chapel':
-      case 'event_horizon_crown':
-        g.fillStyle(0x000000, 0.92);
-        g.fillCircle(cx, cy, 88);
-        for (let i = 0; i < 5; i += 1) {
-          g.lineStyle(
-            7 - i,
-            i % 2 ? theme.highlight : theme.accent,
-            0.24 - i * 0.025
-          );
-          g.strokeEllipse(cx, cy, 210 + i * 48, 62 + i * 16);
-        }
-        if (zoneId === 'event_horizon_crown') {
-          g.lineStyle(5, theme.highlight, 0.32);
-          g.lineBetween(cx - 120, cy - 104, cx - 46, cy - 176);
-          g.lineBetween(cx - 46, cy - 176, cx, cy - 112);
-          g.lineBetween(cx, cy - 112, cx + 52, cy - 184);
-          g.lineBetween(cx + 52, cy - 184, cx + 124, cy - 104);
-        }
-        break;
-      case 'dying_star_garden':
-        g.fillStyle(theme.accent, 0.12);
-        g.fillCircle(cx, cy, 154);
-        g.fillStyle(theme.highlight, 0.32);
-        g.fillCircle(cx, cy, 94);
-        g.lineStyle(4, theme.stoneDark, 0.48);
-        for (let i = 0; i < 8; i += 1) {
-          const angle = (i / 8) * Math.PI * 2;
-          g.lineBetween(
-            cx + Math.cos(angle) * 78,
-            cy + Math.sin(angle) * 78,
-            cx + Math.cos(angle + 0.2) * 182,
-            cy + Math.sin(angle + 0.2) * 182
-          );
-        }
-        break;
-    }
-  }
-
   private drawPlatform(platform: Platform) {
-    if (this.useReliquaryRenderer && this.graphics) {
-      renderReliquaryPlatform(this.graphics, platform);
-      return;
-    }
-
-    const y = platform.y;
-    const zoneId = zoneForY(y).id;
-    const theme = themeForZone(zoneId);
-    const zoneIndex = ZONES.findIndex((zone) => zone.id === zoneId);
-    const stoneColor = theme.stone;
-    const darkColor = theme.stoneDark;
-    const edgeColor = theme.platformEdge;
-    const highlightColor = theme.highlight;
-
-    // Check if checkpoint to draw Torii Gate
-    const isCheckpoint = platform.id.includes('checkpoint');
-    if (isCheckpoint) {
-      const cx = platform.x + platform.width / 2;
-      const postW = 8;
-      const postH = 46;
-
-      // Platform base
-      this.graphics
-        ?.fillStyle(0x1b262f, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y + 4,
-          platform.width,
-          platform.height,
-          5
-        );
-      this.graphics
-        ?.fillStyle(darkColor, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y + 1,
-          platform.width,
-          platform.height,
-          5
-        );
-      this.graphics
-        ?.fillStyle(stoneColor, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y,
-          platform.width,
-          platform.height - 2,
-          4
-        );
-
-      // Torii columns
-      this.graphics?.fillStyle(theme.platformEdge, 1);
-      this.graphics?.fillRect(
-        cx - platform.width * 0.32 - 1,
-        platform.y - postH,
-        postW + 2,
-        postH
-      );
-      this.graphics?.fillRect(
-        cx + platform.width * 0.32 - postW - 1,
-        platform.y - postH,
-        postW + 2,
-        postH
-      );
-
-      this.graphics?.fillStyle(theme.accent, 1);
-      this.graphics?.fillRect(
-        cx - platform.width * 0.32,
-        platform.y - postH,
-        postW,
-        postH
-      );
-      this.graphics?.fillRect(
-        cx + platform.width * 0.32 - postW,
-        platform.y - postH,
-        postW,
-        postH
-      );
-
-      // Column bases
-      this.graphics?.fillStyle(0x1b262f, 1);
-      this.graphics?.fillRect(
-        cx - platform.width * 0.32 - 1,
-        platform.y - 4,
-        postW + 2,
-        4
-      );
-      this.graphics?.fillRect(
-        cx + platform.width * 0.32 - postW - 1,
-        platform.y - 4,
-        postW + 2,
-        4
-      );
-
-      // Shimaki crossbeam
-      this.graphics?.fillStyle(theme.platformEdge, 1);
-      this.graphics?.fillRect(
-        cx - platform.width * 0.36,
-        platform.y - postH + 10,
-        platform.width * 0.72,
-        6
-      );
-      this.graphics?.fillStyle(theme.accent, 1);
-      this.graphics?.fillRect(
-        cx - platform.width * 0.36,
-        platform.y - postH + 9,
-        platform.width * 0.72,
-        6
-      );
-
-      // Kasagi lintel
-      this.graphics?.fillStyle(0x1b262f, 1);
-      this.graphics?.fillRoundedRect(
-        cx - platform.width * 0.44,
-        platform.y - postH - 12,
-        platform.width * 0.88,
-        5,
-        2
-      );
-      this.graphics?.fillStyle(theme.accent, 1);
-      this.graphics?.fillRoundedRect(
-        cx - platform.width * 0.42,
-        platform.y - postH - 8,
-        platform.width * 0.84,
-        9,
-        3
-      );
-
-      // Center wood stamp nameboard
-      this.graphics?.fillStyle(0x1b262f, 1);
-      this.graphics?.fillRect(cx - 8, platform.y - postH - 1, 16, 11);
-      this.graphics?.fillStyle(theme.highlight, 1);
-      this.graphics?.strokeRect(cx - 7, platform.y - postH, 14, 9);
-
-      this.addInlineLabel(
-        cx - 11,
-        platform.y - postH - 24,
-        'GATE',
-        9,
-        theme.skyBot
-      );
-      return;
-    }
-
-    if (platform.kind === 'summit') {
-      // Summit platform — glowing golden celestial arch/temple roof design
-      this.graphics
-        ?.fillStyle(theme.platformEdge, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y + 4,
-          platform.width,
-          platform.height,
-          5
-        );
-      this.graphics
-        ?.fillStyle(theme.stone, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y,
-          platform.width,
-          platform.height - 2,
-          5
-        );
-      this.graphics
-        ?.fillStyle(0xffffff, 0.45)
-        .fillRect(platform.x + 4, platform.y + 3, platform.width - 8, 3);
-
-      this.graphics
-        ?.fillStyle(theme.highlight, 0.55)
-        .fillEllipse(platform.x + platform.width / 2, platform.y - 20, 20, 20);
-      this.addInlineLabel(
-        platform.x + platform.width / 2 - 18,
-        platform.y - 25,
-        'SUMMIT',
-        10,
-        '#ffffff'
-      );
-      return;
-    }
-
-    if (platform.kind === 'obstacle') {
-      const isRicochet = platform.id.startsWith('ricochet-');
-      const notchCount = Math.max(3, Math.floor(platform.height / 18));
-      this.graphics
-        ?.fillStyle(edgeColor, 0.92)
-        .fillRoundedRect(
-          platform.x - 2,
-          platform.y + 3,
-          platform.width + 4,
-          platform.height,
-          4
-        );
-      this.graphics
-        ?.fillStyle(darkColor, 1)
-        .fillRoundedRect(
-          platform.x,
-          platform.y,
-          platform.width,
-          platform.height,
-          4
-        );
-      this.graphics
-        ?.fillStyle(stoneColor, 1)
-        .fillRoundedRect(
-          platform.x + 3,
-          platform.y + 3,
-          platform.width - 6,
-          platform.height - 6,
-          3
-        );
-      this.graphics?.lineStyle(2, highlightColor, 0.46);
-      for (let i = 1; i < notchCount; i += 1) {
-        const yLine = platform.y + (platform.height / notchCount) * i;
-        this.graphics?.lineBetween(
-          platform.x + 4,
-          yLine,
-          platform.x + platform.width - 4,
-          yLine - 4
-        );
-      }
-      this.graphics?.lineStyle(2, theme.accent, 0.35);
-      this.graphics?.lineBetween(
-        platform.x + platform.width / 2,
-        platform.y + 8,
-        platform.x + platform.width / 2,
-        platform.y + platform.height - 8
-      );
-      if (isRicochet) {
-        this.graphics?.lineStyle(3, highlightColor, 0.9);
-        const points = Math.max(3, Math.floor(platform.height / 26));
-        const facesRight = platform.id.endsWith('-left');
-        for (let i = 0; i < points; i += 1) {
-          const markerY = platform.y + 14 + i * 26;
-          const edgeX = facesRight
-            ? platform.x + platform.width - 2
-            : platform.x + 2;
-          const innerX = facesRight ? edgeX - 8 : edgeX + 8;
-          this.graphics?.lineBetween(innerX, markerY - 5, edgeX, markerY);
-          this.graphics?.lineBetween(edgeX, markerY, innerX, markerY + 5);
-        }
-      }
-      return;
-    }
-
-    // Shadow depth
-    this.graphics
-      ?.fillStyle(edgeColor, 0.9)
-      .fillRoundedRect(
-        platform.x,
-        platform.y + 4,
-        platform.width,
-        platform.height,
-        5
-      );
-    // Ledge faces
-    this.graphics
-      ?.fillStyle(darkColor, 1)
-      .fillRoundedRect(
-        platform.x,
-        platform.y + 1,
-        platform.width,
-        platform.height,
-        5
-      );
-    this.graphics
-      ?.fillStyle(stoneColor, 1)
-      .fillRoundedRect(
-        platform.x,
-        platform.y,
-        platform.width,
-        platform.height - 2,
-        4
-      );
-    // Highlights
-    this.graphics
-      ?.fillStyle(highlightColor, 0.22)
-      .fillRect(platform.x + 5, platform.y + 2, platform.width - 10, 2);
-
-    // Sub-theme specific decorative platform detailing
-    if (zoneIndex % 6 === 0) {
-      this.graphics?.lineStyle(1.2, darkColor, 0.35);
-      if (platform.width > 40)
-        this.graphics?.lineBetween(
-          platform.x + 20,
-          platform.y + 1,
-          platform.x + 20,
-          platform.y + platform.height - 3
-        );
-      if (platform.width > 80)
-        this.graphics?.lineBetween(
-          platform.x + 60,
-          platform.y + 1,
-          platform.x + 60,
-          platform.y + platform.height - 3
-        );
-      this.graphics?.fillStyle(theme.accent, 0.7);
-      if (platform.width > 30)
-        this.graphics?.fillEllipse(platform.x + 12, platform.y, 6, 2.5);
-    } else if (zoneIndex % 6 === 1) {
-      this.graphics?.fillStyle(theme.highlight, 0.7);
-      if (platform.width > 30)
-        this.graphics?.fillCircle(platform.x + 15, platform.y + 8, 3.5);
-      if (platform.width > 60)
-        this.graphics?.fillCircle(
-          platform.x + platform.width - 15,
-          platform.y + 8,
-          3
-        );
-      this.graphics?.lineStyle(1, theme.highlight, 0.45);
-      this.graphics?.lineBetween(
-        platform.x + 10,
-        platform.y + 4,
-        platform.x + 24,
-        platform.y + 12
-      );
-    } else if (zoneIndex % 6 === 2) {
-      this.graphics?.lineStyle(1, highlightColor, 0.25);
-      this.graphics?.lineBetween(
-        platform.x + 10,
-        platform.y + 2,
-        platform.x + platform.width - 10,
-        platform.y + platform.height - 4
-      );
-      this.graphics?.lineBetween(
-        platform.x + platform.width - 15,
-        platform.y + 2,
-        platform.x + 15,
-        platform.y + platform.height - 4
-      );
-    } else if (zoneIndex % 6 === 3) {
-      this.graphics?.lineStyle(1, darkColor, 0.6);
-      this.graphics?.lineBetween(
-        platform.x + 4,
-        platform.y + platform.height / 2,
-        platform.x + platform.width - 4,
-        platform.y + platform.height / 2
-      );
-      this.graphics?.fillStyle(theme.platformEdge, 0.75);
-      this.graphics?.fillCircle(platform.x + 4, platform.y + 4, 1.2);
-      this.graphics?.fillCircle(
-        platform.x + platform.width - 4,
-        platform.y + 4,
-        1.2
-      );
-      this.graphics?.fillCircle(
-        platform.x + 4,
-        platform.y + platform.height - 6,
-        1.2
-      );
-      this.graphics?.fillCircle(
-        platform.x + platform.width - 4,
-        platform.y + platform.height - 6,
-        1.2
-      );
-    } else if (zoneIndex % 6 === 4) {
-      this.graphics?.fillStyle(highlightColor, 0.18);
-      this.graphics?.beginPath();
-      const px = platform.x + platform.width / 2;
-      const py = platform.y + platform.height / 2 - 1;
-      this.graphics?.moveTo(px - 10, py);
-      this.graphics?.lineTo(px, py - 4);
-      this.graphics?.lineTo(px + 10, py);
-      this.graphics?.lineTo(px, py + 4);
-      this.graphics?.closePath();
-      this.graphics?.fill();
-    } else {
-      this.graphics?.fillStyle(highlightColor, 0.35);
-      this.graphics?.fillRect(
-        platform.x + 4,
-        platform.y + 3,
-        platform.width - 8,
-        1.5
-      );
-      this.graphics?.fillRect(
-        platform.x + 4,
-        platform.y + platform.height - 6,
-        platform.width - 8,
-        1.5
-      );
-    }
+    if (!this.graphics) return;
+    renderReliquaryPlatform(this.graphics, platform);
   }
 
   private drawArtifact(artifact: Artifact) {
-    if (this.useReliquaryRenderer && this.graphics) {
-      renderReliquaryArtifact(this.graphics, artifact, {
-        reducedMotion: this.reducedMotion,
-        timeMs: this.time.now,
-        addLabel: (centerX, y, text) =>
-          this.addArtifactLabel(centerX, y, text),
-      });
-      return;
-    }
-
-    const zone = zoneForY(artifact.y);
-    const th = themeForZone(zone.id);
-
-    if (artifact.type === 'lantern_trail') {
-      this.graphics?.lineStyle(2, th.accent, 0.6).beginPath();
-      this.graphics?.arc(
-        artifact.x + 60,
-        artifact.y + 10,
-        72,
-        Math.PI * 1.08,
-        Math.PI * 1.82
-      );
-      this.graphics?.strokePath();
-      this.addInlineLabel(
-        artifact.x - 22,
-        artifact.y - 32,
-        artifact.label,
-        10,
-        th.skyBot
-      );
-      return;
-    }
-
-    if (artifact.type === 'corpse_stack') {
-      const colors = [th.stoneDark, th.stone, th.highlight];
-      for (let i = 2; i >= 0; i -= 1) {
-        this.graphics
-          ?.fillStyle(colors[i]!, 1)
-          .fillRoundedRect(
-            artifact.x + i * 4,
-            artifact.y + i * 5,
-            artifact.width - i * 8,
-            10,
-            3
-          );
-        this.graphics
-          ?.fillStyle(0xf6f0d4, 0.24)
-          .fillRect(
-            artifact.x + i * 4 + 4,
-            artifact.y + i * 5 + 1,
-            artifact.width - i * 8 - 8,
-            2
-          );
-      }
-      this.addArtifactLabel(
-        artifact.x + artifact.width / 2,
-        artifact.y - 6,
-        artifact.label
-      );
-      return;
-    }
-
-    if (artifact.type === 'mercy_nail') {
-      this.graphics
-        ?.fillStyle(th.stoneDark, 1)
-        .fillRoundedRect(artifact.x, artifact.y, 10, artifact.height, 2);
-      this.graphics
-        ?.fillStyle(th.accent, 1)
-        .fillRoundedRect(
-          artifact.x + 8,
-          artifact.y - 2,
-          artifact.width - 8,
-          artifact.height + 4,
-          3
-        );
-      this.graphics
-        ?.lineStyle(1, th.highlight, 0.85)
-        .strokeRect(
-          artifact.x + 11,
-          artifact.y,
-          artifact.width - 14,
-          artifact.height
-        );
-      this.graphics
-        ?.lineStyle(1.2, 0xe8fff5, 0.9)
-        .lineBetween(
-          artifact.x + 10,
-          artifact.y + artifact.height / 2,
-          artifact.x + 3,
-          artifact.y + artifact.height / 2
-        );
-      this.addArtifactLabel(
-        artifact.x + artifact.width / 2,
-        artifact.y - 6,
-        artifact.label
-      );
-      return;
-    }
-
-    if (artifact.type === 'ghost_platform') {
-      this.graphics
-        ?.lineStyle(1.8, th.accent, 0.8)
-        .strokeRoundedRect(
-          artifact.x,
-          artifact.y,
-          artifact.width,
-          artifact.height,
-          6
-        );
-      this.graphics
-        ?.fillStyle(th.accent, 0.2)
-        .fillRoundedRect(
-          artifact.x,
-          artifact.y,
-          artifact.width,
-          artifact.height,
-          6
-        );
-
-      this.graphics?.fillStyle(0xe8fff5, 0.75);
-      for (let i = 0; i < 3; i++) {
-        this.graphics?.fillCircle(
-          artifact.x + 12 + i * ((artifact.width - 24) / 2),
-          artifact.y + artifact.height / 2,
-          2
-        );
-      }
-      this.addArtifactLabel(
-        artifact.x + artifact.width / 2,
-        artifact.y - 6,
-        artifact.label
-      );
-      return;
-    }
-
-    if (artifact.type === 'cursed_brick') {
-      this.addArtifactLabel(
-        artifact.x + artifact.width / 2,
-        artifact.y - 6,
-        artifact.label
-      );
-      return;
-    }
+    if (!this.graphics) return;
+    renderReliquaryArtifact(this.graphics, artifact, {
+      reducedMotion: this.reducedMotion,
+      timeMs: this.time.now,
+      addLabel: (centerX, y, text) =>
+        this.addArtifactLabel(centerX, y, text),
+    });
   }
 
   private drawDynamicElements(deltaMs: number) {
     if (!this.dynamicGraphics || !this.player) return;
     const g = this.dynamicGraphics;
     const time = this.time.now;
-
-    if (!this.useReliquaryRenderer) this.drawBiomeAnimation(g, time);
 
     // 1. UPDATE AND DRAW PARTICLES
     const activeParticles = [];
@@ -1519,7 +754,7 @@ class FallstackScene extends Phaser.Scene {
     const body = this.player.body;
     const onFloor = body.blocked.down || body.touching.down;
     const vx = body.velocity.x;
-    if (onFloor && Math.abs(vx) > 30) {
+    if (!this.reducedMotion && onFloor && Math.abs(vx) > 30) {
       if (Math.random() < 0.28) {
         this.particles.push({
           x: this.player.x - this.facing * 5 + (Math.random() * 6 - 3),
@@ -1537,7 +772,7 @@ class FallstackScene extends Phaser.Scene {
     }
 
     // SPAWN CHARGING FOXFIRE
-    if (this.charging) {
+    if (!this.reducedMotion && this.charging) {
       const power = chargePowerForHeldMs(this.chargeTime);
       if (Math.random() < 0.42 + power * 0.45) {
         const angle = Math.random() * Math.PI * 2;
@@ -1560,12 +795,11 @@ class FallstackScene extends Phaser.Scene {
     }
 
     const zone = ZONES.find((z) => z.id === this.currentZone);
-    if (zone && zone.id !== BOTTOM_ZONE_ID) {
+    if (!this.reducedMotion && zone && zone.id !== BOTTOM_ZONE_ID) {
       if (Math.random() < 0.05) {
         const cam = this.cameras.main;
         const px = cam.scrollX + Math.random() * this.gameWidth();
         const py = cam.scrollY + cam.height - Math.random() * 160;
-        const theme = themeForZone(zone.id);
         const zoneIndex = ZONES.findIndex(
           (candidate) => candidate.id === zone.id
         );
@@ -1574,7 +808,10 @@ class FallstackScene extends Phaser.Scene {
           y: py,
           vx: Math.random() * 24 - 12,
           vy: -25 - Math.random() * 35,
-          color: zoneIndex % 2 === 0 ? theme.highlight : theme.accent,
+          color:
+            zoneIndex % 2 === 0
+              ? RELIQUARY_COLORS.gold
+              : RELIQUARY_COLORS.ghost,
           alpha: 0.45,
           size: 1.0 + Math.random() * 1.5,
           life: 2000,
@@ -1590,337 +827,28 @@ class FallstackScene extends Phaser.Scene {
     // 4. DRAW DYNAMIC WOBBLING CURSED BRICKS
     this.drawWobblingCursedBricks(g);
 
-    // 5. DRAW DYNAMIC TWINKLING STARS
-    if (!this.useReliquaryRenderer) {
-      g.fillStyle(0xffffff, 0.7);
-      for (const star of this.stars) {
-        const alpha =
-          0.35 + Math.sin((time / 300) * star.speed + star.phase) * 0.35;
-        g.fillStyle(0xffffff, alpha);
-        g.fillPoint(star.x, star.y, star.size);
-      }
-    }
-
-    // 6. DRAW PLAYER
-    this.drawFoxSpirit(g);
+    // 5. DRAW PLAYER
+    this.drawPlayer(g);
   }
 
-  private drawBiomeAnimation(g: Phaser.GameObjects.Graphics, time: number) {
-    if (this.reducedMotion) return;
-    const cam = this.cameras.main;
-    const viewTop = cam.scrollY;
-    const viewBottom = viewTop + cam.height;
-    const viewW = this.gameWidth();
-
-    for (const zone of ZONES) {
-      if (zone.yBottom < viewTop || zone.yTop > viewBottom) continue;
-      const theme = themeForZone(zone.id);
-      const zoneIndex = ZONES.findIndex(
-        (candidate) => candidate.id === zone.id
-      );
-      const zoneMidY = zone.yTop + (zone.yBottom - zone.yTop) / 2;
-      const drift = time * (0.018 + zoneIndex * 0.001);
-
-      if (zone.id === 'orbital_scrapyard') {
-        const hubX = this.layoutX(305);
-        const hubY = Phaser.Math.Clamp(
-          zone.yBottom - 720 + Math.sin(time / 900) * 42,
-          viewTop + 118,
-          viewBottom - 118
-        );
-        g.lineStyle(2, theme.accent, 0.22);
-        g.strokeEllipse(hubX, hubY, 178, 34);
-        g.strokeEllipse(hubX - 4, hubY + 2, 126, 22);
-        g.fillStyle(0x090507, 0.58);
-        g.fillCircle(hubX + 4, hubY - 3, 44);
-        g.fillStyle(theme.highlight, 0.14);
-        g.fillCircle(hubX - 18, hubY - 2, 63);
-        for (let i = 0; i < 9; i += 1) {
-          const x = ((i * 71 + time / 21) % (viewW + 120)) - 60;
-          const y =
-            viewTop +
-            92 +
-            ((i * 97 + time / 36) % Math.max(cam.height - 150, 160));
-          const w = 18 + (i % 3) * 14;
-          g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.18);
-          g.fillRect(x, y, w, 5);
-          g.lineStyle(1, theme.platformEdge, 0.36);
-          g.lineBetween(
-            x - 10,
-            y + 2,
-            x + w + 14,
-            y + 2 + Math.sin(time / 600 + i) * 8
-          );
-        }
-        g.lineStyle(2, theme.platformEdge, 0.38);
-        for (let i = 0; i < 4; i += 1) {
-          const cableY =
-            viewTop + 132 + i * 138 + Math.sin(time / 740 + i) * 18;
-          g.lineBetween(0, cableY, viewW * 0.34, cableY - 28);
-          g.lineBetween(viewW * 0.66, cableY + 22, viewW, cableY - 10);
-        }
-        continue;
-      }
-
-      if (zone.id === 'crater_foundry') {
-        for (let i = 0; i < 8; i += 1) {
-          const x = 24 + i * (viewW / 8) + Math.sin(time / 540 + i) * 8;
-          const y0 = viewTop + ((time / (10 + i) + i * 80) % cam.height);
-          g.lineStyle(2, i % 2 === 0 ? theme.highlight : theme.accent, 0.18);
-          g.lineBetween(x, y0, x + 14, y0 + 78);
-        }
-      }
-
-      g.lineStyle(1.5, theme.highlight, 0.18);
-      for (let i = 0; i < 4; i += 1) {
-        const y =
-          zone.yTop +
-          ((i * 520 + drift * (i + 1)) % (zone.yBottom - zone.yTop));
-        const sway = Math.sin(time / 820 + i + zoneIndex) * 34;
-        g.lineBetween(22 + sway, y, viewW - 24 - sway, y - 72);
-      }
-
-      if (
-        zone.id === 'black_hole_chapel' ||
-        zone.id === 'event_horizon_crown'
-      ) {
-        const cx = this.layoutX(240);
-        const cy = Phaser.Math.Clamp(zoneMidY, viewTop + 140, viewBottom - 120);
-        const spin = time / 520;
-        g.fillStyle(0x010104, 0.72);
-        g.fillCircle(cx, cy, 42);
-        for (let i = 0; i < 5; i += 1) {
-          const radius = 72 + i * 18;
-          const alpha = 0.19 - i * 0.024;
-          g.lineStyle(2, i % 2 === 0 ? theme.accent : theme.highlight, alpha);
-          g.strokeEllipse(
-            cx + Math.cos(spin + i) * 5,
-            cy + Math.sin(spin + i) * 4,
-            radius * 1.85,
-            radius * 0.42
-          );
-        }
-        continue;
-      }
-
-      if (zone.id === 'pulsar_spine' || zone.id === 'neutron_forge') {
-        const pulse = 0.5 + Math.sin(time / 180) * 0.5;
-        const beamX = this.layoutX(74 + ((zoneIndex * 53) % 300));
-        g.lineStyle(3, theme.accent, 0.2 + pulse * 0.24);
-        g.lineBetween(
-          beamX,
-          viewTop,
-          beamX + Math.sin(time / 480) * 48,
-          viewBottom
-        );
-        g.lineStyle(1, theme.highlight, 0.36 * pulse);
-        g.strokeCircle(
-          beamX,
-          viewTop + 120 + ((time / 8) % Math.max(cam.height - 160, 120)),
-          24 + pulse * 18
-        );
-        continue;
-      }
-
-      if (zone.id === 'ring_citadel' || zone.id === 'galaxy_reef') {
-        const orbitCenterX = this.layoutX(
-          zone.id === 'ring_citadel' ? 310 : 190
-        );
-        const orbitCenterY = Phaser.Math.Clamp(
-          zoneMidY + Math.sin(time / 1100) * 120,
-          viewTop + 110,
-          viewBottom - 100
-        );
-        for (let i = 0; i < 3; i += 1) {
-          g.lineStyle(2, i === 1 ? theme.highlight : theme.accent, 0.2);
-          g.strokeEllipse(
-            orbitCenterX,
-            orbitCenterY,
-            130 + i * 36,
-            22 + i * 10
-          );
-          const angle = time / (680 + i * 170) + i * 2.1;
-          g.fillStyle(theme.highlight, 0.5);
-          g.fillCircle(
-            orbitCenterX + Math.cos(angle) * (62 + i * 18),
-            orbitCenterY + Math.sin(angle) * (10 + i * 5),
-            2.5 + i
-          );
-        }
-        continue;
-      }
-
-      if (zone.id === 'comet_reef' || zone.id === 'dying_star_garden') {
-        for (let i = 0; i < 7; i += 1) {
-          const lane = (i * 79 + zoneIndex * 31) % viewW;
-          const fall = (time / (7 + i) + i * 120) % (cam.height + 180);
-          const x = lane + Math.sin(time / 900 + i) * 18;
-          const y = viewTop - 90 + fall;
-          g.lineStyle(2, i % 2 === 0 ? theme.accent : theme.highlight, 0.22);
-          g.lineBetween(x, y, x - 32, y + 58);
-          g.fillStyle(theme.highlight, 0.3);
-          g.fillCircle(x, y, 3.5);
-        }
-        continue;
-      }
-
-      const bandCount = zone.id === 'nebula_vault' ? 8 : 5;
-      for (let i = 0; i < bandCount; i += 1) {
-        const x =
-          ((i * 103 + Math.sin(time / 700 + i) * 30 + viewW) % viewW) +
-          Math.sin(time / 1200 + zoneIndex) * 12;
-        const y =
-          zone.yTop + ((i * 410 + time / 18) % (zone.yBottom - zone.yTop));
-        g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.08);
-        g.fillEllipse(x, y, 90 + i * 14, 18 + (i % 3) * 8);
-      }
-    }
-  }
-
-  private drawFoxSpirit(g: Phaser.GameObjects.Graphics) {
+  private drawPlayer(g: Phaser.GameObjects.Graphics) {
     if (!this.player) return;
-    if (this.useReliquaryRenderer) {
-      renderReliquaryPlayer(g, {
-        x: this.player.x,
-        y: this.player.y,
-        facing: this.facing,
-        charging: this.charging,
-        grounded:
-          this.player.body.blocked.down || this.player.body.touching.down,
-        velocityY: this.player.body.velocity.y,
-        chargeRatio: chargePowerForHeldMs(this.chargeTime),
-        reducedMotion: this.reducedMotion,
-      });
-      return;
-    }
-    const cx = this.player.x;
-    const cy = this.player.y;
-    const onFloor =
-      this.player.body.blocked.down || this.player.body.touching.down;
-    const vy = this.player.body.velocity.y;
-    const time = this.time.now;
-
-    // Squash & Stretch
-    let squashX = 1;
-    let squashY = 1;
-    if (this.charging) {
-      const power = chargePowerForHeldMs(this.chargeTime);
-      squashY = 1 - power * 0.28;
-      squashX = 1 + power * 0.22;
-    } else if (!onFloor) {
-      const stretch = Phaser.Math.Clamp(Math.abs(vy) / 1200, 0, 0.26);
-      squashY = 1 + stretch;
-      squashX = 1 - stretch * 0.5;
-    }
-
-    // Charge glow rings
-    if (this.charging) {
-      const power = chargePowerForHeldMs(this.chargeTime);
-      g.fillStyle(0xff6f5f, 0.15 + power * 0.35);
-      g.fillCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
-
-      g.lineStyle(1.5, 0x62d0c4, 0.3 + power * 0.5);
-      g.strokeCircle(cx, cy + 2 * squashY, (14 + power * 10) * squashX);
-    }
-
-    // Ears
-    g.fillStyle(0xf6f0d4, 1);
-    g.fillTriangle(
-      cx - 9 * squashX,
-      cy - 8 * squashY,
-      cx - 4 * squashX,
-      cy - 19 * squashY,
-      cx - 1 * squashX,
-      cy - 8 * squashY
-    );
-    g.fillStyle(0xff6f5f, 0.85);
-    g.fillTriangle(
-      cx - 7 * squashX,
-      cy - 9 * squashY,
-      cx - 4 * squashX,
-      cy - 16 * squashY,
-      cx - 3 * squashX,
-      cy - 9 * squashY
-    );
-
-    g.fillStyle(0xf6f0d4, 1);
-    g.fillTriangle(
-      cx + 9 * squashX,
-      cy - 8 * squashY,
-      cx + 4 * squashX,
-      cy - 19 * squashY,
-      cx + 1 * squashX,
-      cy - 8 * squashY
-    );
-    g.fillStyle(0xff6f5f, 0.85);
-    g.fillTriangle(
-      cx + 7 * squashX,
-      cy - 9 * squashY,
-      cx + 4 * squashX,
-      cy - 16 * squashY,
-      cx + 3 * squashX,
-      cy - 9 * squashY
-    );
-
-    // Fluffy waving tail
-    const tailWave = Math.sin(time / 140) * 3.5;
-    const tx = cx - this.facing * (9 + tailWave * 0.2) * squashX;
-    const ty = cy + (5 + tailWave * 0.6) * squashY;
-
-    g.fillStyle(0xf6f0d4, 1);
-    g.fillEllipse(tx, ty, 6 * squashX, 8 * squashY);
-    g.fillStyle(0xff6f5f, 1);
-    g.fillEllipse(
-      tx - this.facing * 3 * squashX,
-      ty + 1 * squashY,
-      3 * squashX,
-      4 * squashY
-    );
-
-    // Body
-    g.fillStyle(0xf6f0d4, 1);
-    g.fillEllipse(cx, cy + 2 * squashY, 10 * squashX, 12 * squashY);
-
-    // Blush cheeks
-    g.fillStyle(0xff6f5f, 0.38);
-    g.fillCircle(cx - 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
-    g.fillCircle(cx + 6 * squashX, cy + 4 * squashY, 2.2 * squashX);
-
-    // Eyes
-    g.fillStyle(0x33291f, 1);
-    const eyeOffset = this.facing * 2 * squashX;
-    const isBlinking = Math.floor(time / 2800) % 10 === 0;
-
-    if (isBlinking) {
-      g.lineStyle(1.5, 0x33291f, 1);
-      g.lineBetween(
-        cx - 5.5 * squashX + eyeOffset,
-        cy + 0.5 * squashY,
-        cx - 2.5 * squashX + eyeOffset,
-        cy + 0.5 * squashY
-      );
-      g.lineBetween(
-        cx + 2.5 * squashX + eyeOffset,
-        cy + 0.5 * squashY,
-        cx + 5.5 * squashX + eyeOffset,
-        cy + 0.5 * squashY
-      );
-    } else {
-      g.fillCircle(
-        cx - 4 * squashX + eyeOffset,
-        cy + 0.5 * squashY,
-        1.8 * squashX
-      );
-      g.fillCircle(
-        cx + 4 * squashX + eyeOffset,
-        cy + 0.5 * squashY,
-        1.8 * squashX
-      );
-    }
+    renderReliquaryPlayer(g, {
+      x: this.player.x,
+      y: this.player.y,
+      facing: this.facing,
+      charging: this.charging,
+      grounded: this.player.body.blocked.down || this.player.body.touching.down,
+      velocityY: this.player.body.velocity.y,
+      chargeRatio: chargePowerForHeldMs(this.chargeTime),
+      reducedMotion: this.reducedMotion,
+    });
   }
 
   private drawCheckpointLanterns(g: Phaser.GameObjects.Graphics) {
-    const swingAngle = Math.sin(this.time.now / 380) * 0.16;
+    const swingAngle = this.reducedMotion
+      ? 0
+      : Math.sin(this.time.now / 380) * 0.16;
     for (const platform of this.towerPlatforms) {
       const layout = this.layoutPlatform(platform);
       const isCheckpoint = layout.id.includes('checkpoint');
@@ -1947,25 +875,25 @@ class FallstackScene extends Phaser.Scene {
     const ly = hy + Math.cos(angle) * len;
 
     // Cord
-    g.lineStyle(1.2, 0x071923, 0.85);
+    g.lineStyle(1.2, RELIQUARY_COLORS.ink, 0.85);
     g.lineBetween(hx, hy, lx, ly);
 
     // Glow
-    g.fillStyle(0x62d0c4, 0.28);
+    g.fillStyle(RELIQUARY_COLORS.gold, 0.2);
     g.fillCircle(lx, ly, 10);
 
     // Wood cap
-    g.fillStyle(0x071923, 1);
+    g.fillStyle(RELIQUARY_COLORS.indigoDeep, 1);
     g.fillRect(lx - 4, ly - 7, 8, 2);
 
     // Warm glow paper body
-    g.fillStyle(0xe8fff5, 1);
+    g.fillStyle(RELIQUARY_COLORS.washi, 1);
     g.fillRoundedRect(lx - 4, ly - 5, 8, 10, 2);
-    g.fillStyle(0x62d0c4, 0.62);
+    g.fillStyle(RELIQUARY_COLORS.gold, 0.62);
     g.fillRoundedRect(lx - 3, ly - 4, 6, 8, 1.5);
 
     // Red tassel
-    g.lineStyle(1.5, 0xff6f5f, 0.9);
+    g.lineStyle(1.5, RELIQUARY_COLORS.persimmon, 0.9);
     g.lineBetween(lx, ly + 5, lx + Math.sin(angle * 1.5) * 5, ly + 9);
   }
 
@@ -1993,12 +921,12 @@ class FallstackScene extends Phaser.Scene {
             }
           }
 
-          const amp = isStanding ? 2.2 : 0.6;
+          const amp = this.reducedMotion ? 0 : isStanding ? 2.2 : 0.6;
           const freq = isStanding ? 50 : 220;
           const wobble = Math.sin(time / freq) * amp;
 
           // Shadow
-          g.fillStyle(0x120608, 0.9).fillRoundedRect(
+          g.fillStyle(RELIQUARY_COLORS.ink, 0.9).fillRoundedRect(
             layout.x + wobble,
             layout.y + 3,
             layout.width,
@@ -2007,7 +935,7 @@ class FallstackScene extends Phaser.Scene {
           );
 
           // Brick
-          g.fillStyle(0x6a1b2e, 1).fillRoundedRect(
+          g.fillStyle(RELIQUARY_COLORS.burgundy, 1).fillRoundedRect(
             layout.x + wobble,
             layout.y,
             layout.width,
@@ -2016,7 +944,7 @@ class FallstackScene extends Phaser.Scene {
           );
 
           // Cracks
-          g.lineStyle(1.2, 0x0a0508, 0.8);
+          g.lineStyle(1.2, RELIQUARY_COLORS.ink, 0.8);
           g.lineBetween(
             layout.x + 8 + wobble,
             layout.y + 2,
@@ -2030,8 +958,8 @@ class FallstackScene extends Phaser.Scene {
             layout.y + layout.height - 2
           );
 
-          // Moss clumps on top
-          g.fillStyle(0x62d0c4, 0.75);
+          // Damage beads make the curse legible without relying on color.
+          g.fillStyle(RELIQUARY_COLORS.danger, 0.82);
           g.fillEllipse(layout.x + 10 + wobble, layout.y, 4, 1.5);
           g.fillEllipse(layout.x + 28 + wobble, layout.y, 6, 2);
         }
@@ -2049,19 +977,21 @@ class FallstackScene extends Phaser.Scene {
       fontFamily: '"Shippori Mincho", serif',
       fontSize: '11px',
       fontStyle: 'bold',
-      color: '#9ee6c9',
+      color: '#d9b45c',
+      backgroundColor: 'rgba(23, 20, 38, 0.86)',
+      padding: { left: 6, right: 6, top: 3, bottom: 3 },
     });
     label.setDepth(1);
-    label.setAlpha(0.58);
+    label.setAlpha(0.78);
     this.labels.push(label);
   }
 
   private addArtifactLabel(centerX: number, y: number, text: string) {
     const labelWidth = 148;
-    const clampedX = Phaser.Math.Clamp(
+    const clampedX = clampedArtifactLabelCenter(
       centerX,
-      labelWidth / 2 + 6,
-      this.gameWidth() - labelWidth / 2 - 6
+      this.gameWidth(),
+      labelWidth
     );
     this.graphics
       ?.lineStyle(2, 0xd9b45c, 0.9)
@@ -2078,22 +1008,6 @@ class FallstackScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 1);
     label.setDepth(4);
-    this.labels.push(label);
-  }
-
-  private addInlineLabel(
-    x: number,
-    y: number,
-    text: string,
-    size: number,
-    color: string
-  ) {
-    const label = this.add.text(x, y, text, {
-      fontFamily: '"Zen Maru Gothic", sans-serif',
-      fontSize: `${size}px`,
-      color,
-    });
-    label.setDepth(3);
     this.labels.push(label);
   }
 

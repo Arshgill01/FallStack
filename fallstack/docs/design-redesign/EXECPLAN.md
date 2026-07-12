@@ -283,5 +283,5 @@ Exit: the production redesign is reviewable, reproducible, validated, and mainta
 - [x] M4: opening-zone vertical slice.
 - [x] M5: full expanded-game migration.
 - [x] M6: inline splash and cross-surface coherence.
-- [ ] M7: full validation.
-- [ ] M8: cleanup and handoff.
+- [x] M7: full validation.
+- [x] M8: cleanup and handoff.
