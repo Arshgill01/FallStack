@@ -83,6 +83,7 @@ The highest-leverage fixes I verified are small enough to evaluate quickly:
 - merge configurable raw request headers before `Context(headers)` in `createDevvitTest`, enabling post/comment/logged-out route tests;
 - add a non-mutating `devvit validate --config ...` command;
 - add optional typed status records for JSON logs (`connected`, keepalive/reconnect, complete/error);
+- return an opaque request ID on Devvit Web API responses, propagate it into server context/runtime errors, and support CLI filtering by that ID;
 - contract-test docs, schema constraints, changelog deprecations, template dependencies, and README commands together;
 - report the exact upload manifest, runtime/map/compressed-size estimates, and host-specific Phaser/game performance baselines before remote mutation.
 - surface the installed version in playtest host/log context so concurrent uploads cannot be mistaken for cache or runtime regressions.
@@ -99,6 +100,7 @@ The detailed package lives in:
 - `template-audit-pass.md` — pinned React/Phaser starter evidence;
 - `phaser-packaging-observability-pass.md` — exact build defaults, selected manifest, and runtime/map size split;
 - `host-performance-pass.md` — authenticated same-version cold/warm Reddit iframe timing;
+- `host-log-correlation-pass.md` — browser response and CLI runtime-log join-key audit;
 - `server-persistence-experiment.md` — 101 real-route requests and fault injection;
 - `submission-evidence-audit.md` — claim-by-claim proof and exclusions.
 

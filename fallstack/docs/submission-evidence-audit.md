@@ -67,6 +67,17 @@ Evidence:
 
 Conclusion: submission-ready as secondary observability feedback. Do not promise `history_complete` is implementable if the remote API has no history/tail boundary.
 
+### P1 — Hosted requests lack a browser-to-runtime join key
+
+Evidence:
+
+- `devvit logs --help` has no request/trace filter or correlation option;
+- `--json --log-runtime --since=30m` emitted no automatic record for recent successful hosted requests;
+- an authenticated `/api/init-game` response exposed content/security and Reddit infrastructure headers but no request, trace, correlation, ray, server-timing, or opaque request-ID header;
+- Fallstack did not emit per-request application logs, so the silent stream is not described as dropped log data.
+
+Conclusion: submission-ready as an observability recommendation. Ask for an opaque response ID propagated into server context and structured runtime/error logs. Do not claim successful requests were mishandled.
+
 ### P1 — Game performance guidance lacks actionable host-specific targets
 
 Evidence:

@@ -27,6 +27,7 @@ These recommendations come from clean installs, pinned first-party sources/templ
 | P0 | Golden-path docs/templates contradict executable contracts | New users receive wrong commands, limits, stack, and deprecated config | Correct six source locations; add CI contracts | Docs/schema/changelog/templates/commands compared at pinned revisions |
 | P1 | No non-mutating `validate`/package manifest | Developers learn config/package problems only inside mutating upload flows | CLI validation command or `upload --dry-run` | Controlled config failures and exact uploader enumeration completed |
 | P1 | JSON logs omit lifecycle state | Automation cannot distinguish connected-empty from stalled | Optional typed status JSONL | Human/JSON behavior reproduced and source branch confirmed |
+| P1 | Browser responses cannot be joined to runtime logs | Intermittent hosted failures lack a copyable platform trace key | Opaque response request ID + structured log propagation/filter | CLI flags, recent runtime stream, and authenticated response headers inspected |
 | P1 | Phaser builds lack actionable Reddit-host targets | Generic Vite warnings cannot answer host/mobile/review readiness | Guidance plus manifest/runtime/map split and reference metrics | Three host runs: 0.392–4.164 s cold vs 0.400–0.412 s warm FCP |
 
 ## Fast reproductions
@@ -122,6 +123,12 @@ With no app events, JSON modes remained completely silent until interrupted. Hum
 
 Acceptance criteria: an opt-in discriminated JSONL envelope can report `connected`, keepalive/reconnect, completion, and terminal error without breaking existing log consumers. If the backend cannot distinguish history drain from live tail, document that boundary rather than naming an unsupported event.
 
+### 7. Request correlation
+
+Recent authenticated hosted requests produced no automatic JSON runtime record, and a fresh `/api/init-game` response exposed no request/trace/correlation identifier. Fallstack itself did not log every request, so this is not a missing-log claim; it is the absence of a platform join key.
+
+Acceptance criteria: every Devvit Web API response may expose an opaque request ID; the same ID is available in server context and structured runtime/error logs; CLI filtering can retrieve that record with installed version, subreddit, route, status, runtime, and duration without user or infrastructure identifiers.
+
 ## Evidence integrity
 
 The package deliberately excludes these from Devvit criticism:
@@ -152,6 +159,7 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Inline/expanded screenshots, video, and safe hosted persistence probes | `playtest-evidence/2026-07-12-authenticated-host/report.md` |
 | Logged-out boundary and `loid` limitation | `logged-out-host-pass.md` |
 | Real two-tab identity/idempotency race | `hosted-duplicate-tab-pass.md` |
+| Browser/runtime request-correlation audit | `host-log-correlation-pass.md` |
 | Claim-level readiness and exclusions | `submission-evidence-audit.md` |
 | Paste-ready survey answers | `feedback-form-submission.md` |
 

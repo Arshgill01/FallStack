@@ -163,6 +163,16 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Evidence: `docs/hosted-duplicate-tab-pass.md`.
 - Chrome and Xvfb were stopped; no listener remained on ports 5900, 6080, or 9222.
 
+### Hosted request/log correlation pass
+
+- Inspected `devvit logs --help`; there is no request ID, trace filter, route filter, or client/server correlation option.
+- `--since=30m --json --show-timestamps --log-runtime` emitted no automatic record for recent successful hosted calls during a ten-second observation window. Fallstack did not log each request, so do not claim dropped logs.
+- A fresh authenticated `/api/init-game` response exposed ordinary content/security and Reddit infrastructure header names but no request, trace, correlation, ray, server-timing, or opaque request-ID header.
+- Internal infrastructure header values were deliberately not recorded.
+- Recommendation: an opaque response ID propagated into server context, structured runtime/error logs, installed-version metadata, and a CLI filter.
+- Evidence: `docs/host-log-correlation-pass.md`.
+- Chrome, Xvfb, and orphaned diagnostic log processes were stopped; no listener remained on 5678, 5900, 6080, or 9222.
+
 ### Maintainer usability pass
 
 - Created `maintainer-triage-brief.md` as the short entrypoint to the evidence package.
