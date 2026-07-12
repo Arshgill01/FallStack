@@ -17,6 +17,7 @@ import {
   WORLD_WIDTH,
   ZONES,
   generateDailyTower,
+  isRoutePlatform,
   nextZoneId,
   validateTower,
   zoneForY,
@@ -29,6 +30,7 @@ void test('known-good tower has finite dimensions and a summit', () => {
   assert.equal(WORLD_HEIGHT, ZONE_IDS.length * ZONE_HEIGHT);
   assert.ok(PLATFORMS.length >= 560);
   assert.ok(PLATFORMS.some((platform) => platform.id === 'summit' && platform.kind === 'summit'));
+  assert.ok(PLATFORMS.some((platform) => platform.kind === 'obstacle'));
 });
 
 void test('movement tuning supports generated tower reachability', () => {
@@ -40,6 +42,8 @@ void test('movement tuning supports generated tower reachability', () => {
   assert.ok(MOVEMENT_TUNING.minChargePercent < 1);
   assert.ok(MOVEMENT_TUNING.minLaunchVelocityX < MOVEMENT_TUNING.maxLaunchVelocityX);
   assert.ok(MOVEMENT_TUNING.maxLaunchVelocityY < MOVEMENT_TUNING.minLaunchVelocityY);
+  assert.ok(MOVEMENT_TUNING.airSteerAccelerationX < MOVEMENT_TUNING.groundDragX);
+  assert.ok(MOVEMENT_TUNING.wallBounceVelocityX > MOVEMENT_TUNING.wallBounceMinVelocityX);
   assert.equal(chargePowerForHeldMs(0), 0);
   assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs), 1);
   assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs * 2), 1);
@@ -94,7 +98,7 @@ void test('daily tower generation avoids near-vertical ledge traps', () => {
   for (let index = 0; index < 120; index += 1) {
     const day = String((index % 28) + 1).padStart(2, '0');
     const tower = generateDailyTower(`fallstack-2026-07-${day}-${index}`);
-    const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+    const route = tower.platforms.filter(isRoutePlatform).sort((a, b) => b.y - a.y);
 
     for (let routeIndex = 0; routeIndex < route.length - 1; routeIndex += 1) {
       const from = route[routeIndex]!;
@@ -125,7 +129,7 @@ void test('current first checkpoint does not respawn over empty air', () => {
 void test('current opening route gives the first biome meaningful ledge separation', () => {
   const tower = generateDailyTower('fallstack-2026-07-11');
   const lowerRoute = tower.platforms
-    .filter((platform) => platform.zoneId === BOTTOM_ZONE_ID)
+    .filter((platform) => platform.zoneId === BOTTOM_ZONE_ID && isRoutePlatform(platform))
     .sort((a, b) => b.y - a.y)
     .slice(0, 8);
 
@@ -142,7 +146,7 @@ void test('current opening route gives the first biome meaningful ledge separati
 
 void test('summit connector stays reachable from awkward top seeds', () => {
   const tower = generateDailyTower('fallstack-2026-07-10-149');
-  const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+  const route = tower.platforms.filter(isRoutePlatform).sort((a, b) => b.y - a.y);
   const connectorIndex = route.findIndex(
     (platform) => platform.id === `ledge-${TOP_ZONE_ID}-summit-connector`
   );
@@ -160,7 +164,7 @@ void test('summit connector stays reachable from awkward top seeds', () => {
 
 void test('summit pull keeps top-zone ledges within horizontal reach', () => {
   const tower = generateDailyTower('fallstack-2026-07-20-215');
-  const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+  const route = tower.platforms.filter(isRoutePlatform).sort((a, b) => b.y - a.y);
   const hardest = route
     .slice(0, -1)
     .map((platform, index) => ({
@@ -183,6 +187,7 @@ void test('tower validation catches unreachable zone stitches', () => {
   const secondZone = ZONE_IDS[1]!;
   const firstUpperPlatform = tower.platforms
     .filter((platform) => platform.zoneId === secondZone)
+    .filter(isRoutePlatform)
     .sort((a, b) => b.y - a.y)[0];
 
   assert.ok(firstUpperPlatform);

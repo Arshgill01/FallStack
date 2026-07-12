@@ -13,7 +13,7 @@ export const WORLD_HEIGHT = ZONE_IDS.length * ZONE_HEIGHT;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
 export const CHECKPOINT_RESPAWN_CENTER_X = 240;
 
-export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit';
+export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit' | 'obstacle';
 
 export type Platform = {
   id: string;
@@ -168,6 +168,26 @@ export function generateDailyTower(seed: string): GeneratedTower {
       kind,
     });
 
+    if (!isCP && count % 8 === 0) {
+      const obstacleW = 18;
+      const obstacleH = 86;
+      const side = nextCenter < prevCenter ? 1 : -1;
+      const obstacleX = clamp(
+        nextCenter + side * (pWidth / 2 + 42) - obstacleW / 2,
+        18,
+        WORLD_WIDTH - obstacleW - 18
+      );
+      platforms.push({
+        id: `obstacle-${zone.id}-${count}`,
+        zoneId: zone.id,
+        x: Math.round(obstacleX),
+        y: nextY - 64,
+        width: obstacleW,
+        height: obstacleH,
+        kind: 'obstacle',
+      });
+    }
+
     prevY = nextY;
     prevCenter = nextCenter;
     count++;
@@ -208,7 +228,9 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
   // Expose generated zone chunks for validation and downstream metadata.
   const chunks: TowerChunk[] = ZONES.map((zone) => {
-    const zoneLedges = platforms.filter((p) => p.zoneId === zone.id);
+    const zoneLedges = platforms.filter(
+      (p) => p.zoneId === zone.id && isRoutePlatform(p)
+    );
     const entrance = zoneLedges[0] ?? platforms[0]!;
     const exit = zoneLedges[zoneLedges.length - 1] ?? platforms[platforms.length - 1]!;
     return {
@@ -241,6 +263,10 @@ function platformKindForZone(zoneId: ZoneId): PlatformKind {
 export const CHUNK_LIBRARY: TowerChunk[] = generateDailyTower(KNOWN_GOOD_SEED).chunks;
 export const PLATFORMS = generateDailyTower(KNOWN_GOOD_SEED).platforms;
 
+export function isRoutePlatform(platform: Platform): boolean {
+  return platform.kind !== 'obstacle';
+}
+
 export function validateTower(tower: GeneratedTower): boolean {
   const byZone = new Map<ZoneId, Platform[]>();
   for (const zone of ZONES) byZone.set(zone.id, []);
@@ -248,12 +274,12 @@ export function validateTower(tower: GeneratedTower): boolean {
   for (const platform of tower.platforms) {
     if (platform.x < 0 || platform.x + platform.width > WORLD_WIDTH) return false;
     if (platform.y < 0 || platform.y + platform.height > WORLD_HEIGHT) return false;
-    byZone.get(platform.zoneId)?.push(platform);
+    if (isRoutePlatform(platform)) byZone.get(platform.zoneId)?.push(platform);
   }
 
   if (!tower.platforms.some((platform) => platform.id === 'summit' && platform.kind === 'summit')) return false;
 
-  const route = [...tower.platforms].sort((a, b) => b.y - a.y);
+  const route = tower.platforms.filter(isRoutePlatform).sort((a, b) => b.y - a.y);
   for (let i = 0; i < route.length - 1; i += 1) {
     if (!isReachable(route[i]!, route[i + 1]!)) return false;
   }

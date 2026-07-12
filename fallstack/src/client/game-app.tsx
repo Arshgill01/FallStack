@@ -240,6 +240,7 @@ class FallstackScene extends Phaser.Scene {
   private chargeStart = 0;
   private lastChargePercent = 0;
   private lastWallBonk = false;
+  private lastWallBounceAt = -Infinity;
   private currentZone: ZoneId = BOTTOM_ZONE_ID;
   private publishedZone: ZoneId = BOTTOM_ZONE_ID;
   private respawnZone: ZoneId = BOTTOM_ZONE_ID;
@@ -375,8 +376,15 @@ class FallstackScene extends Phaser.Scene {
 
     if (input.left) this.facing = -1;
     if (input.right) this.facing = 1;
+    const zoneForceX = this.biomeAccelerationX(onFloor);
+    body.setGravityY(this.biomeGravityOffsetY());
     if (onFloor) {
       body.setAccelerationX(0);
+      body.setDragX(this.groundDragForZone());
+      body.setMaxVelocity(
+        MOVEMENT_TUNING.initialMaxVelocityX,
+        MOVEMENT_TUNING.maxVelocityY
+      );
       body.setVelocityX(
         input.left
           ? -MOVEMENT_TUNING.groundSpeed
@@ -387,11 +395,14 @@ class FallstackScene extends Phaser.Scene {
       this.lastWallBonk = false;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(steer * MOVEMENT_TUNING.airSteerAccelerationX);
+      body.setAccelerationX(
+        steer * MOVEMENT_TUNING.airSteerAccelerationX + zoneForceX
+      );
       body.setMaxVelocity(
         MOVEMENT_TUNING.airMaxVelocityX,
         MOVEMENT_TUNING.maxVelocityY
       );
+      this.tryWallBounce(body, input);
       if (
         (body.blocked.left || body.blocked.right) &&
         body.velocity.y > MOVEMENT_TUNING.wallBonkVelocityYThreshold
@@ -662,6 +673,7 @@ class FallstackScene extends Phaser.Scene {
     this.player.setPosition(this.layoutX(checkpoint.x), checkpoint.y);
     this.player.body.setVelocity(0, 0);
     this.player.body.setAcceleration(0, 0);
+    this.player.body.setGravityY(0);
     this.currentZone = this.respawnZone;
     this.publishZone();
     this.currentAttemptId = newAttemptId('attempt');
@@ -673,6 +685,106 @@ class FallstackScene extends Phaser.Scene {
 
     // Instantly snap camera scroll to the player spawn point
     this.snapCameraToPlayer();
+  }
+
+  private groundDragForZone() {
+    if (
+      this.currentZone === 'comet_reef' ||
+      this.currentZone === 'neutron_forge'
+    )
+      return 180;
+    if (this.currentZone === 'crater_foundry') return 520;
+    return MOVEMENT_TUNING.groundDragX;
+  }
+
+  private biomeGravityOffsetY() {
+    if (this.currentZone === 'ring_citadel')
+      return MOVEMENT_TUNING.biomeLowGravityY;
+    if (this.currentZone === 'neutron_forge')
+      return MOVEMENT_TUNING.biomeHighGravityY;
+    if (this.currentZone === 'event_horizon_crown')
+      return MOVEMENT_TUNING.biomeHighGravityY * 0.45;
+    return 0;
+  }
+
+  private biomeAccelerationX(onFloor: boolean) {
+    if (!this.player || onFloor) return 0;
+    const centerX = this.layoutX(240);
+    const pullSign = this.player.x < centerX ? 1 : -1;
+    const t = this.time.now;
+
+    switch (this.currentZone) {
+      case 'comet_reef':
+        return Math.sin(t / 1050) * MOVEMENT_TUNING.biomeWindAccelerationX;
+      case 'nebula_vault':
+        return Math.sin(t / 720 + this.player.y * 0.015) * 95;
+      case 'dwarf_garden':
+        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX;
+      case 'pulsar_spine': {
+        const pulse = Math.max(0, Math.sin(t / 290));
+        return pullSign * pulse * MOVEMENT_TUNING.biomePulseAccelerationX;
+      }
+      case 'black_hole_chapel':
+        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 1.55;
+      case 'galaxy_reef':
+        return Math.sin(t / 1500) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.9;
+      case 'dying_star_garden':
+        return Math.sin(t / 430) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.55;
+      case 'event_horizon_crown':
+        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 0.8;
+      default:
+        return 0;
+    }
+  }
+
+  private tryWallBounce(
+    body: Phaser.Physics.Arcade.Body,
+    input: InputState
+  ) {
+    const now = this.time.now;
+    if (now - this.lastWallBounceAt < MOVEMENT_TUNING.wallBounceCooldownMs)
+      return;
+
+    const hitLeft = body.blocked.left || body.touching.left;
+    const hitRight = body.blocked.right || body.touching.right;
+    const intoLeft =
+      hitLeft &&
+      (input.left ||
+        this.facing === -1 ||
+        body.velocity.x <= -MOVEMENT_TUNING.wallBounceMinVelocityX);
+    const intoRight =
+      hitRight &&
+      (input.right ||
+        this.facing === 1 ||
+        body.velocity.x >= MOVEMENT_TUNING.wallBounceMinVelocityX);
+    const direction = intoLeft ? 1 : intoRight ? -1 : 0;
+    if (direction === 0) return;
+
+    body.setVelocityX(direction * MOVEMENT_TUNING.wallBounceVelocityX);
+    body.setVelocityY(
+      Math.min(body.velocity.y, MOVEMENT_TUNING.wallBounceLiftVelocityY)
+    );
+    this.facing = direction as -1 | 1;
+    this.lastWallBonk = true;
+    this.lastWallBounceAt = now;
+    window.dispatchEvent(new CustomEvent('fallstack:land', {
+      detail: { zoneId: this.currentZone },
+    }));
+
+    for (let i = 0; i < 10; i += 1) {
+      this.particles.push({
+        x: this.player?.x ?? 0,
+        y: (this.player?.y ?? 0) + (Math.random() * 18 - 9),
+        vx: -direction * (90 + Math.random() * 110),
+        vy: -50 + Math.random() * 90,
+        color: 0xffd36a,
+        alpha: 0.75,
+        size: 1.3 + Math.random() * 2,
+        life: 360,
+        maxLife: 360,
+        type: 'dust',
+      });
+    }
   }
 
   private updateCamera(deltaMs: number) {
@@ -1014,6 +1126,55 @@ class FallstackScene extends Phaser.Scene {
       return;
     }
 
+    if (platform.kind === 'obstacle') {
+      const notchCount = Math.max(3, Math.floor(platform.height / 18));
+      this.graphics
+        ?.fillStyle(edgeColor, 0.92)
+        .fillRoundedRect(
+          platform.x - 2,
+          platform.y + 3,
+          platform.width + 4,
+          platform.height,
+          4
+        );
+      this.graphics
+        ?.fillStyle(darkColor, 1)
+        .fillRoundedRect(
+          platform.x,
+          platform.y,
+          platform.width,
+          platform.height,
+          4
+        );
+      this.graphics
+        ?.fillStyle(stoneColor, 1)
+        .fillRoundedRect(
+          platform.x + 3,
+          platform.y + 3,
+          platform.width - 6,
+          platform.height - 6,
+          3
+        );
+      this.graphics?.lineStyle(2, highlightColor, 0.46);
+      for (let i = 1; i < notchCount; i += 1) {
+        const yLine = platform.y + (platform.height / notchCount) * i;
+        this.graphics?.lineBetween(
+          platform.x + 4,
+          yLine,
+          platform.x + platform.width - 4,
+          yLine - 4
+        );
+      }
+      this.graphics?.lineStyle(2, theme.accent, 0.35);
+      this.graphics?.lineBetween(
+        platform.x + platform.width / 2,
+        platform.y + 8,
+        platform.x + platform.width / 2,
+        platform.y + platform.height - 8
+      );
+      return;
+    }
+
     // Shadow depth
     this.graphics
       ?.fillStyle(edgeColor, 0.9)
@@ -1293,6 +1454,8 @@ class FallstackScene extends Phaser.Scene {
     const g = this.dynamicGraphics;
     const time = this.time.now;
 
+    this.drawBiomeAnimation(g, time);
+
     // 1. UPDATE AND DRAW PARTICLES
     const activeParticles = [];
     for (const p of this.particles) {
@@ -1414,6 +1577,157 @@ class FallstackScene extends Phaser.Scene {
 
     // 6. DRAW FOX-SPIRIT PLAYER
     this.drawFoxSpirit(g);
+  }
+
+  private drawBiomeAnimation(g: Phaser.GameObjects.Graphics, time: number) {
+    if (this.reducedMotion) return;
+    const cam = this.cameras.main;
+    const viewTop = cam.scrollY;
+    const viewBottom = viewTop + cam.height;
+    const viewW = this.gameWidth();
+
+    for (const zone of ZONES) {
+      if (zone.yBottom < viewTop || zone.yTop > viewBottom) continue;
+      const theme = themeForZone(zone.id);
+      const zoneIndex = ZONES.findIndex((candidate) => candidate.id === zone.id);
+      const zoneMidY = zone.yTop + (zone.yBottom - zone.yTop) / 2;
+      const drift = time * (0.018 + zoneIndex * 0.001);
+
+      if (zone.id === 'orbital_scrapyard') {
+        const hubX = this.layoutX(305);
+        const hubY = Phaser.Math.Clamp(
+          zone.yBottom - 720 + Math.sin(time / 900) * 42,
+          viewTop + 118,
+          viewBottom - 118
+        );
+        g.lineStyle(2, theme.accent, 0.22);
+        g.strokeEllipse(hubX, hubY, 178, 34);
+        g.strokeEllipse(hubX - 4, hubY + 2, 126, 22);
+        g.fillStyle(0x090507, 0.58);
+        g.fillCircle(hubX + 4, hubY - 3, 44);
+        g.fillStyle(theme.highlight, 0.14);
+        g.fillCircle(hubX - 18, hubY - 2, 63);
+        for (let i = 0; i < 9; i += 1) {
+          const x = ((i * 71 + time / 21) % (viewW + 120)) - 60;
+          const y = viewTop + 92 + ((i * 97 + time / 36) % Math.max(cam.height - 150, 160));
+          const w = 18 + (i % 3) * 14;
+          g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.18);
+          g.fillRect(x, y, w, 5);
+          g.lineStyle(1, theme.platformEdge, 0.36);
+          g.lineBetween(x - 10, y + 2, x + w + 14, y + 2 + Math.sin(time / 600 + i) * 8);
+        }
+        g.lineStyle(2, theme.platformEdge, 0.38);
+        for (let i = 0; i < 4; i += 1) {
+          const cableY = viewTop + 132 + i * 138 + Math.sin(time / 740 + i) * 18;
+          g.lineBetween(0, cableY, viewW * 0.34, cableY - 28);
+          g.lineBetween(viewW * 0.66, cableY + 22, viewW, cableY - 10);
+        }
+        continue;
+      }
+
+      if (zone.id === 'crater_foundry') {
+        for (let i = 0; i < 8; i += 1) {
+          const x = 24 + i * (viewW / 8) + Math.sin(time / 540 + i) * 8;
+          const y0 = viewTop + ((time / (10 + i) + i * 80) % cam.height);
+          g.lineStyle(2, i % 2 === 0 ? theme.highlight : theme.accent, 0.18);
+          g.lineBetween(x, y0, x + 14, y0 + 78);
+        }
+      }
+
+      g.lineStyle(1.5, theme.highlight, 0.18);
+      for (let i = 0; i < 4; i += 1) {
+        const y =
+          zone.yTop +
+          ((i * 520 + drift * (i + 1)) % (zone.yBottom - zone.yTop));
+        const sway = Math.sin(time / 820 + i + zoneIndex) * 34;
+        g.lineBetween(22 + sway, y, viewW - 24 - sway, y - 72);
+      }
+
+      if (
+        zone.id === 'black_hole_chapel' ||
+        zone.id === 'event_horizon_crown'
+      ) {
+        const cx = this.layoutX(240);
+        const cy = Phaser.Math.Clamp(zoneMidY, viewTop + 140, viewBottom - 120);
+        const spin = time / 520;
+        g.fillStyle(0x010104, 0.72);
+        g.fillCircle(cx, cy, 42);
+        for (let i = 0; i < 5; i += 1) {
+          const radius = 72 + i * 18;
+          const alpha = 0.19 - i * 0.024;
+          g.lineStyle(2, i % 2 === 0 ? theme.accent : theme.highlight, alpha);
+          g.strokeEllipse(
+            cx + Math.cos(spin + i) * 5,
+            cy + Math.sin(spin + i) * 4,
+            radius * 1.85,
+            radius * 0.42
+          );
+        }
+        continue;
+      }
+
+      if (zone.id === 'pulsar_spine' || zone.id === 'neutron_forge') {
+        const pulse = 0.5 + Math.sin(time / 180) * 0.5;
+        const beamX = this.layoutX(74 + ((zoneIndex * 53) % 300));
+        g.lineStyle(3, theme.accent, 0.2 + pulse * 0.24);
+        g.lineBetween(beamX, viewTop, beamX + Math.sin(time / 480) * 48, viewBottom);
+        g.lineStyle(1, theme.highlight, 0.36 * pulse);
+        g.strokeCircle(beamX, viewTop + 120 + ((time / 8) % Math.max(cam.height - 160, 120)), 24 + pulse * 18);
+        continue;
+      }
+
+      if (zone.id === 'ring_citadel' || zone.id === 'galaxy_reef') {
+        const orbitCenterX = this.layoutX(zone.id === 'ring_citadel' ? 310 : 190);
+        const orbitCenterY = Phaser.Math.Clamp(
+          zoneMidY + Math.sin(time / 1100) * 120,
+          viewTop + 110,
+          viewBottom - 100
+        );
+        for (let i = 0; i < 3; i += 1) {
+          g.lineStyle(2, i === 1 ? theme.highlight : theme.accent, 0.2);
+          g.strokeEllipse(
+            orbitCenterX,
+            orbitCenterY,
+            130 + i * 36,
+            22 + i * 10
+          );
+          const angle = time / (680 + i * 170) + i * 2.1;
+          g.fillStyle(theme.highlight, 0.5);
+          g.fillCircle(
+            orbitCenterX + Math.cos(angle) * (62 + i * 18),
+            orbitCenterY + Math.sin(angle) * (10 + i * 5),
+            2.5 + i
+          );
+        }
+        continue;
+      }
+
+      if (zone.id === 'comet_reef' || zone.id === 'dying_star_garden') {
+        for (let i = 0; i < 7; i += 1) {
+          const lane = (i * 79 + zoneIndex * 31) % viewW;
+          const fall = (time / (7 + i) + i * 120) % (cam.height + 180);
+          const x = lane + Math.sin(time / 900 + i) * 18;
+          const y = viewTop - 90 + fall;
+          g.lineStyle(2, i % 2 === 0 ? theme.accent : theme.highlight, 0.22);
+          g.lineBetween(x, y, x - 32, y + 58);
+          g.fillStyle(theme.highlight, 0.3);
+          g.fillCircle(x, y, 3.5);
+        }
+        continue;
+      }
+
+      const bandCount = zone.id === 'nebula_vault' ? 8 : 5;
+      for (let i = 0; i < bandCount; i += 1) {
+        const x =
+          ((i * 103 + Math.sin(time / 700 + i) * 30 + viewW) % viewW) +
+          Math.sin(time / 1200 + zoneIndex) * 12;
+        const y =
+          zone.yTop +
+          ((i * 410 + time / 18) % (zone.yBottom - zone.yTop));
+        g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.08);
+        g.fillEllipse(x, y, 90 + i * 14, 18 + (i % 3) * 8);
+      }
+    }
   }
 
   private drawFoxSpirit(g: Phaser.GameObjects.Graphics) {
