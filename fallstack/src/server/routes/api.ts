@@ -71,7 +71,7 @@ api.get('/init-game', async (c) => {
     });
   } catch (err) {
     console.error('init-game failed', err);
-    return error(c, 'The tower failed to wake.');
+    return error(c, 'The tower failed to wake.', 500);
   }
 });
 
@@ -140,7 +140,7 @@ api.post('/record-fall', async (c) => {
     });
   } catch (err) {
     console.error('record-fall failed', err);
-    return error(c, 'The fall was lost in the stones.');
+    return error(c, 'The fall was lost in the stones.', 500);
   }
 });
 
@@ -201,7 +201,7 @@ api.post('/record-clear', async (c) => {
     });
   } catch (err) {
     console.error('record-clear failed', err);
-    return error(c, 'The checkpoint did not hold.');
+    return error(c, 'The checkpoint did not hold.', 500);
   }
 });
 
@@ -250,7 +250,7 @@ api.post('/record-summit', async (c) => {
     });
   } catch (err) {
     console.error('record-summit failed', err);
-    return error(c, 'The summit went quiet.');
+    return error(c, 'The summit went quiet.', 500);
   }
 });
 
