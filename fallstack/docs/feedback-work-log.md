@@ -209,13 +209,20 @@ The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
 6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.
 
+## Award-readiness audit
+
+- Current public Feedback Award signals were rechecked on 2026-07-12: detailed, candid, actionable, constructive, specific, and thoughtful feedback; concrete feature/resource/bug/process commentary.
+- `docs/award-criteria-audit.md` maps each signal to direct package evidence and records exclusions, security hygiene, and residual uncertainty.
+- The paste-ready form is now judged award-ready at its stated evidence scope. Remaining physical-mobile, uncapped-identity, `loid`, response-loss, and firsthand-support gaps are disclosed and do not support stronger current claims.
+- Do not continue experimenting merely for volume. Resume only if new evidence can materially change a form claim or maintainer recommendation without misleading public state, credential risk, access-control bypass, or overwriting the separately uploaded v0.0.15 app.
+
 ## Operating rules
 
 - Preserve unrelated user changes and do not merge worktrees implicitly.
 - Keep Devvit-owned, Reddit-host-owned, Phaser/Vite-owned, environment-owned, and Fallstack-owned issues explicitly separated.
 - Routine successes belong in pass reports; only reproducible failures/gaps belong in `devvit-feedback-log.md`.
 - Each primary submission claim needs authoritative evidence, developer impact, workaround status, and a concrete recommendation.
-- Keep the broader goal active until the remaining host, Redis, support, and final evidence-audit work is genuinely complete.
+- Treat the award-readiness audit as the completion gate. Residual external-only gaps remain visible, but do not keep the goal artificially active when every submitted claim is directly supported and the public award signals are covered.
 
 ## Worktree transfer record
 

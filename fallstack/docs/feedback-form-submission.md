@@ -103,5 +103,6 @@ The detailed package lives in:
 - `host-log-correlation-pass.md` — browser response and CLI runtime-log join-key audit;
 - `server-persistence-experiment.md` — 101 real-route requests and fault injection;
 - `submission-evidence-audit.md` — claim-by-claim proof and exclusions.
+- `award-criteria-audit.md` — mapping to Reddit's published detailed/candid/actionable/constructive feedback signals.
 
 Do not paste this appendix list unless the form accepts a repository link or supplemental context.

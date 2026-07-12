@@ -162,6 +162,7 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Browser/runtime request-correlation audit | `host-log-correlation-pass.md` |
 | Claim-level readiness and exclusions | `submission-evidence-audit.md` |
 | Paste-ready survey answers | `feedback-form-submission.md` |
+| Published award-signal mapping and readiness judgment | `award-criteria-audit.md` |
 
 ## Suggested ownership
 

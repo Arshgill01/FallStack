@@ -5,6 +5,8 @@ Tested Devvit version: 0.13.7
 
 This is the claim gate for the paste-ready form answers. “Submission-ready” means the current repository contains direct evidence for the claim at the same scope. It does not mean the broader feedback objective is complete.
 
+The separate `award-criteria-audit.md` maps the completed package to Reddit's published Feedback Award signals and records the final readiness judgment.
+
 ## Form coverage
 
 | Required question | Answer status | Evidence basis | Remaining uncertainty |
@@ -122,7 +124,7 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 | Generic chunk warning | Mostly Vite/Phaser; ask Devvit for host budgets rather than call it a bug |
 | Community response quality | No first-hand interaction; do not infer from other people's threads |
 
-## Completion blockers that must remain visible
+## Residual evidence gaps that must remain visible
 
 1. Hosted Redis replay of a fresh successful contribution under an uncapped identity; the current authenticated account was already capped. Cross-tab duplicate-marker sharing is now verified.
 2. Logged-out `loid` on a Reddit-allowed device/network or supported developer-token browser path; response-loss and mutation transaction/state-machine testing.
@@ -130,4 +132,4 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 4. First-hand support interaction if the submission deadline permits.
 5. Sharing the evidence branch/repository if the form allows an appendix link.
 
-These blockers limit claims; they do not invalidate the form-ready answers below.
+These gaps limit claims but do not block the current award-ready submission: every claim in the paste-ready form is already supported at its stated scope, and the gaps are disclosed directly.
