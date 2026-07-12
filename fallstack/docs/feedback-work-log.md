@@ -13,18 +13,20 @@ This is the durable handoff record for the Devvit feedback-reward research. Read
 
 All further feedback-reward research, logs, drafts, and evidence should be created in the canonical worktree above. Do not continue this work in the original worktree.
 
-## Active authenticated-host setup
+## Authenticated-host setup and completed pass
 
-As of 2026-07-12, a temporary login desktop is running on the `skywalker` VM for real Reddit host QA:
+On 2026-07-12, a temporary login desktop ran on the `skywalker` VM for real Reddit host QA:
 
 - Xvfb display `:99`, 1440×1000;
 - headed `/usr/bin/google-chrome` 150.0.7871.100 with persistent QA profile `/home/arshdeepsingh/.config/google-chrome-fallstack-qa`;
 - Chrome DevTools bound to `127.0.0.1:9222`;
-- x11vnc bound to `127.0.0.1:5900` with no VNC password because it is localhost-only;
-- noVNC/websockify bound to `127.0.0.1:6080` and proxying to localhost VNC;
+- x11vnc bound to `127.0.0.1:5900` with no VNC password because it was localhost-only;
+- noVNC/websockify bound to `127.0.0.1:6080` and proxied to localhost VNC;
 - all three TCP listeners were verified with `ss`; no public listener or firewall rule was added.
 
-User tunnel:
+The user completed login through the temporary tunnel. Chrome authentication persisted in the dedicated QA profile; no cookie or session-store values were extracted or transferred.
+
+User tunnel used during login:
 
 ```sh
 gcloud compute ssh skywalker --zone=asia-south2-b -- -N -L 6080:127.0.0.1:6080
@@ -32,7 +34,7 @@ gcloud compute ssh skywalker --zone=asia-south2-b -- -N -L 6080:127.0.0.1:6080
 
 Then open `http://127.0.0.1:6080/vnc.html?autoconnect=1&resize=scale`, log into Reddit, and tell the agent only that login completed. Never paste credentials or cookies into chat.
 
-Chrome is currently on the Reddit login page and is not authenticated. Once login completes, attach through CDP port 9222 and perform the inline/expanded/mobile/network/console/hosted-persistence pass. After evidence capture, close Chrome and terminate websockify, x11vnc, and Xvfb; verify ports 5900, 6080, and 9222 no longer listen. The persistent QA profile contains authentication state and must not be committed, printed, copied to third parties, or inspected for cookie values.
+The authenticated pass is recorded in `docs/playtest-evidence/2026-07-12-authenticated-host/report.md`. It covered the real inline post, expanded Mobile/Desktop layouts, warm-load timings, encoded resource sizes, console state, a no-input stability probe, and non-polluting hosted fall/clear/summit validation. The pass found and locally fixed an application-owned stale-inline-counter bug. Chrome, Xvfb, x11vnc, and websockify were stopped after capture; `ss` and process inspection confirmed no listener remained on 5900, 6080, or 9222. The persistent QA profile contains authentication state and must not be committed, printed, copied to third parties, or inspected for cookie values.
 
 ## Objective
 
@@ -153,14 +155,16 @@ Run from `fallstack/` after the 2026-07-12 CLI pass:
 
 Never report a later validation as passing without rerunning it in this worktree.
 
+After the authenticated-host pass and live-snapshot splash fix, the full validation passed again on 2026-07-12: audit 0; type-check; lint; 46/46 tests; build; and `git diff --check`. The build retained the existing Devvit plugin-timing and generic chunk-size advisories.
+
 The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the hosted-retry and Phaser-packaging pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing chunk-size advisory; the separate measured packaging run also captured the Devvit plugin-timing advisory.
 
 ## Highest-value next work
 
-1. Import a user-provided authenticated Reddit cookie/state file into the prepared headed system-Chrome session, or complete an interactive login, then inspect the actual inline post and expanded iframe.
-2. Exercise real `/api` fall, clear, summit, duplicate-event, stale-seed, anonymous-user, and contribution-cap flows against playtest Redis.
-3. Capture inline-to-expanded timing, actual runtime transfer/cache behavior, first canvas paint, client-log forwarding, mobile host layout, and iframe console/network behavior.
-4. Trigger a controlled server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
+1. Upload the live-snapshot splash fix only if another hosted verification build is justified; do not mutate the installed test version merely to prove local React rendering.
+2. Exercise logged-out `loid`, duplicate-tab, response-loss, and genuinely earned clear/summit flows against playtest Redis. Do not fabricate the first named summit or leaderboard clear.
+3. Repeat performance evidence with cold cache and physical mobile hardware; the current warm-profile timings are useful but not generalizable.
+4. Trigger a controlled non-destructive server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
 6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.
 

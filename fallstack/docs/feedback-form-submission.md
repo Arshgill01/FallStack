@@ -15,7 +15,7 @@ Use these answers for the Google form. Keep the evidence cutoff/version if space
 
 ## Why did you choose this rating?
 
-Devvit Web's core architecture is strong. I built a Phaser + React + Hono app with a lightweight inline entrypoint, expanded game, `/api` routes, server-authoritative identity, and Redis without putting platform credentials in the iframe. `devvit playtest` successfully built and installed Fallstack v0.0.14.4, and CLI read-back confirmed the exact installed version. Schema errors for unknown properties and malformed internal endpoints were concise and pointed to the nested field.
+Devvit Web's core architecture is strong. I built a Phaser + React + Hono app with a lightweight inline entrypoint, expanded game, `/api` routes, server-authoritative identity, and Redis without putting platform credentials in the iframe. `devvit playtest` successfully built and installed Fallstack v0.0.14.4, CLI read-back confirmed the exact version, and an authenticated headed-Chrome pass rendered the real inline post plus responsive Mobile/Desktop expanded game. Hosted API probes also preserved the 46/0/0 snapshot while correctly rejecting stale fall/clear/summit events and distinguishing an account cap from an exact duplicate. Schema errors for unknown properties and malformed internal endpoints were concise and pointed to the nested field.
 
 The missing two points are confidence and iteration. Fresh installs of both current first-party React and Phaser starters produced 1 high + 4 low audit findings through development CLI code: `devvit@0.13.7 → @devvit/cli → inquirer@9.1.4 → external-editor → tmp@0.0.33`. A targeted Inquirer 9.3.8 override removed that path, audited at zero, and still ran the CLI.
 
@@ -58,7 +58,7 @@ I chose the neutral midpoint rather than inventing a positive or negative suppor
 
 Yes. Fallstack's core loop is Reddit-native rather than merely hosted on Reddit: everyone's falls and clean clears aggregate into visible artifacts that alter the same daily tower, and the result creates discussion material beyond a leaderboard. The project already has deterministic finite tower generation, analog hold/release movement, mobile controls, capped shared mutation, server validation, checkpoints, and a lightweight-inline/expanded-game split.
 
-The evidence work also improved the app: route-level concurrency tests proved duplicate and contribution caps, and fault injection caught internal errors incorrectly returning HTTP 400; those now return 500. I will continue with a recoverable mutation transaction/state machine, logged-out/duplicate-tab testing, hosted Redis verification, and real Reddit mobile/performance QA. Those are concrete launch gates, not speculative roadmap scope.
+The evidence work also improved the app: route-level concurrency tests proved duplicate and contribution caps, and fault injection caught internal errors incorrectly returning HTTP 400; those now return 500. Authenticated host QA then caught a first-viewport integrity bug: the inline post hard-coded 37 falls while the deployed snapshot and expanded game showed 46. The inline entrypoint now loads the live snapshot and uses number-free loading copy. I will continue with a recoverable mutation transaction/state machine, logged-out/duplicate-tab testing, and physical-mobile/cold-cache QA. Those are concrete launch gates, not speculative roadmap scope.
 
 ## What would get you most excited to start working on a new app?
 
