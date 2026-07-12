@@ -92,6 +92,7 @@ I separated platform findings from my own bugs and environment issues. For examp
 
 The detailed package lives in:
 
+- `maintainer-triage-brief.md` — prioritized reproductions, acceptance criteria, and ownership routing;
 - `devvit-feedback-log.md` — reproductions and impact;
 - `maintainer-patch-map.md` — exact upstream files and minimal candidate fixes;
 - `template-audit-pass.md` — pinned React/Phaser starter evidence;

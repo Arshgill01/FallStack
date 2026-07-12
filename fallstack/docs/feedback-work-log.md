@@ -28,6 +28,7 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/template-audit-pass.md`: pinned first-party React/Phaser install, audit, build, and contract evidence.
 - `fallstack/docs/phaser-packaging-observability-pass.md`: exact Vite defaults, CLI-selected upload manifest, size split, and packaging recommendations.
 - `fallstack/docs/maintainer-patch-map.md`: upstream source root causes, verified dependency bumps, exact files, and minimal patch recommendations.
+- `fallstack/docs/maintainer-triage-brief.md`: prioritized engineering handoff with fast reproductions, acceptance criteria, exclusions, and ownership routing.
 - `fallstack/docs/server-persistence-experiment.md`: real route + Redis concurrency/fault-injection evidence and application-owned persistence findings.
 - `fallstack/docs/submission-evidence-audit.md`: requirement coverage, primary claims, exclusions, and completion blockers.
 - `fallstack/docs/feedback-form-submission.md`: current paste-ready Google Form answers plus a non-form appendix index.
@@ -109,6 +110,14 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Confirmed the reused Chrome profile is not authenticated to Reddit. Devvit CLI authentication remains separate and exposes no browser-session handoff.
 - Preserved the screenshot and concise network facts in `docs/playtest-evidence/2026-07-12-headed-system-chrome/`.
 - Actual host QA now requires a user-provided authenticated Reddit cookie/state file or an interactive login; installing a different Chrome binary is no longer a plausible fix.
+
+### Maintainer usability pass
+
+- Created `maintainer-triage-brief.md` as the short entrypoint to the evidence package.
+- Ranked seven verified findings by developer impact and candidate patch scope.
+- Added fast reproductions, upstream file locations, explicit acceptance criteria, evidence limitations, exclusions, and likely owning teams.
+- Preserved targeted-versus-full-upstream validation language and kept unmeasured host behavior out of claims.
+- Kept the deeper patch map and experiment reports authoritative; the brief links rather than duplicating unsupported detail.
 
 ## Last full validation
 

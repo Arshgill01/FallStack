@@ -17,7 +17,7 @@ This is the claim gate for the paste-ready form answers. “Submission-ready” 
 | Community support satisfaction | Neutral 3/5, explicitly low confidence | Channels/public tracker were discoverable; authenticated public duplicate search performed | No first-hand support request or response-time sample |
 | Continue project | Ready | Current implemented architecture, successful validations, concrete persistence/host gaps | Launch viability still depends on host QA and persistence hardening |
 | Excitement for new app | Ready | Directly derived from observed iteration/testing costs and useful harness behavior | Preference |
-| Anything else | Ready | Prioritized patch map with verified candidates and limitations | Cannot attach local evidence unless repository/branch is shared |
+| Anything else | Ready | Prioritized maintainer brief and patch map with verified candidates, acceptance criteria, ownership, and limitations | Cannot attach local evidence unless repository/branch is shared |
 
 ## Primary submission claims
 
