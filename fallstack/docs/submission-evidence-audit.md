@@ -10,7 +10,7 @@ This is the claim gate for the paste-ready form answers. “Submission-ready” 
 | Required question | Answer status | Evidence basis | Remaining uncertainty |
 | --- | --- | --- | --- |
 | Future hackathon category | Ready | Product thesis, Reddit-native shared mutation design, working aggregate state architecture | Preference, not an empirical platform claim |
-| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated inline/expanded host QA, hosted API probes, two current template audits, test-harness install/audit/context experiments, 101 real route requests | Physical-mobile and logged-out hosted paths remain |
+| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated inline/expanded host QA, two-tab hosted race, hosted validation probes, logged-out boundary, two template audits, harness install/audit/context experiments, 101 real route requests | Physical-mobile, successful `loid`, and uncapped hosted write remain |
 | Why DX rating | Ready | Exact versions, dependency paths, timings, route tests, verified candidate dependency bumps | Candidate bumps have targeted—not full upstream—coverage |
 | Documentation satisfaction | Ready at 3/5 | Current docs, schema, changelog, templates, CLI commands, public docs source | Pages can change after audit date |
 | Why documentation rating | Ready | Direct contradictions and exact source files; positive architecture assessment grounded in working implementation | No new-developer usability study beyond this build |
@@ -89,6 +89,7 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 - Devvit Web's ordinary client/server architecture supported Phaser, React, Hono, server-only Redis/Reddit capabilities, and a lightweight inline entrypoint.
 - The real playtest CLI built and installed v0.0.14.4; installation and exact version were independently read back.
 - Authenticated Reddit rendered the real inline and expanded app in Mobile and Desktop host modes. Safe hosted probes confirmed authenticated context, account caps, duplicate recognition, stale fall/clear/summit rejection, and summit geometry validation while preserving the 46/0/0 snapshot.
+- Two simultaneous expanded tabs returned the same identity and baseline; concurrent identical attempts produced one cap response and one duplicate response, with 46/0/0 preserved in both frames.
 - A later independently read-back v0.0.15 cold/warm pass measured real iframe paint, bundle, cache, and init timing without preserving credentials or tokenized URLs.
 - Schema validation gave useful nested paths for unknown fields and malformed internal endpoints.
 - With manual request context, the first-party harness provided isolated Redis, concurrency, and fault injection that materially improved Fallstack.
@@ -99,6 +100,7 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 | Observation | Reason excluded or constrained |
 | --- | --- |
 | Automated Reddit page returned network-security block | Host/access environment; not established as Devvit defect |
+| Incognito page is blocked while authenticated profile succeeds | Reddit access/auth boundary; useful QA limitation, not Devvit criticism |
 | Chrome/Playwright/agent-browser setup problems | Third-party/local environment |
 | npm `globalignorefile` warnings | Local npm configuration ownership unresolved |
 | Static fallback initially rendered blank | Fallstack-owned bug |
@@ -111,8 +113,8 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 
 ## Completion blockers that must remain visible
 
-1. Hosted Redis replay of a fresh successful contribution and race under an uncapped identity; the current authenticated account was already capped.
-2. Logged-out `loid`, duplicate-tab, response-loss, and mutation transaction/state-machine testing.
+1. Hosted Redis replay of a fresh successful contribution under an uncapped identity; the current authenticated account was already capped. Cross-tab duplicate-marker sharing is now verified.
+2. Logged-out `loid` on a Reddit-allowed device/network or supported developer-token browser path; response-loss and mutation transaction/state-machine testing.
 3. Physical-mobile and broader host performance evidence; current timing has three controlled VM runs but is not a population percentile.
 4. First-hand support interaction if the submission deadline permits.
 5. Sharing the evidence branch/repository if the form allows an appendix link.

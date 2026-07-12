@@ -15,7 +15,7 @@ Three changes would remove the most friction:
 2. make new templates pass a zero-high dependency gate and contract-test the golden-path documentation;
 3. add a non-mutating validation/package report plus typed lifecycle records for automation.
 
-These recommendations come from clean installs, pinned first-party sources/templates, actual CLI commands, installed-version read-back, authenticated Reddit host QA, same-version cold/warm iframe timing, hosted API probes, 101 requests through Fallstack's real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
+These recommendations come from clean installs, pinned first-party sources/templates, actual CLI commands, installed-version read-back, authenticated Reddit host QA, same-version cold/warm iframe timing, a real two-tab hosted Redis race, hosted validation probes, 101 requests through Fallstack's real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
 
 ## Recommended triage order
 
@@ -127,6 +127,7 @@ Acceptance criteria: an opt-in discriminated JSONL envelope can report `connecte
 The package deliberately excludes these from Devvit criticism:
 
 - earlier Reddit network-security 403s before authenticated interactive login;
+- the reproduced incognito/logged-out Reddit security block, which occurs before any Devvit iframe;
 - Chrome/Xvfb/browser setup;
 - Fallstack's fixed 400-versus-500 error classification;
 - Fallstack's still-open interrupted-idempotency design risk;
@@ -149,6 +150,8 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Build/upload manifest and Phaser size split | `phaser-packaging-observability-pass.md` |
 | Authenticated cold/warm Reddit timing | `host-performance-pass.md` |
 | Inline/expanded screenshots, video, and safe hosted persistence probes | `playtest-evidence/2026-07-12-authenticated-host/report.md` |
+| Logged-out boundary and `loid` limitation | `logged-out-host-pass.md` |
+| Real two-tab identity/idempotency race | `hosted-duplicate-tab-pass.md` |
 | Claim-level readiness and exclusions | `submission-evidence-audit.md` |
 | Paste-ready survey answers | `feedback-form-submission.md` |
 

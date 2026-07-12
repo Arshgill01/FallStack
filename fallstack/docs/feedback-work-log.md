@@ -146,6 +146,23 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Evidence: `docs/playtest-evidence/2026-07-12-authenticated-host/report.md` and `docs/host-performance-pass.md`.
 - Chrome and Xvfb were stopped after both passes. No VNC, noVNC, or CDP listener remains; the persistent profile must never be committed or inspected for credential values.
 
+### Logged-out host boundary
+
+- Launched the same system Chrome in incognito mode with the dedicated QA profile, without reading or copying authentication state.
+- Reddit rendered its network-security block before the subreddit or any Devvit iframe loaded. This reproduces the logged-out boundary while the same VM/browser family succeeds authenticated.
+- Real `loid` host QA remains unavailable from this VM. Classify this as Reddit access/anti-abuse behavior, not a Devvit or Fallstack defect.
+- Evidence: `docs/logged-out-host-pass.md` and `docs/playtest-evidence/2026-07-12-authenticated-host/screenshots/v15-incognito-host.png`.
+- Chrome and Xvfb were stopped; no listener remained on ports 5900, 6080, or 9222.
+
+### Real duplicate-tab hosted race
+
+- Opened two authenticated subreddit tabs and two independent expanded `game.html` targets on installed v0.0.15.
+- Both `/api/init-game` calls returned the same authenticated username, seed, and 46/0/0 snapshot.
+- Submitted the same new valid fall attempt concurrently through both Devvit client bridges. One response reached the existing per-zone cap; the other recognized the attempt as duplicate.
+- Both frames still read 46/0/0 afterward. This verifies cross-tab identity and shared Redis marker behavior without a synthetic public increment.
+- Evidence: `docs/hosted-duplicate-tab-pass.md`.
+- Chrome and Xvfb were stopped; no listener remained on ports 5900, 6080, or 9222.
+
 ### Maintainer usability pass
 
 - Created `maintainer-triage-brief.md` as the short entrypoint to the evidence package.
@@ -174,7 +191,7 @@ The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages
 ## Highest-value next work
 
 1. Reconcile the live-snapshot splash fix with the newer separately uploaded visual branch before any upload; do not overwrite v0.0.15 from this older isolated branch.
-2. Exercise logged-out `loid`, duplicate-tab, response-loss, and genuinely earned clear/summit flows against playtest Redis. Do not fabricate the first named summit or leaderboard clear.
+2. Exercise response-loss and genuinely earned clear/summit flows against playtest Redis. Duplicate-tab marker sharing is verified. Logged-out `loid` requires a Reddit-allowed network/device or supported developer-token browser path; do not bypass Reddit access controls.
 3. Repeat performance evidence on physical mobile hardware and broader networks; the current three-run same-version comparison is one VM, not a platform percentile.
 4. Trigger a controlled non-destructive server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
