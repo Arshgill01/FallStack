@@ -1,6 +1,6 @@
-# Feedback Form Draft
+# Feedback Form Draft (Historical Long Form)
 
-Long-form working draft. The current paste-ready candidate is `feedback-form-submission.md`; ratings and support confidence must still be revisited if real host/support evidence arrives.
+This preserves the pre-authenticated-host reasoning pass and is no longer the submission source of truth. The current, evidence-cutoff-aware answers are in `feedback-form-submission.md`; current host, persistence, performance, and observability evidence lives in the evidence matrix and maintainer brief. Keep this file only for background prose. Do not copy its provisional ratings or stale completion language into the form.
 
 ## If we ran another Hackathon, what would you like the category to be?
 

@@ -196,6 +196,8 @@ Never report a later validation as passing without rerunning it in this worktree
 
 After the authenticated-host pass and live-snapshot splash fix, the full validation passed again on 2026-07-12: audit 0; type-check; lint; 46/46 tests; build; and `git diff --check`. The build retained the existing Devvit plugin-timing and generic chunk-size advisories.
 
+After the performance, logged-out, duplicate-tab, request-correlation, and package-consistency passes, the same full validation passed again: audit 0; type-check; lint; 46/46 tests; build; and `git diff --check`. A direct form audit found all 10 non-empty lines from `feedbackquestions.md` in the paste-ready submission, and a local-reference audit found every backticked Markdown evidence file referenced by the canonical submission/audit/triage documents. The build retained only the existing generic chunk-size advisory in this run.
+
 The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the hosted-retry and Phaser-packaging pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing chunk-size advisory; the separate measured packaging run also captured the Devvit plugin-timing advisory.
 
 ## Highest-value next work

@@ -9,7 +9,7 @@ Use these answers for the Google form. Keep the evidence cutoff/version if space
 
 **Shared Worlds / Community Co-creation.** Reward apps where many redditors leave durable consequences in one shared object, story, puzzle, or world—not single-player experiences with Reddit branding added afterward. The category should favor ideas that genuinely require subreddit context, aggregate identity/state, recurring posts, and discussion. Fallstack is an example: failures and clean clears physically mutate the same daily tower, giving later players reasons to thank, blame, and discuss the community that shaped their route.
 
-## How satisfied are you with the developer experience?
+## How satisfied are you with the developer experience? Provide a rating on the scale of 1-5.
 
 **3/5**
 
