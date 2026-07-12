@@ -13,6 +13,27 @@ This is the durable handoff record for the Devvit feedback-reward research. Read
 
 All further feedback-reward research, logs, drafts, and evidence should be created in the canonical worktree above. Do not continue this work in the original worktree.
 
+## Active authenticated-host setup
+
+As of 2026-07-12, a temporary login desktop is running on the `skywalker` VM for real Reddit host QA:
+
+- Xvfb display `:99`, 1440×1000;
+- headed `/usr/bin/google-chrome` 150.0.7871.100 with persistent QA profile `/home/arshdeepsingh/.config/google-chrome-fallstack-qa`;
+- Chrome DevTools bound to `127.0.0.1:9222`;
+- x11vnc bound to `127.0.0.1:5900` with no VNC password because it is localhost-only;
+- noVNC/websockify bound to `127.0.0.1:6080` and proxying to localhost VNC;
+- all three TCP listeners were verified with `ss`; no public listener or firewall rule was added.
+
+User tunnel:
+
+```sh
+gcloud compute ssh skywalker --zone=asia-south2-b -- -N -L 6080:127.0.0.1:6080
+```
+
+Then open `http://127.0.0.1:6080/vnc.html?autoconnect=1&resize=scale`, log into Reddit, and tell the agent only that login completed. Never paste credentials or cookies into chat.
+
+Chrome is currently on the Reddit login page and is not authenticated. Once login completes, attach through CDP port 9222 and perform the inline/expanded/mobile/network/console/hosted-persistence pass. After evidence capture, close Chrome and terminate websockify, x11vnc, and Xvfb; verify ports 5900, 6080, and 9222 no longer listen. The persistent QA profile contains authentication state and must not be committed, printed, copied to third parties, or inspected for cookie values.
+
 ## Objective
 
 Build an award-worthy, evidence-driven feedback submission about Devvit, Devvit Web, Reddit host behavior, developer tools, and Phaser-game development. Do not optimize only for the form prompts. Run real experiments, distinguish Devvit-owned issues from application/environment problems, preserve reproductions and artifacts, recommend concrete fixes, and continuously improve the form answers as evidence accumulates.
