@@ -26,15 +26,15 @@ Fallstack should feel like a damaged astronomical instrument the subreddit is co
 ### Traversal grammar
 
 - [x] Add deterministic optional ricochet chimneys while keeping the default ledge route clear.
-- [ ] Replace uniform procedural steps with tested chunk archetypes: switchback, chimney, orbit gap, narrow shelf, recovery bowl, and checkpoint approach.
-- [ ] Give each archetype an explicit entrance, exit, recovery behavior, and reachability test.
-- [ ] Telecast wall-bounce surfaces by silhouette and edge treatment, not color alone.
+- [x] Replace uniform procedural spacing with zone grammars: switchback, chimney, orbit gap, narrow shelf, recovery bowl, and checkpoint approach.
+- [ ] Give each archetype an explicit recovery behavior and actual-arc reachability test.
+- [x] Telecast wall-bounce surfaces by silhouette and edge treatment, not color alone.
 - [ ] Keep one global charge model; biome forces may alter the puzzle but not redefine the controls.
 
 ### Celestial world art
 
-- [ ] Give every zone one dominant landmark silhouette visible during play: broken moon, ring engine, nebula vault, pulsar mast, black-hole chapel, or dying sun.
-- [ ] Tie animation to mechanics: accretion flow shows pull, comet trails show wind, pulsar timing shows force pulses.
+- [x] Give every zone one dominant landmark silhouette visible during play: orbital wreck, crater, reef, nebula, ring engine, pulsar mast, black-hole chapel, dying sun, or horizon crown.
+- [x] Tie animation to mechanics: accretion flow shows pull, comet trails show wind, pulsar timing shows force pulses.
 - [ ] Reduce low-information scratches and repeated orbital ellipses.
 - [ ] Add depth through three restrained parallax planes without hiding platforms or artifacts.
 - [ ] Support reduced motion with equivalent static cues.
@@ -49,7 +49,8 @@ Fallstack should feel like a damaged astronomical instrument the subreddit is co
 
 ### Architecture and verification
 
-- [ ] Extract pure world-art descriptions from Phaser rendering.
+- [x] Extract the zone theme palette and material descriptions from the monolithic scene.
+- [ ] Extract landmark geometry from Phaser rendering.
 - [ ] Extract tower chunk generation from route stitching.
 - [ ] Add deterministic screenshot states for opening, checkpoint, fall mutation, and each biome family.
 - [ ] Add a movement simulator that evaluates actual arcs and wall rebounds, not only center-distance budgets.

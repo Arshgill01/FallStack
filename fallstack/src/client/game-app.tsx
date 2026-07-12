@@ -61,6 +61,7 @@ import {
   localFallMessage,
 } from './game/localSnapshot';
 import { ProceduralSound } from './game/sound';
+import { colorNumber, themeForZone } from './game/themes';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
 
 declare global {
@@ -75,148 +76,6 @@ const START_POS = { x: 240, y: WORLD_HEIGHT - 120 };
 function checkpointForZone(zoneId: ZoneId): { x: number; y: number } {
   if (zoneId === BOTTOM_ZONE_ID) return START_POS;
   return { x: 240, y: zoneById(zoneId).yBottom - 60 };
-}
-
-type Theme = {
-  skyTop: string;
-  skyBot: string;
-  stone: number;
-  stoneDark: number;
-  highlight: number;
-  accent: number;
-  platformEdge: number;
-  label: string;
-};
-
-const THEMES: Record<ZoneId, Theme> = {
-  orbital_scrapyard: {
-    skyTop: '#091314',
-    skyBot: '#4a1a24',
-    stone: 0x7a2d36,
-    stoneDark: 0x341018,
-    highlight: 0xf2d7a0,
-    accent: 0x62d0c4,
-    platformEdge: 0x120608,
-    label: 'Rust Orbit',
-  },
-  crater_foundry: {
-    skyTop: '#170c14',
-    skyBot: '#4c2026',
-    stone: 0x9c503b,
-    stoneDark: 0x39141a,
-    highlight: 0xffb870,
-    accent: 0x7ee0c6,
-    platformEdge: 0x120608,
-    label: 'Basalt Heat',
-  },
-  comet_reef: {
-    skyTop: '#071923',
-    skyBot: '#0f3d42',
-    stone: 0x287668,
-    stoneDark: 0x12332f,
-    highlight: 0x9ee6c9,
-    accent: 0xffd36a,
-    platformEdge: 0x071613,
-    label: 'Ice Coral',
-  },
-  nebula_vault: {
-    skyTop: '#12091f',
-    skyBot: '#3a1f55',
-    stone: 0x6f5697,
-    stoneDark: 0x211833,
-    highlight: 0xdcc7ff,
-    accent: 0xff6fbc,
-    platformEdge: 0x0b0612,
-    label: 'Ion Mist',
-  },
-  ring_citadel: {
-    skyTop: '#070d18',
-    skyBot: '#26334d',
-    stone: 0xb18b45,
-    stoneDark: 0x413421,
-    highlight: 0xf1d17d,
-    accent: 0x6ec6ff,
-    platformEdge: 0x090d14,
-    label: 'Halo Brass',
-  },
-  dwarf_garden: {
-    skyTop: '#10130b',
-    skyBot: '#354219',
-    stone: 0x769a46,
-    stoneDark: 0x263319,
-    highlight: 0xd8f197,
-    accent: 0xff7b55,
-    platformEdge: 0x090c07,
-    label: 'Redleaf Gravity',
-  },
-  pulsar_spine: {
-    skyTop: '#060914',
-    skyBot: '#122b5c',
-    stone: 0x38666d,
-    stoneDark: 0x182b33,
-    highlight: 0x62d0c4,
-    accent: 0xfff07a,
-    platformEdge: 0x060a0d,
-    label: 'Pulse Metal',
-  },
-  neutron_forge: {
-    skyTop: '#07080f',
-    skyBot: '#2f3448',
-    stone: 0xa5afc2,
-    stoneDark: 0x3a4055,
-    highlight: 0xffffff,
-    accent: 0x74f7ff,
-    platformEdge: 0x090a10,
-    label: 'White Iron',
-  },
-  black_hole_chapel: {
-    skyTop: '#010104',
-    skyBot: '#16051f',
-    stone: 0x443052,
-    stoneDark: 0x110816,
-    highlight: 0xd8b6ff,
-    accent: 0xffbe5c,
-    platformEdge: 0x030104,
-    label: 'Event Stone',
-  },
-  galaxy_reef: {
-    skyTop: '#02091b',
-    skyBot: '#193b6e',
-    stone: 0x5d7fd6,
-    stoneDark: 0x1d2b58,
-    highlight: 0xbfd7ff,
-    accent: 0xff88d0,
-    platformEdge: 0x050915,
-    label: 'Star Coral',
-  },
-  dying_star_garden: {
-    skyTop: '#1e0705',
-    skyBot: '#6a2218',
-    stone: 0xc45d4f,
-    stoneDark: 0x61222b,
-    highlight: 0xffd49a,
-    accent: 0x8df0ff,
-    platformEdge: 0x15070b,
-    label: 'Solar Ash',
-  },
-  event_horizon_crown: {
-    skyTop: '#030006',
-    skyBot: '#210017',
-    stone: 0xbec7d8,
-    stoneDark: 0x4b526b,
-    highlight: 0xf6f0d4,
-    accent: 0xff6f5f,
-    platformEdge: 0x08020a,
-    label: 'Crown Matter',
-  },
-};
-
-function themeForZone(zoneId: ZoneId): Theme {
-  return THEMES[zoneId];
-}
-
-function colorNumber(hex: string): number {
-  return Number.parseInt(hex.slice(1), 16);
 }
 
 /* ======================================================
@@ -727,9 +586,13 @@ class FallstackScene extends Phaser.Scene {
       case 'black_hole_chapel':
         return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 1.55;
       case 'galaxy_reef':
-        return Math.sin(t / 1500) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.9;
+        return (
+          Math.sin(t / 1500) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.9
+        );
       case 'dying_star_garden':
-        return Math.sin(t / 430) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.55;
+        return (
+          Math.sin(t / 430) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.55
+        );
       case 'event_horizon_crown':
         return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 0.8;
       default:
@@ -737,10 +600,7 @@ class FallstackScene extends Phaser.Scene {
     }
   }
 
-  private tryWallBounce(
-    body: Phaser.Physics.Arcade.Body,
-    input: InputState
-  ) {
+  private tryWallBounce(body: Phaser.Physics.Arcade.Body, input: InputState) {
     const now = this.time.now;
     if (now - this.lastWallBounceAt < MOVEMENT_TUNING.wallBounceCooldownMs)
       return;
@@ -767,9 +627,11 @@ class FallstackScene extends Phaser.Scene {
     this.facing = direction as -1 | 1;
     this.lastWallBonk = true;
     this.lastWallBounceAt = now;
-    window.dispatchEvent(new CustomEvent('fallstack:land', {
-      detail: { zoneId: this.currentZone },
-    }));
+    window.dispatchEvent(
+      new CustomEvent('fallstack:land', {
+        detail: { zoneId: this.currentZone },
+      })
+    );
 
     for (let i = 0; i < 10; i += 1) {
       this.particles.push({
@@ -840,7 +702,14 @@ class FallstackScene extends Phaser.Scene {
       const height = zone.yBottom - zone.yTop;
       this.bgGraphics.fillGradientStyle(top, top, bottom, bottom, 1, 1, 1, 1);
       this.bgGraphics.fillRect(minX, zone.yTop, drawW, height);
-      this.drawBiomeDetails(zone.id, zone.yTop, zone.yBottom, minX, maxX, drawW);
+      this.drawBiomeDetails(
+        zone.id,
+        zone.yTop,
+        zone.yBottom,
+        minX,
+        maxX,
+        drawW
+      );
       if (zone.yTop > 0) {
         this.bgGraphics
           .lineStyle(1.5, theme.accent, 0.36)
@@ -908,12 +777,7 @@ class FallstackScene extends Phaser.Scene {
     this.bgGraphics?.fillStyle(theme.platformEdge, 0.72);
     this.bgGraphics?.fillCircle(minX + drawW * 0.74 + 18, yBottom - 628, 40);
     this.bgGraphics?.lineStyle(3, theme.accent, 0.2);
-    this.bgGraphics?.strokeEllipse(
-      minX + drawW * 0.74,
-      yBottom - 620,
-      142,
-      28
-    );
+    this.bgGraphics?.strokeEllipse(minX + drawW * 0.74, yBottom - 620, 142, 28);
     this.bgGraphics?.fillStyle(theme.accent, 0.24);
     for (let i = 0; i < 5; i += 1) {
       const chipX = minX + drawW * (0.16 + i * 0.16);
@@ -945,7 +809,127 @@ class FallstackScene extends Phaser.Scene {
     } else {
       this.bgGraphics?.lineStyle(3, theme.highlight, 0.14);
       this.bgGraphics?.lineBetween(minX + 60, midY, maxX - 60, midY - 260);
-      this.bgGraphics?.lineBetween(minX + 80, midY + 180, maxX - 120, midY + 60);
+      this.bgGraphics?.lineBetween(
+        minX + 80,
+        midY + 180,
+        maxX - 120,
+        midY + 60
+      );
+    }
+
+    this.drawCelestialLandmark(zoneId, yBottom, minX, drawW);
+  }
+
+  private drawCelestialLandmark(
+    zoneId: ZoneId,
+    yBottom: number,
+    minX: number,
+    drawW: number
+  ) {
+    const g = this.bgGraphics;
+    if (!g) return;
+    const theme = themeForZone(zoneId);
+    const cx = minX + drawW * 0.5;
+    // Put the landmark inside the first cameraful of each zone so entering a
+    // biome changes the composition immediately instead of several jumps later.
+    const cy = yBottom - 520;
+
+    switch (zoneId) {
+      case 'orbital_scrapyard':
+        g.lineStyle(10, theme.platformEdge, 0.68);
+        g.strokeEllipse(cx, cy, drawW * 0.72, 118);
+        g.lineStyle(3, theme.accent, 0.34);
+        g.strokeEllipse(cx, cy, drawW * 0.66, 86);
+        for (let i = -2; i <= 2; i += 1) {
+          g.fillStyle(i === 0 ? theme.highlight : theme.stone, 0.5);
+          g.fillRect(cx + i * 58 - 12, cy - 14 + Math.abs(i) * 8, 24, 28);
+        }
+        break;
+      case 'crater_foundry':
+        g.fillStyle(theme.platformEdge, 0.72);
+        g.fillCircle(cx, cy, 116);
+        g.fillStyle(theme.stoneDark, 0.95);
+        g.fillCircle(cx, cy - 18, 92);
+        g.lineStyle(6, theme.accent, 0.26);
+        g.arc(cx, cy, 108, Math.PI * 0.08, Math.PI * 0.92);
+        g.strokePath();
+        break;
+      case 'comet_reef':
+      case 'galaxy_reef':
+        for (let i = 0; i < 5; i += 1) {
+          const reefX = minX + drawW * (0.16 + i * 0.17);
+          const reefY = cy + (i % 2) * 84;
+          g.lineStyle(7, i % 2 ? theme.accent : theme.highlight, 0.2);
+          g.lineBetween(reefX, reefY + 130, reefX, reefY);
+          g.lineBetween(reefX, reefY + 42, reefX - 30, reefY + 8);
+          g.lineBetween(reefX, reefY + 68, reefX + 34, reefY + 22);
+        }
+        break;
+      case 'nebula_vault':
+      case 'dwarf_garden':
+        for (let i = 0; i < 4; i += 1) {
+          g.fillStyle(i % 2 ? theme.accent : theme.highlight, 0.08 + i * 0.025);
+          g.fillEllipse(
+            cx + (i - 1.5) * 34,
+            cy + i * 22,
+            drawW * (0.78 - i * 0.09),
+            176 - i * 20
+          );
+        }
+        break;
+      case 'ring_citadel':
+        g.fillStyle(theme.stoneDark, 0.78);
+        g.fillCircle(cx, cy, 78);
+        g.lineStyle(12, theme.platformEdge, 0.62);
+        g.strokeEllipse(cx, cy, drawW * 0.82, 96);
+        g.lineStyle(4, theme.highlight, 0.34);
+        g.strokeEllipse(cx, cy, drawW * 0.74, 66);
+        break;
+      case 'pulsar_spine':
+      case 'neutron_forge':
+        g.fillStyle(theme.highlight, 0.42);
+        g.fillCircle(cx, cy, 30);
+        g.lineStyle(9, theme.accent, 0.2);
+        g.lineBetween(cx, cy - 360, cx, cy + 360);
+        g.lineStyle(2, theme.highlight, 0.34);
+        for (let i = 1; i <= 4; i += 1) g.strokeCircle(cx, cy, 36 + i * 34);
+        break;
+      case 'black_hole_chapel':
+      case 'event_horizon_crown':
+        g.fillStyle(0x000000, 0.92);
+        g.fillCircle(cx, cy, 88);
+        for (let i = 0; i < 5; i += 1) {
+          g.lineStyle(
+            7 - i,
+            i % 2 ? theme.highlight : theme.accent,
+            0.24 - i * 0.025
+          );
+          g.strokeEllipse(cx, cy, 210 + i * 48, 62 + i * 16);
+        }
+        if (zoneId === 'event_horizon_crown') {
+          g.lineStyle(5, theme.highlight, 0.32);
+          g.lineBetween(cx - 120, cy - 104, cx - 46, cy - 176);
+          g.lineBetween(cx - 46, cy - 176, cx, cy - 112);
+          g.lineBetween(cx, cy - 112, cx + 52, cy - 184);
+          g.lineBetween(cx + 52, cy - 184, cx + 124, cy - 104);
+        }
+        break;
+      case 'dying_star_garden':
+        g.fillStyle(theme.accent, 0.12);
+        g.fillCircle(cx, cy, 154);
+        g.fillStyle(theme.highlight, 0.32);
+        g.fillCircle(cx, cy, 94);
+        g.lineStyle(4, theme.stoneDark, 0.48);
+        for (let i = 0; i < 8; i += 1) {
+          const angle = (i / 8) * Math.PI * 2;
+          g.lineBetween(
+            cx + Math.cos(angle) * 78,
+            cy + Math.sin(angle) * 78,
+            cx + Math.cos(angle + 0.2) * 182,
+            cy + Math.sin(angle + 0.2) * 182
+          );
+        }
+        break;
     }
   }
 
@@ -1127,6 +1111,7 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (platform.kind === 'obstacle') {
+      const isRicochet = platform.id.startsWith('ricochet-');
       const notchCount = Math.max(3, Math.floor(platform.height / 18));
       this.graphics
         ?.fillStyle(edgeColor, 0.92)
@@ -1172,6 +1157,20 @@ class FallstackScene extends Phaser.Scene {
         platform.x + platform.width / 2,
         platform.y + platform.height - 8
       );
+      if (isRicochet) {
+        this.graphics?.lineStyle(3, highlightColor, 0.9);
+        const points = Math.max(3, Math.floor(platform.height / 26));
+        const facesRight = platform.id.endsWith('-left');
+        for (let i = 0; i < points; i += 1) {
+          const markerY = platform.y + 14 + i * 26;
+          const edgeX = facesRight
+            ? platform.x + platform.width - 2
+            : platform.x + 2;
+          const innerX = facesRight ? edgeX - 8 : edgeX + 8;
+          this.graphics?.lineBetween(innerX, markerY - 5, edgeX, markerY);
+          this.graphics?.lineBetween(edgeX, markerY, innerX, markerY + 5);
+        }
+      }
       return;
     }
 
@@ -1544,7 +1543,9 @@ class FallstackScene extends Phaser.Scene {
         const px = cam.scrollX + Math.random() * this.gameWidth();
         const py = cam.scrollY + cam.height - Math.random() * 160;
         const theme = themeForZone(zone.id);
-        const zoneIndex = ZONES.findIndex((candidate) => candidate.id === zone.id);
+        const zoneIndex = ZONES.findIndex(
+          (candidate) => candidate.id === zone.id
+        );
         this.particles.push({
           x: px,
           y: py,
@@ -1589,7 +1590,9 @@ class FallstackScene extends Phaser.Scene {
     for (const zone of ZONES) {
       if (zone.yBottom < viewTop || zone.yTop > viewBottom) continue;
       const theme = themeForZone(zone.id);
-      const zoneIndex = ZONES.findIndex((candidate) => candidate.id === zone.id);
+      const zoneIndex = ZONES.findIndex(
+        (candidate) => candidate.id === zone.id
+      );
       const zoneMidY = zone.yTop + (zone.yBottom - zone.yTop) / 2;
       const drift = time * (0.018 + zoneIndex * 0.001);
 
@@ -1609,16 +1612,25 @@ class FallstackScene extends Phaser.Scene {
         g.fillCircle(hubX - 18, hubY - 2, 63);
         for (let i = 0; i < 9; i += 1) {
           const x = ((i * 71 + time / 21) % (viewW + 120)) - 60;
-          const y = viewTop + 92 + ((i * 97 + time / 36) % Math.max(cam.height - 150, 160));
+          const y =
+            viewTop +
+            92 +
+            ((i * 97 + time / 36) % Math.max(cam.height - 150, 160));
           const w = 18 + (i % 3) * 14;
           g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.18);
           g.fillRect(x, y, w, 5);
           g.lineStyle(1, theme.platformEdge, 0.36);
-          g.lineBetween(x - 10, y + 2, x + w + 14, y + 2 + Math.sin(time / 600 + i) * 8);
+          g.lineBetween(
+            x - 10,
+            y + 2,
+            x + w + 14,
+            y + 2 + Math.sin(time / 600 + i) * 8
+          );
         }
         g.lineStyle(2, theme.platformEdge, 0.38);
         for (let i = 0; i < 4; i += 1) {
-          const cableY = viewTop + 132 + i * 138 + Math.sin(time / 740 + i) * 18;
+          const cableY =
+            viewTop + 132 + i * 138 + Math.sin(time / 740 + i) * 18;
           g.lineBetween(0, cableY, viewW * 0.34, cableY - 28);
           g.lineBetween(viewW * 0.66, cableY + 22, viewW, cableY - 10);
         }
@@ -1670,14 +1682,25 @@ class FallstackScene extends Phaser.Scene {
         const pulse = 0.5 + Math.sin(time / 180) * 0.5;
         const beamX = this.layoutX(74 + ((zoneIndex * 53) % 300));
         g.lineStyle(3, theme.accent, 0.2 + pulse * 0.24);
-        g.lineBetween(beamX, viewTop, beamX + Math.sin(time / 480) * 48, viewBottom);
+        g.lineBetween(
+          beamX,
+          viewTop,
+          beamX + Math.sin(time / 480) * 48,
+          viewBottom
+        );
         g.lineStyle(1, theme.highlight, 0.36 * pulse);
-        g.strokeCircle(beamX, viewTop + 120 + ((time / 8) % Math.max(cam.height - 160, 120)), 24 + pulse * 18);
+        g.strokeCircle(
+          beamX,
+          viewTop + 120 + ((time / 8) % Math.max(cam.height - 160, 120)),
+          24 + pulse * 18
+        );
         continue;
       }
 
       if (zone.id === 'ring_citadel' || zone.id === 'galaxy_reef') {
-        const orbitCenterX = this.layoutX(zone.id === 'ring_citadel' ? 310 : 190);
+        const orbitCenterX = this.layoutX(
+          zone.id === 'ring_citadel' ? 310 : 190
+        );
         const orbitCenterY = Phaser.Math.Clamp(
           zoneMidY + Math.sin(time / 1100) * 120,
           viewTop + 110,
@@ -1722,8 +1745,7 @@ class FallstackScene extends Phaser.Scene {
           ((i * 103 + Math.sin(time / 700 + i) * 30 + viewW) % viewW) +
           Math.sin(time / 1200 + zoneIndex) * 12;
         const y =
-          zone.yTop +
-          ((i * 410 + time / 18) % (zone.yBottom - zone.yTop));
+          zone.yTop + ((i * 410 + time / 18) % (zone.yBottom - zone.yTop));
         g.fillStyle(i % 2 === 0 ? theme.accent : theme.highlight, 0.08);
         g.fillEllipse(x, y, 90 + i * 14, 18 + (i % 3) * 8);
       }
@@ -2140,7 +2162,10 @@ export function GameApp() {
       return { name: zoneById(BOTTOM_ZONE_ID).name, statusLabel: 'Quiet' };
     return (
       snapshot.zones.find((zone) => zone.id === currentZoneId) ??
-      snapshot.zones[0] ?? { name: zoneById(BOTTOM_ZONE_ID).name, statusLabel: 'Quiet' }
+      snapshot.zones[0] ?? {
+        name: zoneById(BOTTOM_ZONE_ID).name,
+        statusLabel: 'Quiet',
+      }
     );
   }, [currentZoneId, snapshot]);
 
@@ -2228,8 +2253,9 @@ export function GameApp() {
     const resizeGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container || !gameRef.current) return;
-      const { containerW, containerH, gameW, gameH } =
-        computeGameDimensions(container.getBoundingClientRect());
+      const { containerW, containerH, gameW, gameH } = computeGameDimensions(
+        container.getBoundingClientRect()
+      );
       if (containerW === 0 || containerH === 0) return;
       gameRef.current.scale.resize(gameW, gameH);
     };
@@ -2237,8 +2263,9 @@ export function GameApp() {
     const initGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container) return;
-      const { containerW, containerH, gameW, gameH } =
-        computeGameDimensions(container.getBoundingClientRect());
+      const { containerW, containerH, gameW, gameH } = computeGameDimensions(
+        container.getBoundingClientRect()
+      );
 
       // Wait until browser layout has completed and container has dimensions
       if (containerW === 0 || containerH === 0) {

@@ -34,6 +34,7 @@ export type Connector = {
 export type TowerChunk = {
   id: string;
   theme: ZoneId;
+  archetype: TraversalArchetype;
   difficultyMin: number;
   difficultyMax: number;
   height: number;
@@ -41,6 +42,14 @@ export type TowerChunk = {
   exitConnector: Connector;
   ledges: Platform[];
 };
+
+export type TraversalArchetype =
+  | 'switchback'
+  | 'chimney'
+  | 'orbit_gap'
+  | 'narrow_shelf'
+  | 'recovery_bowl'
+  | 'checkpoint_approach';
 
 export type GeneratedTower = {
   seed: string;
@@ -75,7 +84,10 @@ export const ZONES: ZoneDefinition[] = [...ZONE_IDS]
 
 // Helper to check if a y coordinate is in a zone
 export function zoneForY(y: number): ZoneDefinition {
-  return ZONES.find((zone) => y >= zone.yTop && y < zone.yBottom) ?? ZONES[ZONES.length - 1]!;
+  return (
+    ZONES.find((zone) => y >= zone.yTop && y < zone.yBottom) ??
+    ZONES[ZONES.length - 1]!
+  );
 }
 
 export function zoneById(zoneId: ZoneId): ZoneDefinition {
@@ -112,7 +124,10 @@ export function generateDailyTower(seed: string): GeneratedTower {
   let count = 1;
   const checkpointYLevels = ZONES.map((zone) => zone.yTop).filter((y) => y > 0);
 
-  while (prevY > MOVEMENT_TUNING.topConnectorY + MOVEMENT_TUNING.reachableVertical - 10) {
+  while (
+    prevY >
+    MOVEMENT_TUNING.topConnectorY + MOVEMENT_TUNING.reachableVertical - 10
+  ) {
     // Determine target Y for the next platform
     let nextY = prevY - Math.round(96 + prng() * 28);
 
@@ -126,7 +141,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
     const zone = zoneForY(nextY);
     let pWidth = Math.round(94 + prng() * 28);
-    
+
     // Checkpoints are wider/more forgiving
     const isCP = checkpointYLevels.includes(nextY);
     if (isCP) {
@@ -134,7 +149,8 @@ export function generateDailyTower(seed: string): GeneratedTower {
     }
 
     // Set horizontal coordinate based on the shared movement reachability budget.
-    const maxOffset = MOVEMENT_TUNING.generatedHorizontalStep;
+    const traversal = traversalForZone(zone.id);
+    const maxOffset = traversal.maxHorizontalStep;
 
     // As we get close to the summit, gradually pull the target center towards 240
     let centerTarget = prevCenter;
@@ -148,7 +164,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
       : chooseNextCenter({
           centerTarget,
           maxOffset,
-          minOffset: MOVEMENT_TUNING.generatedMinHorizontalStep,
+          minOffset: traversal.minHorizontalStep,
           platformWidth: pWidth,
           prevCenter,
           prng,
@@ -247,7 +263,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   const summitY = 240;
   const summitW = 160;
   const summitX = 240 - summitW / 2; // Centered at 240
-  
+
   platforms.push({
     id: 'summit',
     zoneId: TOP_ZONE_ID,
@@ -264,14 +280,20 @@ export function generateDailyTower(seed: string): GeneratedTower {
       (p) => p.zoneId === zone.id && isRoutePlatform(p)
     );
     const entrance = zoneLedges[0] ?? platforms[0]!;
-    const exit = zoneLedges[zoneLedges.length - 1] ?? platforms[platforms.length - 1]!;
+    const exit =
+      zoneLedges[zoneLedges.length - 1] ?? platforms[platforms.length - 1]!;
     return {
       id: `${zone.id}-chunk-gen`,
       theme: zone.id,
+      archetype: traversalForZone(zone.id).archetype,
       difficultyMin: 2,
       difficultyMax: 6,
       height: Math.abs(exit.y - entrance.y),
-      entranceConnector: { xMin: entrance.x, xMax: entrance.x + entrance.width, y: entrance.y },
+      entranceConnector: {
+        xMin: entrance.x,
+        xMax: entrance.x + entrance.width,
+        y: entrance.y,
+      },
       exitConnector: { xMin: exit.x, xMax: exit.x + exit.width, y: exit.y },
       ledges: zoneLedges,
     };
@@ -285,6 +307,57 @@ export function generateDailyTower(seed: string): GeneratedTower {
   };
 }
 
+function traversalForZone(zoneId: ZoneId): {
+  archetype: TraversalArchetype;
+  minHorizontalStep: number;
+  maxHorizontalStep: number;
+} {
+  switch (zoneId) {
+    case 'orbital_scrapyard':
+    case 'dying_star_garden':
+      return {
+        archetype: 'switchback',
+        minHorizontalStep: 78,
+        maxHorizontalStep: 132,
+      };
+    case 'crater_foundry':
+    case 'neutron_forge':
+      return {
+        archetype: 'narrow_shelf',
+        minHorizontalStep: 96,
+        maxHorizontalStep: 145,
+      };
+    case 'comet_reef':
+    case 'galaxy_reef':
+      return {
+        archetype: 'orbit_gap',
+        minHorizontalStep: 88,
+        maxHorizontalStep: 140,
+      };
+    case 'nebula_vault':
+    case 'dwarf_garden':
+      return {
+        archetype: 'recovery_bowl',
+        minHorizontalStep: 68,
+        maxHorizontalStep: 112,
+      };
+    case 'pulsar_spine':
+    case 'black_hole_chapel':
+      return {
+        archetype: 'chimney',
+        minHorizontalStep: 68,
+        maxHorizontalStep: 96,
+      };
+    case 'ring_citadel':
+    case 'event_horizon_crown':
+      return {
+        archetype: 'checkpoint_approach',
+        minHorizontalStep: 74,
+        maxHorizontalStep: 124,
+      };
+  }
+}
+
 function platformKindForZone(zoneId: ZoneId): PlatformKind {
   const index = ZONE_IDS.indexOf(zoneId);
   if (index >= 8) return 'moon';
@@ -292,7 +365,8 @@ function platformKindForZone(zoneId: ZoneId): PlatformKind {
   return 'stone';
 }
 
-export const CHUNK_LIBRARY: TowerChunk[] = generateDailyTower(KNOWN_GOOD_SEED).chunks;
+export const CHUNK_LIBRARY: TowerChunk[] =
+  generateDailyTower(KNOWN_GOOD_SEED).chunks;
 export const PLATFORMS = generateDailyTower(KNOWN_GOOD_SEED).platforms;
 
 export function isRoutePlatform(platform: Platform): boolean {
@@ -304,14 +378,23 @@ export function validateTower(tower: GeneratedTower): boolean {
   for (const zone of ZONES) byZone.set(zone.id, []);
 
   for (const platform of tower.platforms) {
-    if (platform.x < 0 || platform.x + platform.width > WORLD_WIDTH) return false;
-    if (platform.y < 0 || platform.y + platform.height > WORLD_HEIGHT) return false;
+    if (platform.x < 0 || platform.x + platform.width > WORLD_WIDTH)
+      return false;
+    if (platform.y < 0 || platform.y + platform.height > WORLD_HEIGHT)
+      return false;
     if (isRoutePlatform(platform)) byZone.get(platform.zoneId)?.push(platform);
   }
 
-  if (!tower.platforms.some((platform) => platform.id === 'summit' && platform.kind === 'summit')) return false;
+  if (
+    !tower.platforms.some(
+      (platform) => platform.id === 'summit' && platform.kind === 'summit'
+    )
+  )
+    return false;
 
-  const route = tower.platforms.filter(isRoutePlatform).sort((a, b) => b.y - a.y);
+  const route = tower.platforms
+    .filter(isRoutePlatform)
+    .sort((a, b) => b.y - a.y);
   for (let i = 0; i < route.length - 1; i += 1) {
     if (!isReachable(route[i]!, route[i + 1]!)) return false;
   }
@@ -355,12 +438,28 @@ function chooseNextCenter(args: {
   const minBound = 30 + args.platformWidth / 2;
   const maxBound = WORLD_WIDTH - 30 - args.platformWidth / 2;
   const left = {
-    min: Math.max(minBound, args.centerTarget - args.maxOffset, args.prevCenter - args.maxOffset),
-    max: Math.min(maxBound, args.centerTarget + args.maxOffset, args.prevCenter - args.minOffset),
+    min: Math.max(
+      minBound,
+      args.centerTarget - args.maxOffset,
+      args.prevCenter - args.maxOffset
+    ),
+    max: Math.min(
+      maxBound,
+      args.centerTarget + args.maxOffset,
+      args.prevCenter - args.minOffset
+    ),
   };
   const right = {
-    min: Math.max(minBound, args.centerTarget - args.maxOffset, args.prevCenter + args.minOffset),
-    max: Math.min(maxBound, args.centerTarget + args.maxOffset, args.prevCenter + args.maxOffset),
+    min: Math.max(
+      minBound,
+      args.centerTarget - args.maxOffset,
+      args.prevCenter + args.minOffset
+    ),
+    max: Math.min(
+      maxBound,
+      args.centerTarget + args.maxOffset,
+      args.prevCenter + args.maxOffset
+    ),
   };
   const ranges = args.prng() < 0.5 ? [left, right] : [right, left];
   const range = ranges.find((candidate) => candidate.max >= candidate.min);
