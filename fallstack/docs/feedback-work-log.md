@@ -27,6 +27,7 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/cli-diagnostics-pass.md`: controlled CLI/config/logging experiments.
 - `fallstack/docs/template-audit-pass.md`: pinned first-party React/Phaser install, audit, build, and contract evidence.
 - `fallstack/docs/maintainer-patch-map.md`: upstream source root causes, verified dependency bumps, exact files, and minimal patch recommendations.
+- `fallstack/docs/server-persistence-experiment.md`: real route + Redis concurrency/fault-injection evidence and application-owned persistence findings.
 - `fallstack/docs/playtest-evidence/`: real upload/read-back and browser-host evidence.
 
 ## Completed evidence passes
@@ -71,6 +72,14 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Confirmed missing-entry polling constants and hard-coded `devvit.json` error text in `packages/build-pack/src/esbuild/ESBuildPack.ts`.
 - Confirmed JSON logs intentionally suppress the human connected/complete banners and only serialize log/error/event messages; keepalives are hidden by default.
 - Mapped every docs inconsistency to current public docs source files for a minimal maintainer patch set.
+
+### Local real-route and Redis integration pass
+
+- Ephemerally installed the patched first-party harness path and issued 101 requests through Fallstack's actual Hono routes in 7 tests.
+- Verified stale-seed rejection, sequential and 20-way duplicate idempotency, bucket/daily caps under concurrency, authenticated identity isolation, clear caps, summit uniqueness, and final persisted totals.
+- Positive platform evidence: once post context was supplied manually, isolated Redis and fault injection were effective and found real application problems.
+- Fixed Fallstack catch blocks incorrectly returning HTTP 400 for internal server/Redis exceptions; they now return 500.
+- Verified an open Fallstack persistence risk: the NX event marker survives a later write failure, so retry is treated as duplicate while the aggregate contribution is missing and a cap increment may be partial. Do not claim persistence hardening complete until this has a recoverable transaction/state-machine design and hosted playtest coverage.
 
 ## Last full validation
 
