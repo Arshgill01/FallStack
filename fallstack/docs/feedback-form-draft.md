@@ -1,6 +1,6 @@
 # Feedback Form Draft
 
-Working draft only. Ratings and support claims remain provisional until the live playtest/support passes in `feedback-evidence-matrix.md` are complete.
+Long-form working draft. The current paste-ready candidate is `feedback-form-submission.md`; ratings and support confidence must still be revisited if real host/support evidence arrives.
 
 ## If we ran another Hackathon, what would you like the category to be?
 

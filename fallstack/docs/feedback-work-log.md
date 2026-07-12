@@ -28,6 +28,8 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/template-audit-pass.md`: pinned first-party React/Phaser install, audit, build, and contract evidence.
 - `fallstack/docs/maintainer-patch-map.md`: upstream source root causes, verified dependency bumps, exact files, and minimal patch recommendations.
 - `fallstack/docs/server-persistence-experiment.md`: real route + Redis concurrency/fault-injection evidence and application-owned persistence findings.
+- `fallstack/docs/submission-evidence-audit.md`: requirement coverage, primary claims, exclusions, and completion blockers.
+- `fallstack/docs/feedback-form-submission.md`: current paste-ready Google Form answers plus a non-form appendix index.
 - `fallstack/docs/playtest-evidence/`: real upload/read-back and browser-host evidence.
 
 ## Completed evidence passes
@@ -81,6 +83,14 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Fixed Fallstack catch blocks incorrectly returning HTTP 400 for internal server/Redis exceptions; they now return 500.
 - Verified an open Fallstack persistence risk: the NX event marker survives a later write failure, so retry is treated as duplicate while the aggregate contribution is missing and a cap increment may be partial. Do not claim persistence hardening complete until this has a recoverable transaction/state-machine design and hosted playtest coverage.
 
+### Submission synthesis pass
+
+- Audited all exact form questions against current evidence and created `submission-evidence-audit.md`.
+- Selected evidence-backed 3/5 ratings for developer experience and documentation.
+- Selected a neutral 3/5 support rating with an explicit low-confidence/no-first-hand-interaction disclosure; do not strengthen this without a real support exchange.
+- Created `feedback-form-submission.md` as the paste-ready candidate, keeping the long-form draft and technical reports as the evidence appendix.
+- Excluded/muted environment-owned, browser-owned, intentional-tooling, and Fallstack-owned observations from Devvit criticism.
+
 ## Last full validation
 
 Run from `fallstack/` after the 2026-07-12 CLI pass:
@@ -94,7 +104,7 @@ Run from `fallstack/` after the 2026-07-12 CLI pass:
 
 Never report a later validation as passing without rerunning it in this worktree.
 
-The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the template-audit documentation pass, the full validation above was rerun here and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`.
+The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the submission synthesis pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing Devvit plugin-timing and chunk-size advisories.
 
 ## Highest-value next work
 
@@ -103,7 +113,7 @@ The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages
 3. Capture inline-to-expanded timing, first canvas paint, client-log forwarding, mobile host layout, and iframe console/network behavior.
 4. Trigger a controlled server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
-6. Re-audit every form claim against evidence, then compress answers to the form's practical length without losing reproductions, impact, or fixes.
+6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.
 
 ## Operating rules
 

@@ -32,7 +32,7 @@ Last updated: 2026-07-12.
 3. Measure inline-to-expanded transition time, expanded bundle transfer/load timing, first canvas paint, and mobile control behavior in the actual Reddit host.
 4. Continue error discoverability with a deliberate server exception once the real host can call an endpoint. Schema probes are complete: unknown fields and malformed menu endpoints produced useful paths; missing entries exposed the custom-config diagnostic issue.
 5. Test current documentation as a new-user path in a scratch app, especially package naming: current pages mix capability packages such as `@devvit/reddit` with the Fallstack scaffold's `@devvit/web/server` facade.
-6. Gather support evidence only from actual interactions. Do not rate community support from documentation or second-hand posts.
+6. If time permits, gather first-hand support evidence. Until then, keep the paste-ready support rating neutral (3/5), explicitly low-confidence, and avoid claims about response quality or speed.
 
 ## Research-backed framing
 
