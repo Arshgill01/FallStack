@@ -231,6 +231,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Workaround: use a logged-in human browser session for final in-Reddit visual QA; static local browser smoke and `devvit playtest` upload still validate separate parts of the path.
 - Notes: Automated QA for playtest posts needs either browser login state or documented developer-token setup.
 - Reconfirmed 2026-07-12 with a fresh `agent-browser` Chrome 150.0.7871.115 session after a successful v0.0.14.4 playtest upload. A second attempt using the VM's existing Google Chrome profile produced the same block. Evidence: `docs/playtest-evidence/2026-07-12/screenshots/reddit-network-block.png`.
+- Reconfirmed again with installed system Chrome 150.0.7871.100 in genuinely headed mode under Xvfb. The request used an ordinary `Chrome/150.0.0.0` user agent without `HeadlessChrome`, but Reddit still returned HTTP 403 before any Devvit iframe request. The reused profile was logged out. Evidence: `docs/playtest-evidence/2026-07-12-headed-system-chrome/`.
 
 ## 2026-07-08 00:00 UTC — Mobile static smoke caught first-viewport HUD compression
 

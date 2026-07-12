@@ -27,7 +27,7 @@ Last updated: 2026-07-12.
 
 ## Evidence gaps to pursue
 
-1. Complete the live host pass in a logged-in human browser. The 2026-07-12 CLI upload succeeded as v0.0.14.4, but both fresh and existing-profile automated Chrome sessions received Reddit's network-security block before the subreddit or iframe loaded.
+1. Complete the live host pass with authenticated Reddit browser state. The 2026-07-12 CLI upload succeeded as v0.0.14.4, but fresh headless Chrome, existing-profile Chrome, old Reddit, and headed system Chrome under Xvfb all received Reddit's network-security block before the subreddit or iframe loaded. The headed request used a normal Google Chrome user agent, so installing/switching Chrome alone is not the missing step.
 2. Repeat the now-complete local route/concurrency suite against the real playtest installation. Local harness covered stale seed, duplicates, authenticated identity, bucket/daily/clear/summit caps, and one failure boundary; logged-out `loid`, hosted Redis, response loss, and duplicate tabs remain.
 3. Measure inline-to-expanded transition time, actual runtime transfer/cache behavior, first canvas paint, and mobile control behavior in the Reddit host. Local packaging now proves what the CLI selects, but not what browsers fetch during normal execution.
 4. Continue error discoverability with a deliberate server exception once the real host can call an endpoint. Schema probes are complete: unknown fields and malformed menu endpoints produced useful paths; missing entries exposed the custom-config diagnostic issue.

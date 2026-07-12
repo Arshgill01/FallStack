@@ -101,6 +101,15 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Measured 1,826,262 raw runtime bytes and 12,571,300 raw map bytes; maps were 87.3% of selected raw client bytes. Kept this framed as upload/build observability, not evidence maps delay normal runtime loading.
 - Added `phaser-packaging-observability-pass.md` and strengthened the form's game-tooling recommendation with exact evidence.
 
+### Headed system Chrome host pass
+
+- Confirmed both Chrome for Testing 150.0.7871.115 and installed system Google Chrome 150.0.7871.100 are available.
+- Installed Xvfb to provide the missing display server, then launched `/usr/bin/google-chrome` in headed mode with the VM's existing Chrome profile.
+- Captured a normal `Chrome/150.0.0.0` user agent without `HeadlessChrome`; Reddit still returned HTTP 403 before any Devvit iframe or Fallstack request.
+- Confirmed the reused Chrome profile is not authenticated to Reddit. Devvit CLI authentication remains separate and exposes no browser-session handoff.
+- Preserved the screenshot and concise network facts in `docs/playtest-evidence/2026-07-12-headed-system-chrome/`.
+- Actual host QA now requires a user-provided authenticated Reddit cookie/state file or an interactive login; installing a different Chrome binary is no longer a plausible fix.
+
 ## Last full validation
 
 Run from `fallstack/` after the 2026-07-12 CLI pass:
@@ -118,7 +127,7 @@ The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages
 
 ## Highest-value next work
 
-1. Use a logged-in human Reddit browser or documented safe developer-token browser setup to inspect the actual inline post and expanded iframe.
+1. Import a user-provided authenticated Reddit cookie/state file into the prepared headed system-Chrome session, or complete an interactive login, then inspect the actual inline post and expanded iframe.
 2. Exercise real `/api` fall, clear, summit, duplicate-event, stale-seed, anonymous-user, and contribution-cap flows against playtest Redis.
 3. Capture inline-to-expanded timing, actual runtime transfer/cache behavior, first canvas paint, client-log forwarding, mobile host layout, and iframe console/network behavior.
 4. Trigger a controlled server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
