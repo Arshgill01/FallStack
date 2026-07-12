@@ -120,15 +120,20 @@ export function renderReliquaryPlatform(
 
   const checkpoint = platform.id.includes('checkpoint');
   const summit = platform.kind === 'summit';
+  const metal = platform.kind === 'metal';
+  const moon = platform.kind === 'moon' || summit;
   const underface = Math.max(12, platform.height - 5);
   graphics
     .fillStyle(c.ink, 0.96)
     .fillRect(platform.x + 3, platform.y + 5, platform.width, underface + 3);
   graphics
-    .fillStyle(summit ? c.goldDeep : c.indigo, 1)
+    .fillStyle(summit ? c.goldDeep : metal ? c.indigoLit : c.indigo, 1)
     .fillRect(platform.x, platform.y + 4, platform.width, underface);
   graphics
-    .fillStyle(checkpoint ? c.gold : c.washiDim, 1)
+    .fillStyle(
+      checkpoint ? c.gold : moon ? c.ghost : metal ? c.goldDeep : c.washiDim,
+      1
+    )
     .fillRect(platform.x, platform.y, platform.width, 6);
   graphics
     .fillStyle(c.indigoLit, 0.65)
@@ -147,10 +152,53 @@ export function renderReliquaryPlatform(
 
   if (checkpoint) {
     const center = platform.x + platform.width / 2;
+    const gateHeight = 32;
+    graphics.fillStyle(c.indigoDeep, 1);
+    graphics.fillRect(platform.x + 8, platform.y - gateHeight, 7, gateHeight);
+    graphics.fillRect(
+      platform.x + platform.width - 15,
+      platform.y - gateHeight,
+      7,
+      gateHeight
+    );
+    graphics
+      .fillStyle(c.gold, 1)
+      .fillRect(
+        platform.x + 5,
+        platform.y - gateHeight,
+        platform.width - 10,
+        5
+      );
     graphics.fillStyle(c.gold, 1).fillRect(center - 3, platform.y + 5, 6, underface);
     graphics
       .lineStyle(2, c.washi, 0.75)
       .lineBetween(center, platform.y - 12, center, platform.y);
+  }
+
+  if (metal && !checkpoint) {
+    for (let x = platform.x + 12; x < platform.x + platform.width - 8; x += 28) {
+      graphics.fillStyle(c.gold, 0.72).fillCircle(x, platform.y + 10, 2.2);
+    }
+  }
+
+  if (moon && !checkpoint) {
+    graphics.lineStyle(2, c.ghost, 0.55);
+    graphics.lineBetween(
+      platform.x + 8,
+      platform.y + 12,
+      platform.x + platform.width - 8,
+      platform.y + 8
+    );
+  }
+
+  if (summit) {
+    const center = platform.x + platform.width / 2;
+    graphics.lineStyle(5, c.gold, 0.9);
+    graphics.beginPath();
+    graphics.arc(center, platform.y - 4, 38, Math.PI, Math.PI * 2);
+    graphics.strokePath();
+    graphics.fillStyle(c.persimmon, 1).fillCircle(center, platform.y - 35, 7);
+    graphics.fillStyle(c.washi, 0.9).fillCircle(center, platform.y - 35, 2.5);
   }
 }
 

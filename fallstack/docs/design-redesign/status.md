@@ -90,6 +90,7 @@ Direction C wins because the tower reads as a physical object, community mutatio
 | Provider bake-off | In progress | Equal brief/fallback locked; Scenario/Layer outputs require authenticated paid access |
 | Phaser compatibility proof | Complete | Phaser 4.2.1, procedural fallback modules, browser captures, reduced-motion proof, full checks |
 | Opening-zone vertical slice | Complete | Real first-fall/respawn capture, 90/100 scorecard, 48 tests, full checks |
+| Full expanded-game migration | Complete | Distinct three-zone contracts, checkpoint/summit/platform families, reliquary loading/controls/results, mobile/desktop browser evidence, 49 tests |
 
 ## Validation log
 
@@ -118,4 +119,8 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - M4 first-fall browser smoke (2026-07-13) — Playwright drove real `ArrowRight` plus held/released `Space` through the Phaser scene. DOM evidence changed community Falls `37 → 38`; the live plaque read `Your fall counted here. 1 more helper slip spawns Cursed Brick.` after the taxonomy fix; the player visibly respawned on the start platform.
 - M4 weighted scorecard (2026-07-13) — 90/100: shared mutation 5/5, tower composition 5/5, tactile depth 4/5, collision readability 4/5, opening jump/feedback 5/5, mobile/accessibility 5/5, coherence 4/5, runtime feasibility 5/5. No first-five criterion is below 4.
 - M4 project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 48 tests passed. The known large-chunk warning remains for M7 measurement.
+- M5 three-zone migration (2026-07-13) — Lower Ruins uses broad repaired arches and washi-edged stone; Bell Shaft uses narrow bound piers, hanging bell lines, riveted metal ledges; Moon Roof uses open roof teeth, spectral traces, and ghost-edged moonstone. The mapping remains presentation-only over the existing twelve persistence segments and five platform kinds.
+- M5 expanded-state migration (2026-07-13) — checkpoint gates, summit reliquary, loading state, charge meter, fixed touch controls, checkpoint plaque, and daily result now share the washi/indigo/burgundy/persimmon/gold grammar. Existing sound events, result data, tower geometry, collision bodies, and event authority are unchanged.
+- M5 browser proof (2026-07-13) — production build rendered at 375×812 and 1280×800. Archived `m5-mobile.png`, `m5-result-mobile.png`, and `m5-desktop.png`; the accessibility tree exposed the tower, status, progressbar, result dialog, and all three touch controls. Measured touch targets were 52×50, 190×50, and 52×50 CSS px.
+- M5 project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 49 tests passed. The known large-chunk warning remains for M7 measurement.
 - No repository build, test, lint, or type-check was run for Gate 2 because production code was not changed.

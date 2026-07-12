@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   ARTIFACT_COLLISION_CLASS,
+  RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
   playerVisualState,
   reliquaryZoneFor,
@@ -25,6 +26,13 @@ void test('twelve persistence segments resolve to three visual zones', () => {
   assert.equal(reliquaryZoneFor('orbital_scrapyard'), 'lower_ruins');
   assert.equal(reliquaryZoneName('ring_citadel'), 'Bell Shaft');
   assert.equal(reliquaryZoneName('event_horizon_crown'), 'Moon Roof');
+});
+
+void test('each visual zone has a distinct architectural and material contract', () => {
+  const treatments = Object.values(RELIQUARY_ZONE_TREATMENTS);
+  assert.equal(new Set(treatments.map((item) => item.density)).size, 3);
+  assert.equal(new Set(treatments.map((item) => item.platformMaterial)).size, 3);
+  assert.equal(new Set(treatments.map((item) => item.lightEmphasis)).size, 3);
 });
 
 void test('reduced motion removes ambience without hiding state', () => {

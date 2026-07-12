@@ -88,6 +88,31 @@ export const RELIQUARY_ZONE_NAMES: Record<ReliquaryZone, string> = {
   moon_roof: 'Moon Roof',
 };
 
+export const RELIQUARY_ZONE_TREATMENTS = {
+  lower_ruins: {
+    density: 'broad-broken-arches',
+    platformMaterial: 'washi-repaired-stone',
+    lightEmphasis: 'low-ember',
+  },
+  bell_shaft: {
+    density: 'narrow-bound-piers',
+    platformMaterial: 'gold-bound-metal',
+    lightEmphasis: 'vertical-bell-glow',
+  },
+  moon_roof: {
+    density: 'open-roof-teeth',
+    platformMaterial: 'ghost-edged-moonstone',
+    lightEmphasis: 'cold-roof-light',
+  },
+} as const satisfies Record<
+  ReliquaryZone,
+  {
+    density: string;
+    platformMaterial: string;
+    lightEmphasis: string;
+  }
+>;
+
 export function reliquaryZoneFor(zoneId: ZoneId): ReliquaryZone {
   const index = Math.max(0, ZONE_IDS.indexOf(zoneId));
   if (index < 4) return 'lower_ruins';
