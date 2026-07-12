@@ -2,6 +2,47 @@
 
 Document only observed Devvit or tooling failures, rough edges, and reproducible gaps. Do not add routine successful playtest logs; keep those in commit messages or validation notes instead.
 
+## 2026-07-12 19:00 UTC — Both current first-party Web templates install with a high-severity audit finding
+
+- Environment: Ubuntu VM, Node v24.18.0, npm 11.18.0, clean clones of Reddit's current React and Phaser templates.
+- Template revisions:
+  - `reddit/devvit-template-react` at `bee528c76b388978cd3c24ca9e6af3402c6116e6`
+  - `reddit/devvit-template-phaser` at `23e3eeeae3141216fb211ea64b34f4884167438f`
+- Task attempted: follow the new-user dependency-install path, then audit the generated dependency graph.
+- Commands: `npm install`, followed by `npm audit --json` and `npm ls tmp devvit @devvit/cli inquirer external-editor` in each template.
+- Expected result: current first-party starter templates install without known high-severity findings, or document a pinned mitigation.
+- Actual result: both clean installs reported 5 vulnerabilities (1 high, 4 low). The shared path was `devvit@0.13.7 > @devvit/cli@0.13.7 > inquirer@9.1.4 > external-editor@3.1.0 > tmp@0.0.33`. npm associated `tmp` with path-traversal advisory `GHSA-ph9p-34f9-6g65` and reported the available automated fix as the unrelated-looking semver-major `devvit@1.0.0`.
+- Product impact: a new app begins with a red audit result before the developer changes any code. Teams with a zero-high policy cannot adopt the starter unchanged, and beginners may run `npm audit fix --force` against a platform CLI without understanding the major-version implication.
+- Workaround verified in the Phaser template: add `"overrides": { "tmp": "0.2.7" }` and rerun `npm install`. npm changed the transitive package and returned `found 0 vulnerabilities`; type-check/lint/build had already passed on the same template. Fallstack independently uses the same override and audits cleanly.
+- Severity: high-confidence starter/dependency maintenance issue. The vulnerable path is development CLI code, not bundled game runtime, which reduces end-user exposure but does not remove CI/supply-chain impact.
+- Recommendation: update the CLI's Inquirer/external-editor chain or add the safe transitive override to `devvit`; gate every released starter revision with a clean install plus `npm audit --audit-level=high`.
+- Notes: plain `npm audit fix` on this npm/Linux environment failed with `EBADPLATFORM` for optional `@esbuild/aix-ppc64@0.28.1`. That secondary failure appears npm/esbuild-owned and is not being presented as a Devvit defect; the explicit `tmp` override was the reliable mitigation.
+
+## 2026-07-12 19:04 UTC — Current quickstart, changelog, Vite guide, and templates disagree on shipped behavior
+
+- Sources inspected:
+  - current [App quickstart](https://developers.reddit.com/docs/quickstart)
+  - current [Vite plugin guide](https://developers.reddit.com/docs/guides/tools/vite)
+  - current [0.13 changelog](https://developers.reddit.com/docs/changelog)
+  - the pinned React and Phaser template revisions above
+- Expected result: the recommended quickstart and current first-party templates describe the same stack, configuration, and validation commands.
+- Actual result:
+  - The quickstart architecture section says the React example uses Express; the current React template uses Hono and has no Express dependency.
+  - The 0.13 changelog says `post.entrypoints.*.inline` is deprecated, has no effect, and is always implied. Both current templates still emit `"inline": true`, and the current Vite plugin guide includes it in the canonical configuration example.
+  - Both template READMEs say `npm run type-check` “Type checks, lints, and prettifies your app,” but the script is only `tsc --build`; lint is separate and no check/prettify step runs.
+- Severity: documentation/template consistency issue. None prevents a build, but each weakens trust in the golden path and can make developers misunderstand what their validation actually covered.
+- Workaround: inspect the generated `package.json` and current source rather than relying on the README/quickstart prose; omit the no-op `inline` field in new configurations.
+- Recommendation: run docs/template contract tests in CI: verify mentioned frameworks against dependencies/imports, execute every documented npm command, and validate configuration examples against deprecations for the released SDK version.
+
+## 2026-07-12 19:04 UTC — Phaser starter establishes a large bundle without a Devvit performance budget
+
+- Environment: current first-party Phaser template at the pinned revision, `phaser@4.2.0`, `vite@8.1.3`, Devvit Vite plugin 0.13.7.
+- Commands: fresh `npm install`, `npm run type-check`, `npm run lint`, and `npm run build`.
+- Result: all commands passed. The production output included `dist/client/game.js` at 1,380,869 bytes and its source map at 10,960,672 bytes; the full `dist` directory was about 21 MB. The build emitted no bundle-size warning in this template.
+- Assessment: not a template failure. This is useful baseline evidence that engine-based games naturally start above generic 500 kB guidance, reinforcing the existing documentation gap around actual Reddit iframe transfer/cache/startup budgets.
+- Developer impact: developers cannot tell whether a successful first-party baseline is comfortably within Reddit mobile constraints or already requires code splitting/load measurement.
+- Recommendation: publish measured budgets and reference metrics for first-party game templates: compressed transfer bytes, cache behavior, inline and expanded startup, first canvas paint, memory on supported mobile clients, source-map upload treatment, and thresholds that affect review or user experience.
+
 ## 2026-07-12 19:02 UTC — Current configuration docs recommend a nonexistent CLI command
 
 - Environment: official Devvit 0.13 configuration page and `@devvit/cli@0.13.7`.

@@ -12,6 +12,8 @@ Devvit Web's standard client/server split made it practical to build a real Phas
 
 The missing two points are mostly iteration and testing confidence. A normal Vite dev server is intentionally unavailable, so integrated feedback depends on an upload/playtest loop. More importantly, the newly documented `@devvit/test@0.13.7` path was not clean to adopt: its Redis dependency silently remained at 0% during postinstall for more than three minutes; completing installation via a system Redis workaround added 2 high and 2 moderate npm audit findings with no fix available; and the public runner configuration could not provide `postId` to a real `@devvit/web/server` Hono route. Capability-level tests are useful, but the authenticated post-scoped boundary is exactly where a shared Reddit game needs confidence.
 
+The clean-start experience also needs a dependency-health gate. Fresh installs of both current first-party React and Phaser templates produced the same 1 high + 4 low audit result through `devvit@0.13.7 → @devvit/cli → inquirer → external-editor → tmp@0.0.33`. A one-line `tmp@0.2.7` override returned the Phaser starter to zero findings, so this appears readily fixable upstream and should not be left for every new app to rediscover.
+
 The most valuable improvements would be a patched test dependency, explicit Redis binary/setup documentation, first-class post/comment/anonymous context fixtures, and a supported local request adapter for Devvit Web routes.
 
 ## How satisfied are you with the Devvit documentation? Rating: 3/5 (provisional)
@@ -22,7 +24,11 @@ The testing guide currently overpromises the smoothness of the new harness. It s
 
 There are also preventable correctness problems in the current configuration reference. It twice says app names are limited to 16 characters, while the live schema and 0.13.6 changelog say 20. Its best-practices section recommends `devvit build`, but CLI 0.13.7 returns `Command build not found`. These are ideal candidates for generated documentation checks because the authoritative schema and command metadata already exist.
 
+The golden-path materials also drift from one another: the quickstart still says the React template uses Express although it now uses Hono; current templates and the Vite guide still emit `inline: true` after the changelog declared it deprecated and ineffective; and both template READMEs claim `npm run type-check` also lints and prettifies even though it only runs TypeScript. Contract-testing documentation commands and examples against each released template would catch these cheaply.
+
 Documentation would also benefit from one authoritative limits/performance page for interactive Web games: expected inline and expanded bundle budgets, iframe startup diagnostics, asset caching, mobile constraints, and guidance for large engines such as Phaser.
+
+For scale, the untouched current Phaser starter successfully produced a 1,380,869-byte `game.js` file and a 10,960,672-byte source map without a size warning. That may be perfectly acceptable, but developers need Reddit-specific compressed-transfer, caching, first-paint, memory, and review thresholds to know what “good” means.
 
 ## How satisfied are you with support in our communities? Rating: not yet evidence-backed
 

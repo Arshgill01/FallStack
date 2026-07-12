@@ -50,6 +50,15 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Current configuration docs recommend nonexistent `devvit build`; CLI 0.13.7 returns `Command build not found`.
 - Current configuration docs say app names are limited to 16 characters; the live schema and current changelog say 20.
 
+### Current first-party template audit
+
+- Audited clean clones of `reddit/devvit-template-react` at `bee528c76b388978cd3c24ca9e6af3402c6116e6` and `reddit/devvit-template-phaser` at `23e3eeeae3141216fb211ea64b34f4884167438f`.
+- Both installed, type-checked, linted, and built successfully after substituting a local diagnostic app name.
+- Both fresh installs reported 1 high and 4 low vulnerabilities through `devvit@0.13.7 > @devvit/cli > inquirer > external-editor > tmp@0.0.33`.
+- Adding `overrides.tmp = 0.2.7` to the Phaser template and reinstalling produced 0 vulnerabilities.
+- Recorded current golden-path drift: quickstart Express versus template Hono; deprecated/no-op `inline` still in both templates and the Vite guide; template READMEs overstate what `npm run type-check` executes.
+- Recorded the first-party Phaser build baseline: 1,380,869-byte `game.js`, 10,960,672-byte source map, about 21 MB total `dist`; build passed without a size warning.
+
 ## Last full validation
 
 Run from `fallstack/` after the 2026-07-12 CLI pass:
@@ -62,6 +71,8 @@ Run from `fallstack/` after the 2026-07-12 CLI pass:
 - `git diff --check` — passed.
 
 Never report a later validation as passing without rerunning it in this worktree.
+
+The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the template-audit documentation pass, the full validation above was rerun here and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`.
 
 ## Highest-value next work
 
