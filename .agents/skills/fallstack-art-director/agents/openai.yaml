@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fallstack Art Director"
+  short_description: "Direct Fallstack visual redesign stage gates"
+  default_prompt: "Use $fallstack-art-director to redesign Fallstack through gated visual directions and one validated vertical slice."
