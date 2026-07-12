@@ -178,6 +178,19 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Workaround: none for the current build; later code-splitting may be useful if measured load time becomes a problem.
 - Notes: Phaser games are likely to cross the default chunk warning threshold. Devvit-specific guidance on acceptable bundle size, iframe load impact, and whether expanded entrypoints should code-split would be helpful.
 
+## 2026-07-12 19:45 UTC — Devvit build hides package sizes while uploader selects linked source maps
+
+- Environment: `@devvit/start@0.13.7`, `@devvit/cli@0.13.7`, Vite 8.1.4, Phaser 4.2.1, Fallstack production build.
+- Task attempted: determine exactly what the normal Devvit Web build reports and what the CLI selects from `dist/client` for upload.
+- Commands: `npm run build`, raw/gzip/Brotli-Q4 file measurement, and the installed CLI's exported `queryAssets('./dist/client', [], 'Client', '0.13.7', false)` function.
+- Expected result: a game-oriented build/upload path reports the selected manifest and enough size data to interpret a large successful Phaser build before mutating a remote version.
+- Actual result: the first-party Vite plugin sets `sourcemap: true` and `reportCompressedSize: false`. The build printed no file-size table. The CLI glob selected all 12 client files, including three linked source maps. Runtime assets were 1,826,262 raw bytes; maps were 12,571,300 raw bytes; maps comprised 87.3% of the 14,397,562-byte on-disk client directory. The uploader measured 14,397,690 bytes after injecting its script into two HTML files.
+- Root cause: `@devvit/start/vite/index.js` owns the build defaults; `@devvit/cli/dist/util/AssetUploader.js` globs every client file because WebView assets use an empty extension allowlist.
+- Severity: tooling/guide observability gap. This is not evidence that maps are fetched during ordinary gameplay or that the current runtime bundle violates an unpublished host limit.
+- Workaround: measure `dist/client` independently and inspect the upload with `--verbose`; developers can override the Vite map policy, but current docs do not state the tradeoff for playtest versus publish.
+- Recommendation: add a non-mutating package report that lists selected files, separates runtime and source-map bytes, estimates compression, identifies entrypoint totals, and compares them with published inline/expanded/mobile targets. Make the source-map policy explicit.
+- Full evidence: `docs/phaser-packaging-observability-pass.md`.
+
 ## 2026-07-08 00:00 UTC — Static browser smoke found graceful-degradation gap
 
 - Environment: Ubuntu VM, Node v22.22.1, local static server via `python3 -m http.server`, Playwright CLI wrapper, Google Chrome 150.0.7871.100.

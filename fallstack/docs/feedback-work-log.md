@@ -26,6 +26,7 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/feedback-form-draft.md`: evolving answers to the exact form questions; provisional claims must remain labeled.
 - `fallstack/docs/cli-diagnostics-pass.md`: controlled CLI/config/logging experiments.
 - `fallstack/docs/template-audit-pass.md`: pinned first-party React/Phaser install, audit, build, and contract evidence.
+- `fallstack/docs/phaser-packaging-observability-pass.md`: exact Vite defaults, CLI-selected upload manifest, size split, and packaging recommendations.
 - `fallstack/docs/maintainer-patch-map.md`: upstream source root causes, verified dependency bumps, exact files, and minimal patch recommendations.
 - `fallstack/docs/server-persistence-experiment.md`: real route + Redis concurrency/fault-injection evidence and application-owned persistence findings.
 - `fallstack/docs/submission-evidence-audit.md`: requirement coverage, primary claims, exclusions, and completion blockers.
@@ -91,6 +92,15 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Created `feedback-form-submission.md` as the paste-ready candidate, keeping the long-form draft and technical reports as the evidence appendix.
 - Excluded/muted environment-owned, browser-owned, intentional-tooling, and Fallstack-owned observations from Devvit criticism.
 
+### Hosted retry and Phaser packaging pass
+
+- Retried the playtest URL with the VM's existing Chrome profile through agent-browser. The profile was logged out; both modern and old Reddit returned server-side 403 responses before any Devvit iframe request. Preserved screenshots and kept this excluded from Devvit criticism.
+- Reconfirmed CLI authentication and the installed Fallstack v0.0.14.4 build. The CLI exposes no browser-session handoff, post ID, request replay, or upload dry-run command.
+- Audited the exact `@devvit/start@0.13.7` build defaults and `@devvit/cli@0.13.7` asset-enumeration path.
+- Invoked the uploader's own `queryAssets()` function against Fallstack's successful build: it selected all 12 client files, including all three linked source maps.
+- Measured 1,826,262 raw runtime bytes and 12,571,300 raw map bytes; maps were 87.3% of selected raw client bytes. Kept this framed as upload/build observability, not evidence maps delay normal runtime loading.
+- Added `phaser-packaging-observability-pass.md` and strengthened the form's game-tooling recommendation with exact evidence.
+
 ## Last full validation
 
 Run from `fallstack/` after the 2026-07-12 CLI pass:
@@ -104,13 +114,13 @@ Run from `fallstack/` after the 2026-07-12 CLI pass:
 
 Never report a later validation as passing without rerunning it in this worktree.
 
-The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the submission synthesis pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing Devvit plugin-timing and chunk-size advisories.
+The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the hosted-retry and Phaser-packaging pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing chunk-size advisory; the separate measured packaging run also captured the Devvit plugin-timing advisory.
 
 ## Highest-value next work
 
 1. Use a logged-in human Reddit browser or documented safe developer-token browser setup to inspect the actual inline post and expanded iframe.
 2. Exercise real `/api` fall, clear, summit, duplicate-event, stale-seed, anonymous-user, and contribution-cap flows against playtest Redis.
-3. Capture inline-to-expanded timing, first canvas paint, client-log forwarding, mobile host layout, and iframe console/network behavior.
+3. Capture inline-to-expanded timing, actual runtime transfer/cache behavior, first canvas paint, client-log forwarding, mobile host layout, and iframe console/network behavior.
 4. Trigger a controlled server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
 6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.

@@ -42,7 +42,7 @@ The rating is 3 because the current golden path has several mechanically prevent
 
 These should be contract-tested, not fixed one typo at a time: execute documented commands in CI, generate duplicated constraints from the schema, compare framework claims with template dependencies, and scan active examples for current deprecations.
 
-Game guidance also needs Reddit-specific budgets. The untouched current Phaser starter built a 1,380,869-byte `game.js` and 10,960,672-byte source map without a warning. That may be acceptable, but developers need compressed-transfer, caching, first-canvas-paint, memory, mobile, and review thresholds to know what “good” means inside Reddit.
+Game guidance also needs Reddit-specific budgets and a package report. The first-party Vite plugin enables maps but disables compressed-size reporting; the CLI uploader then selects every client file. In Fallstack, 12.57 MB of 14.40 MB selected raw client bytes were maps, while runtime files were 1.83 MB raw/~0.52 MB gzip-estimated. Maps are not normally fetched for execution, so this is an upload-observability finding—not a first-paint claim. Show the manifest, runtime-versus-map totals, and host targets before remote mutation.
 
 ## How satisfied are you with support in our communities?
 
@@ -84,7 +84,7 @@ The highest-leverage fixes I verified are small enough to evaluate quickly:
 - add a non-mutating `devvit validate --config ...` command;
 - add optional typed status records for JSON logs (`connected`, keepalive/reconnect, complete/error);
 - contract-test docs, schema constraints, changelog deprecations, template dependencies, and README commands together;
-- publish host-specific Phaser/game performance baselines.
+- report the exact upload manifest, runtime/map/compressed-size estimates, and host-specific Phaser/game performance baselines before remote mutation.
 
 I separated platform findings from my own bugs and environment issues. For example, I did not blame Devvit for automated Reddit network-security blocking, browser setup, a static fallback bug, or Fallstack's interrupted-idempotency risk. The full evidence package records commands, pinned revisions, expected/actual behavior, ownership, severity, workaround, candidate source files, targeted patch validation, and remaining uncertainty. If the form permits a repository/appendix link, I would be happy to share it.
 
@@ -95,6 +95,7 @@ The detailed package lives in:
 - `devvit-feedback-log.md` — reproductions and impact;
 - `maintainer-patch-map.md` — exact upstream files and minimal candidate fixes;
 - `template-audit-pass.md` — pinned React/Phaser starter evidence;
+- `phaser-packaging-observability-pass.md` — exact build defaults, selected manifest, and runtime/map size split;
 - `server-persistence-experiment.md` — 101 real-route requests and fault injection;
 - `submission-evidence-audit.md` — claim-by-claim proof and exclusions.
 

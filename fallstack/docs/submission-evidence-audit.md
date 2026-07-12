@@ -71,12 +71,15 @@ Conclusion: submission-ready as secondary observability feedback. Do not promise
 
 Evidence:
 
-- untouched current Phaser starter built successfully;
-- `game.js` was 1,380,869 bytes, source map 10,960,672 bytes, `dist` about 21 MB;
-- no warning in that starter; Fallstack's later toolchain emits a generic 500 kB warning;
+- untouched current Phaser starter built successfully with a 1,380,869-byte `game.js` and 10,960,672-byte source map;
+- Fallstack's current Devvit build emitted 1,826,262 raw runtime client bytes and 12,571,300 raw source-map bytes;
+- the first-party Vite plugin explicitly sets `sourcemap: true` and `reportCompressedSize: false`;
+- the CLI uploader's own `queryAssets()` selected all 12 client files, including all three maps;
+- maps were 87.3% of selected raw client bytes, but this does not prove they are fetched during normal gameplay;
+- `devvit upload` exposes no dry-run/manifest/analyze option;
 - real Reddit transfer/cache/paint/memory was not measurable due host access block.
 
-Conclusion: submission-ready as a documentation request, not a performance defect.
+Conclusion: submission-ready as a tooling/documentation request, not a runtime-performance defect. Ask for a non-mutating package report and host targets; do not claim source maps delay first paint.
 
 ## Positive claims retained
 

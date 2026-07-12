@@ -28,7 +28,7 @@ The golden-path materials also drift from one another: the quickstart still says
 
 Documentation would also benefit from one authoritative limits/performance page for interactive Web games: expected inline and expanded bundle budgets, iframe startup diagnostics, asset caching, mobile constraints, and guidance for large engines such as Phaser.
 
-For scale, the untouched current Phaser starter successfully produced a 1,380,869-byte `game.js` file and a 10,960,672-byte source map without a size warning. That may be perfectly acceptable, but developers need Reddit-specific compressed-transfer, caching, first-paint, memory, and review thresholds to know what “good” means.
+For scale, the untouched current Phaser starter successfully produced a 1,380,869-byte `game.js` and 10,960,672-byte source map without a size warning. A deeper Fallstack pass traced the gap to first-party defaults: `@devvit/start` enables linked maps while disabling compressed-size reporting, and the CLI selects every client file for upload. Fallstack's selected client directory was 1.83 MB of runtime files plus 12.57 MB of maps. Maps are not normally fetched during execution, so the actionable issue is package observability, not an unsupported first-paint claim. A pre-upload manifest plus Reddit-specific transfer, caching, first-canvas, memory, mobile, and review targets would tell developers what “good” means.
 
 ## How satisfied are you with support in our communities? Rating: not yet evidence-backed
 

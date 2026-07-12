@@ -146,6 +146,29 @@ Recommended CI contracts:
 4. scan current templates/examples for properties marked removed/deprecated in the active changelog;
 5. require clean-install high-severity audits for released templates.
 
+## Patch 7 — Add a non-mutating WebView package report
+
+Sources:
+
+- `packages/start/src/vite/index.ts` sets `sourcemap: true` and `reportCompressedSize: false` for client and server builds;
+- `packages/cli/src/util/AssetUploader.ts` calls `queryAssets()` with an empty extension allowlist for the configured client directory;
+- `queryAssets()` globs every client file, so linked `.js.map` outputs are selected for upload;
+- `devvit upload` has no dry-run, manifest, or analyze option.
+
+Exact reproduction against Fallstack's successful build:
+
+- 12 selected client files;
+- 1,826,262 raw runtime bytes (about 517,826 gzip-estimated bytes);
+- 12,571,300 raw source-map bytes (about 2,106,970 gzip-estimated bytes);
+- source maps were 87.3% of the raw client directory;
+- the uploader's own `queryAssets()` measured 128 additional bytes after injecting the Devvit script into two HTML files.
+
+Minimal candidate: extract the already-computed client asset manifest into a local report step that runs before `CheckIfMediaExists()` or any version creation. Show file path, role (entry/runtime/map), raw size, compressed estimate, entrypoint aggregate, and total. Keep compressed values labeled as estimates unless the serving configuration is known.
+
+Expose this through the proposed `devvit validate` command or `devvit upload --dry-run`. Add platform-owned recommended ranges for inline launch, expanded first canvas, and mobile memory rather than promoting Vite's generic 500 kB threshold as a Reddit limit. Document whether source maps should default differently for playtest and publish.
+
+This patch does not assume source maps are fetched in ordinary execution and should not reject a Phaser build solely from raw size. Its purpose is to make the package and platform tradeoff visible before remote mutation.
+
 ## Public duplicate screening
 
 Using authenticated `gh issue list/search` across open and closed `reddit/devvit` issues, keyword searches found no direct report for these primary dependency, test-context, config-command/name-limit, or JSON-lifecycle findings. Issue #116 concerns a different runtime forms scenario where context IDs disappear for multi-location menu items; it is not the test-harness configuration gap described here.
