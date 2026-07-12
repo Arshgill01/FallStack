@@ -1,0 +1,45 @@
+# Feedback Form Draft
+
+Working draft only. Ratings and support claims remain provisional until the live playtest/support passes in `feedback-evidence-matrix.md` are complete.
+
+## If we ran another Hackathon, what would you like the category to be?
+
+**Shared Worlds / Community Co-creation.** The most interesting Reddit apps are not single-player games wearing Reddit branding; they make participation from many people accumulate into a shared object, story, puzzle, or world. A category built around persistent community consequences would encourage experiments that genuinely need Reddit's post, identity, conversation, and shared-state surfaces.
+
+## How satisfied are you with the developer experience? Rating: 3/5 (provisional)
+
+Devvit Web's standard client/server split made it practical to build a real Phaser + React + Hono game while keeping Redis and Reddit identity server-authoritative. The current scaffold, typed context, `/api` convention, and playtest upload flow are much easier to reason about than a bespoke UI runtime.
+
+The missing two points are mostly iteration and testing confidence. A normal Vite dev server is intentionally unavailable, so integrated feedback depends on an upload/playtest loop. More importantly, the newly documented `@devvit/test@0.13.7` path was not clean to adopt: its Redis dependency silently remained at 0% during postinstall for more than three minutes; completing installation via a system Redis workaround added 2 high and 2 moderate npm audit findings with no fix available; and the public runner configuration could not provide `postId` to a real `@devvit/web/server` Hono route. Capability-level tests are useful, but the authenticated post-scoped boundary is exactly where a shared Reddit game needs confidence.
+
+The most valuable improvements would be a patched test dependency, explicit Redis binary/setup documentation, first-class post/comment/anonymous context fixtures, and a supported local request adapter for Devvit Web routes.
+
+## How satisfied are you with the Devvit documentation? Rating: 3/5 (provisional)
+
+The architecture pages are concise and correctly steer developers toward `devvit.json`, `/api` endpoints, server-only capabilities, Redis for persistence across app versions, and uploaded playtests for full integration. The FAQ also now makes the lack of a complete local environment explicit, which prevents wasted time trying to force a normal Vite workflow.
+
+The testing guide currently overpromises the smoothness of the new harness. It says to install Vitest and `@devvit/test`, but does not mention that `redis-memory-server` downloads/compiles Redis during postinstall, how to use a system binary, or that the published dependency path produces unfixable high-severity audit findings. It also documents user and subreddit fixtures but not how to test post-scoped Web endpoints; attempting the obvious `devvit-post` header route did not hydrate `context.postId`. A small, runnable Devvit Web + Hono endpoint example covering authenticated, logged-out (`loid`), post, and Redis context would close a major gap.
+
+There are also preventable correctness problems in the current configuration reference. It twice says app names are limited to 16 characters, while the live schema and 0.13.6 changelog say 20. Its best-practices section recommends `devvit build`, but CLI 0.13.7 returns `Command build not found`. These are ideal candidates for generated documentation checks because the authoritative schema and command metadata already exist.
+
+Documentation would also benefit from one authoritative limits/performance page for interactive Web games: expected inline and expanded bundle budgets, iframe startup diagnostics, asset caching, mobile constraints, and guidance for large engines such as Phaser.
+
+## How satisfied are you with support in our communities? Rating: not yet evidence-backed
+
+Do not submit a numeric rating or narrative until there is a real support interaction to evaluate. Record the question, channel, response time, accuracy, and whether the answer resolved the issue. Second-hand community posts are not evidence of Fallstack's support experience.
+
+## Do you plan on continuing to develop your project? Why or why not?
+
+Yes. Fallstack's core loop depends on Reddit in a substantive way: every player's falls and clean clears mutate a shared daily tower, and the resulting artifacts become material for community discussion rather than a detached leaderboard. The project already has deterministic tower generation, capped aggregate mutation, server-validated events, checkpoint recovery, desktop/mobile controls, and an inline-to-expanded Devvit Web structure. The next work is production confidence: real-host mobile/performance measurement, persistence and concurrency hardening, and clearer evidence that a player's contribution survives and visibly changes the shared post.
+
+## What would get you most excited to start working on a new app?
+
+A trustworthy local-to-Reddit testing ladder: instant client preview, a first-party local server harness that can reproduce every authenticated/anonymous post context, and one command that promotes the same test scenario into a real playtest installation with correlated client/server traces. That would make ambitious realtime or game-like ideas feel cheap to explore without hiding the platform-specific risks until late in development.
+
+I would also be excited by hackathon categories that reward persistent community systems, paired with reference apps that show production patterns for concurrency, idempotency, abuse caps, logged-out users, mobile performance, and analytics—not only small API examples.
+
+## Please share anything else you would like for the team to know
+
+Devvit Web is compelling because it lets web developers keep familiar tools while Reddit supplies the difficult, valuable parts: distribution inside a post, identity, community context, persistence, and conversation. Fallstack could use Phaser and Hono without placing Redis or Reddit trust in the iframe, which is the right architecture.
+
+The highest-leverage improvement is to make the testing story match that architecture. Today pure game logic is easy to test and an uploaded playtest can exercise the real platform, but the boundary between them is weak. The current official harness is promising; fixing its dependency health and adding complete request-context fixtures would turn it into the confidence layer needed for stateful community apps. A non-mutating `devvit validate` command, generated schema/CLI reference checks, and machine-readable log lifecycle events would make the surrounding toolchain considerably easier to trust. Each issue above has a reproduction, impact statement, workaround status, and suggested fix in the accompanying development log.

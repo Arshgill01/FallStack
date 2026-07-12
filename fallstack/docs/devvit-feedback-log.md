@@ -2,6 +2,101 @@
 
 Document only observed Devvit or tooling failures, rough edges, and reproducible gaps. Do not add routine successful playtest logs; keep those in commit messages or validation notes instead.
 
+## 2026-07-12 19:02 UTC — Current configuration docs recommend a nonexistent CLI command
+
+- Environment: official Devvit 0.13 configuration page and `@devvit/cli@0.13.7`.
+- Documentation inspected: [Configure your app](https://developers.reddit.com/docs/capabilities/devvit-web/devvit_web_configuration), “Best practices,” item 6.
+- Documented instruction: `Validate your config with devvit build before deployment.`
+- Command: `devvit build --help`
+- Expected result: the documented validation command exists, or the guide points to a supported non-uploading validation command.
+- Actual result: `Error: Command build not found.` The current CLI command list contains `playtest`, `upload`, and `publish`, but no `build` or dedicated `validate` command.
+- Severity: direct documentation error. It sends developers looking for a safe pre-deployment validation path to a command that cannot run.
+- Workaround: run the project-native build (`vite build` here) for artifacts, then use `devvit upload` or `devvit playtest` for Devvit schema/file validation. Those commands can mutate remote app/playtest state, so they are not equivalent to a local validator.
+- Recommendation: replace the instruction with the current supported command. Prefer adding `devvit validate --config <path>` that performs schema, permission, endpoint, and artifact checks without building, uploading, or changing an installation.
+
+## 2026-07-12 19:02 UTC — Configuration docs disagree with the current schema and changelog on app-name length
+
+- Environment: official Devvit 0.13 configuration page, published `config-file.v1.json`, and 0.13 changelog.
+- Expected result: the prose reference, schema, and release notes agree on a basic required field.
+- Actual result:
+  - The configuration page says `name` must be 3–16 characters in both “Required properties” and “Core properties.”
+  - The live schema specifies `minLength: 3` and `maxLength: 20`.
+  - The 0.13.6 changelog says app slugs can now be up to 20 characters.
+- Reproduction:
+  1. Open the current [configuration reference](https://developers.reddit.com/docs/capabilities/devvit-web/devvit_web_configuration#required-properties).
+  2. Fetch `https://developers.reddit.com/schema/config-file.v1.json` and inspect `properties.name`.
+  3. Compare the [0.13.6 changelog](https://developers.reddit.com/docs/changelog#relese-0136-external-endpoints-and-app-mentions-triggers-limited-access).
+- Severity: documentation correctness issue. It can unnecessarily constrain naming decisions or make IDE/CLI acceptance appear inconsistent.
+- Workaround: treat the published schema and current CLI as authoritative.
+- Recommendation: generate field constraints in the reference page from the same schema used by the CLI, and add a docs consistency check for duplicated limits.
+
+## 2026-07-12 18:56 UTC — Custom-config missing-entry error waits and then names the wrong file
+
+- Environment: `@devvit/cli@0.13.7`, valid alternate config passed with `--config`, build script completes successfully, configured server entry intentionally absent.
+- Command: `devvit upload --config devvit.experiment-missing-entry.json`
+- Expected result: after the non-watch build command exits, artifact validation fails promptly and identifies the custom config that supplied the bad path.
+- Actual result: after `vite build` completed, the CLI waited about 20 seconds at `Waiting for config.server.entry file ... to be generated`, then failed with an actionable missing-entry explanation that specifically said to correct `devvit.json`, not the custom file named in the command and initial CLI output.
+- Severity: minor diagnostic rough edge. The core error and missing path were otherwise clear.
+- Workaround: inspect the path shown in the error and apply the fix to the file passed via `--config`.
+- Recommendation: skip or shorten the artifact wait after a one-shot `scripts.build` process has exited; include the resolved config filename in every configuration diagnostic.
+
+## 2026-07-12 18:51 UTC — JSON log mode provides no connected or empty-history signal
+
+- Environment: authenticated `@devvit/cli@0.13.7`, installed Fallstack playtest on `r/fallstack_dev`.
+- Commands:
+  - `devvit logs fallstack_dev fallstack --since=1h --json --show-timestamps`
+  - `devvit logs fallstack_dev fallstack --since=1h --json --verbose`
+- Expected result: machine-readable mode provides a record indicating connection/readiness and whether the historical query completed with zero records, or documents that it is an indefinite record-only stream.
+- Actual result: both commands remained completely silent until interrupted (first run approximately one minute), then exited 0. Human mode printed `streaming logs for fallstack on r/fallstack_dev` after about six seconds, but did not distinguish an empty historical result from waiting for future events.
+- Severity: low-to-moderate automation/diagnostic gap. Silence is valid JSON-lines behavior, but a CI or support script cannot distinguish connected-and-empty from stalled-before-connection.
+- Workaround: use human mode for a connection banner; there is no observed completion marker for the historical window.
+- Recommendation: emit typed JSON control records such as `connected`, `history_complete`, and `heartbeat` (to stderr or behind a flag), and document whether `--since` first drains history and then tails indefinitely.
+
+## 2026-07-12 18:35 UTC — Official test harness install stalls on an implicit Redis source download
+
+- Environment: Ubuntu VM, Node v24.18.0, npm 11.18.0, `@devvit/test@0.13.7`, no preinstalled `redis-server`.
+- Task attempted: install the test stack recommended by the official [Testing with @devvit/test](https://developers.reddit.com/docs/guides/tools/devvit_test) guide.
+- Command: `npm install --save-dev @devvit/test@0.13.7 vitest@4.1.10`
+- Expected result: install the documented development dependencies, with any native prerequisite or download made visible and bounded.
+- Actual result: installation remained in `redis-memory-server@0.14.1`'s silent postinstall for more than three minutes. After interruption, buffered output revealed `Downloading Redis stable: 0 % (0mb / 4.4mb)`. The package downloads and compiles Redis during postinstall; the testing guide does not mention this network/toolchain step or its environment variables.
+- Reproduction steps:
+  1. Start on a Linux environment without `redis-server` or a cached Redis binary.
+  2. Run the documented install command.
+  3. Observe the postinstall remain at 0% without live progress.
+  4. Interrupt it and inspect npm's error output.
+- Severity: significant developer-experience rough edge in the newly documented testing path.
+- Workaround: install a system Redis binary, then install with `REDISMS_DISABLE_POSTINSTALL=1` and run tests with `REDISMS_SYSTEM_BINARY=/usr/bin/redis-server`.
+- Recommendation: document the binary download, cache location, supported environment variables, compilation prerequisites, and system-binary path. Stream progress rather than buffering it until failure.
+
+## 2026-07-12 18:38 UTC — Current official test harness introduces four unfixable audit findings
+
+- Environment: same as above, with installation completed using `REDISMS_DISABLE_POSTINSTALL=1`.
+- Commands:
+  - `REDISMS_DISABLE_POSTINSTALL=1 npm install --save-dev @devvit/test@0.13.7 vitest@4.1.10`
+  - `npm audit --json`
+  - `npm ls tar uuid redis-memory-server @devvit/test --all`
+- Expected result: the current first-party testing package can be added to a clean current Devvit app without creating known high-severity dependency findings.
+- Actual result: npm reported 4 vulnerabilities (2 high, 2 moderate), all on the path `@devvit/test@0.13.7 > redis-memory-server@0.14.1`. The installed versions were `tar@6.2.1` and `uuid@8.3.2`; npm reported no fix available for the dependency path. Installation also emitted deprecation warnings for those packages and `glob@10.5.0`.
+- Severity: high-confidence adoption blocker for teams with a zero-high-vulnerability CI policy; development-only dependency, so it does not enlarge the shipped client/server bundle.
+- Workaround: none within the published dependency range. Fallstack removed the experimental dependencies after reproducing the issue; `npm uninstall --save-dev @devvit/test vitest` returned the repository to 0 audit findings.
+- Recommendation: update or replace `redis-memory-server`, publish a patched `@devvit/test`, and add dependency auditing to its release gate.
+
+## 2026-07-12 18:40 UTC — Test harness cannot configure post context for a Devvit Web route
+
+- Environment: `@devvit/test@0.13.7`, Vitest 4.1.10, Hono 4.12.29, Fallstack's `/api/init-game` route using `context.postId` from `@devvit/web/server`.
+- Task attempted: integration-test the real Hono route with the documented `createDevvitTest()` runner and its `headers` fixture.
+- Expected result: configure a realistic post execution context and exercise the route through its actual request boundary, Redis calls, and authenticated context.
+- Actual result: `DevvitTestConfig` exposes username, user ID, subreddit name/ID, settings, and internal `appConfig`, but no post ID. Setting `headers['devvit-post']` to `t3_fallstack_test_post`, both as a fixture mutation and as request headers passed to `api.request()`, still left `context.postId` undefined. The real route returned HTTP 400 with `postId is required but missing from context` in both attempts.
+- Reproduction steps:
+  1. Create a runner with `createDevvitTest({ username, userId })`.
+  2. Import a Hono route that reads `context.postId` from `@devvit/web/server`.
+  3. Set the documented mutable headers fixture's `devvit-post` value.
+  4. Call the route with `api.request()`, with and without those headers on the request.
+  5. Observe that `context.postId` remains missing.
+- Severity: testing coverage gap. Capability calls can be tested, but post-scoped Devvit Web endpoints cannot be exercised end-to-end through the obvious public API.
+- Workaround: refactor production logic behind injected service/context parameters and test below the HTTP boundary, then reserve the real boundary for uploaded playtests. This weakens the advertised production-like integration coverage.
+- Recommendation: add `postId`, `commentId`, `loid`, and other request-context fields to `DevvitTestConfig`, or document a supported request adapter that hydrates `@devvit/web/server` context from a Hono/Fetch request.
+
 ## 2026-07-08 00:00 UTC — Raw Vite dev server is blocked by the Devvit plugin
 
 - Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, app `fallstack`.
@@ -78,6 +173,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Severity: blocker.
 - Workaround: use a logged-in human browser session for final in-Reddit visual QA; static local browser smoke and `devvit playtest` upload still validate separate parts of the path.
 - Notes: Automated QA for playtest posts needs either browser login state or documented developer-token setup.
+- Reconfirmed 2026-07-12 with a fresh `agent-browser` Chrome 150.0.7871.115 session after a successful v0.0.14.4 playtest upload. A second attempt using the VM's existing Google Chrome profile produced the same block. Evidence: `docs/playtest-evidence/2026-07-12/screenshots/reddit-network-block.png`.
 
 ## 2026-07-08 00:00 UTC — Mobile static smoke caught first-viewport HUD compression
 
