@@ -17,6 +17,7 @@ import {
 import {
   chargePowerForHeldMs,
   chargeRatioForHeldMs,
+  launchVelocityForChargeRatio,
   MOVEMENT_TUNING,
 } from '../shared/game/movement.js';
 import {
@@ -115,6 +116,7 @@ class FallstackScene extends Phaser.Scene {
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed)
     .platforms;
   private chargeTime = 0;
+  private publishedChargePercent = -1;
   private currentRouteOffset = 0;
   private readonly platformScale = 1;
 
@@ -235,28 +237,29 @@ class FallstackScene extends Phaser.Scene {
 
     if (input.left) this.facing = -1;
     if (input.right) this.facing = 1;
-    const zoneForceX = this.biomeAccelerationX(onFloor);
-    body.setGravityY(this.biomeGravityOffsetY());
+    body.setGravityY(0);
     if (onFloor) {
       body.setAccelerationX(0);
-      body.setDragX(this.groundDragForZone());
+      body.setDragX(MOVEMENT_TUNING.groundDragX);
       body.setMaxVelocity(
         MOVEMENT_TUNING.initialMaxVelocityX,
         MOVEMENT_TUNING.maxVelocityY
       );
       body.setVelocityX(
         input.left
-          ? -MOVEMENT_TUNING.groundSpeed
+          ? -(this.charging
+              ? MOVEMENT_TUNING.chargingGroundSpeed
+              : MOVEMENT_TUNING.groundSpeed)
           : input.right
-            ? MOVEMENT_TUNING.groundSpeed
-            : Phaser.Math.Linear(body.velocity.x, 0, 0.18)
+            ? this.charging
+              ? MOVEMENT_TUNING.chargingGroundSpeed
+              : MOVEMENT_TUNING.groundSpeed
+            : Phaser.Math.Linear(body.velocity.x, 0, 0.32)
       );
       this.lastWallBonk = false;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(
-        steer * MOVEMENT_TUNING.airSteerAccelerationX + zoneForceX
-      );
+      body.setAccelerationX(steer * MOVEMENT_TUNING.airSteerAccelerationX);
       body.setMaxVelocity(
         MOVEMENT_TUNING.airMaxVelocityX,
         MOVEMENT_TUNING.maxVelocityY
@@ -277,11 +280,15 @@ class FallstackScene extends Phaser.Scene {
     if (this.charging) {
       this.chargeTime = Math.max(0, this.time.now - this.chargeStart);
       const percent = chargeRatioForHeldMs(this.chargeTime);
-      window.dispatchEvent(
-        new CustomEvent('fallstack:charge', {
-          detail: { percent: Math.round(percent * 100) },
-        })
-      );
+      const roundedPercent = Math.round(percent * 10) * 10;
+      if (roundedPercent !== this.publishedChargePercent) {
+        this.publishedChargePercent = roundedPercent;
+        window.dispatchEvent(
+          new CustomEvent('fallstack:charge', {
+            detail: { percent: roundedPercent },
+          })
+        );
+      }
     }
 
     if (this.charging && (!input.jump || !onFloor)) {
@@ -289,23 +296,13 @@ class FallstackScene extends Phaser.Scene {
       const percent = chargeRatioForHeldMs(held);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
-        body.setVelocity(
-          this.facing *
-            Phaser.Math.Linear(
-              MOVEMENT_TUNING.minLaunchVelocityX,
-              MOVEMENT_TUNING.maxLaunchVelocityX,
-              percent
-            ),
-          Phaser.Math.Linear(
-            MOVEMENT_TUNING.minLaunchVelocityY,
-            MOVEMENT_TUNING.maxLaunchVelocityY,
-            percent
-          )
-        );
+        const launch = launchVelocityForChargeRatio(percent);
+        body.setVelocity(this.facing * launch.x, launch.y);
         window.dispatchEvent(new CustomEvent('fallstack:launch'));
       }
       this.charging = false;
       this.chargeTime = 0;
+      this.publishedChargePercent = 0;
       window.dispatchEvent(
         new CustomEvent('fallstack:charge', { detail: { percent: 0 } })
       );
@@ -539,65 +536,12 @@ class FallstackScene extends Phaser.Scene {
     this.highestY = checkpoint.y;
     this.charging = false;
     this.chargeTime = 0;
+    this.publishedChargePercent = 0;
     this.lastHelperTouchAt = -Infinity;
     this.lastTouchedHelper = false;
 
     // Instantly snap camera scroll to the player spawn point
     this.snapCameraToPlayer();
-  }
-
-  private groundDragForZone() {
-    if (
-      this.currentZone === 'comet_reef' ||
-      this.currentZone === 'neutron_forge'
-    )
-      return 180;
-    if (this.currentZone === 'crater_foundry') return 520;
-    return MOVEMENT_TUNING.groundDragX;
-  }
-
-  private biomeGravityOffsetY() {
-    if (this.currentZone === 'ring_citadel')
-      return MOVEMENT_TUNING.biomeLowGravityY;
-    if (this.currentZone === 'neutron_forge')
-      return MOVEMENT_TUNING.biomeHighGravityY;
-    if (this.currentZone === 'event_horizon_crown')
-      return MOVEMENT_TUNING.biomeHighGravityY * 0.45;
-    return 0;
-  }
-
-  private biomeAccelerationX(onFloor: boolean) {
-    if (!this.player || onFloor) return 0;
-    const centerX = this.layoutX(240);
-    const pullSign = this.player.x < centerX ? 1 : -1;
-    const t = this.time.now;
-
-    switch (this.currentZone) {
-      case 'comet_reef':
-        return Math.sin(t / 1050) * MOVEMENT_TUNING.biomeWindAccelerationX;
-      case 'nebula_vault':
-        return Math.sin(t / 720 + this.player.y * 0.015) * 95;
-      case 'dwarf_garden':
-        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX;
-      case 'pulsar_spine': {
-        const pulse = Math.max(0, Math.sin(t / 290));
-        return pullSign * pulse * MOVEMENT_TUNING.biomePulseAccelerationX;
-      }
-      case 'black_hole_chapel':
-        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 1.55;
-      case 'galaxy_reef':
-        return (
-          Math.sin(t / 1500) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.9
-        );
-      case 'dying_star_garden':
-        return (
-          Math.sin(t / 430) * MOVEMENT_TUNING.biomeWindAccelerationX * 0.55
-        );
-      case 'event_horizon_crown':
-        return pullSign * MOVEMENT_TUNING.biomePullAccelerationX * 0.8;
-      default:
-        return 0;
-    }
   }
 
   private tryWallBounce(body: Phaser.Physics.Arcade.Body, input: InputState) {
@@ -660,7 +604,7 @@ class FallstackScene extends Phaser.Scene {
       this.cameras.main.scrollY = Phaser.Math.Linear(
         current,
         targetY,
-        Math.min(1, deltaMs / 260)
+        Math.min(1, deltaMs / 120)
       );
     }
 
@@ -2109,6 +2053,7 @@ export function GameApp() {
   );
   const resultCloseRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const chargeRef = useRef(0);
   const mutationTimerRef = useRef<number | null>(null);
   const checkpointTimerRef = useRef<number | null>(null);
   const [reducedMotion, setReducedMotion] = useState(
@@ -2497,8 +2442,9 @@ export function GameApp() {
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
       if (detail.percent <= 0) soundRef.current?.stopCharge();
-      if (detail.percent <= 35 && detail.percent > 0)
+      if (chargeRef.current === 0 && detail.percent > 0)
         soundRef.current?.play('charge-start');
+      chargeRef.current = detail.percent;
       setCharge(detail.percent);
     };
     const onLand = (event: Event) => {

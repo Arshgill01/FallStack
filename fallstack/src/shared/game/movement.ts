@@ -1,27 +1,23 @@
 export const MOVEMENT_TUNING = {
-  gravityY: 1550,
-  groundDragX: 850,
-  groundSpeed: 155,
-  initialMaxVelocityX: 420,
-  airMaxVelocityX: 430,
-  maxVelocityY: 1300,
-  airSteerAccelerationX: 135,
+  gravityY: 1850,
+  groundDragX: 1200,
+  groundSpeed: 210,
+  chargingGroundSpeed: 110,
+  initialMaxVelocityX: 500,
+  airMaxVelocityX: 500,
+  maxVelocityY: 1450,
+  airSteerAccelerationX: 520,
   wallBonkVelocityYThreshold: -720,
   wallBounceMinVelocityX: 120,
-  wallBounceVelocityX: 285,
-  wallBounceLiftVelocityY: -310,
-  wallBounceCooldownMs: 140,
-  biomeWindAccelerationX: 185,
-  biomePullAccelerationX: 165,
-  biomePulseAccelerationX: 260,
-  biomeLowGravityY: -260,
-  biomeHighGravityY: 360,
-  chargeMs: 900,
-  minChargePercent: 0.32,
-  minLaunchVelocityX: 170,
-  maxLaunchVelocityX: 400,
-  minLaunchVelocityY: -560,
-  maxLaunchVelocityY: -1000,
+  wallBounceVelocityX: 360,
+  wallBounceLiftVelocityY: -430,
+  wallBounceCooldownMs: 180,
+  chargeMs: 600,
+  minChargePercent: 0.42,
+  minLaunchVelocityX: 210,
+  maxLaunchVelocityX: 460,
+  minLaunchVelocityY: -650,
+  maxLaunchVelocityY: -1050,
   reachableHorizontal: 260,
   reachableVertical: 165,
   generatedMinHorizontalStep: 68,
@@ -41,6 +37,43 @@ export function chargeRatioForHeldMs(heldMs: number): number {
   );
 }
 
+export function launchVelocityForChargeRatio(chargeRatio: number): {
+  x: number;
+  y: number;
+} {
+  const ratio = clamp(chargeRatio, MOVEMENT_TUNING.minChargePercent, 1);
+  return {
+    x: lerp(
+      MOVEMENT_TUNING.minLaunchVelocityX,
+      MOVEMENT_TUNING.maxLaunchVelocityX,
+      ratio
+    ),
+    y: lerp(
+      MOVEMENT_TUNING.minLaunchVelocityY,
+      MOVEMENT_TUNING.maxLaunchVelocityY,
+      ratio
+    ),
+  };
+}
+
+export function jumpArcForHeldMs(heldMs: number): {
+  rise: number;
+  sameHeightDistance: number;
+  sameHeightDurationMs: number;
+} {
+  const velocity = launchVelocityForChargeRatio(chargeRatioForHeldMs(heldMs));
+  const secondsToApex = Math.abs(velocity.y) / MOVEMENT_TUNING.gravityY;
+  return {
+    rise: (velocity.y * velocity.y) / (2 * MOVEMENT_TUNING.gravityY),
+    sameHeightDistance: velocity.x * secondsToApex * 2,
+    sameHeightDurationMs: secondsToApex * 2000,
+  };
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function lerp(from: number, to: number, amount: number): number {
+  return from + (to - from) * amount;
 }

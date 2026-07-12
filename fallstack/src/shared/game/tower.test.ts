@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   chargePowerForHeldMs,
   chargeRatioForHeldMs,
+  jumpArcForHeldMs,
   MOVEMENT_TUNING,
 } from './movement.js';
 import {
@@ -72,6 +73,19 @@ void test('movement tuning supports generated tower reachability', () => {
   assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs * 2), 1);
   assert.equal(chargeRatioForHeldMs(0), MOVEMENT_TUNING.minChargePercent);
   assert.equal(chargeRatioForHeldMs(MOVEMENT_TUNING.chargeMs), 1);
+});
+
+void test('the responsive controller produces quick useful arcs', () => {
+  const tap = jumpArcForHeldMs(0);
+  const half = jumpArcForHeldMs(MOVEMENT_TUNING.chargeMs / 2);
+  const full = jumpArcForHeldMs(MOVEMENT_TUNING.chargeMs);
+
+  assert.equal(MOVEMENT_TUNING.chargeMs, 600);
+  assert.ok(tap.rise > 110);
+  assert.ok(full.rise > 260);
+  assert.ok(full.sameHeightDistance > 400);
+  assert.ok(full.sameHeightDurationMs < 1200);
+  assert.ok(tap.rise < half.rise && half.rise < full.rise);
 });
 
 void test('all platforms live inside the logical world', () => {

@@ -34,7 +34,7 @@ Fallstack should feel like a damaged astronomical instrument the subreddit is co
 ### Celestial world art
 
 - [x] Give every zone one dominant landmark silhouette visible during play: orbital wreck, crater, reef, nebula, ring engine, pulsar mast, black-hole chapel, dying sun, or horizon crown.
-- [x] Tie animation to mechanics: accretion flow shows pull, comet trails show wind, pulsar timing shows force pulses.
+- [x] Use accretion flow, comet trails, and pulsar timing as visual identity without changing the global movement model.
 - [ ] Reduce low-information scratches and repeated orbital ellipses.
 - [ ] Add depth through three restrained parallax planes without hiding platforms or artifacts.
 - [ ] Support reduced motion with equivalent static cues.
