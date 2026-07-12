@@ -1516,14 +1516,6 @@ export function GameApp() {
     const label = currentZoneInfo.statusLabel ?? 'Untouched';
     return STATUS_TO_BADGE_CLASS[label] ?? 'badge-quiet';
   }, [currentZoneInfo.statusLabel]);
-  const audioMuted = gameplayMuted && musicMuted;
-
-  const toggleAudio = () => {
-    const nextMuted = !audioMuted;
-    setGameplayMuted(nextMuted);
-    setMusicMuted(nextMuted);
-  };
-
   return (
     <main className="game-shell">
       {/* ── TOP BAR ── */}
@@ -1570,11 +1562,20 @@ export function GameApp() {
           <button
             type="button"
             className="action-btn"
-            onClick={toggleAudio}
-            aria-pressed={audioMuted}
-            aria-label={audioMuted ? 'Turn audio on' : 'Turn audio off'}
+            onClick={() => setMusicMuted(muted => !muted)}
+            aria-pressed={musicMuted}
+            aria-label={musicMuted ? 'Turn music on' : 'Turn music off'}
           >
-            {audioMuted ? 'Audio Off' : 'Audio On'}
+            Music {musicMuted ? 'Off' : 'On'}
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => setGameplayMuted(muted => !muted)}
+            aria-pressed={gameplayMuted}
+            aria-label={gameplayMuted ? 'Turn sound effects on' : 'Turn sound effects off'}
+          >
+            SFX {gameplayMuted ? 'Off' : 'On'}
           </button>
         </div>
       </header>

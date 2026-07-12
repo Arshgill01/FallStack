@@ -8,10 +8,11 @@ const baseUrl = process.env.FALLSTACK_SCREENSHOT_URL ?? 'http://127.0.0.1:8080';
 
 async function assertHeaderBounds(page) {
   await page.locator('.topbar').waitFor();
-  const overflow = await page.locator('.stats-cluster').evaluate(cluster => {
+  const overflow = await page.locator('.topbar').evaluate(header => {
+    const cluster = header.querySelector('.stats-cluster');
+    if (!cluster) return [{ label: 'Missing stats cluster' }];
     const clusterRect = cluster.getBoundingClientRect();
-
-    return [...cluster.querySelectorAll('.stat-value')]
+    const statOverflow = [...cluster.querySelectorAll('.stat-value')]
       .map(value => {
         const valueRect = value.getBoundingClientRect();
         return {
@@ -30,6 +31,15 @@ async function assertHeaderBounds(page) {
             value.top < clusterRect.top ||
             value.bottom > clusterRect.bottom)
       );
+    const actionRects = [...header.querySelectorAll('.topbar-actions button')].map(button => {
+      const rect = button.getBoundingClientRect();
+      return { label: button.textContent?.trim() ?? 'Action', left: rect.left, right: rect.right };
+    });
+    const actionOverlap = actionRects.slice(1).flatMap((action, index) =>
+      action.left < actionRects[index].right ? [action] : []
+    );
+
+    return [...statOverflow, ...actionOverlap];
   });
 
   if (overflow.length > 0) {

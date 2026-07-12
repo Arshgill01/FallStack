@@ -427,19 +427,19 @@ button:disabled {
 .topbar-actions {
   grid-area: actions;
   display: grid;
-  grid-template-columns: repeat(2, minmax(62px, 1fr));
+  grid-template-columns: repeat(3, minmax(52px, 1fr));
   gap: 4px;
 }
 
 .topbar-actions .action-btn:first-child {
-  min-width: 62px;
+  min-width: 0;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
+  min-width: 0;
   min-height: 24px;
   padding: 0 6px;
   border-radius: var(--radius-sm);
@@ -1251,7 +1251,7 @@ button:disabled {
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(116px, 1fr) 126px 102px;
+  grid-template-columns: minmax(116px, 1fr) 126px 174px;
   grid-template-areas: 'brand stats actions';
   min-height: 58px;
   padding: 7px 9px;
@@ -1286,8 +1286,8 @@ button:disabled {
 }
 
 .topbar-actions {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 102px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 174px;
 }
 
 .action-btn {
@@ -1511,7 +1511,7 @@ button:disabled {
 
 @media (max-width: 599px) {
   .topbar {
-    grid-template-columns: minmax(116px, 1fr) 48px 94px;
+    grid-template-columns: minmax(108px, 1fr) 48px 132px;
     grid-template-areas: 'brand stats actions';
     min-height: 58px;
     padding: 6px 7px;
@@ -1539,7 +1539,7 @@ button:disabled {
   }
 
   .topbar-actions {
-    width: 94px;
+    width: 132px;
   }
 
   .action-btn {
