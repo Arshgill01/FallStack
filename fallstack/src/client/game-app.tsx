@@ -49,11 +49,21 @@ import type {
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
+  reliquaryZoneFor,
+  reliquaryZoneName,
+} from './game/art-direction';
+import {
   cameraBottomPaddingForGameWidth,
   computeGameDimensions,
   gameWorldWidth,
   routeOffsetForGameWidth,
 } from './game/layout';
+import { renderReliquaryArtifact } from './game/renderArtifacts';
+import { renderReliquaryPlayer } from './game/renderPlayer';
+import {
+  renderReliquaryBackdrop,
+  renderReliquaryPlatform,
+} from './game/renderTower';
 import {
   applyLocalClear,
   applyLocalFall,
@@ -121,6 +131,7 @@ class FallstackScene extends Phaser.Scene {
   private controlsReady = false;
   private currentRouteOffset = 0;
   private readonly platformScale = 1;
+  private readonly useReliquaryRenderer = true;
 
   // Visual enhancements
   private particles: Array<{
@@ -670,7 +681,24 @@ class FallstackScene extends Phaser.Scene {
     const activeZoneIds = this.activeZoneIds();
     const activeZones = ZONES.filter((zone) => activeZoneIds.has(zone.id));
 
-    for (const zone of activeZones) {
+    if (this.useReliquaryRenderer) {
+      for (const zone of activeZones) {
+        renderReliquaryBackdrop(this.bgGraphics, {
+          zoneTop: zone.yTop,
+          zoneBottom: zone.yBottom,
+          gameWidth: drawW,
+          routeOffset: this.currentRouteOffset,
+          zone: reliquaryZoneFor(zone.id),
+        });
+        this.addZoneLabel(
+          this.layoutX(42),
+          zone.yBottom - 1180,
+          reliquaryZoneName(zone.id),
+          window.fallstackSnapshot?.zones.find((item) => item.id === zone.id)
+            ?.statusLabel ?? 'Untouched'
+        );
+      }
+    } else for (const zone of activeZones) {
       const theme = themeForZone(zone.id);
       const top = colorNumber(theme.skyTop);
       const bottom = colorNumber(theme.skyBot);
@@ -698,12 +726,14 @@ class FallstackScene extends Phaser.Scene {
       );
     }
 
-    this.bgGraphics
-      .lineStyle(3, 0x0a0508, 0.55)
-      .lineBetween(0, 0, 0, WORLD_HEIGHT);
-    this.bgGraphics
-      .lineStyle(3, 0x0a0508, 0.55)
-      .lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
+    if (!this.useReliquaryRenderer) {
+      this.bgGraphics
+        .lineStyle(3, 0x0a0508, 0.55)
+        .lineBetween(0, 0, 0, WORLD_HEIGHT);
+      this.bgGraphics
+        .lineStyle(3, 0x0a0508, 0.55)
+        .lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
+    }
 
     // 3. DRAW PLATFORMS
     for (const platform of this.towerPlatforms) {
@@ -912,6 +942,11 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private drawPlatform(platform: Platform) {
+    if (this.useReliquaryRenderer && this.graphics) {
+      renderReliquaryPlatform(this.graphics, platform);
+      return;
+    }
+
     const y = platform.y;
     const zoneId = zoneForY(y).id;
     const theme = themeForZone(zoneId);
@@ -1291,6 +1326,16 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private drawArtifact(artifact: Artifact) {
+    if (this.useReliquaryRenderer && this.graphics) {
+      renderReliquaryArtifact(this.graphics, artifact, {
+        reducedMotion: this.reducedMotion,
+        timeMs: this.time.now,
+        addLabel: (centerX, y, text) =>
+          this.addArtifactLabel(centerX, y, text),
+      });
+      return;
+    }
+
     const zone = zoneForY(artifact.y);
     const th = themeForZone(zone.id);
 
@@ -1431,7 +1476,7 @@ class FallstackScene extends Phaser.Scene {
     const g = this.dynamicGraphics;
     const time = this.time.now;
 
-    this.drawBiomeAnimation(g, time);
+    if (!this.useReliquaryRenderer) this.drawBiomeAnimation(g, time);
 
     // 1. UPDATE AND DRAW PARTICLES
     const activeParticles = [];
@@ -1546,15 +1591,17 @@ class FallstackScene extends Phaser.Scene {
     this.drawWobblingCursedBricks(g);
 
     // 5. DRAW DYNAMIC TWINKLING STARS
-    g.fillStyle(0xffffff, 0.7);
-    for (const star of this.stars) {
-      const alpha =
-        0.35 + Math.sin((time / 300) * star.speed + star.phase) * 0.35;
-      g.fillStyle(0xffffff, alpha);
-      g.fillPoint(star.x, star.y, star.size);
+    if (!this.useReliquaryRenderer) {
+      g.fillStyle(0xffffff, 0.7);
+      for (const star of this.stars) {
+        const alpha =
+          0.35 + Math.sin((time / 300) * star.speed + star.phase) * 0.35;
+        g.fillStyle(0xffffff, alpha);
+        g.fillPoint(star.x, star.y, star.size);
+      }
     }
 
-    // 6. DRAW FOX-SPIRIT PLAYER
+    // 6. DRAW PLAYER
     this.drawFoxSpirit(g);
   }
 
@@ -1732,6 +1779,20 @@ class FallstackScene extends Phaser.Scene {
 
   private drawFoxSpirit(g: Phaser.GameObjects.Graphics) {
     if (!this.player) return;
+    if (this.useReliquaryRenderer) {
+      renderReliquaryPlayer(g, {
+        x: this.player.x,
+        y: this.player.y,
+        facing: this.facing,
+        charging: this.charging,
+        grounded:
+          this.player.body.blocked.down || this.player.body.touching.down,
+        velocityY: this.player.body.velocity.y,
+        chargeRatio: chargePowerForHeldMs(this.chargeTime),
+        reducedMotion: this.reducedMotion,
+      });
+      return;
+    }
     const cx = this.player.x;
     const cy = this.player.y;
     const onFloor =
@@ -2002,13 +2063,17 @@ class FallstackScene extends Phaser.Scene {
       labelWidth / 2 + 6,
       this.gameWidth() - labelWidth / 2 - 6
     );
+    this.graphics
+      ?.lineStyle(2, 0xd9b45c, 0.9)
+      .lineBetween(centerX, y - 2, centerX, y + 10);
+    this.graphics?.fillStyle(0x180d18, 1).fillCircle(centerX, y - 2, 2.5);
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
       fontSize: '11px',
       fontStyle: '700',
-      color: '#120608',
-      backgroundColor: 'rgba(232, 255, 245, 0.94)',
-      padding: { left: 6, right: 6, top: 3, bottom: 3 },
+      color: '#180d18',
+      backgroundColor: 'rgba(244, 239, 226, 0.97)',
+      padding: { left: 7, right: 7, top: 4, bottom: 4 },
       wordWrap: { width: labelWidth, useAdvancedWrap: true },
     });
     label.setOrigin(0.5, 1);
@@ -2141,14 +2206,14 @@ export function GameApp() {
 
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
-      return { name: zoneById(BOTTOM_ZONE_ID).name, statusLabel: 'Quiet' };
-    return (
+      return { name: reliquaryZoneName(BOTTOM_ZONE_ID), statusLabel: 'Quiet' };
+    const segment =
       snapshot.zones.find((zone) => zone.id === currentZoneId) ??
       snapshot.zones[0] ?? {
         name: zoneById(BOTTOM_ZONE_ID).name,
         statusLabel: 'Quiet',
-      }
-    );
+      };
+    return { ...segment, name: reliquaryZoneName(currentZoneId) };
   }, [currentZoneId, snapshot]);
 
   useEffect(() => {
@@ -2171,7 +2236,7 @@ export function GameApp() {
         window.fallstackSnapshot = localSnapshot;
         setSnapshot(localSnapshot);
         showMutation(
-          'The mountain remembers locally. Shared marks are delayed.'
+          '14 falls made this foothold. Shared marks are delayed.'
         );
       } finally {
         if (!cancelled) setLoading(false);

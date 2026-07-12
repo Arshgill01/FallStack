@@ -1,0 +1,163 @@
+import type Phaser from 'phaser';
+import type { Platform } from '../../shared/game/tower.js';
+import {
+  RELIQUARY_COLORS,
+  type ReliquaryZone,
+} from './art-direction.js';
+
+export function renderReliquaryBackdrop(
+  graphics: Phaser.GameObjects.Graphics,
+  input: {
+    zoneTop: number;
+    zoneBottom: number;
+    gameWidth: number;
+    routeOffset: number;
+    zone: ReliquaryZone;
+  }
+): void {
+  const c = RELIQUARY_COLORS;
+  const routeLeft = input.routeOffset;
+  const routeRight = routeLeft + 480;
+  const height = input.zoneBottom - input.zoneTop;
+  graphics.fillStyle(c.indigoDeep, 1).fillRect(0, input.zoneTop, input.gameWidth, height);
+  graphics
+    .fillStyle(c.burgundyDeep, 1)
+    .fillRect(routeLeft + 14, input.zoneTop, 452, height);
+
+  graphics.fillStyle(c.washiDim, 1);
+  graphics.fillRect(routeLeft + 5, input.zoneTop, 8, height);
+  graphics.fillRect(routeRight - 13, input.zoneTop, 8, height);
+  graphics.fillStyle(c.indigo, 1);
+  graphics.fillRect(routeLeft + 13, input.zoneTop, 20, height);
+  graphics.fillRect(routeRight - 33, input.zoneTop, 20, height);
+  graphics.fillStyle(c.goldDeep, 0.8);
+  graphics.fillRect(routeLeft + 31, input.zoneTop, 3, height);
+  graphics.fillRect(routeRight - 34, input.zoneTop, 3, height);
+
+  const archSpacing =
+    input.zone === 'lower_ruins' ? 760 : input.zone === 'bell_shaft' ? 620 : 880;
+  const archWidth = input.zone === 'bell_shaft' ? 286 : 350;
+  for (
+    let y = input.zoneTop + 260;
+    y < input.zoneBottom;
+    y += archSpacing
+  ) {
+    const cx = routeLeft + 240;
+    graphics.lineStyle(22, c.indigo, 0.72);
+    graphics.beginPath();
+    graphics.arc(cx, y, archWidth / 2, Math.PI, Math.PI * 2);
+    graphics.strokePath();
+    graphics.lineStyle(4, c.goldDeep, 0.42);
+    graphics.beginPath();
+    graphics.arc(cx, y, archWidth / 2 - 15, Math.PI, Math.PI * 2);
+    graphics.strokePath();
+    graphics.fillStyle(c.indigo, 0.64);
+    graphics.fillRect(cx - archWidth / 2 - 11, y, 22, 210);
+    graphics.fillRect(cx + archWidth / 2 - 11, y, 22, 210);
+  }
+
+  if (input.zone === 'lower_ruins') {
+    const repairY = input.zoneBottom - 430;
+    graphics.fillStyle(c.washiDim, 0.16).fillRect(routeLeft + 56, repairY, 126, 54);
+    graphics.lineStyle(3, c.gold, 0.34);
+    graphics.lineBetween(routeLeft + 62, repairY + 12, routeLeft + 174, repairY + 38);
+  } else if (input.zone === 'bell_shaft') {
+    for (let x = routeLeft + 88; x <= routeRight - 88; x += 76) {
+      graphics.lineStyle(3, c.goldDeep, 0.42);
+      graphics.lineBetween(x, input.zoneTop, x, input.zoneBottom);
+      for (let y = input.zoneTop + 320; y < input.zoneBottom; y += 920) {
+        graphics.fillStyle(c.gold, 0.22).fillEllipse(x, y, 32, 44);
+        graphics.fillStyle(c.indigoDeep, 0.8).fillEllipse(x, y + 4, 18, 28);
+      }
+    }
+  } else {
+    for (let x = routeLeft + 42; x < routeRight - 42; x += 54) {
+      graphics.fillStyle(c.indigoLit, 0.52).fillTriangle(
+        x,
+        input.zoneTop + 72,
+        x + 27,
+        input.zoneTop + 18,
+        x + 54,
+        input.zoneTop + 72
+      );
+    }
+    graphics.lineStyle(4, c.ghost, 0.2);
+    for (let y = input.zoneTop + 420; y < input.zoneBottom; y += 980) {
+      graphics.lineBetween(routeLeft + 60, y, routeRight - 90, y - 110);
+    }
+  }
+}
+
+export function renderReliquaryPlatform(
+  graphics: Phaser.GameObjects.Graphics,
+  platform: Platform
+): void {
+  const c = RELIQUARY_COLORS;
+  const obstacle = platform.kind === 'obstacle';
+  if (obstacle) {
+    graphics.fillStyle(c.ink, 0.95).fillRect(
+      platform.x + 3,
+      platform.y + 2,
+      platform.width,
+      platform.height
+    );
+    graphics.fillStyle(c.indigo, 1).fillRect(
+      platform.x,
+      platform.y,
+      platform.width,
+      platform.height
+    );
+    graphics
+      .lineStyle(2, c.goldDeep, 0.8)
+      .lineBetween(
+        platform.x + platform.width / 2,
+        platform.y + 6,
+        platform.x + platform.width / 2,
+        platform.y + platform.height - 6
+      );
+    return;
+  }
+
+  const checkpoint = platform.id.includes('checkpoint');
+  const summit = platform.kind === 'summit';
+  const underface = Math.max(12, platform.height - 5);
+  graphics
+    .fillStyle(c.ink, 0.96)
+    .fillRect(platform.x + 3, platform.y + 5, platform.width, underface + 3);
+  graphics
+    .fillStyle(summit ? c.goldDeep : c.indigo, 1)
+    .fillRect(platform.x, platform.y + 4, platform.width, underface);
+  graphics
+    .fillStyle(checkpoint ? c.gold : c.washiDim, 1)
+    .fillRect(platform.x, platform.y, platform.width, 6);
+  graphics
+    .fillStyle(c.indigoLit, 0.65)
+    .fillRect(platform.x + 6, platform.y + 7, platform.width - 12, 3);
+
+  const chipSide = stableChipSide(platform.id);
+  const chipX = chipSide === 'left' ? platform.x : platform.x + platform.width - 10;
+  graphics.fillStyle(c.burgundyDeep, 1).fillTriangle(
+    chipX,
+    platform.y,
+    chipX + 10,
+    platform.y,
+    chipSide === 'left' ? chipX : chipX + 10,
+    platform.y + 7
+  );
+
+  if (checkpoint) {
+    const center = platform.x + platform.width / 2;
+    graphics.fillStyle(c.gold, 1).fillRect(center - 3, platform.y + 5, 6, underface);
+    graphics
+      .lineStyle(2, c.washi, 0.75)
+      .lineBetween(center, platform.y - 12, center, platform.y);
+  }
+}
+
+function stableChipSide(id: string): 'left' | 'right' {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash) % 2 === 0 ? 'left' : 'right';
+}

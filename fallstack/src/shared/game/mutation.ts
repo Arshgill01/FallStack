@@ -574,7 +574,7 @@ function bucketArtifactName(bucket: FailureBucket, nextCount: number): string {
     return nextCount >= 6 ? 'Mercy Nail' : 'Corpse Stack';
   if (bucket === 'wall_bonk') return 'Ghost Platform';
   if (bucket === 'overjump') return 'Cursed Brick';
-  return 'Cursed Helper';
+  return 'Cursed Brick';
 }
 
 function artifactLabel(type: ArtifactType, count: number): string {

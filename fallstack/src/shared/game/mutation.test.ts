@@ -199,7 +199,7 @@ void test('fall feedback is short, specific, and cap-aware', () => {
       count: 2,
       counted: true,
     }),
-    'Your fall counted. 1 more helper slip spawns Cursed Helper.'
+    'Your fall counted. 1 more helper slip spawns Cursed Brick.'
   );
   assert.equal(
     fallFeedback({

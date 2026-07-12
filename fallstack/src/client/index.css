@@ -493,9 +493,7 @@ button:disabled {
   display: block;
   width: 100%;
   height: 100%;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
+  image-rendering: auto;
 }
 
 /* =============================================
@@ -1026,6 +1024,166 @@ button:disabled {
     flex-wrap: nowrap;
     max-width: none;
     justify-content: flex-end;
+  }
+}
+
+/* =============================================
+   CUTAWAY RELIQUARY — PRODUCTION SHELL
+   ============================================= */
+.game-shell {
+  border-inline-color: rgba(216, 180, 92, 0.42);
+  background: #171426;
+  box-shadow:
+    0 0 0 5px #171426,
+    0 0 0 7px rgba(216, 205, 183, 0.68),
+    0 18px 72px rgba(0, 0, 0, 0.62);
+}
+
+.topbar {
+  grid-template-columns: minmax(116px, 1fr) 126px 102px;
+  grid-template-areas: 'brand stats actions';
+  min-height: 58px;
+  padding: 7px 9px;
+  gap: 7px;
+  background: #f4efe2;
+  border-bottom: 4px solid #29243f;
+  box-shadow: inset 0 -1px 0 #d9b45c;
+}
+
+.topbar .eyebrow {
+  color: #180d18;
+  letter-spacing: 1.6px;
+}
+
+.topbar-headline {
+  color: #592337;
+}
+
+.stats-cluster {
+  width: 126px;
+  border: 2px solid #29243f;
+  border-radius: 4px;
+  box-shadow: 0 3px 0 #75552a;
+}
+
+.stat-cell {
+  background: #d8cdb7;
+}
+
+.stat-cell:first-child {
+  background: #d9b45c;
+}
+
+.topbar-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 102px;
+}
+
+.action-btn {
+  min-height: 32px;
+  border: 2px solid #29243f;
+  border-radius: 4px;
+  background: #f4efe2;
+  box-shadow: 0 3px 0 #75552a;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #75552a;
+}
+
+.zone-tag {
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 24px);
+  padding: 6px 10px;
+  border: 2px solid #29243f;
+  border-radius: 2px;
+  background: #f4efe2;
+  box-shadow: 4px 4px 0 rgba(24, 13, 24, 0.72);
+  clip-path: polygon(0 0, 96% 0, 100% 22%, 100% 100%, 4% 100%, 0 78%);
+  font-family: 'Shippori Mincho', serif;
+}
+
+.zone-badge {
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.mutation-banner {
+  top: auto;
+  right: 14px;
+  bottom: 14px;
+  left: auto;
+  width: min(286px, calc(100% - 28px));
+  padding: 9px 12px;
+  border: 2px solid #180d18;
+  border-top-width: 2px;
+  border-radius: 3px;
+  background: #e95f45;
+  box-shadow: 5px 5px 0 rgba(24, 13, 24, 0.8);
+  color: #180d18;
+  text-align: left;
+  transform: translateY(8px);
+}
+
+.mutation-banner.visible {
+  transform: translateY(0);
+}
+
+.controls-hint {
+  left: 22px;
+  bottom: 18px;
+  color: rgba(244, 239, 226, 0.74);
+}
+
+@media (max-width: 599px) {
+  .topbar {
+    grid-template-columns: minmax(116px, 1fr) 48px 94px;
+    grid-template-areas: 'brand stats actions';
+    min-height: 58px;
+    padding: 6px 7px;
+    gap: 5px;
+  }
+
+  .topbar .hanko {
+    width: 25px;
+    height: 25px;
+    font-size: 13px;
+  }
+
+  .topbar .eyebrow {
+    gap: 5px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .stats-cluster {
+    width: 48px;
+  }
+
+  .stats-cluster .stat-cell:not(:first-child) {
+    display: none;
+  }
+
+  .topbar-actions {
+    width: 94px;
+  }
+
+  .action-btn {
+    min-height: 34px;
+    font-size: 8px;
+  }
+
+  .mutation-banner {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    padding: 8px 10px;
+    font-size: 10.5px;
   }
 }
 
