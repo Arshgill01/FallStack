@@ -195,6 +195,18 @@ void test('tower validation catches unreachable zone stitches', () => {
   assert.equal(validateTower(tower), false);
 });
 
+void test('generated towers include optional ricochet chimneys without changing the clear route', () => {
+  const tower = generateDailyTower(KNOWN_GOOD_SEED);
+  const ricochetWalls = tower.platforms.filter((platform) =>
+    platform.id.startsWith('ricochet-')
+  );
+
+  assert.ok(ricochetWalls.length >= 2);
+  assert.equal(ricochetWalls.length % 2, 0);
+  assert.ok(ricochetWalls.every((platform) => platform.kind === 'obstacle'));
+  assert.equal(validateTower(tower), true);
+});
+
 void test('different daily seeds can vary the known-good tower subtly', () => {
   const first = generateDailyTower('fallstack-2026-07-08');
   const second = generateDailyTower('fallstack-2026-07-09');

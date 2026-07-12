@@ -188,6 +188,38 @@ export function generateDailyTower(seed: string): GeneratedTower {
       });
     }
 
+    // Optional ricochet chimney: the normal ledge sequence stays clear while
+    // confident players can rebound between two visibly paired wall faces.
+    if (!isCP && count % 12 === 0) {
+      const wallWidth = 16;
+      const wallHeight = 112;
+      const halfGap = 82;
+      const leftX = nextCenter - halfGap - wallWidth;
+      const rightX = nextCenter + halfGap;
+      if (leftX >= 18 && rightX + wallWidth <= WORLD_WIDTH - 18) {
+        platforms.push(
+          {
+            id: `ricochet-${zone.id}-${count}-left`,
+            zoneId: zone.id,
+            x: Math.round(leftX),
+            y: nextY - 82,
+            width: wallWidth,
+            height: wallHeight,
+            kind: 'obstacle',
+          },
+          {
+            id: `ricochet-${zone.id}-${count}-right`,
+            zoneId: zone.id,
+            x: Math.round(rightX),
+            y: nextY - 82,
+            width: wallWidth,
+            height: wallHeight,
+            kind: 'obstacle',
+          }
+        );
+      }
+    }
+
     prevY = nextY;
     prevCenter = nextCenter;
     count++;
