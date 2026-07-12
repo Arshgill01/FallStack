@@ -20,7 +20,7 @@ Fallstack should feel like a damaged astronomical instrument the subreddit is co
 
 - [x] Preserve seeded community artifacts and in-world origin labels.
 - [x] Move transient state feedback out of the central jump lane.
-- [ ] Put one helpful artifact directly on the obvious opening route and one cursed artifact on a tempting alternate route.
+- [x] Put one helpful artifact directly on the obvious opening route and one cursed artifact on a tempting continuation route.
 - [ ] Make the first fall feedback point to the exact affected ledge and next threshold.
 
 ### Traversal grammar

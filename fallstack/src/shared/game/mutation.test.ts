@@ -42,7 +42,11 @@ void test('seeded snapshot opens with visible shared mutation hook', () => {
 
   assert.equal(snapshot.headline, "Today's tower has 37 failed climbs in it.");
   assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
-  assert.ok(snapshot.zones.some((zone) => zone.artifacts.some((artifact) => artifact.label.includes('falls'))));
+  assert.ok(
+    snapshot.zones.some((zone) =>
+      zone.artifacts.some((artifact) => artifact.label.includes('falls'))
+    )
+  );
 });
 
 void test('seeded artifacts live in their owning tower zones', () => {
@@ -82,7 +86,28 @@ void test('seeded bottom-zone artifacts are visible in the opening viewport', ()
       (artifact) => artifact.y >= (ZONE_IDS.length - 1) * ZONE_HEIGHT
     )
   );
-  assert.ok(bottomZone.artifacts.some((artifact) => artifact.label.includes('falls')));
+  assert.ok(
+    bottomZone.artifacts.some((artifact) => artifact.label.includes('falls'))
+  );
+});
+
+void test('the opening helper sits on the first jump line', () => {
+  const snapshot = deriveSnapshot({
+    dailySeed: 'fallstack-2026-07-12',
+    dateKey: '2026-07-12',
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const helper = snapshot.zones[0]?.artifacts.find(
+    (artifact) => artifact.type === 'mercy_nail'
+  );
+
+  assert.ok(helper);
+  assert.ok(helper.x >= 260);
+  assert.ok(helper.y > 71820 && helper.y < 71940);
 });
 
 void test('zone status display labels do not leak internal state names', () => {
@@ -118,8 +143,14 @@ void test('artifact derivation stays capped per zone under high traffic', () => 
     },
   });
 
-  assert.equal(snapshot.zones.every((zone) => zone.artifacts.length <= 3), true);
-  assert.equal(snapshot.zones.every((zone) => zone.status === 'Stabilized'), true);
+  assert.equal(
+    snapshot.zones.every((zone) => zone.artifacts.length <= 3),
+    true
+  );
+  assert.equal(
+    snapshot.zones.every((zone) => zone.status === 'Stabilized'),
+    true
+  );
   assert.equal(snapshot.result.summitStatus, 'Summit Cleared');
   assert.equal(snapshot.result.mostCursedStatus, 'Blessed');
 });
