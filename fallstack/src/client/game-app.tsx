@@ -72,7 +72,7 @@ declare global {
   }
 }
 
-const START_POS = { x: 240, y: WORLD_HEIGHT - 120 };
+const START_POS = { x: 240, y: WORLD_HEIGHT - 88 };
 
 function checkpointForZone(zoneId: ZoneId): { x: number; y: number } {
   if (zoneId === BOTTOM_ZONE_ID) return START_POS;
@@ -117,6 +117,8 @@ class FallstackScene extends Phaser.Scene {
     .platforms;
   private chargeTime = 0;
   private publishedChargePercent = -1;
+  private stableFrameCount = 0;
+  private controlsReady = false;
   private currentRouteOffset = 0;
   private readonly platformScale = 1;
 
@@ -229,6 +231,20 @@ class FallstackScene extends Phaser.Scene {
 
   override update(_time: number, deltaMs: number) {
     if (!this.player) return;
+    if (!this.controlsReady) {
+      this.stableFrameCount = deltaMs <= 34 ? this.stableFrameCount + 1 : 0;
+      const settled =
+        this.player.body.blocked.down || this.player.body.touching.down;
+      if (this.dynamicGraphics) {
+        this.dynamicGraphics.clear();
+        this.drawDynamicElements(deltaMs);
+      }
+      if (this.stableFrameCount >= 4 && settled) {
+        this.controlsReady = true;
+        window.dispatchEvent(new CustomEvent('fallstack:ready'));
+      }
+      return;
+    }
     const input = this.readInput();
     const body = this.player.body;
     const onFloor = body.blocked.down || body.touching.down;
@@ -436,7 +452,16 @@ class FallstackScene extends Phaser.Scene {
 
   private rebuildPlatformBodies() {
     this.platforms?.clear(true, true);
-    for (const platform of this.towerPlatforms) this.addPlatform(platform);
+    const activeZoneIds = this.activeZoneIds();
+    for (const platform of this.towerPlatforms) {
+      if (activeZoneIds.has(platform.zoneId)) this.addPlatform(platform);
+    }
+  }
+
+  private activeZoneIds(): Set<ZoneId> {
+    const index = ZONES.findIndex((zone) => zone.id === this.currentZone);
+    const from = Math.max(0, index - 1);
+    return new Set(ZONES.slice(from, index + 2).map((zone) => zone.id));
   }
 
   private readInput(): InputState {
@@ -615,6 +640,9 @@ class FallstackScene extends Phaser.Scene {
     const zoneId = zoneForY(this.player?.y ?? START_POS.y).id;
     if (zoneId === this.currentZone) return;
     this.currentZone = zoneId;
+    this.rebuildPlatformBodies();
+    this.drawWorld();
+    this.rebuildArtifactBodies();
     this.publishZone();
   }
 
@@ -639,7 +667,10 @@ class FallstackScene extends Phaser.Scene {
     const drawW = this.gameWidth();
     const maxX = minX + drawW;
 
-    for (const zone of ZONES) {
+    const activeZoneIds = this.activeZoneIds();
+    const activeZones = ZONES.filter((zone) => activeZoneIds.has(zone.id));
+
+    for (const zone of activeZones) {
       const theme = themeForZone(zone.id);
       const top = colorNumber(theme.skyTop);
       const bottom = colorNumber(theme.skyBot);
@@ -675,13 +706,16 @@ class FallstackScene extends Phaser.Scene {
       .lineBetween(drawW, 0, drawW, WORLD_HEIGHT);
 
     // 3. DRAW PLATFORMS
-    for (const platform of this.towerPlatforms)
-      this.drawPlatform(this.layoutPlatform(platform));
+    for (const platform of this.towerPlatforms) {
+      if (activeZoneIds.has(platform.zoneId))
+        this.drawPlatform(this.layoutPlatform(platform));
+    }
 
     // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     for (const zone of snapshot.zones) {
+      if (!activeZoneIds.has(zone.id)) continue;
       for (const artifact of zone.artifacts)
         this.drawArtifact(this.layoutArtifact(artifact));
     }
@@ -2002,7 +2036,9 @@ class FallstackScene extends Phaser.Scene {
     this.artifactBodies?.clear(true, true);
     const snapshot = window.fallstackSnapshot;
     if (!snapshot || !this.artifactBodies) return;
+    const activeZoneIds = this.activeZoneIds();
     for (const artifact of snapshot.zones.flatMap((zone) => zone.artifacts)) {
+      if (!activeZoneIds.has(artifact.zoneId)) continue;
       if (!artifact.solid) continue;
       const layout = this.layoutArtifact(artifact);
       const rect = this.add.rectangle(
@@ -2029,6 +2065,7 @@ export function GameApp() {
   const [currentZoneId, setCurrentZoneId] = useState<ZoneId>(BOTTOM_ZONE_ID);
   const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [sceneReady, setSceneReady] = useState(false);
   const [summitOpen, setSummitOpen] = useState(false);
   const [gameplayMuted, setGameplayMuted] = useState(
     () =>
@@ -2113,6 +2150,12 @@ export function GameApp() {
       }
     );
   }, [currentZoneId, snapshot]);
+
+  useEffect(() => {
+    const onReady = () => setSceneReady(true);
+    window.addEventListener('fallstack:ready', onReady);
+    return () => window.removeEventListener('fallstack:ready', onReady);
+  }, []);
 
   useEffect(() => {
     resetSharedInput();
@@ -2617,15 +2660,17 @@ export function GameApp() {
         </div>
 
         {/* Loading overlay */}
-        {loading && (
+        {(loading || !sceneReady) && (
           <div className="loading-overlay" aria-hidden="true">
-            <div className="loading-text">Reading the mountain…</div>
+            <div className="loading-text">
+              {loading ? 'Reading the mountain…' : 'Calibrating the jump…'}
+            </div>
           </div>
         )}
       </section>
 
       {/* ── TOUCH CONTROLS ── */}
-      <TouchControls disabled={summitOpen} charge={charge} />
+      <TouchControls disabled={summitOpen || !sceneReady} charge={charge} />
 
       {/* ── RESULT CARD ── */}
       {summitOpen ? (

@@ -20,6 +20,7 @@ export class ProceduralSound {
   private musicNodes: AudioNode[] = [];
   private musicTimers: number[] = [];
   private musicStopTimer: number | null = null;
+  private musicStartTimer: number | null = null;
 
   constructor(private options: SoundOptions) {}
 
@@ -30,8 +31,13 @@ export class ProceduralSound {
 
   setMusicMuted(musicMuted: boolean) {
     this.options = { ...this.options, musicMuted };
-    if (musicMuted) this.stopMusic();
-    if (!musicMuted && this.context) this.startMusic();
+    if (musicMuted) {
+      if (this.musicStartTimer !== null)
+        window.clearTimeout(this.musicStartTimer);
+      this.musicStartTimer = null;
+      this.stopMusic();
+    }
+    if (!musicMuted && this.context) this.unlock();
   }
 
   unlock() {
@@ -39,7 +45,16 @@ export class ProceduralSound {
     if (!AudioContextCtor) return;
     this.context ??= new AudioContextCtor();
     if (this.context.state === 'suspended') void this.context.resume();
-    if (!this.options.musicMuted) this.startMusic();
+    if (
+      !this.options.musicMuted &&
+      !this.musicGain &&
+      this.musicStartTimer === null
+    ) {
+      this.musicStartTimer = window.setTimeout(() => {
+        this.musicStartTimer = null;
+        this.startMusic();
+      }, 2000);
+    }
   }
 
   play(id: SoundId, zoneId?: ZoneId) {
@@ -119,7 +134,14 @@ export class ProceduralSound {
     pulse.connect(pulseGain).connect(filter.frequency);
     pulse.start(now);
 
-    this.musicNodes.push(droneA, droneAGain, droneB, droneBGain, pulse, pulseGain);
+    this.musicNodes.push(
+      droneA,
+      droneAGain,
+      droneB,
+      droneBGain,
+      pulse,
+      pulseGain
+    );
     this.startBellLoop();
   }
 
@@ -203,17 +225,15 @@ export class ProceduralSound {
 
   private launch() {
     this.stopCharge();
-    this.noise(0.05, 900, 0.04);
     this.ping(240, 0.08, 0.03);
+    window.setTimeout(() => this.ping(360, 0.055, 0.016), 28);
   }
 
   private land(zoneId?: ZoneId) {
     const zoneIndex = zoneId ? ZONE_IDS.indexOf(zoneId) : 0;
-    if (zoneIndex >= ZONE_IDS.length * 0.66)
-      return this.ping(980, 0.18, 0.018);
-    if (zoneIndex >= ZONE_IDS.length * 0.33)
-      return this.ping(760, 0.12, 0.022);
-    return this.noise(0.06, 260, 0.035);
+    if (zoneIndex >= ZONE_IDS.length * 0.66) return this.ping(980, 0.18, 0.018);
+    if (zoneIndex >= ZONE_IDS.length * 0.33) return this.ping(760, 0.12, 0.022);
+    return this.ping(180, 0.07, 0.028);
   }
 
   private fall() {
