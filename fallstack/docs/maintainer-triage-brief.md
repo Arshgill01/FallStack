@@ -15,7 +15,7 @@ Three changes would remove the most friction:
 2. make new templates pass a zero-high dependency gate and contract-test the golden-path documentation;
 3. add a non-mutating validation/package report plus typed lifecycle records for automation.
 
-These recommendations come from clean installs, pinned first-party sources/templates, actual CLI commands, an installed playtest version, 101 requests through Fallstack's real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
+These recommendations come from clean installs, pinned first-party sources/templates, actual CLI commands, installed-version read-back, authenticated Reddit host QA, same-version cold/warm iframe timing, hosted API probes, 101 requests through Fallstack's real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
 
 ## Recommended triage order
 
@@ -27,7 +27,7 @@ These recommendations come from clean installs, pinned first-party sources/templ
 | P0 | Golden-path docs/templates contradict executable contracts | New users receive wrong commands, limits, stack, and deprecated config | Correct six source locations; add CI contracts | Docs/schema/changelog/templates/commands compared at pinned revisions |
 | P1 | No non-mutating `validate`/package manifest | Developers learn config/package problems only inside mutating upload flows | CLI validation command or `upload --dry-run` | Controlled config failures and exact uploader enumeration completed |
 | P1 | JSON logs omit lifecycle state | Automation cannot distinguish connected-empty from stalled | Optional typed status JSONL | Human/JSON behavior reproduced and source branch confirmed |
-| P1 | Phaser builds lack Reddit-host budgets | Generic Vite warnings cannot answer host/mobile/review readiness | Guidance plus manifest runtime/map split | Starter baseline and Fallstack raw/compressed estimates measured |
+| P1 | Phaser builds lack actionable Reddit-host targets | Generic Vite warnings cannot answer host/mobile/review readiness | Guidance plus manifest/runtime/map split and reference metrics | Three host runs: 0.392–4.164 s cold vs 0.400–0.412 s warm FCP |
 
 ## Fast reproductions
 
@@ -109,6 +109,8 @@ Maps were 87.3% of raw client bytes. This does not mean maps are fetched during 
 
 Acceptance criteria: a local command reports selected paths, entrypoint/runtime/map roles, raw and labeled compression estimates, aggregate entrypoint sizes, and platform-owned inline/expanded/mobile targets before any remote mutation.
 
+Authenticated host evidence strengthens the need for those targets. Across three same-version v0.0.15 runs on one VM, expanded FCP ranged from 392 to 4,164 ms cold (3,292 ms median) and 400 to 412 ms warm (412 ms median). The identical 371,879-byte encoded `game.js` ranged from 90.5 to 2,222.6 ms cold versus a 46.1 ms warm median. Initial API state completed at a 4,267.5 ms cold median versus 1,003.3 ms warm. This is not a platform percentile, but the cold variability demonstrates why raw bundle size and a generic Vite warning are insufficient guidance.
+
 ### 6. Machine-readable log lifecycle
 
 ```sh
@@ -124,7 +126,7 @@ Acceptance criteria: an opt-in discriminated JSONL envelope can report `connecte
 
 The package deliberately excludes these from Devvit criticism:
 
-- Reddit network-security 403s in logged-out automated and headed system Chrome;
+- earlier Reddit network-security 403s before authenticated interactive login;
 - Chrome/Xvfb/browser setup;
 - Fallstack's fixed 400-versus-500 error classification;
 - Fallstack's still-open interrupted-idempotency design risk;
@@ -132,7 +134,7 @@ The package deliberately excludes these from Devvit criticism:
 - generic Phaser/Vite chunk size as a claimed platform defect;
 - support response quality, because no firsthand support exchange occurred.
 
-Candidate dependency bumps have targeted validation only. They are not represented as passing Reddit's complete upstream suites. Host transfer, first canvas, mobile behavior, and hosted Redis remain unmeasured until authenticated Reddit browser state is available.
+Candidate dependency bumps have targeted validation only. They are not represented as passing Reddit's complete upstream suites. Authenticated host transfer, first paint, responsive Mobile/Desktop layout, and safe hosted validation are now measured; logged-out identity, physical-mobile behavior, a fresh uncapped hosted write/race, and interrupted-response recovery remain open.
 
 ## Detailed evidence index
 
@@ -145,6 +147,8 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Test-harness install and source evidence | `feedback-evidence-matrix.md` and `maintainer-patch-map.md` |
 | 101 real Hono route requests and Redis fault injection | `server-persistence-experiment.md` |
 | Build/upload manifest and Phaser size split | `phaser-packaging-observability-pass.md` |
+| Authenticated cold/warm Reddit timing | `host-performance-pass.md` |
+| Inline/expanded screenshots, video, and safe hosted persistence probes | `playtest-evidence/2026-07-12-authenticated-host/report.md` |
 | Claim-level readiness and exclusions | `submission-evidence-audit.md` |
 | Paste-ready survey answers | `feedback-form-submission.md` |
 

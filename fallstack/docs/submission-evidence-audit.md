@@ -10,12 +10,12 @@ This is the claim gate for the paste-ready form answers. “Submission-ready” 
 | Required question | Answer status | Evidence basis | Remaining uncertainty |
 | --- | --- | --- | --- |
 | Future hackathon category | Ready | Product thesis, Reddit-native shared mutation design, working aggregate state architecture | Preference, not an empirical platform claim |
-| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, two current template audits, test-harness install/audit/context experiments, 101 real route requests | Real host interaction and hosted Redis still blocked |
+| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated inline/expanded host QA, hosted API probes, two current template audits, test-harness install/audit/context experiments, 101 real route requests | Physical-mobile and logged-out hosted paths remain |
 | Why DX rating | Ready | Exact versions, dependency paths, timings, route tests, verified candidate dependency bumps | Candidate bumps have targeted—not full upstream—coverage |
 | Documentation satisfaction | Ready at 3/5 | Current docs, schema, changelog, templates, CLI commands, public docs source | Pages can change after audit date |
 | Why documentation rating | Ready | Direct contradictions and exact source files; positive architecture assessment grounded in working implementation | No new-developer usability study beyond this build |
 | Community support satisfaction | Neutral 3/5, explicitly low confidence | Channels/public tracker were discoverable; authenticated public duplicate search performed | No first-hand support request or response-time sample |
-| Continue project | Ready | Current implemented architecture, successful validations, concrete persistence/host gaps | Launch viability still depends on host QA and persistence hardening |
+| Continue project | Ready | Current architecture, successful validations, authenticated host QA, live-snapshot fix, concrete persistence gaps | Launch viability still depends on persistence hardening and physical-mobile QA |
 | Excitement for new app | Ready | Directly derived from observed iteration/testing costs and useful harness behavior | Preference |
 | Anything else | Ready | Prioritized maintainer brief and patch map with verified candidates, acceptance criteria, ownership, and limitations | Cannot attach local evidence unless repository/branch is shared |
 
@@ -67,7 +67,7 @@ Evidence:
 
 Conclusion: submission-ready as secondary observability feedback. Do not promise `history_complete` is implementable if the remote API has no history/tail boundary.
 
-### P1 — Game performance guidance lacks a host-specific baseline
+### P1 — Game performance guidance lacks actionable host-specific targets
 
 Evidence:
 
@@ -77,17 +77,22 @@ Evidence:
 - the CLI uploader's own `queryAssets()` selected all 12 client files, including all three maps;
 - maps were 87.3% of selected raw client bytes, but this does not prove they are fetched during normal gameplay;
 - `devvit upload` exposes no dry-run/manifest/analyze option;
-- real Reddit transfer/cache/paint/memory was not measurable due host access block.
+- three authenticated same-version v0.0.15 runs produced 392–4,164 ms cold-cache FCP (3,292 ms median) versus 400–412 ms warm-cache FCP (412 ms median);
+- the 371,879-byte encoded / 1,433,086-byte decoded `game.js` transferred in every cold run and ranged from 90.5 to 2,222.6 ms (2,180.2 ms median), versus a 46.1 ms warm median;
+- initial API state completed at a 4,267.5 ms cold median versus 1,003.3 ms warm median;
+- no source-map request appeared in the execution Resource Timing entries.
 
-Conclusion: submission-ready as a tooling/documentation request, not a runtime-performance defect. Ask for a non-mutating package report and host targets; do not claim source maps delay first paint.
+Conclusion: submission-ready as a tooling/documentation request, not a CDN/runtime defect. Ask for a non-mutating package report and measured platform targets; do not generalize one VM or claim source maps delay first paint.
 
 ## Positive claims retained
 
 - Devvit Web's ordinary client/server architecture supported Phaser, React, Hono, server-only Redis/Reddit capabilities, and a lightweight inline entrypoint.
 - The real playtest CLI built and installed v0.0.14.4; installation and exact version were independently read back.
+- Authenticated Reddit rendered the real inline and expanded app in Mobile and Desktop host modes. Safe hosted probes confirmed authenticated context, account caps, duplicate recognition, stale fall/clear/summit rejection, and summit geometry validation while preserving the 46/0/0 snapshot.
+- A later independently read-back v0.0.15 cold/warm pass measured real iframe paint, bundle, cache, and init timing without preserving credentials or tokenized URLs.
 - Schema validation gave useful nested paths for unknown fields and malformed internal endpoints.
 - With manual request context, the first-party harness provided isolated Redis, concurrency, and fault injection that materially improved Fallstack.
-- Fallstack's 44 committed pure/client tests, type-check, lint, audit, and production build pass in the dedicated worktree.
+- Fallstack's 46 committed pure/client tests, type-check, lint, audit, and production build pass in the dedicated worktree.
 
 ## Claims excluded from criticism
 
@@ -97,6 +102,7 @@ Conclusion: submission-ready as a tooling/documentation request, not a runtime-p
 | Chrome/Playwright/agent-browser setup problems | Third-party/local environment |
 | npm `globalignorefile` warnings | Local npm configuration ownership unresolved |
 | Static fallback initially rendered blank | Fallstack-owned bug |
+| Inline shared counters were stale | Fallstack-owned hard-coded copy; fixed locally by loading `/api/init-game` |
 | Internal failures returned 400 | Fallstack-owned and fixed |
 | NX marker poisons retry after later failure | Fallstack-owned open persistence design risk |
 | Raw `vite dev` rejected | Documented intentional plugin limitation; mention only as iteration cost |
@@ -105,9 +111,9 @@ Conclusion: submission-ready as a tooling/documentation request, not a runtime-p
 
 ## Completion blockers that must remain visible
 
-1. Logged-in Reddit inline/expanded QA.
-2. Hosted Redis replay of route/concurrency/failure scenarios.
-3. Logged-out `loid`, duplicate-tab, response-loss, and mutation transaction/state-machine testing.
+1. Hosted Redis replay of a fresh successful contribution and race under an uncapped identity; the current authenticated account was already capped.
+2. Logged-out `loid`, duplicate-tab, response-loss, and mutation transaction/state-machine testing.
+3. Physical-mobile and broader host performance evidence; current timing has three controlled VM runs but is not a population percentile.
 4. First-hand support interaction if the submission deadline permits.
 5. Sharing the evidence branch/repository if the form allows an appendix link.
 

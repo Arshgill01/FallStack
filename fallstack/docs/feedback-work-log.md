@@ -132,7 +132,19 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Captured a normal `Chrome/150.0.0.0` user agent without `HeadlessChrome`; Reddit still returned HTTP 403 before any Devvit iframe or Fallstack request.
 - Confirmed the reused Chrome profile is not authenticated to Reddit. Devvit CLI authentication remains separate and exposes no browser-session handoff.
 - Preserved the screenshot and concise network facts in `docs/playtest-evidence/2026-07-12-headed-system-chrome/`.
-- Actual host QA now requires a user-provided authenticated Reddit cookie/state file or an interactive login; installing a different Chrome binary is no longer a plausible fix.
+- At that point, actual host QA required interactive login; installing a different Chrome binary was no longer a plausible fix. The later authenticated pass below closed this blocker without extracting credentials.
+
+### Authenticated host and cold/warm performance passes
+
+- The user logged into Reddit through the temporary SSH-tunneled noVNC desktop; authentication persisted only in the dedicated local QA Chrome profile.
+- Real Reddit rendered Fallstack's inline post and expanded Mobile/Desktop game. The v0.0.14.4 pass captured screenshots, transition video, console state, warm timings, resource sizes, and safe hosted API probes.
+- Hosted baseline/final state remained 46 falls, 0 clears, 0 summits. The account was already contribution-capped; an exact retry was recognized as duplicate; stale fall/clear/summit requests returned 409; impossible summit geometry returned 400.
+- The live v0.0.14.4 snapshot exposed an application-owned integrity bug: inline copy hard-coded 37/14 while expanded state showed 46. The research branch now loads `/api/init-game` in the inline entrypoint and has two focused copy tests.
+- During a later cache pass, independent CLI read-back showed a separate concurrent v0.0.15 upload at `2026-07-12T20:26:23.656Z`. The research worktree remained clean and did not upload; cross-version UI differences were excluded from cache conclusions.
+- Across three runs on the same installed v0.0.15 and VM, expanded FCP ranged from 392 to 4,164 ms cold (3,292 ms median) and 400 to 412 ms warm (412 ms median). The identical `game.js` transfer ranged from 90.5 to 2,222.6 ms cold versus a 46.1 ms warm median; initial API state completed at a 4,267.5 ms cold median versus 1,003.3 ms warm.
+- Source maps did not appear in execution Resource Timing, preserving the distinction between upload volume and normal runtime cost.
+- Evidence: `docs/playtest-evidence/2026-07-12-authenticated-host/report.md` and `docs/host-performance-pass.md`.
+- Chrome and Xvfb were stopped after both passes. No VNC, noVNC, or CDP listener remains; the persistent profile must never be committed or inspected for credential values.
 
 ### Maintainer usability pass
 
@@ -161,9 +173,9 @@ The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages
 
 ## Highest-value next work
 
-1. Upload the live-snapshot splash fix only if another hosted verification build is justified; do not mutate the installed test version merely to prove local React rendering.
+1. Reconcile the live-snapshot splash fix with the newer separately uploaded visual branch before any upload; do not overwrite v0.0.15 from this older isolated branch.
 2. Exercise logged-out `loid`, duplicate-tab, response-loss, and genuinely earned clear/summit flows against playtest Redis. Do not fabricate the first named summit or leaderboard clear.
-3. Repeat performance evidence with cold cache and physical mobile hardware; the current warm-profile timings are useful but not generalizable.
+3. Repeat performance evidence on physical mobile hardware and broader networks; the current three-run same-version comparison is one VM, not a platform percentile.
 4. Trigger a controlled non-destructive server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
 5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
 6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.

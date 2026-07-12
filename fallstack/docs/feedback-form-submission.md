@@ -42,7 +42,7 @@ The rating is 3 because the current golden path has several mechanically prevent
 
 These should be contract-tested, not fixed one typo at a time: execute documented commands in CI, generate duplicated constraints from the schema, compare framework claims with template dependencies, and scan active examples for current deprecations.
 
-Game guidance also needs Reddit-specific budgets and a package report. The first-party Vite plugin enables maps but disables compressed-size reporting; the CLI uploader then selects every client file. In Fallstack, 12.57 MB of 14.40 MB selected raw client bytes were maps, while runtime files were 1.83 MB raw/~0.52 MB gzip-estimated. Maps are not normally fetched for execution, so this is an upload-observability finding—not a first-paint claim. Show the manifest, runtime-versus-map totals, and host targets before remote mutation.
+Game guidance also needs Reddit-specific budgets and a package report. The first-party Vite plugin enables maps but disables compressed-size reporting; the CLI uploader then selects every client file. In Fallstack, 12.57 MB of 14.40 MB selected raw client bytes were maps, while runtime files were 1.83 MB raw/~0.52 MB gzip-estimated. Maps were not requested during observed execution, so this is packaging volume—not a map-caused first-paint claim. Across three authenticated same-version v0.0.15 runs, expanded FCP ranged from 0.392 to 4.164 seconds cold (3.292-second median) versus 0.400–0.412 seconds warm; the identical 372 kB encoded bundle ranged from 90.5 ms to 2.223 seconds cold. One VM is not a platform percentile, but the variability proves why tooling should show manifests, repeated samples, entrypoint budgets, and cold/warm desktop/mobile targets before remote mutation.
 
 ## How satisfied are you with support in our communities?
 
@@ -85,6 +85,7 @@ The highest-leverage fixes I verified are small enough to evaluate quickly:
 - add optional typed status records for JSON logs (`connected`, keepalive/reconnect, complete/error);
 - contract-test docs, schema constraints, changelog deprecations, template dependencies, and README commands together;
 - report the exact upload manifest, runtime/map/compressed-size estimates, and host-specific Phaser/game performance baselines before remote mutation.
+- surface the installed version in playtest host/log context so concurrent uploads cannot be mistaken for cache or runtime regressions.
 
 I separated platform findings from my own bugs and environment issues. For example, I did not blame Devvit for automated Reddit network-security blocking, browser setup, a static fallback bug, or Fallstack's interrupted-idempotency risk. The full evidence package records commands, pinned revisions, expected/actual behavior, ownership, severity, workaround, candidate source files, targeted patch validation, and remaining uncertainty. If the form permits a repository/appendix link, I would be happy to share it.
 
@@ -97,6 +98,7 @@ The detailed package lives in:
 - `maintainer-patch-map.md` — exact upstream files and minimal candidate fixes;
 - `template-audit-pass.md` — pinned React/Phaser starter evidence;
 - `phaser-packaging-observability-pass.md` — exact build defaults, selected manifest, and runtime/map size split;
+- `host-performance-pass.md` — authenticated same-version cold/warm Reddit iframe timing;
 - `server-persistence-experiment.md` — 101 real-route requests and fault injection;
 - `submission-evidence-audit.md` — claim-by-claim proof and exclusions.
 
