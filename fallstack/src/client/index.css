@@ -415,6 +415,7 @@ button:disabled {
 }
 
 .stat-value {
+  margin: 0;
   font-family: 'Shippori Mincho', serif;
   font-weight: 700;
   font-size: 14px;
@@ -1249,6 +1250,7 @@ button:disabled {
 }
 
 .topbar {
+  display: grid;
   grid-template-columns: minmax(116px, 1fr) 126px 102px;
   grid-template-areas: 'brand stats actions';
   min-height: 58px;
