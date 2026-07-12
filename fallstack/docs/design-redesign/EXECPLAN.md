@@ -282,6 +282,6 @@ Exit: the production redesign is reviewable, reproducible, validated, and mainta
 - [x] M3: Phaser compatibility and performance proof using the repository-native fallback.
 - [x] M4: opening-zone vertical slice.
 - [x] M5: full expanded-game migration.
-- [ ] M6: inline splash and cross-surface coherence.
+- [x] M6: inline splash and cross-surface coherence.
 - [ ] M7: full validation.
 - [ ] M8: cleanup and handoff.

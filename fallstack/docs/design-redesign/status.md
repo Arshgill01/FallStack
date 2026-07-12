@@ -91,6 +91,7 @@ Direction C wins because the tower reads as a physical object, community mutatio
 | Phaser compatibility proof | Complete | Phaser 4.2.1, procedural fallback modules, browser captures, reduced-motion proof, full checks |
 | Opening-zone vertical slice | Complete | Real first-fall/respawn capture, 90/100 scorecard, 48 tests, full checks |
 | Full expanded-game migration | Complete | Distinct three-zone contracts, checkpoint/summit/platform families, reliquary loading/controls/results, mobile/desktop browser evidence, 49 tests |
+| Inline splash | Complete | Lightweight CSS reliquary, visible seeded foothold promise, preserved expansion action, mobile/desktop browser evidence, no Phaser request |
 
 ## Validation log
 
@@ -123,4 +124,7 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - M5 expanded-state migration (2026-07-13) — checkpoint gates, summit reliquary, loading state, charge meter, fixed touch controls, checkpoint plaque, and daily result now share the washi/indigo/burgundy/persimmon/gold grammar. Existing sound events, result data, tower geometry, collision bodies, and event authority are unchanged.
 - M5 browser proof (2026-07-13) — production build rendered at 375×812 and 1280×800. Archived `m5-mobile.png`, `m5-result-mobile.png`, and `m5-desktop.png`; the accessibility tree exposed the tower, status, progressbar, result dialog, and all three touch controls. Measured touch targets were 52×50, 190×50, and 52×50 CSS px.
 - M5 project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 49 tests passed. The known large-chunk warning remains for M7 measurement.
+- M6 splash migration (2026-07-13) — replaced the unrelated celestial gradient with the same framed burgundy cavity, indigo arch, washi/gold platform family, stacked-failure artifact, climber silhouette, typography, and persimmon action used by the expanded game. The promise `14 falls made this foothold.` is exposed before expansion.
+- M6 browser proof (2026-07-13) — production `splash.html` rendered at 375×812 and 1280×800; archived `m6-splash-mobile.png` and `m6-splash-desktop.png`. The CTA measured 202×48 CSS px, the accessibility tree exposed the community-shaped opening region and action, and loaded scripts contained only `default.js`; no `game.js` request was observed.
+- M6 project checks (2026-07-13) — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 49 tests passed.
 - No repository build, test, lint, or type-check was run for Gate 2 because production code was not changed.
