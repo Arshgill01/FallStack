@@ -278,7 +278,7 @@ Exit: the production redesign is reviewable, reproducible, validated, and mainta
 - [x] Gate 3: Cutaway Reliquary selected and refined to v2.
 - [x] M0: reconfirm baseline and worktree safety for implementation start.
 - [x] M1: complete art bible and responsive/state designs.
-- [ ] M2: asset bake-off and provider/fallback decision. Equal brief and fallback are locked; paid Scenario/Layer comparison remains an external handoff.
+- [x] M2: asset bake-off/fallback decision. Scenario and Layer were not trialled without supplied account access or paid approval; the scored repository-native fallback was selected and shipped.
 - [x] M3: Phaser compatibility and performance proof using the repository-native fallback.
 - [x] M4: opening-zone vertical slice.
 - [x] M5: full expanded-game migration.

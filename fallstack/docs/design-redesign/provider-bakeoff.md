@@ -27,3 +27,7 @@ Use the same reviewer and normalization steps. Reject attractive single images t
 ## Authorization boundary
 
 Account creation, free trials, and test generations are within the approved workflow. Stop before starting a paid subscription or bulk generation and present measured cost and score differences for explicit approval.
+
+## Final decision
+
+No authenticated Scenario or Layer access was supplied, and no paid subscription was authorized. Per the locked decision rule, neither provider was adopted. The repository-native procedural fallback passed the product scorecard at 96/100, introduced no external rights or payload risk, and is the selected production path. A future provider trial is optional replacement research, not unfinished work for this redesign.
