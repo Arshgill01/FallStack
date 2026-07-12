@@ -80,12 +80,12 @@ This does not prove poor runtime performance. It proves that a first-party start
 
 ## Recommended Devvit-team patch set
 
-1. Update the CLI's affected transitive dependencies or ship the verified safe `tmp` override.
+1. Update the CLI from Inquirer 9.1.4 to at least 9.3.8 (targeted override validated at zero audit findings with the CLI still runnable), or ship the verified safe `tmp` override.
 2. Add clean-install + high-severity audit gates to every starter release.
 3. Contract-test template README commands against `package.json` scripts.
 4. Generate or test configuration examples against current schema deprecations.
 5. Update quickstart framework names from template dependencies/imports.
-6. Put a minimal pure test and a Devvit capability-test example in the golden templates once the harness dependency/context issues are fixed.
+6. Move the test harness to `redis-memory-server` 0.17.0 (targeted Redis harness test validated at zero audit findings), add request-context fixtures, then put a minimal pure test and capability-test example in the golden templates.
 7. Publish a game-template performance baseline with host-relevant budgets rather than generic chunk thresholds.
 
 ## Cleanup

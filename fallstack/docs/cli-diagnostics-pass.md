@@ -13,7 +13,7 @@ Controlled alternate configuration files were created in the app root, passed ex
 | --- | --- | --- |
 | Unknown top-level field | Exit 1 in ~5 seconds: `config is not allowed to have the additional property "unknownDiagnosticProbe"` | Good schema path and concise message; filename/line absent but not essential for this case |
 | Menu endpoint without `/internal/` | Exit 1 in ~5 seconds: `menu.items[0].endpoint does not match pattern "^/internal/.+"` | Good exact object path and expected pattern |
-| Missing custom server entry after successful build | Exit 2 after ~22.6 seconds; ~20 seconds spent waiting for the file, then a clear missing path but instruction to edit `devvit.json` | Core diagnosis good; wait and wrong config filename are actionable polish issues |
+| Missing custom server entry after successful build | Exit 2 after ~22.6 seconds total; later source inspection confirmed a fixed 10-second artifact poll, then a clear missing path but instruction to edit `devvit.json` | Core diagnosis good; wait and wrong config filename are actionable polish issues |
 | Historical logs, human format | Printed a streaming banner after ~6 seconds, then waited without an empty-history/completion message | Connection is visible; history versus tail phase is not |
 | Historical logs, JSON and verbose JSON | No bytes emitted for up to ~60 seconds; Ctrl+C exited 0 | Valid record-only JSONL, but unusable for determining readiness/empty history in automation |
 | Documented `devvit build` | `Error: Command build not found.` | Direct current-docs error |

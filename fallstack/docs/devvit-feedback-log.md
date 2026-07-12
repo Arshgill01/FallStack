@@ -15,7 +15,8 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Product impact: a new app begins with a red audit result before the developer changes any code. Teams with a zero-high policy cannot adopt the starter unchanged, and beginners may run `npm audit fix --force` against a platform CLI without understanding the major-version implication.
 - Workaround verified in the Phaser template: add `"overrides": { "tmp": "0.2.7" }` and rerun `npm install`. npm changed the transitive package and returned `found 0 vulnerabilities`; type-check/lint/build had already passed on the same template. Fallstack independently uses the same override and audits cleanly.
 - Severity: high-confidence starter/dependency maintenance issue. The vulnerable path is development CLI code, not bundled game runtime, which reduces end-user exposure but does not remove CI/supply-chain impact.
-- Recommendation: update the CLI's Inquirer/external-editor chain or add the safe transitive override to `devvit`; gate every released starter revision with a clean install plus `npm audit --audit-level=high`.
+- Recommendation: update `packages/cli/package.json` from `inquirer@9.1.4` to at least `9.3.8` or add the safe transitive override to `devvit`; gate every released starter revision with a clean install plus `npm audit --audit-level=high`.
+- Patch validation: a disposable `devvit@0.13.7` project with `inquirer@9.3.8` forced through npm overrides installed with 0 vulnerabilities, removed the legacy `external-editor/tmp` path, and successfully ran `npx devvit --version`. This is targeted compatibility evidence, not a substitute for Reddit's full CLI test suite.
 - Notes: plain `npm audit fix` on this npm/Linux environment failed with `EBADPLATFORM` for optional `@esbuild/aix-ppc64@0.28.1`. That secondary failure appears npm/esbuild-owned and is not being presented as a Devvit defect; the explicit `tmp` override was the reliable mitigation.
 
 ## 2026-07-12 19:04 UTC — Current quickstart, changelog, Vite guide, and templates disagree on shipped behavior
@@ -76,10 +77,10 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Environment: `@devvit/cli@0.13.7`, valid alternate config passed with `--config`, build script completes successfully, configured server entry intentionally absent.
 - Command: `devvit upload --config devvit.experiment-missing-entry.json`
 - Expected result: after the non-watch build command exits, artifact validation fails promptly and identifies the custom config that supplied the bad path.
-- Actual result: after `vite build` completed, the CLI waited about 20 seconds at `Waiting for config.server.entry file ... to be generated`, then failed with an actionable missing-entry explanation that specifically said to correct `devvit.json`, not the custom file named in the command and initial CLI output.
+- Actual result: the full command took about 22.6 seconds. After `vite build` completed, the CLI entered `Waiting for config.server.entry file ... to be generated`, then failed with an actionable missing-entry explanation that specifically said to correct `devvit.json`, not the custom file named in the command and initial CLI output. Public source inspection later confirmed this artifact poll has a hard-coded 10-second timeout and begins warning at 5 seconds; the remaining observed time belonged to command startup/build work.
 - Severity: minor diagnostic rough edge. The core error and missing path were otherwise clear.
 - Workaround: inspect the path shown in the error and apply the fix to the file passed via `--config`.
-- Recommendation: skip or shorten the artifact wait after a one-shot `scripts.build` process has exited; include the resolved config filename in every configuration diagnostic.
+- Recommendation: skip or shorten the 10-second artifact poll after a one-shot `scripts.build` process has exited; include the resolved config filename in every configuration diagnostic.
 
 ## 2026-07-12 18:51 UTC — JSON log mode provides no connected or empty-history signal
 
@@ -120,7 +121,8 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Actual result: npm reported 4 vulnerabilities (2 high, 2 moderate), all on the path `@devvit/test@0.13.7 > redis-memory-server@0.14.1`. The installed versions were `tar@6.2.1` and `uuid@8.3.2`; npm reported no fix available for the dependency path. Installation also emitted deprecation warnings for those packages and `glob@10.5.0`.
 - Severity: high-confidence adoption blocker for teams with a zero-high-vulnerability CI policy; development-only dependency, so it does not enlarge the shipped client/server bundle.
 - Workaround: none within the published dependency range. Fallstack removed the experimental dependencies after reproducing the issue; `npm uninstall --save-dev @devvit/test vitest` returned the repository to 0 audit findings.
-- Recommendation: update or replace `redis-memory-server`, publish a patched `@devvit/test`, and add dependency auditing to its release gate.
+- Recommendation: update `packages/test/package.json` from `redis-memory-server@0.14.1` to `0.17.0`, update the same development dependency in `packages/redis/package.json`, publish a patched `@devvit/test`, and add dependency auditing to its release gate.
+- Patch validation: forcing `redis-memory-server@0.17.0` under the published `@devvit/test@0.13.7` resolved `tar@7.5.20`, removed the old UUID path, installed with 0 vulnerabilities, and passed a real Vitest Redis set/get through `createDevvitTest()` using the system Redis binary. Full upstream tests remain required before release.
 
 ## 2026-07-12 18:40 UTC — Test harness cannot configure post context for a Devvit Web route
 
@@ -128,6 +130,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Task attempted: integration-test the real Hono route with the documented `createDevvitTest()` runner and its `headers` fixture.
 - Expected result: configure a realistic post execution context and exercise the route through its actual request boundary, Redis calls, and authenticated context.
 - Actual result: `DevvitTestConfig` exposes username, user ID, subreddit name/ID, settings, and internal `appConfig`, but no post ID. Setting `headers['devvit-post']` to `t3_fallstack_test_post`, both as a fixture mutation and as request headers passed to `api.request()`, still left `context.postId` undefined. The real route returned HTTP 400 with `postId is required but missing from context` in both attempts.
+- Root cause confirmed in public source: `packages/test/src/server/vitest/devvitTest.ts` constructs `headers`, immediately snapshots them into `reqCtx = Context(headers)`, and only then exposes the headers object as a fixture. Mutating the fixture inside the test cannot rebuild the request context. The public `DevvitTestConfig` type has no raw-header, post, comment, or logged-out identity fields.
 - Reproduction steps:
   1. Create a runner with `createDevvitTest({ username, userId })`.
   2. Import a Hono route that reads `context.postId` from `@devvit/web/server`.
@@ -136,7 +139,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
   5. Observe that `context.postId` remains missing.
 - Severity: testing coverage gap. Capability calls can be tested, but post-scoped Devvit Web endpoints cannot be exercised end-to-end through the obvious public API.
 - Workaround: refactor production logic behind injected service/context parameters and test below the HTTP boundary, then reserve the real boundary for uploaded playtests. This weakens the advertised production-like integration coverage.
-- Recommendation: add `postId`, `commentId`, `loid`, and other request-context fields to `DevvitTestConfig`, or document a supported request adapter that hydrates `@devvit/web/server` context from a Hono/Fetch request.
+- Recommendation: add `headers?: Partial<Record<Header, string>>` (or typed `postId`, `commentId`, `loid`, and related fields) to `DevvitTestConfig` and merge it before `Context(headers)` is called. Add assertions against the actual exported `context`, not only the fixture object. Alternatively, document a supported request adapter that hydrates `@devvit/web/server` context from a Hono/Fetch request.
 
 ## 2026-07-08 00:00 UTC — Raw Vite dev server is blocked by the Devvit plugin
 

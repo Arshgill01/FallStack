@@ -25,6 +25,8 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/feedback-evidence-matrix.md`: claim-quality gate, ownership classification, and remaining evidence gaps.
 - `fallstack/docs/feedback-form-draft.md`: evolving answers to the exact form questions; provisional claims must remain labeled.
 - `fallstack/docs/cli-diagnostics-pass.md`: controlled CLI/config/logging experiments.
+- `fallstack/docs/template-audit-pass.md`: pinned first-party React/Phaser install, audit, build, and contract evidence.
+- `fallstack/docs/maintainer-patch-map.md`: upstream source root causes, verified dependency bumps, exact files, and minimal patch recommendations.
 - `fallstack/docs/playtest-evidence/`: real upload/read-back and browser-host evidence.
 
 ## Completed evidence passes
@@ -45,7 +47,7 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 ### CLI and documentation diagnostics
 
 - Structural config errors are generally good: unknown fields and malformed internal endpoints fail before upload with exact schema paths.
-- A missing server entry under custom `--config` waits about 20 seconds and then tells the user to edit `devvit.json` rather than the named custom config.
+- A missing server entry under custom `--config` triggers a hard-coded 10-second artifact poll and then tells the user to edit `devvit.json` rather than the named custom config; the observed full command took about 22.6 seconds including startup/build.
 - JSON log mode emits no connection, historical-completion, empty-result, or heartbeat record.
 - Current configuration docs recommend nonexistent `devvit build`; CLI 0.13.7 returns `Command build not found`.
 - Current configuration docs say app names are limited to 16 characters; the live schema and current changelog say 20.
@@ -58,6 +60,17 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Adding `overrides.tmp = 0.2.7` to the Phaser template and reinstalling produced 0 vulnerabilities.
 - Recorded current golden-path drift: quickstart Express versus template Hono; deprecated/no-op `inline` still in both templates and the Vite guide; template READMEs overstate what `npm run type-check` executes.
 - Recorded the first-party Phaser build baseline: 1,380,869-byte `game.js`, 10,960,672-byte source map, about 21 MB total `dist`; build passed without a size warning.
+
+### Public-source root-cause and patch audit
+
+- Pinned `reddit/devvit` public source at `075019a41285ddf266bedf52bc7878763f59aecc` and `reddit/devvit-docs` at `c8bb880f5af14e8dde58e9a010b01cbdb28ad179`.
+- Keyword searches of the public `reddit/devvit` issue tracker found no direct open/closed duplicate for the primary test-harness dependency/context, nonexistent `devvit build`, app-name limit, or JSON log lifecycle findings. This is a duplicate-screening result, not proof of uniqueness.
+- Confirmed the CLI audit path originates at `packages/cli/package.json` pinning `inquirer@9.1.4`; forcing 9.3.8 installed at 0 vulnerabilities and ran the CLI version command.
+- Confirmed `packages/test/package.json` pins `redis-memory-server@0.14.1`; forcing 0.17.0 installed at 0 vulnerabilities and passed a real harness Redis test.
+- Confirmed the post-context gap is structural: `DevvitTestConfig` lacks request-context fields and `reqCtx = Context(headers)` runs before test code can mutate the headers fixture.
+- Confirmed missing-entry polling constants and hard-coded `devvit.json` error text in `packages/build-pack/src/esbuild/ESBuildPack.ts`.
+- Confirmed JSON logs intentionally suppress the human connected/complete banners and only serialize log/error/event messages; keepalives are hidden by default.
+- Mapped every docs inconsistency to current public docs source files for a minimal maintainer patch set.
 
 ## Last full validation
 
