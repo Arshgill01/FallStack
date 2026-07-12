@@ -42,7 +42,7 @@ Fallstack should feel like a damaged astronomical instrument the subreddit is co
 ### Shell and HUD
 
 - [x] Restore a compact desktop diorama width.
-- [ ] Collapse sound controls into one compact accessible control without hiding their state.
+- [x] Collapse sound controls into one compact accessible control without hiding its state.
 - [ ] Keep community totals readable but visually subordinate to the tower.
 - [ ] Ensure banners never cover the player's next landing on mobile or desktop.
 - [ ] Verify touch targets, safe areas, contrast, and keyboard focus.

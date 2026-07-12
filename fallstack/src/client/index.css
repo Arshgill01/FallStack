@@ -45,43 +45,51 @@
    DESIGN TOKENS — lacquer / verdigris / ashlight
    ============================================= */
 :root {
-  --washi:          #e8fff5;
-  --washi-dim:      #b9d7cd;
-  --washi-card:     #f4fff9;
-  --ink:            #120608;
-  --ink-soft:       #3f2930;
-  --ink-ghost:      rgba(18, 6, 8, 0.58);
-  --indigo:         #12332f;
-  --indigo-deep:    #08050a;
-  --indigo-mid:     #132326;
-  --persimmon:      #ff6f5f;
+  --washi: #e8fff5;
+  --washi-dim: #b9d7cd;
+  --washi-card: #f4fff9;
+  --ink: #120608;
+  --ink-soft: #3f2930;
+  --ink-ghost: rgba(18, 6, 8, 0.58);
+  --indigo: #12332f;
+  --indigo-deep: #08050a;
+  --indigo-mid: #132326;
+  --persimmon: #ff6f5f;
   --persimmon-deep: #7a2d36;
-  --moss:           #2c8b7e;
-  --moss-bg:        rgba(44, 139, 126, 0.16);
-  --gold:           #f1c96b;
-  --shadow-warm:    rgba(18, 6, 8, 0.32);
-  --shadow-dark:    rgba(0, 0, 0, 0.35);
-  --radius-sm:      6px;
-  --radius:         10px;
-  --radius-lg:      14px;
+  --moss: #2c8b7e;
+  --moss-bg: rgba(44, 139, 126, 0.16);
+  --gold: #f1c96b;
+  --shadow-warm: rgba(18, 6, 8, 0.32);
+  --shadow-dark: rgba(0, 0, 0, 0.35);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
 }
 
 /* =============================================
    RESET & BASE
    ============================================= */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
   overscroll-behavior: none;
   background: #08050a;
   color: var(--ink);
-  font-family: 'Zen Maru Gothic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Zen Maru Gothic',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -94,7 +102,12 @@ html, body {
 }
 
 button {
-  font-family: 'Zen Maru Gothic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Zen Maru Gothic',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   cursor: pointer;
   border: none;
 }
@@ -126,7 +139,8 @@ button:disabled {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg,
+    linear-gradient(
+      90deg,
       transparent 0 8%,
       rgba(98, 208, 196, 0.22) 8% 12%,
       transparent 12% 88%,
@@ -199,7 +213,8 @@ button:disabled {
   position: relative;
   width: min(100%, 480px);
   padding: 32px 22px 28px;
-  background: linear-gradient(180deg,
+  background: linear-gradient(
+    180deg,
     rgba(8, 5, 10, 0) 0%,
     rgba(8, 5, 10, 0.84) 18%,
     #08050a 100%
@@ -231,7 +246,9 @@ button:disabled {
   font-family: 'Shippori Mincho', serif;
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 2px 0 var(--persimmon-deep), inset 0 0 0 1px rgba(255,255,255,0.22);
+  box-shadow:
+    0 2px 0 var(--persimmon-deep),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22);
   transform: rotate(-2deg);
   flex-shrink: 0;
 }
@@ -267,7 +284,9 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.3px;
   box-shadow: 0 4px 0 var(--persimmon-deep);
-  transition: transform 80ms ease, box-shadow 80ms ease;
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
 }
 
 .splash-cta:active {
@@ -314,12 +333,16 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "brand actions"
-    "stats actions";
+    'brand actions'
+    'stats actions';
   align-items: center;
   gap: 5px 8px;
   padding: 7px 10px 6px;
-  background: linear-gradient(180deg, rgba(244, 255, 249, 0.95), rgba(146, 188, 177, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(244, 255, 249, 0.95),
+    rgba(146, 188, 177, 0.92)
+  );
   border-bottom: 1px solid rgba(18, 6, 8, 0.26);
   z-index: 3;
 }
@@ -403,12 +426,12 @@ button:disabled {
 .topbar-actions {
   grid-area: actions;
   display: grid;
-  grid-template-columns: repeat(2, minmax(48px, 1fr));
+  grid-template-columns: repeat(2, minmax(62px, 1fr));
   gap: 4px;
 }
 
 .topbar-actions .action-btn:first-child {
-  grid-column: 1 / -1;
+  min-width: 62px;
 }
 
 .action-btn {
@@ -425,7 +448,10 @@ button:disabled {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2px;
-  transition: background 100ms ease, border-color 100ms ease;
+  white-space: nowrap;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -506,11 +532,26 @@ button:disabled {
   letter-spacing: 0.4px;
 }
 
-.badge-quiet        { background: #d7e8e1; color: #295348; }
-.badge-haunted      { background: #ead0d6; color: #7a2d36; }
-.badge-cursed       { background: #38121c; color: #ffd6d0; }
-.badge-reinforced   { background: #cfece5; color: #12524b; }
-.badge-stabilized   { background: #f5df9d; color: #5a4213; }
+.badge-quiet {
+  background: #d7e8e1;
+  color: #295348;
+}
+.badge-haunted {
+  background: #ead0d6;
+  color: #7a2d36;
+}
+.badge-cursed {
+  background: #38121c;
+  color: #ffd6d0;
+}
+.badge-reinforced {
+  background: #cfece5;
+  color: #12524b;
+}
+.badge-stabilized {
+  background: #f5df9d;
+  color: #5a4213;
+}
 
 /* Controls hint — bottom-left of viewport on desktop only */
 .controls-hint {
@@ -541,14 +582,18 @@ button:disabled {
   border-top: 3.5px solid var(--persimmon);
   border-bottom: 1.5px solid rgba(18, 6, 8, 0.16);
   border-radius: var(--radius-sm);
-  box-shadow: 0 5px 16px var(--shadow-warm), 0 0 0 1.5px rgba(242, 233, 216, 0.5);
+  box-shadow:
+    0 5px 16px var(--shadow-warm),
+    0 0 0 1.5px rgba(242, 233, 216, 0.5);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.4;
   color: var(--ink);
   opacity: 0;
   transform: translate(-50%, -10px);
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   text-align: center;
   z-index: 99;
@@ -581,10 +626,14 @@ button:disabled {
   background: linear-gradient(135deg, #f4fff9, #d6efe6);
   border: 1.5px solid #2c8b7e;
   border-radius: var(--radius-sm);
-  box-shadow: 0 5px 16px var(--shadow-warm), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 5px 16px var(--shadow-warm),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
   text-align: center;
   opacity: 0;
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
   pointer-events: none;
   z-index: 100;
 }
@@ -613,7 +662,7 @@ button:disabled {
   letter-spacing: 0.4px;
   color: #12524b;
   margin-bottom: 3px;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .checkpoint-sub {
@@ -677,7 +726,11 @@ button:disabled {
   gap: 8px;
   height: calc(66px + env(safe-area-inset-bottom, 0px));
   padding: 0 10px calc(8px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, rgba(185, 215, 205, 0.92), rgba(117, 161, 150, 0.94));
+  background: linear-gradient(
+    180deg,
+    rgba(185, 215, 205, 0.92),
+    rgba(117, 161, 150, 0.94)
+  );
   border-top: 1px solid rgba(18, 6, 8, 0.22);
   touch-action: none;
   z-index: 4;
@@ -691,20 +744,26 @@ button:disabled {
   height: 50px;
   border-radius: var(--radius);
   background: linear-gradient(180deg, #f4fff9, #b9d7cd);
-  box-shadow: 0 4px 0 #668f84, inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 4px 0 #668f84,
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
   color: var(--ink-soft);
   font-size: 18px;
   font-weight: 700;
   flex-shrink: 0;
   -webkit-user-select: none;
   user-select: none;
-  transition: transform 60ms ease, box-shadow 60ms ease;
+  transition:
+    transform 60ms ease,
+    box-shadow 60ms ease;
 }
 
 .ctrl-btn:active,
 .ctrl-btn.pressed {
   background: linear-gradient(180deg, #b9d7cd, #8ebbb0);
-  box-shadow: 0 1px 0 #668f84, inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 1px 0 #668f84,
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateY(3px);
 }
 
@@ -714,7 +773,9 @@ button:disabled {
   height: 50px;
   border-radius: var(--radius);
   background: linear-gradient(180deg, #f4fff9, #b9d7cd);
-  box-shadow: 0 4px 0 #668f84, inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 4px 0 #668f84,
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
   color: var(--persimmon-deep);
   font-size: 10px;
   font-weight: 700;
@@ -724,12 +785,16 @@ button:disabled {
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
-  transition: transform 60ms ease, box-shadow 60ms ease;
+  transition:
+    transform 60ms ease,
+    box-shadow 60ms ease;
 }
 
 .jump-btn:active,
 .jump-btn.pressed {
-  box-shadow: 0 1px 0 #668f84, inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 1px 0 #668f84,
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateY(3px);
 }
 
@@ -748,8 +813,11 @@ button:disabled {
 
 @media (max-width: 599px) {
   .topbar {
-    grid-template-columns: minmax(70px, 0.72fr) minmax(124px, 1fr) minmax(120px, auto);
-    grid-template-areas: "brand stats actions";
+    grid-template-columns: minmax(70px, 0.72fr) minmax(124px, 1fr) minmax(
+        120px,
+        auto
+      );
+    grid-template-areas: 'brand stats actions';
     gap: 5px;
     padding: 4px 7px;
   }
@@ -767,6 +835,21 @@ button:disabled {
     width: 100%;
     max-width: 142px;
     justify-self: center;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar-actions .action-btn:first-child,
+  .action-btn {
+    min-width: 0;
+  }
+
+  .action-btn {
+    padding-inline: 4px;
+    font-size: 9px;
   }
 
   .stat-cell {
@@ -898,7 +981,9 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.4px;
   box-shadow: 0 3px 0 var(--persimmon-deep);
-  transition: transform 60ms ease, box-shadow 60ms ease;
+  transition:
+    transform 60ms ease,
+    box-shadow 60ms ease;
 }
 
 .result-close-btn:active {
@@ -948,7 +1033,9 @@ button:disabled {
    REDUCED MOTION
    ============================================= */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
