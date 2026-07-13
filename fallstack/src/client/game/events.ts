@@ -7,15 +7,15 @@ import type { ZoneId } from '../../shared/game/mutation';
 
 export type FallEventDetail = Omit<
   RecordFallRequest,
-  'dailySeed' | 'timestamp'
+  'eventId' | 'boardId' | 'boardRevision' | 'timestamp'
 >;
 export type ClearEventDetail = Omit<
   RecordClearRequest,
-  'dailySeed' | 'timestamp'
+  'eventId' | 'boardId' | 'boardRevision' | 'timestamp'
 >;
 export type SummitEventDetail = Omit<
   RecordSummitRequest,
-  'dailySeed' | 'timestamp'
+  'eventId' | 'boardId' | 'boardRevision' | 'timestamp'
 >;
 export type LandEventDetail = { zoneId: ZoneId };
 export type ZoneEventDetail = { zoneId: ZoneId };

@@ -1,28 +1,26 @@
-import type {
-  FailureBucket,
-  GameSnapshot,
-  ZoneId,
-} from './game/mutation';
+import type { ZoneId } from './game/mutation';
+import type { BoardSnapshot } from './game/board';
+import type { FallObservation } from './game/mutation-events';
+import type { MutationReceipt } from './game/mutation-receipts';
 
 export type ApiErrorResponse = {
   status: 'error';
   message: string;
+  receipt?: MutationReceipt;
+  snapshot?: BoardSnapshot;
 };
 
 export type InitGameResponse = {
   type: 'initGame';
   postId: string;
   username: string;
-  snapshot: GameSnapshot;
+  snapshot: BoardSnapshot;
 };
 
-export type RecordFallRequest = {
-  dailySeed: string;
-  attemptId: string;
-  zoneId: ZoneId;
-  failureBucket: FailureBucket;
-  chargePercent: number;
-  highestY: number;
+export type RecordFallRequest = FallObservation & {
+  eventId: string;
+  boardId: string;
+  boardRevision: number;
   timestamp: number;
 };
 
@@ -30,11 +28,14 @@ export type RecordFallResponse = {
   type: 'recordFall';
   counted: boolean;
   message: string;
-  snapshot: GameSnapshot;
+  receipt: MutationReceipt;
+  snapshot: BoardSnapshot;
 };
 
 export type RecordClearRequest = {
-  dailySeed: string;
+  eventId: string;
+  boardId: string;
+  boardRevision: number;
   attemptId: string;
   zoneId: ZoneId;
   highestY: number;
@@ -45,11 +46,14 @@ export type RecordClearResponse = {
   type: 'recordClear';
   counted: boolean;
   message: string;
-  snapshot: GameSnapshot;
+  receipt: MutationReceipt;
+  snapshot: BoardSnapshot;
 };
 
 export type RecordSummitRequest = {
-  dailySeed: string;
+  eventId: string;
+  boardId: string;
+  boardRevision: number;
   attemptId: string;
   highestY: number;
   timestamp: number;
@@ -59,5 +63,6 @@ export type RecordSummitResponse = {
   type: 'recordSummit';
   counted: boolean;
   message: string;
-  snapshot: GameSnapshot;
+  receipt: MutationReceipt;
+  snapshot: BoardSnapshot;
 };

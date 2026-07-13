@@ -10,15 +10,18 @@ import {
   createDailySeed,
   createInitialAchievements,
   createSeededCounters,
+  createSeededSiteCounters,
   deriveSnapshot,
   displayZoneStatus,
   fallFeedback,
   clearFeedback,
   mergeAchievementState,
+  SEEDED_TOTAL_FALLS,
   type ZoneId,
   type ZoneMutationCounters,
 } from './mutation.js';
-import { zoneForY } from './tower.js';
+import { deriveImpactSites } from './impact-sites.js';
+import { generateDailyTower, zoneForY } from './tower.js';
 
 const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
 
@@ -41,11 +44,164 @@ void test('seeded snapshot opens with visible shared mutation hook', () => {
   });
 
   assert.equal(snapshot.headline, "Today's tower has 37 failed climbs in it.");
+  assert.equal(snapshot.zones[0]?.statusLabel, 'Restless');
   assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
   assert.ok(
     snapshot.zones.some((zone) =>
       zone.artifacts.some((artifact) => artifact.label.includes('falls'))
     )
+  );
+});
+
+void test('seeded failure counters agree with the advertised opening total', () => {
+  const counters = createSeededCounters();
+  const failures = Object.values(counters).reduce(
+    (total, zone) =>
+      total +
+      zone.short_jump +
+      zone.overjump +
+      zone.wall_bonk +
+      zone.helper_overuse,
+    0
+  );
+
+  assert.equal(failures, SEEDED_TOTAL_FALLS);
+});
+
+void test('snapshot separates seeded scars from community additions', () => {
+  const counters = createSeededCounters();
+  counters[BOTTOM_ZONE_ID].short_jump += 1;
+  const snapshot = deriveSnapshot({
+    dailySeed: 'fallstack-2026-07-13',
+    dateKey: '2026-07-13',
+    counters,
+    totalFalls: SEEDED_TOTAL_FALLS + 1,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const helper = snapshot.zones[0]?.artifacts.find(
+    (artifact) => artifact.bucket === 'short_jump'
+  );
+
+  assert.equal(snapshot.seededFalls, SEEDED_TOTAL_FALLS);
+  assert.equal(snapshot.organicFalls, 1);
+  assert.ok(helper);
+  assert.equal(helper.seededCount, 4);
+  assert.equal(helper.organicCount, 1);
+});
+
+void test('site counters keep an organic fall attached to its resolved impact site', () => {
+  const dailySeed = 'fallstack-2026-07-13';
+  const impactSites = deriveImpactSites(generateDailyTower(dailySeed));
+  const site = impactSites.find(
+    (candidate) =>
+      candidate.zoneId === BOTTOM_ZONE_ID && candidate.name !== 'First Gap'
+  );
+  const siteCounters = createSeededSiteCounters(dailySeed);
+
+  assert.ok(site);
+  siteCounters[site.id]!.short_jump += 1;
+  const snapshot = deriveSnapshot({
+    dailySeed,
+    dateKey: '2026-07-13',
+    counters: createSeededCounters(),
+    siteCounters,
+    totalFalls: SEEDED_TOTAL_FALLS + 1,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const changedSite = snapshot.sites.find(
+    (candidate) => candidate.id === site.id
+  );
+
+  assert.ok(changedSite);
+  assert.equal(changedSite.counters.short_jump, 1);
+  assert.equal(changedSite.seededCounters.short_jump, 0);
+  assert.equal(changedSite.organicCounters.short_jump, 1);
+  assert.equal(
+    snapshot.sites.find((candidate) => candidate.name === 'First Gap')
+      ?.counters.short_jump,
+    4
+  );
+});
+
+void test('site threshold derives its artifact at that exact impact site', () => {
+  const dailySeed = 'fallstack-2026-07-13';
+  const site = deriveImpactSites(generateDailyTower(dailySeed)).find(
+    (candidate) =>
+      candidate.zoneId === BOTTOM_ZONE_ID && candidate.name !== 'First Gap'
+  );
+  const siteCounters = createSeededSiteCounters(dailySeed);
+
+  assert.ok(site);
+  siteCounters[site.id]!.short_jump = 3;
+  const snapshot = deriveSnapshot({
+    dailySeed,
+    dateKey: '2026-07-13',
+    counters: createSeededCounters(),
+    siteCounters,
+    totalFalls: SEEDED_TOTAL_FALLS + 3,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const artifact = snapshot.sites
+    .find((candidate) => candidate.id === site.id)
+    ?.artifacts.find((candidate) => candidate.bucket === 'short_jump');
+
+  assert.ok(artifact);
+  assert.equal(artifact.siteId, site.id);
+  assert.deepEqual(
+    {
+      x: artifact.x,
+      y: artifact.y,
+      width: artifact.width,
+      height: artifact.height,
+    },
+    site.helperSlot
+  );
+});
+
+void test('site stabilization preserves the failure history it transforms', () => {
+  const dailySeed = 'fallstack-2026-07-13';
+  const site = deriveImpactSites(generateDailyTower(dailySeed))[0];
+  const siteCounters = createSeededSiteCounters(dailySeed);
+
+  assert.ok(site);
+  siteCounters[site.id] = {
+    short_jump: 6,
+    overjump: 10,
+    wall_bonk: 3,
+    helper_overuse: 0,
+    successfulClears: 6,
+  };
+  const snapshot = deriveSnapshot({
+    dailySeed,
+    dateKey: '2026-07-13',
+    counters: createSeededCounters(),
+    siteCounters,
+    totalFalls: SEEDED_TOTAL_FALLS + 15,
+    totalClears: 6,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const stabilized = snapshot.sites.find(
+    (candidate) => candidate.id === site.id
+  );
+
+  assert.ok(stabilized);
+  assert.equal(stabilized.status, 'Stabilized');
+  assert.equal(stabilized.counters.short_jump, 6);
+  assert.equal(stabilized.counters.overjump, 10);
+  assert.equal(stabilized.counters.wall_bonk, 3);
+  assert.equal(stabilized.counters.successfulClears, 6);
+  assert.equal(
+    stabilized.artifacts.some(
+      (artifact) => artifact.bucket === 'successful_clear'
+    ),
+    true
   );
 });
 
@@ -102,12 +258,45 @@ void test('the opening helper sits on the first jump line', () => {
     achievements: createInitialAchievements(),
   });
   const helper = snapshot.zones[0]?.artifacts.find(
-    (artifact) => artifact.type === 'mercy_nail'
+    (artifact) => artifact.bucket === 'short_jump'
   );
 
   assert.ok(helper);
+  assert.equal(helper.type, 'corpse_stack');
   assert.ok(helper.x >= 260);
   assert.ok(helper.y > 71820 && helper.y < 71940);
+});
+
+void test('seeded opening mutation is anchored to the generated First Gap site', () => {
+  const dailySeed = 'fallstack-2026-07-13';
+  const openingSite = deriveImpactSites(generateDailyTower(dailySeed))[0];
+  const snapshot = deriveSnapshot({
+    dailySeed,
+    dateKey: '2026-07-13',
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const helper = snapshot.zones[0]?.artifacts.find(
+    (artifact) => artifact.bucket === 'short_jump'
+  );
+
+  assert.ok(openingSite);
+  assert.ok(helper);
+  assert.equal(helper.siteId, openingSite.id);
+  assert.equal(helper.siteName, 'First Gap');
+  assert.equal(helper.anchorPlatformId, openingSite.anchorPlatformId);
+  assert.deepEqual(
+    {
+      x: helper.x,
+      y: helper.y,
+      width: helper.width,
+      height: helper.height,
+    },
+    openingSite.helperSlot
+  );
 });
 
 void test('zone status display labels do not leak internal state names', () => {

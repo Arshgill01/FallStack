@@ -1,21 +1,25 @@
-export const ZONE_IDS = [
-  'orbital_scrapyard',
-  'crater_foundry',
-  'comet_reef',
-  'nebula_vault',
-  'ring_citadel',
-  'dwarf_garden',
-  'pulsar_spine',
-  'neutron_forge',
-  'black_hole_chapel',
-  'galaxy_reef',
-  'dying_star_garden',
-  'event_horizon_crown',
-] as const;
-export type ZoneId = (typeof ZONE_IDS)[number];
-export const BOTTOM_ZONE_ID: ZoneId = ZONE_IDS[0];
-export const TOP_ZONE_ID: ZoneId = ZONE_IDS[ZONE_IDS.length - 1]!;
-export const ZONE_HEIGHT = 6000;
+import {
+  BOTTOM_ZONE_ID,
+  ZONE_HEIGHT,
+  ZONE_IDS,
+  ZONE_NAMES,
+  type ZoneId,
+} from './zones.js';
+import {
+  deriveImpactSites,
+  type ImpactSite,
+  type Rect,
+} from './impact-sites.js';
+import { generateDailyTower } from './tower.js';
+
+export {
+  BOTTOM_ZONE_ID,
+  TOP_ZONE_ID,
+  ZONE_HEIGHT,
+  ZONE_IDS,
+  ZONE_NAMES,
+  type ZoneId,
+} from './zones.js';
 
 export const FAILURE_BUCKETS = [
   'short_jump',
@@ -39,10 +43,15 @@ export type ZoneMutationCounters = Record<FailureBucket, number> & {
   successfulClears: number;
 };
 
+export type SiteMutationCounters = ZoneMutationCounters;
+
 export type Artifact = {
   id: string;
   type: ArtifactType;
   zoneId: ZoneId;
+  siteId: string;
+  siteName: string;
+  anchorPlatformId: string;
   bucket: FailureBucket | 'successful_clear';
   x: number;
   y: number;
@@ -51,6 +60,8 @@ export type Artifact = {
   solid: boolean;
   label: string;
   count: number;
+  seededCount: number;
+  organicCount: number;
 };
 
 export type ZoneSnapshot = {
@@ -62,13 +73,24 @@ export type ZoneSnapshot = {
   artifacts: Artifact[];
 };
 
+export type SiteSnapshot = ImpactSite & {
+  status: ZoneStatus;
+  counters: SiteMutationCounters;
+  seededCounters: SiteMutationCounters;
+  organicCounters: SiteMutationCounters;
+  artifacts: Artifact[];
+};
+
 export type GameSnapshot = {
   dailySeed: string;
   dateKey: string;
+  seededFalls: number;
+  organicFalls: number;
   totalFalls: number;
   totalClears: number;
   totalSummits: number;
   headline: string;
+  sites: SiteSnapshot[];
   zones: ZoneSnapshot[];
   result: ResultSummary;
 };
@@ -94,7 +116,6 @@ export type ResultSummary = {
   bestStabilizerUsername: string | null;
   highestClimberUsername: string | null;
   highestClimberZone: string;
-  tomorrowHook: string;
 };
 
 export const ZERO_COUNTERS: ZoneMutationCounters = {
@@ -105,108 +126,86 @@ export const ZERO_COUNTERS: ZoneMutationCounters = {
   successfulClears: 0,
 };
 
-export const ZONE_NAMES: Record<ZoneId, string> = {
-  orbital_scrapyard: 'Orbital Scrapyard',
-  crater_foundry: 'Crater Foundry',
-  comet_reef: 'Comet Reef',
-  nebula_vault: 'Nebula Vault',
-  ring_citadel: 'Ring Citadel',
-  dwarf_garden: 'Dwarf Garden',
-  pulsar_spine: 'Pulsar Spine',
-  neutron_forge: 'Neutron Forge',
-  black_hole_chapel: 'Black Hole Chapel',
-  galaxy_reef: 'Galaxy Reef',
-  dying_star_garden: 'Dying Star Garden',
-  event_horizon_crown: 'Event Horizon Crown',
+const seededFailures: Record<ZoneId, Record<FailureBucket, number>> = {
+  orbital_scrapyard: {
+    short_jump: 4,
+    overjump: 3,
+    wall_bonk: 3,
+    helper_overuse: 0,
+  },
+  crater_foundry: {
+    short_jump: 3,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  comet_reef: {
+    short_jump: 3,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  nebula_vault: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 3,
+    helper_overuse: 0,
+  },
+  ring_citadel: {
+    short_jump: 0,
+    overjump: 10,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  dwarf_garden: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 3,
+  },
+  pulsar_spine: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 2,
+    helper_overuse: 0,
+  },
+  neutron_forge: {
+    short_jump: 0,
+    overjump: 3,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  black_hole_chapel: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  galaxy_reef: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  dying_star_garden: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
+  event_horizon_crown: {
+    short_jump: 0,
+    overjump: 0,
+    wall_bonk: 0,
+    helper_overuse: 0,
+  },
 };
-
-const ARTIFACT_SLOTS: Record<
-  ZoneId,
-  Record<
-    FailureBucket | 'successful_clear',
-    Pick<Artifact, 'x' | 'y' | 'width' | 'height'>
-  >
-> = Object.fromEntries(
-  ZONE_IDS.map((zoneId, index) => {
-    const zoneBottom = (ZONE_IDS.length - index) * ZONE_HEIGHT;
-    const drift = (index % 4) * 18;
-    if (zoneId === BOTTOM_ZONE_ID) {
-      return [
-        zoneId,
-        {
-          // The seeded helper sits between spawn and the first ledge, proving
-          // in the opening jump that aggregate failure changes the route.
-          short_jump: { x: 280, y: zoneBottom - 130, width: 74, height: 26 },
-          // The cursed option is visible on the tempting continuation line.
-          overjump: { x: 174, y: zoneBottom - 220, width: 72, height: 24 },
-          wall_bonk: { x: 44, y: zoneBottom - 424, width: 92, height: 18 },
-          helper_overuse: {
-            x: 214,
-            y: zoneBottom - 584,
-            width: 52,
-            height: 24,
-          },
-          successful_clear: {
-            x: 92,
-            y: zoneBottom - 820,
-            width: 128,
-            height: 12,
-          },
-        },
-      ];
-    }
-    return [
-      zoneId,
-      {
-        short_jump: {
-          x: 112 + drift,
-          y: zoneBottom - 168,
-          width: 74,
-          height: 26,
-        },
-        overjump: {
-          x: 286 - drift,
-          y: zoneBottom - 276,
-          width: 72,
-          height: 24,
-        },
-        wall_bonk: {
-          x: 44 + drift,
-          y: zoneBottom - 424,
-          width: 92,
-          height: 18,
-        },
-        helper_overuse: {
-          x: 214 - drift / 2,
-          y: zoneBottom - 584,
-          width: 52,
-          height: 24,
-        },
-        successful_clear: {
-          x: 92 + drift,
-          y: zoneBottom - 820,
-          width: 128,
-          height: 12,
-        },
-      },
-    ];
-  })
-) as Record<
-  ZoneId,
-  Record<
-    FailureBucket | 'successful_clear',
-    Pick<Artifact, 'x' | 'y' | 'width' | 'height'>
-  >
->;
 
 const seededCounters: Record<ZoneId, ZoneMutationCounters> = Object.fromEntries(
   ZONE_IDS.map((zoneId, index) => [
     zoneId,
     {
-      short_jump: Math.max(1, 14 - index),
-      overjump: index % 3 === 0 ? 3 : 1,
-      wall_bonk: index % 2 === 0 ? 2 : 0,
-      helper_overuse: index < 4 ? 1 : 0,
+      ...seededFailures[zoneId],
       successfulClears: index < 2 ? 2 - index : 0,
     },
   ])
@@ -228,26 +227,59 @@ export function createSeededCounters(): Record<ZoneId, ZoneMutationCounters> {
   ) as Record<ZoneId, ZoneMutationCounters>;
 }
 
+export function createSeededSiteCounters(
+  dailySeed: string
+): Record<string, SiteMutationCounters> {
+  return siteCountersFromZoneCounters(dailySeed, createSeededCounters());
+}
+
 export function deriveSnapshot(input: {
   dailySeed: string;
   dateKey: string;
   counters: Record<ZoneId, ZoneMutationCounters>;
+  siteCounters?: Record<string, SiteMutationCounters>;
   totalFalls: number;
   totalClears: number;
   totalSummits: number;
   achievements: AchievementState;
 }): GameSnapshot {
+  const impactSites = deriveImpactSites(generateDailyTower(input.dailySeed));
+  const siteCounters =
+    input.siteCounters ??
+    siteCountersFromZoneCounters(input.dailySeed, input.counters);
+  const seededSiteCounters = createSeededSiteCounters(input.dailySeed);
+  const sites = impactSites.map((site) => {
+    const counters = { ...ZERO_COUNTERS, ...siteCounters[site.id] };
+    const seeded = { ...ZERO_COUNTERS, ...seededSiteCounters[site.id] };
+    const status = deriveSiteStatus(counters);
+    return {
+      ...site,
+      status,
+      counters,
+      seededCounters: seeded,
+      organicCounters: subtractCounters(counters, seeded),
+      artifacts: deriveSiteArtifacts(site, counters, status, seeded),
+    };
+  });
+  const zoneCounters = aggregateSiteCounters(impactSites, siteCounters);
   const zones = ZONE_IDS.map((zoneId) =>
-    deriveZone(zoneId, input.counters[zoneId])
+    deriveZoneFromSites(
+      zoneId,
+      zoneCounters[zoneId],
+      sites.filter((site) => site.zoneId === zoneId)
+    )
   );
 
   return {
     dailySeed: input.dailySeed,
     dateKey: input.dateKey,
+    seededFalls: SEEDED_TOTAL_FALLS,
+    organicFalls: Math.max(0, input.totalFalls - SEEDED_TOTAL_FALLS),
     totalFalls: input.totalFalls,
     totalClears: input.totalClears,
     totalSummits: input.totalSummits,
     headline: `Today's tower has ${input.totalFalls} failed climbs in it.`,
+    sites,
     zones,
     result: deriveResult(
       input.dailySeed,
@@ -256,6 +288,81 @@ export function deriveSnapshot(input: {
       input.totalSummits
     ),
   };
+}
+
+function siteCountersFromZoneCounters(
+  dailySeed: string,
+  counters: Record<ZoneId, ZoneMutationCounters>
+): Record<string, SiteMutationCounters> {
+  const sites = deriveImpactSites(generateDailyTower(dailySeed));
+  const result = Object.fromEntries(
+    sites.map((site) => [site.id, { ...ZERO_COUNTERS }])
+  ) as Record<string, SiteMutationCounters>;
+
+  for (const zoneId of ZONE_IDS) {
+    const zoneSites = sites.filter((site) => site.zoneId === zoneId);
+    const zoneCounters = counters[zoneId];
+    assignSiteCounter(zoneSites, result, 0, 'short_jump', zoneCounters.short_jump);
+    assignSiteCounter(zoneSites, result, 1, 'wall_bonk', zoneCounters.wall_bonk);
+    assignSiteCounter(zoneSites, result, 2, 'overjump', zoneCounters.overjump);
+    assignSiteCounter(
+      zoneSites,
+      result,
+      2,
+      'helper_overuse',
+      zoneCounters.helper_overuse
+    );
+    assignSiteCounter(
+      zoneSites,
+      result,
+      0,
+      'successfulClears',
+      zoneCounters.successfulClears
+    );
+  }
+
+  return result;
+}
+
+function assignSiteCounter(
+  sites: ImpactSite[],
+  counters: Record<string, SiteMutationCounters>,
+  preferredIndex: number,
+  counter: keyof SiteMutationCounters,
+  value: number
+): void {
+  const site = sites[preferredIndex] ?? sites[0];
+  if (site) counters[site.id]![counter] = value;
+}
+
+function aggregateSiteCounters(
+  sites: ImpactSite[],
+  counters: Record<string, SiteMutationCounters>
+): Record<ZoneId, ZoneMutationCounters> {
+  const result = Object.fromEntries(
+    ZONE_IDS.map((zoneId) => [zoneId, { ...ZERO_COUNTERS }])
+  ) as Record<ZoneId, ZoneMutationCounters>;
+
+  for (const site of sites) {
+    const siteCounters = { ...ZERO_COUNTERS, ...counters[site.id] };
+    for (const counter of Object.keys(
+      ZERO_COUNTERS
+    ) as (keyof SiteMutationCounters)[]) {
+      result[site.zoneId][counter] += siteCounters[counter];
+    }
+  }
+  return result;
+}
+
+function subtractCounters(
+  counters: SiteMutationCounters,
+  seeded: SiteMutationCounters
+): SiteMutationCounters {
+  return Object.fromEntries(
+    (Object.keys(ZERO_COUNTERS) as (keyof SiteMutationCounters)[]).map(
+      (counter) => [counter, Math.max(0, counters[counter] - seeded[counter])]
+    )
+  ) as SiteMutationCounters;
 }
 
 export function createInitialAchievements(): AchievementState {
@@ -312,16 +419,11 @@ export function mergeAchievementState(
 
 export function deriveZone(
   zoneId: ZoneId,
-  counters: ZoneMutationCounters
+  counters: ZoneMutationCounters,
+  impactSites: ImpactSite[]
 ): ZoneSnapshot {
-  const rawStatus = deriveRawStatus(counters);
-  const status =
-    counters.successfulClears >= 6
-      ? 'Stabilized'
-      : counters.successfulClears >= 3
-        ? 'Reinforced'
-        : rawStatus;
-  const artifacts = deriveArtifacts(zoneId, counters, status);
+  const status = deriveSiteStatus(counters);
+  const artifacts = deriveArtifacts(zoneId, counters, status, impactSites);
 
   return {
     id: zoneId,
@@ -331,6 +433,53 @@ export function deriveZone(
     counters: { ...counters },
     artifacts,
   };
+}
+
+function deriveZoneFromSites(
+  zoneId: ZoneId,
+  counters: ZoneMutationCounters,
+  sites: SiteSnapshot[]
+): ZoneSnapshot {
+  const status = deriveSiteStatus(counters);
+  const artifacts = sites
+    .map((site) => preferredSiteArtifact(site.artifacts))
+    .filter((artifact): artifact is Artifact => Boolean(artifact))
+    .slice(0, 3);
+
+  return {
+    id: zoneId,
+    name: ZONE_NAMES[zoneId],
+    status,
+    statusLabel: displayZoneStatus(status),
+    counters: { ...counters },
+    artifacts,
+  };
+}
+
+function preferredSiteArtifact(artifacts: Artifact[]): Artifact | null {
+  return (
+    [...artifacts].sort(
+      (left, right) =>
+        right.count - left.count ||
+        artifactPriority(left.bucket) - artifactPriority(right.bucket)
+    )[0] ?? null
+  );
+}
+
+function artifactPriority(
+  bucket: FailureBucket | 'successful_clear'
+): number {
+  if (bucket === 'short_jump') return 0;
+  if (bucket === 'wall_bonk') return 1;
+  if (bucket === 'overjump') return 2;
+  if (bucket === 'helper_overuse') return 3;
+  return 4;
+}
+
+function deriveSiteStatus(counters: SiteMutationCounters): ZoneStatus {
+  if (counters.successfulClears >= 6) return 'Stabilized';
+  if (counters.successfulClears >= 3) return 'Reinforced';
+  return deriveRawStatus(counters);
 }
 
 export function isFailureBucket(value: unknown): value is FailureBucket {
@@ -415,6 +564,11 @@ export function clearFeedback(args: {
 }
 
 function deriveRawStatus(counters: ZoneMutationCounters): ZoneStatus {
+  const totalFailures =
+    counters.short_jump +
+    counters.overjump +
+    counters.wall_bonk +
+    counters.helper_overuse;
   const highest = Math.max(
     counters.short_jump,
     counters.overjump,
@@ -422,21 +576,24 @@ function deriveRawStatus(counters: ZoneMutationCounters): ZoneStatus {
     counters.helper_overuse
   );
   if (counters.overjump >= 10 || counters.helper_overuse >= 10) return 'Cursed';
-  if (highest >= 10) return 'Haunted';
+  if (highest >= 10 || totalFailures >= 10) return 'Haunted';
   return 'Quiet';
 }
 
 function deriveArtifacts(
   zoneId: ZoneId,
   counters: ZoneMutationCounters,
-  status: ZoneStatus
+  status: ZoneStatus,
+  impactSites: ImpactSite[]
 ): Artifact[] {
   const artifacts: Artifact[] = [];
   const helpfulBucket =
     counters.short_jump >= counters.wall_bonk ? 'short_jump' : 'wall_bonk';
   const helpfulCount = counters[helpfulBucket];
   if (helpfulCount >= 3) {
-    artifacts.push(makeArtifact(zoneId, helpfulBucket, helpfulCount, status));
+    artifacts.push(
+      makeArtifact(zoneId, helpfulBucket, helpfulCount, status, impactSites)
+    );
   }
 
   const hazardBucket =
@@ -445,7 +602,9 @@ function deriveArtifacts(
       : 'helper_overuse';
   const hazardCount = counters[hazardBucket];
   if (hazardCount >= 3) {
-    artifacts.push(makeArtifact(zoneId, hazardBucket, hazardCount, status));
+    artifacts.push(
+      makeArtifact(zoneId, hazardBucket, hazardCount, status, impactSites)
+    );
   }
 
   if (counters.successfulClears >= 3) {
@@ -454,12 +613,67 @@ function deriveArtifacts(
         zoneId,
         'successful_clear',
         counters.successfulClears,
-        status
+        status,
+        impactSites
       )
     );
   }
 
   return artifacts.slice(0, 3);
+}
+
+function deriveSiteArtifacts(
+  site: ImpactSite,
+  counters: SiteMutationCounters,
+  status: ZoneStatus,
+  seeded: SiteMutationCounters
+): Artifact[] {
+  const artifacts: Artifact[] = [];
+  const helpfulBucket =
+    counters.short_jump >= counters.wall_bonk ? 'short_jump' : 'wall_bonk';
+  const helpfulCount = counters[helpfulBucket];
+  if (helpfulCount >= 3) {
+    artifacts.push(
+      makeSiteArtifact(
+        site,
+        helpfulBucket,
+        helpfulCount,
+        status,
+        seeded[helpfulBucket]
+      )
+    );
+  }
+
+  const hazardBucket =
+    counters.overjump >= counters.helper_overuse
+      ? 'overjump'
+      : 'helper_overuse';
+  const hazardCount = counters[hazardBucket];
+  if (hazardCount >= 3) {
+    artifacts.push(
+      makeSiteArtifact(
+        site,
+        hazardBucket,
+        hazardCount,
+        status,
+        seeded[hazardBucket]
+      )
+    );
+  }
+
+  if (counters.successfulClears >= 3) {
+    artifacts.push(
+      makeSiteArtifact(
+        site,
+        'successful_clear',
+        counters.successfulClears,
+        status,
+        seeded.successfulClears
+      )
+    );
+  }
+
+  return artifacts;
 }
 
 function deriveResult(
@@ -492,7 +706,6 @@ function deriveResult(
     bestStabilizerUsername: achievements.bestStabilizerUsername,
     highestClimberUsername: achievements.highestClimberUsername,
     highestClimberZone: ZONE_NAMES[achievements.highestClimberZone],
-    tomorrowHook: "Tomorrow, today's worst ledge comes back as a relic.",
   };
 }
 
@@ -525,35 +738,90 @@ function makeArtifact(
   zoneId: ZoneId,
   bucket: FailureBucket | 'successful_clear',
   count: number,
-  status: ZoneStatus
+  status: ZoneStatus,
+  impactSites: ImpactSite[]
 ): Artifact {
-  const slot = ARTIFACT_SLOTS[zoneId][bucket];
+  const site = impactSiteForBucket(impactSites, bucket);
+  const seededCount = Math.min(
+    count,
+    bucket === 'successful_clear'
+      ? seededCounters[zoneId].successfulClears
+      : seededCounters[zoneId][bucket]
+  );
+  return makeSiteArtifact(site, bucket, count, status, seededCount);
+}
+
+function makeSiteArtifact(
+  site: ImpactSite,
+  bucket: FailureBucket | 'successful_clear',
+  count: number,
+  status: ZoneStatus,
+  seededCounter: number
+): Artifact {
+  const slot = artifactSlot(site, bucket);
   const stabilized = status === 'Stabilized';
+  const seededCount = Math.min(count, seededCounter);
+  const organicCount = Math.max(0, count - seededCount);
 
   if (bucket === 'successful_clear') {
     return {
       ...slot,
-      id: `${zoneId}-lantern-trail`,
+      id: `${site.id}-lantern-trail`,
       type: 'lantern_trail',
-      zoneId,
+      zoneId: site.zoneId,
+      siteId: site.id,
+      siteName: site.name,
+      anchorPlatformId: site.anchorPlatformId,
       bucket,
       solid: false,
       label: `${count} clean climbs lit this line.`,
       count,
+      seededCount,
+      organicCount,
     };
   }
 
   const type = bucketArtifactType(bucket, count, stabilized);
   return {
     ...slot,
-    id: `${zoneId}-${bucket}`,
+    id: `${site.id}-${bucket}`,
     type,
-    zoneId,
+    zoneId: site.zoneId,
+    siteId: site.id,
+    siteName: site.name,
+    anchorPlatformId: site.anchorPlatformId,
     bucket,
     solid: type !== 'lantern_trail',
     label: artifactLabel(type, count),
     count,
+    seededCount,
+    organicCount,
   };
+}
+
+function impactSiteForBucket(
+  impactSites: ImpactSite[],
+  bucket: FailureBucket | 'successful_clear'
+): ImpactSite {
+  const index =
+    bucket === 'short_jump' || bucket === 'successful_clear'
+      ? 0
+      : bucket === 'wall_bonk'
+        ? 1
+        : 2;
+  const site = impactSites[index] ?? impactSites[0];
+  if (!site) throw new Error('Cannot derive an artifact without an impact site.');
+  return site;
+}
+
+function artifactSlot(
+  site: ImpactSite,
+  bucket: FailureBucket | 'successful_clear'
+): Rect {
+  if (bucket === 'short_jump') return site.helperSlot;
+  if (bucket === 'wall_bonk' || bucket === 'successful_clear')
+    return site.ghostSlot;
+  return site.hazardSlot;
 }
 
 function bucketArtifactType(
@@ -580,8 +848,9 @@ function bucketArtifactName(bucket: FailureBucket, nextCount: number): string {
 function artifactLabel(type: ArtifactType, count: number): string {
   if (type === 'corpse_stack') return `${count} falls made this foothold.`;
   if (type === 'mercy_nail') return `${count} falls hammered this nail.`;
-  if (type === 'ghost_platform') return `${count} bonks left a ghost.`;
+  if (type === 'ghost_platform')
+    return `${count} bonks left a one-use ghost.`;
   if (type === 'cursed_brick')
-    return `This brick remembers ${count} overconfident falls.`;
+    return `${count} falls cursed this crumbling brick.`;
   return `${count} clean climbs left a trail.`;
 }

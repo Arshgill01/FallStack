@@ -25,12 +25,12 @@ export function Splash() {
           <i />
           <i />
         </div>
-        <div className="artifact-label">14 falls made this foothold.</div>
+        <div className="artifact-label">4 opening falls raised First Gap.</div>
         <div className="splash-climber" aria-hidden="true" />
       </section>
 
       <section className="splash-copy">
-        <p className="splash-kicker">Today’s shared mutation</p>
+        <p className="splash-kicker">One community · one daily tower</p>
         <h1>The tower already remembers everyone who fell.</h1>
         <p>Use the foothold they left behind. Your fall may shape what comes next.</p>
         <button

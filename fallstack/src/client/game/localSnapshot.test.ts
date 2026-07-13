@@ -9,6 +9,8 @@ import {
   createInitialAchievements,
   createSeededCounters,
   deriveSnapshot,
+  type FailureBucket,
+  type GameSnapshot,
   type ZoneId,
 } from '../../shared/game/mutation.js';
 import { zoneById } from '../../shared/game/tower.js';
@@ -17,6 +19,7 @@ import {
   applyLocalFall,
   applyLocalSummit,
   localFallMessage,
+  openingMutationMessage,
 } from './localSnapshot.js';
 
 const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
@@ -32,27 +35,51 @@ const baseSnapshot = () =>
     achievements: createInitialAchievements(),
   });
 
+function siteForBucket(
+  snapshot: GameSnapshot,
+  zoneId: ZoneId,
+  bucket: FailureBucket
+) {
+  const site = snapshot.sites
+    .filter((candidate) => candidate.zoneId === zoneId)
+    .sort(
+      (left, right) => right.counters[bucket] - left.counters[bucket]
+    )[0];
+  if (!site) throw new Error(`Missing impact site for ${zoneId}.`);
+  return site;
+}
+
+void test('opening mutation copy names shared scope, site, and seeded origin', () => {
+  assert.equal(
+    openingMutationMessage(baseSnapshot(), true),
+    'One community shares this tower. 4 opening falls raised First Gap.'
+  );
+  assert.equal(
+    openingMutationMessage(baseSnapshot(), false),
+    'One community shares this tower. 4 opening falls raised First Gap. Shared marks are delayed.'
+  );
+});
+
 void test('local fall updates derived counters without server state', () => {
   const mid = zoneById(MID_ZONE_ID);
-  const next = applyLocalFall(baseSnapshot(), {
+  const snapshot = baseSnapshot();
+  const site = siteForBucket(snapshot, MID_ZONE_ID, 'wall_bonk');
+  const detail = {
     attemptId: 'attempt_local_fall',
     zoneId: MID_ZONE_ID,
+    siteId: site.id,
+    siteName: site.name,
     failureBucket: 'wall_bonk',
     chargePercent: 63,
     highestY: mid.yBottom - 500,
-  });
+  } as const;
+  const next = applyLocalFall(snapshot, detail);
   const midZone = next.zones.find((zone) => zone.id === MID_ZONE_ID);
 
   assert.equal(next.totalFalls, 38);
   assert.equal(midZone?.counters.wall_bonk, 3);
   assert.match(
-    localFallMessage(next, {
-      attemptId: 'attempt_local_fall',
-      zoneId: MID_ZONE_ID,
-      failureBucket: 'wall_bonk',
-      chargePercent: 63,
-      highestY: mid.yBottom - 500,
-    }),
+    localFallMessage(next, detail),
     /spawned Ghost Platform/
   );
 });
@@ -88,9 +115,12 @@ void test('local events preserve existing local result achievements', () => {
     attemptId: 'attempt_local_summit',
     highestY: 260,
   });
+  const site = siteForBucket(summit, TOP_ZONE_ID, 'short_jump');
   const afterFall = applyLocalFall(summit, {
     attemptId: 'attempt_after_summit_fall',
     zoneId: TOP_ZONE_ID,
+    siteId: site.id,
+    siteName: site.name,
     failureBucket: 'short_jump',
     chargePercent: 72,
     highestY: 900,
@@ -113,9 +143,13 @@ void test('local events preserve existing local result achievements', () => {
 void test('local falls and clears update highest climber when progress improves', () => {
   const mid = zoneById(MID_ZONE_ID);
   const bottom = zoneById(BOTTOM_ZONE_ID);
-  const afterFall = applyLocalFall(baseSnapshot(), {
+  const snapshot = baseSnapshot();
+  const site = siteForBucket(snapshot, MID_ZONE_ID, 'short_jump');
+  const afterFall = applyLocalFall(snapshot, {
     attemptId: 'attempt_local_high_fall',
     zoneId: MID_ZONE_ID,
+    siteId: site.id,
+    siteName: site.name,
     failureBucket: 'short_jump',
     chargePercent: 81,
     highestY: mid.yTop + 200,

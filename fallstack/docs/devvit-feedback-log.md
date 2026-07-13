@@ -2,6 +2,25 @@
 
 Document only observed Devvit or tooling failures, rough edges, and reproducible gaps. Do not add routine successful playtest logs; keep those in commit messages or validation notes instead.
 
+## 2026-07-13 07:32 UTC — Transaction read example conflicts with Devvit 0.13.7 client contract
+
+- Environment: macOS arm64, Node v26.0.0, npm 11.12.1, Devvit CLI and `@devvit/web` 0.13.7.
+- Task attempted: implement an optimistic Redis transaction that reads contributor caps and counters after `watch()` and before `multi()`.
+- Evidence checked:
+  - current official Redis guide: `https://developers.reddit.com/docs/capabilities/server/redis`
+  - installed `node_modules/@devvit/redis/RedisClient.d.ts`
+  - installed `node_modules/@devvit/redis/RedisClient.js`
+- Expected result: the documented `const currentRaw = await txn.get(key)` returns the current string value and type-checks as the guide shows.
+- Actual result: the installed 0.13.7 declaration returns `Promise<TxClientLike>`, and the installed implementation queues `Get` with the transaction ID then returns `this`. Treating the result as a string does not match either the type or implementation.
+- Reproduction steps:
+  1. Install `@devvit/web@0.13.7`.
+  2. Call `const txn = await redis.watch(key)`.
+  3. Inspect or type-check `const currentRaw = await txn.get(key)` as a string, following the official balance example.
+  4. Observe `TxClientLike` in the declaration and `return this` in the implementation.
+- Severity: docs/tooling gap; it blocks the documented read-check-write pattern from being copied into a typed Devvit Web app.
+- Workaround: call `watch()` first, read watched hashes through the installation-scoped base client, queue writes through the returned transaction client, and retry when `exec()` reports a conflict. A hosted concurrency proof is still required before relying on this workaround in release claims.
+- Notes: either the transaction client should return pre-`multi()` read values as documented, or the guide should show the supported 0.13.7 pattern explicitly.
+
 ## 2026-07-08 00:00 UTC — Raw Vite dev server is blocked by the Devvit plugin
 
 - Environment: Ubuntu VM, Node v22.22.1, npm 9.2.0, Devvit CLI 0.13.7, app `fallstack`.

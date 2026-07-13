@@ -10,7 +10,8 @@ import {
 export class ApiRequestError extends Error {
   constructor(
     message: string,
-    readonly status: number
+    readonly status: number,
+    readonly data: ApiErrorResponse
   ) {
     super(message);
   }
@@ -48,9 +49,9 @@ export async function parseApiResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   const data = parseResponseBody<T>(text);
   if (!res.ok) {
-    const message =
-      (data as ApiErrorResponse).message ?? 'The tower did not answer.';
-    throw new ApiRequestError(message, res.status);
+    const error = data as ApiErrorResponse;
+    const message = error.message ?? 'The tower did not answer.';
+    throw new ApiRequestError(message, res.status, error);
   }
   return data as T;
 }

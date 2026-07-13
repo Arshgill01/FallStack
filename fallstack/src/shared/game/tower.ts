@@ -5,7 +5,7 @@ import {
   ZONE_IDS,
   ZONE_NAMES,
   type ZoneId,
-} from './mutation.js';
+} from './zones.js';
 import { MOVEMENT_TUNING } from './movement.js';
 
 export const WORLD_WIDTH = 480;

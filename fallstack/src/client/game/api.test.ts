@@ -1,17 +1,40 @@
-/// <reference types="node" />
-
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { newAttemptId } from './api.js';
+import type { ApiErrorResponse } from '../../shared/api.js';
+import { ApiRequestError, parseApiResponse } from './api.js';
 
-void test('attempt ids are server-safe and collision-resistant in a session', () => {
-  const ids = new Set<string>();
+void test('API errors preserve a structured unchanged-board receipt', async () => {
+  const body: ApiErrorResponse = {
+    status: 'error',
+    message: 'The shared board did not change. Your climb can continue.',
+    receipt: {
+      eventId: 'fall:attempt-unavailable',
+      boardId: 'community:t5_test:2026-07-13:v1',
+      accepted: false,
+      rejection: 'unavailable',
+      revisionBefore: 42,
+      revisionAfter: 42,
+      siteId: null,
+      siteName: null,
+      bucket: null,
+      counterBefore: null,
+      counterAfter: null,
+      nextThreshold: null,
+      visibleChange: 'none',
+      copy: 'The shared board did not change. Your climb can continue.',
+    },
+  };
 
-  for (let index = 0; index < 50; index += 1) {
-    const id = newAttemptId('attempt');
-    ids.add(id);
-    assert.match(id, /^[a-zA-Z0-9:_-]{8,80}$/);
-  }
-
-  assert.equal(ids.size, 50);
+  await assert.rejects(
+    parseApiResponse(
+      new Response(JSON.stringify(body), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    ),
+    (error: unknown) =>
+      error instanceof ApiRequestError &&
+      error.status === 503 &&
+      error.data.receipt?.rejection === 'unavailable'
+  );
 });

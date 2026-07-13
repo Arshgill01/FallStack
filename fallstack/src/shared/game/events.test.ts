@@ -13,11 +13,13 @@ import {
   validateRecordFallRequest,
   validateRecordSummitRequest,
 } from './events.js';
-import { nextZoneId, zoneById } from './tower.js';
+import { nextZoneId, WORLD_HEIGHT, zoneById } from './tower.js';
 
 const now = Date.parse('2026-07-10T12:00:00Z');
 const base = {
-  dailySeed: 'fallstack-2026-07-10',
+  eventId: 'event_abc12345',
+  boardId: 'community:t5_fallstack:2026-07-10:v1',
+  boardRevision: 37,
   attemptId: 'attempt_abc12345',
   timestamp: now,
 };
@@ -30,10 +32,15 @@ void test('fall event validation accepts bounded structured payloads', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: BOTTOM_ZONE_ID,
-        failureBucket: 'short_jump',
-        chargePercent: 74,
+        respawnZoneId: BOTTOM_ZONE_ID,
+        fallX: 240,
+        fallY: bottom.yBottom + 40,
         highestY: bottom.yBottom - 580,
+        lastPlatformId: 'start',
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 74,
+        launchDirection: -1,
       },
       now
     ).ok,
@@ -43,10 +50,15 @@ void test('fall event validation accepts bounded structured payloads', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: MID_ZONE_ID,
-        failureBucket: 'wall_bonk',
-        chargePercent: 58,
+        respawnZoneId: MID_ZONE_ID,
+        fallX: 240,
+        fallY: mid.yBottom + 40,
         highestY: mid.yTop + 164,
+        lastPlatformId: null,
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 58,
+        launchDirection: 1,
       },
       now
     ).ok,
@@ -62,10 +74,15 @@ void test('fall event validation rejects forged cross-zone progress', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: BOTTOM_ZONE_ID,
-        failureBucket: 'short_jump',
-        chargePercent: 74,
+        respawnZoneId: BOTTOM_ZONE_ID,
+        fallX: 240,
+        fallY: bottom.yBottom + 40,
         highestY: bottom.yTop - 1,
+        lastPlatformId: 'start',
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 74,
+        launchDirection: -1,
       },
       now
     ).ok,
@@ -75,10 +92,15 @@ void test('fall event validation rejects forged cross-zone progress', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: MID_ZONE_ID,
-        failureBucket: 'short_jump',
-        chargePercent: 74,
+        respawnZoneId: MID_ZONE_ID,
+        fallX: 240,
+        fallY: mid.yBottom + 40,
         highestY: mid.yTop - 1,
+        lastPlatformId: null,
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 74,
+        launchDirection: -1,
       },
       now
     ).ok,
@@ -88,10 +110,15 @@ void test('fall event validation rejects forged cross-zone progress', () => {
     validateRecordFallRequest(
       {
         ...base,
-        zoneId: TOP_ZONE_ID,
-        failureBucket: 'short_jump',
-        chargePercent: 74,
+        respawnZoneId: TOP_ZONE_ID,
+        fallX: 240,
+        fallY: top.yBottom + 40,
         highestY: top.yBottom + 1,
+        lastPlatformId: null,
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 74,
+        launchDirection: -1,
       },
       now
     ).ok,
@@ -103,10 +130,15 @@ void test('fall event validation rejects forged numeric fields', () => {
   const result = validateRecordFallRequest(
       {
         ...base,
-      zoneId: BOTTOM_ZONE_ID,
-      failureBucket: 'short_jump',
-      chargePercent: 740,
+      respawnZoneId: BOTTOM_ZONE_ID,
+      fallX: 240,
+      fallY: WORLD_HEIGHT + 40,
       highestY: -100,
+      lastPlatformId: 'start',
+      lastHelperArtifactId: null,
+      wallBonkPlatformId: null,
+      launchChargePercent: 740,
+      launchDirection: -1,
     },
     now
   );
@@ -173,7 +205,7 @@ void test('summit event validation requires fresh bounded summit progress', () =
   );
   assert.equal(
     validateRecordSummitRequest(
-      { ...base, dailySeed: '', attemptId: 'bad space', highestY: 260 },
+      { ...base, boardId: '', attemptId: 'bad space', highestY: 260 },
       now
     ).ok,
     false

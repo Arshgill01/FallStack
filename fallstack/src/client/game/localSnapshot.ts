@@ -7,28 +7,60 @@ import {
   TOP_ZONE_ID,
   ZERO_COUNTERS,
   type AchievementState,
+  type FailureBucket,
   type GameSnapshot,
+  type SiteMutationCounters,
   type ZoneId,
   type ZoneMutationCounters,
 } from '../../shared/game/mutation.js';
+import { resolveClearSite } from '../../shared/game/mutation-events.js';
 import { nextZoneId, ZONES } from '../../shared/game/tower.js';
-import type { ClearEventDetail, FallEventDetail, SummitEventDetail } from './events.js';
+import type { ClearEventDetail, SummitEventDetail } from './events.js';
+
+export type ResolvedFallDetail = {
+  attemptId: string;
+  zoneId: ZoneId;
+  siteId: string;
+  siteName: string;
+  failureBucket: FailureBucket;
+  chargePercent: number;
+  highestY: number;
+};
+
+export function openingMutationMessage(
+  snapshot: GameSnapshot,
+  sharedAvailable: boolean
+): string {
+  const openingArtifact = snapshot.zones
+    .flatMap((zone) => zone.artifacts)
+    .find(
+      (artifact) =>
+        artifact.siteName === 'First Gap' && artifact.bucket === 'short_jump'
+    );
+  const cause = openingArtifact
+    ? openingArtifact.organicCount > 0
+      ? `${openingArtifact.seededCount} opening + ${openingArtifact.organicCount} community falls raised ${openingArtifact.siteName}.`
+      : `${openingArtifact.seededCount} opening falls raised ${openingArtifact.siteName}.`
+    : 'The day opened scarred.';
+  const delayed = sharedAvailable ? '' : ' Shared marks are delayed.';
+  return `One community shares this tower. ${cause}${delayed}`;
+}
 
 export function applyLocalFall(
   snapshot: GameSnapshot,
-  detail: FallEventDetail
+  detail: ResolvedFallDetail
 ): GameSnapshot {
-  const counters = countersFromSnapshot(snapshot);
-  counters[detail.zoneId] = {
-    ...counters[detail.zoneId],
-    [detail.failureBucket]: counters[detail.zoneId][detail.failureBucket] + 1,
-  };
+  const siteCounters = siteCountersFromSnapshot(snapshot);
+  const counters = siteCounters[detail.siteId];
+  if (!counters) return snapshot;
+  counters[detail.failureBucket] += 1;
   const achievements = achievementsFromSnapshot(snapshot);
   updateLocalHighestClimber(achievements, detail.zoneId, detail.highestY);
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
-    counters,
+    counters: countersFromSnapshot(snapshot),
+    siteCounters,
     totalFalls: snapshot.totalFalls + 1,
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits,
@@ -40,18 +72,21 @@ export function applyLocalClear(
   snapshot: GameSnapshot,
   detail: ClearEventDetail
 ): GameSnapshot {
-  const counters = countersFromSnapshot(snapshot);
-  counters[detail.zoneId] = {
-    ...counters[detail.zoneId],
-    successfulClears: counters[detail.zoneId].successfulClears + 1,
-  };
+  const siteCounters = siteCountersFromSnapshot(snapshot);
+  const clearSite = resolveClearSite(snapshot, detail.zoneId);
+  if (!clearSite) return snapshot;
+  siteCounters[clearSite.siteId]!.successfulClears += 1;
   const achievements = achievementsFromSnapshot(snapshot);
   updateLocalHighestClimber(achievements, detail.zoneId, detail.highestY);
-  updateLocalBestStabilizer(achievements, counters[detail.zoneId].successfulClears);
+  const successfulClears = snapshot.zones.find(
+    (zone) => zone.id === detail.zoneId
+  )?.counters.successfulClears;
+  updateLocalBestStabilizer(achievements, (successfulClears ?? 0) + 1);
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
-    counters,
+    counters: countersFromSnapshot(snapshot),
+    siteCounters,
     totalFalls: snapshot.totalFalls,
     totalClears: snapshot.totalClears + 1,
     totalSummits: snapshot.totalSummits,
@@ -74,6 +109,7 @@ export function applyLocalSummit(
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
     counters: countersFromSnapshot(snapshot),
+    siteCounters: siteCountersFromSnapshot(snapshot),
     totalFalls: snapshot.totalFalls,
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits + 1,
@@ -83,16 +119,24 @@ export function applyLocalSummit(
 
 export function localFallMessage(
   snapshot: GameSnapshot,
-  detail: FallEventDetail
+  detail: ResolvedFallDetail
 ): string {
-  const zone = snapshot.zones.find((candidate) => candidate.id === detail.zoneId);
-  const count = zone?.counters[detail.failureBucket] ?? 1;
+  const site = snapshot.sites.find((candidate) => candidate.id === detail.siteId);
+  const count = site?.counters[detail.failureBucket] ?? 1;
   return fallFeedback({
-    zoneName: zone?.name ?? 'This zone',
+    zoneName: site?.name ?? detail.siteName,
     bucket: detail.failureBucket,
     count,
     counted: true,
   }).replace('Your fall counted.', 'Your fall counted here.');
+}
+
+function siteCountersFromSnapshot(
+  snapshot: GameSnapshot
+): Record<string, SiteMutationCounters> {
+  return Object.fromEntries(
+    snapshot.sites.map((site) => [site.id, { ...site.counters }])
+  );
 }
 
 export function localClearMessage(
