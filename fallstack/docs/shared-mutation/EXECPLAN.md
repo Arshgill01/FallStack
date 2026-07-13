@@ -4,7 +4,7 @@
 
 Make the community-authored tower—not the platforming shell—the unmistakable product. The shipped flow must prove shared scope before input, spatial cause-and-effect after an action, mechanical significance on the route, and a coherent whole-board story over the day.
 
-The target architecture is defined in [`architecture.md`](architecture.md). Release gates are defined in [`scorecard.md`](scorecard.md). Evidence and handoffs live in [`status.md`](status.md).
+The target architecture is defined in [`architecture.md`](architecture.md). Release gates are defined in [`scorecard.md`](scorecard.md), with the human M4 protocol in [`comprehension-test.md`](comprehension-test.md). Evidence and handoffs live in [`status.md`](status.md).
 
 ## Working scope decision
 

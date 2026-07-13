@@ -109,7 +109,7 @@ Production release gates still do not pass: authenticated transaction concurrenc
 ## Active next work
 
 1. Prove that hosted Devvit 0.13.7 matches the now-controlled watched-Redis results, then show safe remote receipt application in two authenticated sessions as soon as a connected signed-in browser is available.
-2. Run the five-person first-view comprehension check; do not infer it from screenshots.
+2. Run [`comprehension-test.md`](comprehension-test.md) with five first-time participants; do not infer it from screenshots or prefill the evidence table.
 3. If retrospective prior-day stories become a requirement, design an archive contract separately; do not reintroduce an unsupported relic/carryover promise.
 
 ## Open decision

@@ -8,7 +8,7 @@ All eight core criteria must score at least 3. The first five must score 4 befor
 
 | Criterion | 0 | 2 | 4 | Required evidence |
 | --- | --- | --- | --- | --- |
-| Shared scope comprehension | No shared scope | “Today/community” copy is present but ambiguous | A first-time player correctly identifies who shares the board and that everyone is changing the same tower | 5-person comprehension test plus first-viewport capture |
+| Shared scope comprehension | No shared scope | “Today/community” copy is present but ambiguous | A first-time player correctly identifies who shares the board and that everyone is changing the same tower | [`comprehension-test.md`](comprehension-test.md) plus first-viewport capture |
 | Spatial cause and effect | Counters only | Artifact changes somewhere in the zone | The exact failed approach maps to a named impact site and visible route object | Deterministic pure test plus recorded first-fall run |
 | Personal consequence | Generic “counted” banner | Count changes | Receipt shows before/after, exact site, immediate effect, next threshold, and accepted/capped state | API contract test plus browser capture |
 | Community consequence | Polling silently replaces state | Totals update | Another client crosses a threshold and the first client safely reconciles and highlights the changed site | Two-client browser or integration proof |
