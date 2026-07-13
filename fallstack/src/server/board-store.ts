@@ -1,4 +1,7 @@
-import { context, redis } from '@devvit/web/server';
+import {
+  context as devvitContext,
+  redis as devvitRedis,
+} from '@devvit/web/server';
 import {
   createBoardIdentity,
   createBoardSnapshot,
@@ -26,13 +29,56 @@ import {
   planSummitMutation,
   type MutationPlan,
 } from '../shared/game/mutation-plans.js';
-import {
-  type MutationReceipt,
-} from '../shared/game/mutation-receipts.js';
+import { type MutationReceipt } from '../shared/game/mutation-receipts.js';
 import type { ResolvedFall } from '../shared/game/mutation-events.js';
 
 const DAILY_KEY_TTL_SECONDS = 60 * 60 * 72;
 const MAX_TRANSACTION_ATTEMPTS = 3;
+
+type BoardStoreContext = {
+  subredditId: string;
+  subredditName: string;
+  userId?: string;
+  loid?: string;
+};
+
+type SortedMember = { member: string; score: number };
+
+type BoardTransaction = {
+  discard: () => Promise<void>;
+  multi: () => Promise<void>;
+  exec: () => Promise<unknown[]>;
+  expire: (key: string, seconds: number) => Promise<unknown>;
+  hIncrBy: (key: string, field: string, amount: number) => Promise<unknown>;
+  hSet: (key: string, values: Record<string, string>) => Promise<unknown>;
+  zAdd: (key: string, ...members: SortedMember[]) => Promise<unknown>;
+  zRemRangeByRank: (
+    key: string,
+    start: number,
+    stop: number
+  ) => Promise<unknown>;
+};
+
+type BoardStoreRedis = {
+  hGet: (key: string, field: string) => Promise<string | undefined>;
+  hGetAll: (key: string) => Promise<Record<string, string>>;
+  watch: (...keys: string[]) => Promise<BoardTransaction>;
+  zRange: (
+    key: string,
+    start: number | string,
+    stop: number | string
+  ) => Promise<SortedMember[]>;
+};
+
+type BoardStoreDependencies = {
+  context: BoardStoreContext;
+  redis: BoardStoreRedis;
+  now?: () => Date;
+};
+
+type ResolvedBoardStoreDependencies = Omit<BoardStoreDependencies, 'now'> & {
+  now: () => Date;
+};
 
 export type StoredBoardState = {
   board: BoardIdentity;
@@ -47,20 +93,50 @@ export type StoredBoardState = {
   recentMutations: MutationBeat[];
 };
 
-export async function loadBoardState(): Promise<StoredBoardState> {
-  const seed = createDailySeed();
+export function createBoardStore(dependencies: BoardStoreDependencies) {
+  const resolved: ResolvedBoardStoreDependencies = {
+    ...dependencies,
+    now: dependencies.now ?? (() => new Date()),
+  };
+  return {
+    loadBoardState: () => loadBoardStateWith(resolved),
+    recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
+      recordFallMutationWith(resolved, input),
+    recordClearMutation: (
+      input: Parameters<typeof recordClearMutationWith>[1]
+    ) => recordClearMutationWith(resolved, input),
+    recordSummitMutation: (
+      input: Parameters<typeof recordSummitMutationWith>[1]
+    ) => recordSummitMutationWith(resolved, input),
+  };
+}
+
+const defaultBoardStore = createBoardStore({
+  context: devvitContext,
+  redis: devvitRedis,
+});
+
+export const loadBoardState = defaultBoardStore.loadBoardState;
+export const recordFallMutation = defaultBoardStore.recordFallMutation;
+export const recordClearMutation = defaultBoardStore.recordClearMutation;
+export const recordSummitMutation = defaultBoardStore.recordSummitMutation;
+
+async function loadBoardStateWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<StoredBoardState> {
+  const seed = createDailySeed(dependencies.now());
   const board = createBoardIdentity({
-    communityId: context.subredditId,
-    communityName: context.subredditName,
+    communityId: dependencies.context.subredditId,
+    communityName: dependencies.context.subredditName,
     ...seed,
   });
   const keys = boardKeys(board);
   const [counterFields, metaFields, achievementFields, recentMembers] =
     await Promise.all([
-      redis.hGetAll(keys.counters),
-      redis.hGetAll(keys.meta),
-      redis.hGetAll(keys.achievements),
-      redis.zRange(keys.recent, 0, -1),
+      dependencies.redis.hGetAll(keys.counters),
+      dependencies.redis.hGetAll(keys.meta),
+      dependencies.redis.hGetAll(keys.achievements),
+      dependencies.redis.zRange(keys.recent, 0, -1),
     ]);
   const siteCounters = createSeededSiteCounters(seed.dailySeed);
 
@@ -105,23 +181,26 @@ export function boardSnapshotFor(state: StoredBoardState): BoardSnapshot {
   );
 }
 
-export async function recordFallMutation(input: {
-  state: StoredBoardState;
-  eventId: string;
-  fall: ResolvedFall;
-  highestY: number;
-  username: string;
-}): Promise<MutationReceipt> {
+async function recordFallMutationWith(
+  dependencies: ResolvedBoardStoreDependencies,
+  input: {
+    state: StoredBoardState;
+    eventId: string;
+    fall: ResolvedFall;
+    highestY: number;
+    username: string;
+  }
+): Promise<MutationReceipt> {
   const keys = boardKeys(input.state.board);
   const counterField = siteCounterField(input.fall.siteId, input.fall.bucket);
-  const contributor = contributorToken();
+  const contributor = contributorToken(dependencies.context);
   const bucketField = `${contributor}|site|${input.fall.siteId}|${input.fall.bucket}`;
   const dailyField = `${contributor}|falls`;
   const seeded = createSeededSiteCounters(input.state.dailySeed)[
     input.fall.siteId
   ]?.[input.fall.bucket];
 
-  return runTransaction(keys, async (read) => {
+  return runTransaction(dependencies.redis, keys, async (read) => {
     const [
       existing,
       organicCounter,
@@ -178,22 +257,25 @@ export async function recordFallMutation(input: {
   });
 }
 
-export async function recordClearMutation(input: {
-  state: StoredBoardState;
-  eventId: string;
-  zoneId: ZoneId;
-  siteId: string;
-  siteName: string;
-  highestY: number;
-  username: string;
-}): Promise<MutationReceipt> {
+async function recordClearMutationWith(
+  dependencies: ResolvedBoardStoreDependencies,
+  input: {
+    state: StoredBoardState;
+    eventId: string;
+    zoneId: ZoneId;
+    siteId: string;
+    siteName: string;
+    highestY: number;
+    username: string;
+  }
+): Promise<MutationReceipt> {
   const keys = boardKeys(input.state.board);
   const counterField = siteCounterField(input.siteId, 'successfulClears');
-  const contributorField = `${contributorToken()}|zone|${input.zoneId}|clears`;
+  const contributorField = `${contributorToken(dependencies.context)}|zone|${input.zoneId}|clears`;
   const seeded = createSeededSiteCounters(input.state.dailySeed)[input.siteId]
     ?.successfulClears;
 
-  return runTransaction(keys, async (read) => {
+  return runTransaction(dependencies.redis, keys, async (read) => {
     const [
       existing,
       organicCounter,
@@ -254,16 +336,19 @@ export async function recordClearMutation(input: {
   });
 }
 
-export async function recordSummitMutation(input: {
-  state: StoredBoardState;
-  eventId: string;
-  highestY: number;
-  username: string;
-}): Promise<MutationReceipt> {
+async function recordSummitMutationWith(
+  dependencies: ResolvedBoardStoreDependencies,
+  input: {
+    state: StoredBoardState;
+    eventId: string;
+    highestY: number;
+    username: string;
+  }
+): Promise<MutationReceipt> {
   const keys = boardKeys(input.state.board);
-  const contributorField = `${contributorToken()}|summits`;
+  const contributorField = `${contributorToken(dependencies.context)}|summits`;
 
-  return runTransaction(keys, async (read) => {
+  return runTransaction(dependencies.redis, keys, async (read) => {
     const [
       existing,
       contributorCount,
@@ -274,7 +359,7 @@ export async function recordSummitMutation(input: {
       read.receipt(input.eventId),
       read.number(keys.contributors, contributorField),
       read.number(keys.meta, 'acceptedEvents'),
-      redis.hGet(keys.achievements, 'firstSummitUsername'),
+      dependencies.redis.hGet(keys.achievements, 'firstSummitUsername'),
       read.number(
         keys.achievements,
         'highestClimberY',
@@ -300,7 +385,7 @@ export async function recordSummitMutation(input: {
         if (!firstSummit) {
           await tx.hSet(keys.achievements, {
             firstSummitUsername: input.username,
-            firstSummitAt: String(Date.now()),
+            firstSummitAt: String(dependencies.now().getTime()),
           });
         }
         await queueHighestClimber(
@@ -317,13 +402,14 @@ export async function recordSummitMutation(input: {
 }
 
 type BoardKeys = ReturnType<typeof boardKeys>;
-type TxClient = Awaited<ReturnType<typeof redis.watch>>;
+type TxClient = BoardTransaction;
 type TransactionWork = {
   plan: MutationPlan;
   queue: (tx: TxClient) => Promise<void>;
 };
 
 async function runTransaction(
+  redis: BoardStoreRedis,
   keys: BoardKeys,
   prepare: (read: TransactionReader) => Promise<TransactionWork>
 ): Promise<MutationReceipt> {
@@ -338,7 +424,7 @@ async function runTransaction(
       keys.recent
     );
     try {
-      const work = await prepare(transactionReader(keys));
+      const work = await prepare(transactionReader(redis, keys));
       if (!work.plan.storeReceipt) {
         await tx.discard();
         return work.plan.receipt;
@@ -362,7 +448,10 @@ type TransactionReader = {
   receipt: (eventId: string) => Promise<MutationReceipt | null>;
 };
 
-function transactionReader(keys: BoardKeys): TransactionReader {
+function transactionReader(
+  redis: BoardStoreRedis,
+  keys: BoardKeys
+): TransactionReader {
   return {
     number: async (key, field, fallback) =>
       safeNumber(await redis.hGet(key, field), fallback),
@@ -471,8 +560,7 @@ function parseAchievements(fields: Record<string, string>): AchievementState {
     firstSummitAt: optionalNumber(fields.firstSummitAt),
     highestClimberUsername: fields.highestClimberUsername ?? null,
     highestClimberZone:
-      highestClimberZone &&
-      createSeededCounters()[highestClimberZone]
+      highestClimberZone && createSeededCounters()[highestClimberZone]
         ? highestClimberZone
         : initial.highestClimberZone,
     highestClimberY: safeNumber(
@@ -484,7 +572,9 @@ function parseAchievements(fields: Record<string, string>): AchievementState {
   };
 }
 
-function parseMutationReceipt(value: string | undefined): MutationReceipt | null {
+function parseMutationReceipt(
+  value: string | undefined
+): MutationReceipt | null {
   if (!value) return null;
   try {
     const parsed = JSON.parse(value) as Partial<MutationReceipt>;
@@ -499,11 +589,9 @@ function parseMutationReceipt(value: string | undefined): MutationReceipt | null
 function parseMutationBeat(value: string): MutationBeat | null {
   try {
     const parsed = JSON.parse(value) as Partial<MutationBeat>;
-    return (
-      typeof parsed.revision === 'number' &&
-        typeof parsed.siteId === 'string' &&
-        typeof parsed.copy === 'string'
-    )
+    return typeof parsed.revision === 'number' &&
+      typeof parsed.siteId === 'string' &&
+      typeof parsed.copy === 'string'
       ? (parsed as MutationBeat)
       : null;
   } catch {
@@ -511,7 +599,7 @@ function parseMutationBeat(value: string): MutationBeat | null {
   }
 }
 
-function contributorToken(): string {
+function contributorToken(context: BoardStoreContext): string {
   return encodeURIComponent(context.userId ?? context.loid ?? 'anonymous');
 }
 

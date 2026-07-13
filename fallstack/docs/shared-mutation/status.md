@@ -2,7 +2,7 @@
 
 ## Current gate
 
-The local vertical slice is complete through M7. M3 and M6 still require authenticated hosted transaction/two-client proof, M4 still requires the five-person comprehension check, and M8 release audit is in progress.
+The local vertical slice is complete through M7, including M3's controlled concurrency-harness exit. M6 still requires authenticated hosted two-client proof, M4 still requires the five-person comprehension check, and M8 still requires real Devvit 0.13.7 transaction evidence.
 
 ## Product read
 
@@ -33,6 +33,7 @@ Fallstack now resolves bounded fall evidence to a real impact site on the server
 - Added bounded `FallObservation` validation and pure server-side site/bucket resolution. The client no longer supplies persistent zone or failure-bucket authority.
 - Added explicit community `BoardIdentity`, monotonic board revision, per-site seeded/organic counters, bounded mutation beats, and structured accepted/duplicate/capped/stale/invalid receipts.
 - Replaced scattered event reservation/cap/counter writes with one watched Redis transaction covering idempotency, contributor caps, exact site counters, totals, revision, receipt, achievements, history, and TTL. Pure planning tests submit one event 100 times and apply one mutation.
+- Added an injectable production board-store/API boundary and a Redis-compatible watched-transaction harness. Eleven server tests execute the real store and route behavior for two-user threshold races with ordered revisions, 100 concurrent duplicate tabs, the final per-site cap race, the ten-fall daily cap, fail-closed missing identity, first-summit/highest-climber/best-stabilizer races, exhausted retries with no partial event, previous-day 409 rejection with no write to either board, newest-20 history retention, and 72-hour expiry.
 - Added the accepted-fall runtime receipt: `MUTATION COUNTED`, `BOARD r37 → r38`, `First Gap`, `SHORT JUMPS`, and `4 → 5`; Phaser outlines the exact receipt site for 5.2 seconds.
 - Added accepted, threshold, capped, stale, and unavailable receipt states at 375×812 plus accepted/desktop coverage at 1280×800. Transaction failure now returns a structured unchanged-board receipt when a snapshot is available.
 - Implemented a one-way 900 ms Ghost Platform and a solid 650 ms Cursed Brick crumble. Both reset per attempt; reduced motion preserves shape/state without oscillation; the baseline route remains valid across representative seeds.
@@ -91,7 +92,7 @@ Production release gates still do not pass: authenticated transaction concurrenc
 | Shared scope comprehension | 3/4 | opening names one community; the server snapshot carries authenticated scope label, but five-person comprehension is unrun |
 | Spatial cause and effect | 4/4 | bounded evidence resolves to a generated route site; the accepted receipt names and outlines that exact slot |
 | Personal consequence | 4/4 | accepted runtime receipt exposes board revision, site, bucket, exact before/after count, and next consequence |
-| Persistence authority | 3/4 | watched transaction and pure retry/idempotency decisions exist; hosted concurrent execution is not yet proven |
+| Persistence authority | 4/4 | the server derives the mutation and a controlled Redis-compatible harness executes the real watched store through conflict, idempotency, cap, stale-day, achievement, history, and TTL cases; hosted Devvit semantics remain a separate M8 gate |
 | Trust and failure honesty | 4/4 | seeded/organic provenance and accepted/capped/stale/invalid/unavailable unchanged-board receipts are explicit |
 | Mechanical significance | 4/4 | all five artifacts now match their documented collision/timing semantics and preserve the baseline route |
 
@@ -107,7 +108,7 @@ Production release gates still do not pass: authenticated transaction concurrenc
 
 ## Active next work
 
-1. Prove watched Redis retries, duplicate idempotency, caps, threshold races, and safe remote receipt application in two authenticated hosted sessions as soon as a connected signed-in browser is available.
+1. Prove that hosted Devvit 0.13.7 matches the now-controlled watched-Redis results, then show safe remote receipt application in two authenticated sessions as soon as a connected signed-in browser is available.
 2. Run the five-person first-view comprehension check; do not infer it from screenshots.
 3. If retrospective prior-day stories become a requirement, design an archive contract separately; do not reintroduce an unsupported relic/carryover promise.
 
@@ -154,3 +155,7 @@ The second option is not an incremental Redis key change. It introduces infrastr
 - Hosted mutation proof remains blocked: the CLI has no authenticated endpoint invocation command, the connected Chrome runtime exposed no browser, and isolated browser access receives Reddit's challenge/HTTP 403. No test-only production endpoint or credential extraction was introduced to bypass this gate.
 - Final post-upload local gate — `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check` passed; 93 tests pass. The existing expanded Phaser chunk warning remains.
 - `node take_screenshots.js` — passed against the production bundle after the final gate; refreshed splash, 375×812 mobile, 1280×800 desktop, and 1920×1080 fullscreen captures and passed the header overflow assertions.
+- Persistence-harness red/green loop — passed; the test command now includes compiled server tests, `board-store.ts` retains its production exports behind an injected system boundary, and `api.ts` can be exercised with controlled context, identity, clock, and store dependencies.
+- `node --test 'dist/types/server/**/*.test.js'` — passed; 11 server tests cover watched conflict/retry behavior, exact ordered revisions and threshold crossing, 100-tab idempotency, per-site/daily/anonymous caps, monotonic achievements, stale UTC date, bounded visible history, and 72-hour retention.
+- Persistence-harness full gate — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 104 tests pass. The existing expanded Phaser chunk warning remains.
+- Persistence-hardened Devvit upload — `npm run deploy` passed and uploaded app `0.0.19`; `npx devvit playtest fallstack_dev --show-timestamps --since 0m` installed `v0.0.19.2`, and `npx devvit list installs fallstack_dev` independently confirmed that version. Build/server/client startup completed without a streamed runtime error; this is not the still-missing signed-in two-client proof.

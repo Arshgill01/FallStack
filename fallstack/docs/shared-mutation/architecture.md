@@ -73,6 +73,7 @@ M2 closed the event-authority boundary. Phaser now sends bounded observation evi
 - Players in the same installation and UTC day resolve to one explicit community board identity and revision.
 - Falls, clears, and summits are authenticated through server context rather than client-supplied usernames.
 - Contributions, idempotency receipts, exact site counters, totals, board revision, achievements, and visible history beats are queued in one watched Redis transaction with bounded retry.
+- The production board store and API expose narrow injectable system boundaries. A Redis-compatible controlled harness executes the real store/route code and proves ordered conflict retries, duplicate idempotency, caps, stale-day rejection, monotonic achievements, history bounds, and TTL without changing the production endpoint interface.
 - Aggregate per-site counters deterministically derive visible artifacts and zone labels at real generated impact sites.
 - Seeded state ensures the shared-mutation promise is visible before traffic exists, and seeded versus organic counts are exposed separately.
 - Accepted falls return a structured receipt; React shows the board/site/counter proof and Phaser outlines the exact site.
@@ -84,7 +85,7 @@ These foundations now make an accepted fall contextual, legible, mechanically me
 
 | Severity | Gap | Current evidence | Product consequence |
 | --- | --- | --- | --- |
-| P0 | Hosted transaction semantics are not yet proven | Installed Devvit 0.13.7 transaction reads differ from the current docs; pure planning/retry tests pass, but the signed-in hosted browser gate is unavailable | Atomicity and retry behavior cannot yet carry a public authoritative claim under real concurrency |
+| P0 | Hosted transaction semantics are not yet proven | The real store passes a controlled Redis-compatible concurrency harness, but installed Devvit 0.13.7 transaction reads differ from current docs and the signed-in hosted browser gate is unavailable | The algorithm is locally evidenced, but its Devvit adapter behavior cannot yet carry a public hosted-authority claim |
 | P0 | Hosted two-client reconciliation is not yet proven | deterministic browser proof defers revision 41 during flight and applies it on landing, but the environment has no connected signed-in browser | The remote community consequence cannot yet be claimed from real hosted clients |
 | P1 | First-time comprehension is unmeasured | runtime and Figma states answer scope, earlier cause, personal delta, and next consequence, but the five-person check is unrun | Release confidence still lacks direct human evidence |
 | P1 | Finalized historical board archive is absent | Tower Memory is an honest live board and the false relic promise is removed; prior sealed boards are not yet retrievable in-product | The current day has a story, but later retrospective/community recap features need a separate archive contract |

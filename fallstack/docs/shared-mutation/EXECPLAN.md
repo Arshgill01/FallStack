@@ -209,7 +209,7 @@ Exit:
 - [x] M0 Figma shared-board states and baseline score.
 - [x] M1 deterministic impact sites.
 - [x] M2 observation and receipt contracts.
-- [ ] M3 transactional persistence — implementation and pure retry/idempotency tests pass; authenticated hosted concurrency proof remains open.
+- [x] M3 transactional persistence — the production store now runs through an injectable Redis/context boundary, and a controlled watched-Redis harness proves conflicts, duplicate tabs, threshold ordering, caps, stale-day rejection, monotonic achievements, bounded history, and TTL. Hosted Devvit 0.13.7 semantics remain an M8 platform gate.
 - [ ] M4 first-viewport slice — the complete mobile/desktop receipt matrix passes locally; the five-person comprehension gate remains open.
 - [x] M5 mechanical artifacts.
 - [ ] M6 live reconciliation — safe defer/apply, remote beat, rollover, and local two-snapshot browser proof pass; hosted two-client proof remains open.
