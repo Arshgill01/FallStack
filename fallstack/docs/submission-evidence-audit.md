@@ -1,7 +1,7 @@
 # Feedback Submission Evidence Audit
 
-Audit date: 2026-07-12
-Tested Devvit version: 0.13.7
+Audit date: 2026-07-14
+Tested Devvit versions: current stable 0.13.8 for CLI/package/harness checks; hosted app v0.0.20.2 on 0.13.7
 
 This is the claim gate for the paste-ready form answers. “Submission-ready” means the current repository contains direct evidence for the claim at the same scope. It does not mean the broader feedback objective is complete.
 
@@ -12,7 +12,7 @@ The separate `award-criteria-audit.md` maps the completed package to Reddit's pu
 | Required question | Answer status | Evidence basis | Remaining uncertainty |
 | --- | --- | --- | --- |
 | Future hackathon category | Ready | Product thesis, Reddit-native shared mutation design, working aggregate state architecture | Preference, not an empirical platform claim |
-| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated inline/expanded host QA, two-tab hosted race, hosted validation probes, logged-out boundary, two template audits, harness install/audit/context experiments, 101 real route requests | Physical-mobile, successful `loid`, and uncapped hosted write remain |
+| Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated Chrome/Safari host QA, shared-board reconciliation, two-tab race, current template/CLI audits, current harness install/audit/context experiments, and 101 real route requests | Physical-mobile, successful `loid`, uncapped hosted write, and cross-browser playtest-bridge comparison remain |
 | Why DX rating | Ready | Exact versions, dependency paths, timings, route tests, verified candidate dependency bumps | Candidate bumps have targeted—not full upstream—coverage |
 | Documentation satisfaction | Ready at 3/5 | Current docs, schema, changelog, templates, CLI commands, public docs source | Pages can change after audit date |
 | Why documentation rating | Ready | Direct contradictions and exact source files; positive architecture assessment grounded in working implementation | No new-developer usability study beyond this build |
@@ -27,10 +27,11 @@ The separate `award-criteria-audit.md` maps the completed package to Reddit's pu
 
 Evidence:
 
-- clean `@devvit/test@0.13.7` install attempted an implicit Redis source download and stayed at 0% for more than three minutes;
-- published dependency path introduced 2 high and 2 moderate audit findings through `redis-memory-server@0.14.1`;
-- forcing 0.17.0 produced 0 findings and passed a real harness Redis test;
-- public runner configuration cannot set post/comment/logged-out request context;
+- an uncached Ubuntu `@devvit/test@0.13.7` install attempted an implicit Redis source download and stayed at 0% for more than three minutes;
+- a clean Mac `@devvit/test@0.13.8` install downloaded source and compiled Redis during `npm install`, narrowing the stall to environment-specific behavior while confirming the undocumented native setup;
+- the current published dependency path introduced 2 high and 2 moderate findings through `redis-memory-server@0.14.1`;
+- forcing 0.17.0 produced 0 findings and passed a focused Redis set/get on 0.13.8; a separate regression test reconfirmed the unchanged context gap;
+- current public runner configuration cannot set post/comment/logged-out request context;
 - public source constructs `Context(headers)` before exposing the headers fixture;
 - manual context setup enabled 101 requests through real Fallstack Hono routes and found an application HTTP-status bug plus an interrupted-idempotency risk.
 
@@ -41,9 +42,9 @@ Conclusion: submission-ready, balanced positive/negative evidence. State targete
 Evidence:
 
 - pinned current React and Phaser starter clones both installed with 1 high and 4 low findings;
-- common path: `devvit@0.13.7 > @devvit/cli@0.13.7 > inquirer@9.1.4 > external-editor@3.1.0 > tmp@0.0.33`;
-- public CLI manifest pins Inquirer 9.1.4;
-- forcing Inquirer 9.3.8 installed at 0 findings and still ran `npx devvit --version`.
+- both current template pins reproduce `devvit@0.13.7 > @devvit/cli@0.13.7 > inquirer@9.1.4 > external-editor@3.1.0 > tmp@0.0.33` on macOS;
+- a separate clean `devvit@0.13.8` install retains the same path and findings;
+- forcing Inquirer 9.3.8 under 0.13.8 installed at 0 findings and still ran `npx devvit --version`.
 
 Conclusion: submission-ready. Explicitly say this is development CLI code, not the shipped game bundle.
 
@@ -55,7 +56,9 @@ Evidence:
 - configuration best practice recommends `devvit build`; CLI 0.13.7 has no build command;
 - quickstart/template library say Express; current React/Phaser starters use Hono;
 - changelog says `inline` is deprecated/no-op; Vite guide and both starters still emit it;
-- starter READMEs say type-check also lints/prettifies; script only runs `tsc --build`.
+- starter READMEs say type-check also lints/prettifies; script only runs `tsc --build`;
+- Redis guide treats `await txn.get(key)` as a returned value; current 0.13.8 transaction declarations return `TxClientLike`;
+- stable 0.13.7 and 0.13.8 are published while the official changelog ends at 0.13.6.
 
 Conclusion: submission-ready. Recommend generated/contract-tested docs rather than listing typos without a systemic fix.
 
@@ -68,6 +71,19 @@ Evidence:
 - public source suppresses connected/completion dividers in JSON and serializes only log/error/event messages; keepalives are hidden by default.
 
 Conclusion: submission-ready as secondary observability feedback. Do not promise `history_complete` is implementable if the remote API has no history/tail boundary.
+
+### P1 — Safari cannot connect the documented playtest client bridge
+
+Evidence:
+
+- authenticated Safari rendered the installed inline and expanded app, so the failure is not general app execution;
+- the HTTPS Reddit playtest page reported `ws://localhost:5678/` as blocked insecure content;
+- current CLI source assigns port 5678 to `PlaytestServer`, the bidirectional client-log/reload bridge;
+- `devvit logs ... --connect` printed its streaming banner and `lsof` confirmed Node listening on TCP 5678;
+- reloading the Safari page produced no client connection divider;
+- official playtest docs say the query parameter streams client logs and provides live reload.
+
+Conclusion: submission-ready as a Safari-specific compatibility/diagnostic finding. Do not claim the app failed, physical-mobile impact, or cross-browser failure; the separate Chrome profile was not authenticated.
 
 ### P1 — Hosted requests lack a browser-to-runtime join key
 
@@ -104,16 +120,17 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 - Authenticated Reddit rendered the real inline and expanded app in Mobile and Desktop host modes. Safe hosted probes confirmed authenticated context, account caps, duplicate recognition, stale fall/clear/summit rejection, and summit geometry validation while preserving the 46/0/0 snapshot.
 - Two simultaneous expanded tabs returned the same identity and baseline; concurrent identical attempts produced one cap response and one duplicate response, with 46/0/0 preserved in both frames.
 - A later independently read-back v0.0.15 cold/warm pass measured real iframe paint, bundle, cache, and init timing without preserving credentials or tokenized URLs.
+- The currently installed v0.0.20.2 rendered in authenticated Safari. Earlier two-client Safari evidence proved shared revision reconciliation `R37 → R39` without reload; the current read-only board showed `R40`.
 - Schema validation gave useful nested paths for unknown fields and malformed internal endpoints.
 - With manual request context, the first-party harness provided isolated Redis, concurrency, and fault injection that materially improved Fallstack.
-- Fallstack's 46 committed pure/client tests, type-check, lint, audit, and production build pass in the dedicated worktree.
+- Current `master` passes audit, type-check, lint, 110 tests, and production build; the build retains only the existing generic chunk-size advisory.
 
 ## Claims excluded from criticism
 
 | Observation | Reason excluded or constrained |
 | --- | --- |
 | Automated Reddit page returned network-security block | Host/access environment; not established as Devvit defect |
-| Incognito page is blocked while authenticated profile succeeds | Reddit access/auth boundary; useful QA limitation, not Devvit criticism |
+| VM incognito is blocked; Mac private browsing reaches Reddit but the test subreddit is private | Reddit access/subreddit topology; useful QA limitation, not Devvit criticism |
 | Chrome/Playwright/agent-browser setup problems | Third-party/local environment |
 | npm `globalignorefile` warnings | Local npm configuration ownership unresolved |
 | Static fallback initially rendered blank | Fallstack-owned bug |
@@ -126,10 +143,10 @@ Conclusion: submission-ready as a tooling/documentation request, not a CDN/runti
 
 ## Residual evidence gaps that must remain visible
 
-1. Hosted Redis replay of a fresh successful contribution under an uncapped identity; the current authenticated account was already capped. Cross-tab duplicate-marker sharing is now verified.
-2. Logged-out `loid` on a Reddit-allowed device/network or supported developer-token browser path; response-loss and mutation transaction/state-machine testing.
+1. Hosted Redis replay of a fresh successful contribution under an uncapped identity; current board/account state was not used for synthetic writes. Cross-tab duplicate-marker sharing and two-client reconciliation are already verified.
+2. Logged-out `loid` on a public/otherwise accessible test installation; response-loss and mutation transaction/state-machine testing.
 3. Physical-mobile and broader host performance evidence; current timing has three controlled VM runs but is not a population percentile.
-4. First-hand support interaction if the submission deadline permits.
+4. First-hand support interaction if the submission deadline permits and the user approves the exact public message.
 5. Sharing the evidence branch/repository if the form allows an appendix link.
 
 These gaps limit claims but do not block the current award-ready submission: every claim in the paste-ready form is already supported at its stated scope, and the gaps are disclosed directly.

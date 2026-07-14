@@ -4,14 +4,13 @@ This is the durable handoff record for the Devvit feedback-reward research. Read
 
 ## Workspace
 
-- Canonical worktree: `/home/arshdeepsingh/work/github/FallStack-feedback-reward`
-- Branch: `feedback-reward-research`
-- Branch point: `27fd62692aa1bd46a98a814674e60d9134a89ac3`
-- Created: 2026-07-12 UTC
-- Original worktree: `/home/arshdeepsingh/work/github/FallStack`
-- The original worktree's `.agents/` and `fallstack/docs/design-redesign/` changes are unrelated and were deliberately not transferred.
+- Current canonical repository: `/Users/arshdeepsingh/Developer/FallStack`
+- Current branch: `master`
+- Remote feedback-research history was merged at `bf03ee0` before the 2026-07-14 Mac pass.
+- The earlier `/home/arshdeepsingh/work/github/FallStack-feedback-reward` VM worktree and `feedback-reward-research` branch remain provenance for the 2026-07-12 experiments, not the active path.
+- Disposable current-release projects live under `/tmp/fallstack-devvit-feedback-macos-20260714` and must not be committed.
 
-All further feedback-reward research, logs, drafts, and evidence should be created in the canonical worktree above. Do not continue this work in the original worktree.
+All further feedback research should update the current repository above while preserving unrelated user changes.
 
 ## Authenticated-host setup and completed pass
 
@@ -55,6 +54,8 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - `fallstack/docs/server-persistence-experiment.md`: real route + Redis concurrency/fault-injection evidence and application-owned persistence findings.
 - `fallstack/docs/submission-evidence-audit.md`: requirement coverage, primary claims, exclusions, and completion blockers.
 - `fallstack/docs/feedback-form-submission.md`: current paste-ready Google Form answers plus a non-form appendix index.
+- `fallstack/docs/current-release-macos-pass.md`: current 0.13.8 package/CLI/harness recheck, Safari bridge reproduction, and narrowed host limits.
+- `fallstack/docs/feedback-award-execplan.md`: execution and stop-condition record for the 2026-07-14 follow-up pass.
 - `fallstack/docs/playtest-evidence/`: real upload/read-back and browser-host evidence.
 
 ## Completed evidence passes
@@ -181,6 +182,19 @@ The exact form prompts are in the repository-root `feedbackquestions.md`.
 - Preserved targeted-versus-full-upstream validation language and kept unmeasured host behavior out of claims.
 - Kept the deeper patch map and experiment reports authoritative; the brief links rather than duplicating unsupported detail.
 
+### Current-release macOS and Safari pass
+
+- Rechecked the package registry and official docs on 2026-07-14. Stable 0.13.7 and 0.13.8 are published while the official changelog still ends at 0.13.6.
+- Reproduced the starter/CLI audit path on both pinned current templates under macOS arm64 and in a separate clean `devvit@0.13.8` project. The Inquirer 9.3.8 candidate audited at zero and ran CLI 0.13.8.
+- Reproduced the current `@devvit/test@0.13.8` 2-high/2-moderate dependency path and request-context gap. A clean Mac install downloaded source and compiled Redis during `npm install`, refining the Ubuntu-only silent-stall claim into an undocumented native-setup finding.
+- Forced `redis-memory-server@0.17.0` under the current test package; audit returned zero and focused Redis/context tests passed.
+- Reconfirmed on CLI 0.13.8 that `devvit build` is absent, JSON logs expose no readiness/empty-history record, and upload has no validate/dry-run/analyze mode.
+- Loaded the installed v0.0.20.2 app in authenticated Safari without extracting session values. Inline, expanded, responsive mobile-host controls, and board `R40` rendered. No hosted state was written.
+- Reproduced a Safari-only playtest bridge failure: the HTTPS Reddit page blocked Devvit's `ws://localhost:5678` request. The CLI listener was verified open, but no client connected. App execution itself remained healthy.
+- Mac Private Browsing reached Reddit, narrowing the VM network failure, but the private subreddit prevented logged-out app/`loid` testing. No access control was changed.
+- Skipped upload, response-loss, uncapped-write, clear/summit, and public-support actions because they would change remote/public state or require explicit user confirmation without materially improving the current general claims.
+- Evidence: `docs/current-release-macos-pass.md`.
+
 ## Last full validation
 
 Run from `fallstack/` after the 2026-07-12 CLI pass:
@@ -200,21 +214,23 @@ After the performance, logged-out, duplicate-tab, request-correlation, and packa
 
 The dedicated worktree was initialized with `npm ci` on 2026-07-12 (568 packages, 0 vulnerabilities). After the hosted-retry and Phaser-packaging pass, the full validation above was rerun in this worktree and passed again: audit 0, type-check, lint, 44/44 tests, build, and `git diff --check`. The build retained its existing chunk-size advisory; the separate measured packaging run also captured the Devvit plugin-timing advisory.
 
+After the 2026-07-14 current-release Mac pass, current `master` passed `npm audit --audit-level=high`, `npm run type-check`, `npm run lint`, `npm test` (110/110), and `npm run build`. The build retained only the existing generic chunk-size advisory. The documentation gate also passed `git diff --check`, exact form-heading comparison, and local evidence-reference resolution.
+
 ## Highest-value next work
 
-1. Reconcile the live-snapshot splash fix with the newer separately uploaded visual branch before any upload; do not overwrite v0.0.15 from this older isolated branch.
-2. Exercise response-loss and genuinely earned clear/summit flows against playtest Redis. Duplicate-tab marker sharing is verified. Logged-out `loid` requires a Reddit-allowed network/device or supported developer-token browser path; do not bypass Reddit access controls.
-3. Repeat performance evidence on physical mobile hardware and broader networks; the current three-run same-version comparison is one VM, not a platform percentile.
-4. Trigger a controlled non-destructive server exception through the real host and evaluate trace/request correlation in playtest and historical logs.
-5. Gather first-hand community support evidence: question, channel, timestamps, response accuracy, resolution, and follow-up. Do not invent a support rating.
-6. Revisit the paste-ready submission only when new host, Redis, or support evidence changes a claim; preserve the current evidence cutoff and confidence labels otherwise.
+1. Before any upload, reconcile current `master` with installed product-code commit `6b0b7d0`; do not silently replace v0.0.20.2 merely to run a diagnostic.
+2. Compare the Safari playtest bridge in an authenticated supported Chromium/Firefox profile or obtain an official browser-support statement. Do not generalize the current Safari-only result.
+3. Exercise response-loss and genuinely earned clear/summit flows only with ethically clean state. Logged-out `loid` needs a public/otherwise accessible test installation; do not change subreddit visibility or bypass access controls implicitly.
+4. Repeat performance evidence on physical mobile hardware and broader networks; desktop responsive mode and the current three-run VM sample are not platform percentiles.
+5. Trigger a controlled non-destructive server exception only after the installed/source relationship is resolved, then evaluate request correlation.
+6. Prepare a concise first-hand support question if the user wants it, but obtain confirmation immediately before public submission and keep the support score neutral until a real exchange exists.
 
 ## Award-readiness audit
 
-- Current public Feedback Award signals were rechecked on 2026-07-12: detailed, candid, actionable, constructive, specific, and thoughtful feedback; concrete feature/resource/bug/process commentary.
+- Current public Feedback Award signals were rechecked on 2026-07-14: detailed, candid, actionable, constructive, specific, and thoughtful feedback; concrete feature/resource/bug/process commentary.
 - `docs/award-criteria-audit.md` maps each signal to direct package evidence and records exclusions, security hygiene, and residual uncertainty.
 - The paste-ready form is now judged award-ready at its stated evidence scope. Remaining physical-mobile, uncapped-identity, `loid`, response-loss, and firsthand-support gaps are disclosed and do not support stronger current claims.
-- Do not continue experimenting merely for volume. Resume only if new evidence can materially change a form claim or maintainer recommendation without misleading public state, credential risk, access-control bypass, or overwriting the separately uploaded v0.0.15 app.
+- Do not continue experimenting merely for volume. Resume only if new evidence can materially change a form claim or maintainer recommendation without misleading public state, credential risk, access-control bypass, or overwriting installed v0.0.20.2 from a different local source state.
 
 ## Operating rules
 

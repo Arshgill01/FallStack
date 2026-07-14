@@ -1,7 +1,7 @@
 # Devvit Feedback Maintainer Triage Brief
 
-Evidence cutoff: 2026-07-12
-Tested release: Devvit 0.13.7
+Evidence cutoff: 2026-07-14
+Tested releases: Devvit 0.13.8 for current package/CLI/harness checks; hosted app v0.0.20.2 on 0.13.7
 
 This is the shortest path through the Fallstack evidence package. It prioritizes reproduced, Devvit-owned improvements that are small enough to evaluate independently and valuable beyond one app.
 
@@ -11,11 +11,11 @@ Devvit Web's architecture worked: a real Phaser + React + Hono app built, upload
 
 Three changes would remove the most friction:
 
-1. make `@devvit/test` install cleanly and accept complete request-context fixtures;
-2. make new templates pass a zero-high dependency gate and contract-test the golden-path documentation;
-3. add a non-mutating validation/package report plus typed lifecycle records for automation.
+1. make `@devvit/test` install cleanly, document its native Redis setup, and accept complete request-context fixtures;
+2. make new templates pass a zero-high dependency gate and contract-test docs, templates, schema, and stable release notes;
+3. add a non-mutating validation/package report, typed lifecycle records, and a browser-compatible playtest client bridge.
 
-These recommendations come from clean installs, pinned first-party sources/templates, actual CLI commands, installed-version read-back, authenticated Reddit host QA, same-version cold/warm iframe timing, a real two-tab hosted Redis race, hosted validation probes, 101 requests through Fallstack's real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
+These recommendations come from clean installs on Ubuntu and macOS, pinned first-party sources/templates, current 0.13.8 package checks, actual CLI commands, installed-version read-back, authenticated Chrome/Safari host QA, same-version cold/warm iframe timing, a real two-tab hosted Redis race, two-client board reconciliation, 101 requests through real Hono routes, concurrency and fault injection, and exact upload-manifest enumeration.
 
 ## Recommended triage order
 
@@ -25,9 +25,11 @@ These recommendations come from clean installs, pinned first-party sources/templ
 | P0 | Test harness pins vulnerable Redis-memory dependency | Common zero-high CI gates reject the first-party test package | `redis-memory-server` 0.14.1 → 0.17.0 in test/Redis packages | Override audited at zero and passed a real Redis harness test |
 | P0 | Fresh React/Phaser starters inherit a high CLI finding | New projects fail security gates before app code exists | CLI Inquirer 9.1.4 → 9.3.8 | Override audited at zero and CLI version command passed |
 | P0 | Golden-path docs/templates contradict executable contracts | New users receive wrong commands, limits, stack, and deprecated config | Correct six source locations; add CI contracts | Docs/schema/changelog/templates/commands compared at pinned revisions |
+| P0 | Stable releases are missing from official release notes | “Update to latest” has no authoritative change/migration record | Publish 0.13.7/0.13.8 entries; gate registry/changelog drift | Registry timestamps and current changelog compared on 2026-07-14 |
 | P1 | No non-mutating `validate`/package manifest | Developers learn config/package problems only inside mutating upload flows | CLI validation command or `upload --dry-run` | Controlled config failures and exact uploader enumeration completed |
 | P1 | JSON logs omit lifecycle state | Automation cannot distinguish connected-empty from stalled | Optional typed status JSONL | Human/JSON behavior reproduced and source branch confirmed |
 | P1 | Browser responses cannot be joined to runtime logs | Intermittent hosted failures lack a copyable platform trace key | Opaque response request ID + structured log propagation/filter | CLI flags, recent runtime stream, and authenticated response headers inspected |
+| P1 | Safari blocks the local playtest bridge | Documented client logs/live reload do not connect although the app runs | Secure bridge/fallback or explicit browser support detection | Listener verified on 5678; Safari mixed-content block and no connection observed |
 | P1 | Phaser builds lack actionable Reddit-host targets | Generic Vite warnings cannot answer host/mobile/review readiness | Guidance plus manifest/runtime/map split and reference metrics | Three host runs: 0.392–4.164 s cold vs 0.400–0.412 s warm FCP |
 
 ## Fast reproductions
@@ -42,7 +44,7 @@ npm audit --json
 npm ls devvit @devvit/cli inquirer external-editor tmp --all
 ```
 
-Observed in both templates: 1 high + 4 low findings on:
+Observed in both templates on macOS: 1 high + 4 low findings on:
 
 ```text
 devvit@0.13.7
@@ -54,15 +56,17 @@ devvit@0.13.7
 
 Candidate check: force `inquirer@9.3.8`, reinstall, audit, and run `npx devvit --version`. Those targeted checks passed at zero findings. Full CLI prompt/CI coverage is still required upstream.
 
+A clean `devvit@0.13.8` project independently retained the same path and findings; the 9.3.8 candidate also audited at zero and ran CLI 0.13.8.
+
 ### 2. Test-package dependency gate
 
 ```sh
-REDISMS_DISABLE_POSTINSTALL=1 npm install --save-dev @devvit/test@0.13.7 vitest@4.1.10
+npm install --save-dev @devvit/test@0.13.8 vitest@4.1.10
 npm audit --json
 npm ls redis-memory-server tar uuid --all
 ```
 
-Observed: 2 high + 2 moderate findings through `redis-memory-server@0.14.1`, plus an implicit Redis download that remained silently at 0% for more than three minutes in a clean uncached attempt.
+Observed: 2 high + 2 moderate findings through `redis-memory-server@0.14.1`. The implicit Redis setup remained silently at 0% for more than three minutes on an uncached Ubuntu VM; a clean Mac install downloaded source and compiled Redis with Xcode/Clang. The portable issue is undocumented native setup, not a claim that every install stalls.
 
 Candidate check: force `redis-memory-server@0.17.0`, configure the system Redis binary, then run a `createDevvitTest()` Redis set/get. The install audited at zero and the real Redis test passed. This does not replace the full upstream suite or download-platform coverage.
 
@@ -91,6 +95,8 @@ Run or compare these current first-party contracts:
 | Changelog vs Vite guide/templates | `inline` deprecated/no-op but still emitted |
 | Template README vs package script | Type-check claims lint/prettier but runs only `tsc --build` |
 | Test guide vs harness installation/context | Redis binary/download and post-scoped Web route path omitted |
+| Redis guide vs 0.13.8 declarations | `await txn.get()` shown as a value vs queued command returning `TxClientLike` |
+| npm stable releases vs changelog | 0.13.7 and 0.13.8 published; official page ends at 0.13.6 |
 
 Acceptance criteria: runnable docs commands execute in CI; duplicated schema constraints are generated or checked; framework claims match dependencies; active examples contain no current no-op/deprecated properties; starter validation descriptions match scripts.
 
@@ -129,6 +135,12 @@ Recent authenticated hosted requests produced no automatic JSON runtime record, 
 
 Acceptance criteria: every Devvit Web API response may expose an opaque request ID; the same ID is available in server context and structured runtime/error logs; CLI filtering can retrieve that record with installed version, subreddit, route, status, runtime, and duration without user or infrastructure identifiers.
 
+### 8. Safari playtest bridge
+
+The official playtest guide says `?playtest=<app>` streams client logs and provides live reload. In authenticated Safari, the app and remote API rendered, but the HTTPS Reddit page blocked `ws://localhost:5678/` as mixed content. Current CLI source defines port 5678 in `PlaytestServer`. With `devvit logs ... --connect` running, `lsof` confirmed Node listening on 5678; reloading Safari still produced no client connection divider.
+
+Acceptance criteria: the documented bridge connects without a mixed-content violation on every supported desktop browser and produces a client connection/log event. If Safari is unsupported, the guide and CLI should state/detect that rather than silently losing only the local-development features.
+
 ## Evidence integrity
 
 The package deliberately excludes these from Devvit criticism:
@@ -142,7 +154,7 @@ The package deliberately excludes these from Devvit criticism:
 - generic Phaser/Vite chunk size as a claimed platform defect;
 - support response quality, because no firsthand support exchange occurred.
 
-Candidate dependency bumps have targeted validation only. They are not represented as passing Reddit's complete upstream suites. Authenticated host transfer, first paint, responsive Mobile/Desktop layout, and safe hosted validation are now measured; logged-out identity, physical-mobile behavior, a fresh uncapped hosted write/race, and interrupted-response recovery remain open.
+Candidate dependency bumps have targeted validation only. They are not represented as passing Reddit's complete upstream suites. Authenticated host transfer, first paint, responsive host layout, safe hosted validation, and Safari shared-board reconciliation are measured; logged-out identity, physical-mobile behavior, a fresh uncapped hosted write/race, interrupted-response recovery, and authenticated non-Safari bridge comparison remain open.
 
 ## Detailed evidence index
 
@@ -160,6 +172,7 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Logged-out boundary and `loid` limitation | `logged-out-host-pass.md` |
 | Real two-tab identity/idempotency race | `hosted-duplicate-tab-pass.md` |
 | Browser/runtime request-correlation audit | `host-log-correlation-pass.md` |
+| Current 0.13.8 macOS and Safari recheck | `current-release-macos-pass.md` |
 | Claim-level readiness and exclusions | `submission-evidence-audit.md` |
 | Paste-ready survey answers | `feedback-form-submission.md` |
 | Published award-signal mapping and readiness judgment | `award-criteria-audit.md` |
@@ -169,9 +182,9 @@ Candidate dependency bumps have targeted validation only. They are not represent
 | Area | Likely owner |
 | --- | --- |
 | `@devvit/test`, Redis binary setup, request fixtures | Test/runtime developer experience |
-| CLI dependency gate, validation, logs JSONL | Devvit CLI |
+| CLI dependency gate, validation, logs JSONL, local playtest bridge | Devvit CLI + playtest host |
 | Vite package manifest and map policy | Devvit Web tooling |
-| Schema/docs/template contract CI | Documentation + template maintainers |
+| Schema/docs/template/release-note contract CI | Documentation + release + template maintainers |
 | Phaser/mobile/host budgets | Games + Devvit Web runtime/performance |
 
 The full source-level patch discussion is in `maintainer-patch-map.md`; this brief is the triage entrypoint, not a replacement for the underlying evidence.

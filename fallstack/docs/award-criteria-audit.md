@@ -1,6 +1,6 @@
 # Feedback Award Criteria Audit
 
-Audit date: 2026-07-12 UTC
+Audit date: 2026-07-14 UTC
 
 ## Published signals
 
@@ -31,7 +31,9 @@ These are public selection signals, not a scoring rubric or guarantee.
 The package includes:
 
 - clean audits of two current first-party templates;
+- an independent current `devvit@0.13.8` audit and candidate dependency check on macOS arm64;
 - public-source root-cause analysis and two targeted dependency upgrades;
+- clean current `@devvit/test@0.13.8` native-setup, dependency, and request-context experiments on macOS;
 - 101 requests through Fallstack's real Hono routes and isolated Redis;
 - fault injection and 20-way local races;
 - a successful real upload/install/read-back;
@@ -40,6 +42,8 @@ The package includes:
 - a real two-tab hosted Redis marker race;
 - three same-version cold/warm iframe performance runs;
 - logged-out boundary and browser/runtime correlation audits;
+- authenticated Safari inline/expanded/read-only board QA and a reproducible Safari playtest-bridge compatibility finding;
+- a current registry-versus-changelog release-process audit;
 - a locally fixed first-viewport data-integrity bug with 46 passing tests;
 - paste-ready answers matching every exact form prompt;
 - a short maintainer triage brief, deeper patch map, evidence matrix, and durable work log.
@@ -52,8 +56,8 @@ The package includes:
 - No synthetic clear or first summit was written to the public test state.
 - No cookie, iframe token, HAR, raw authenticated trace, or internal infrastructure value is preserved.
 - Support quality is not invented; its rating remains neutral and explicitly low-confidence.
-- Remaining physical-mobile, uncapped-identity, `loid`, response-loss, and firsthand-support gaps are disclosed rather than silently generalized.
+- Remaining physical-mobile, uncapped-identity, `loid`, response-loss, authenticated cross-browser bridge, and firsthand-support gaps are disclosed rather than silently generalized.
 
 ## Readiness judgment
 
-The paste-ready form is award-ready against the public signals above. The remaining gaps would broaden the evidence but are not needed to support its current claims. Additional experimentation should be accepted only when it can change a claim without unethical state mutation, credential handling, unsupported access-control bypass, or overwriting the separately uploaded v0.0.15 app.
+The paste-ready form is award-ready against the public signals above. Current-release Mac evidence strengthens the general platform claims and narrows the earlier VM limitations without pretending every result is cross-platform. The remaining gaps would broaden the evidence but are not needed to support the current answers. Additional experimentation should be accepted only when it can change a claim without unethical state mutation, credential handling, unsupported access-control bypass, or overwriting installed v0.0.20.2 from a different local source state.

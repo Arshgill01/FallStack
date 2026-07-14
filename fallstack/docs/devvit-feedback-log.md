@@ -2,16 +2,43 @@
 
 Document only observed Devvit or tooling failures, rough edges, and reproducible gaps. Do not add routine successful playtest logs; keep those in commit messages or validation notes instead.
 
-## 2026-07-13 07:32 UTC — Transaction read example conflicts with Devvit 0.13.7 client contract
+## 2026-07-14 18:15 UTC — Stable packages are two releases ahead of the official changelog
 
-- Environment: macOS arm64, Node v26.0.0, npm 11.12.1, Devvit CLI and `@devvit/web` 0.13.7.
+- Environment: npm registry and the official [Devvit changelog](https://developers.reddit.com/docs/changelog), checked 2026-07-14.
+- Expected result: each stable Devvit registry release has a corresponding changelog entry, even if the entry only says there are no developer-facing changes.
+- Actual result: npm published `devvit@0.13.7` on 2026-07-07 and `devvit@0.13.8` on 2026-07-13. The current changelog ends at 0.13.6, dated 2026-06-29, and contains no 0.13.7 or 0.13.8 entry.
+- Developer impact: official guidance recommends the latest project-local CLI, but developers cannot determine what changed in the two newest stable releases, whether a migration is required, or which docs/templates correspond to them. The page's warning about undocumented experimental package features does not resolve stable-release history.
+- Severity: moderate release-process/documentation gap; it reduces upgrade confidence rather than blocking installation.
+- Workaround: compare registry versions and published package/source diffs manually, then retest the app in playtest.
+- Recommendation: publish a changelog entry before or with every stable package release and add an automated registry-versus-changelog drift check. Maintenance releases can be labeled explicitly as having no developer-facing changes.
+
+## 2026-07-14 18:05 UTC — Safari blocks the documented local playtest bridge as mixed content
+
+- Environment: macOS 15.7.3 arm64, authenticated Safari, Reddit HTTPS playtest URL, `@devvit/cli@0.13.8` local listener.
+- Task attempted: use the documented `?playtest=<app>` client-log/live-reload connection while inspecting a real installed Devvit Web app.
+- Expected result: the browser connects to the local playtest server, the CLI prints a client connection divider, and client logs/reload messages can flow.
+- Actual result: Safari reported that the HTTPS Reddit page requested insecure content from `ws://localhost:5678/` and blocked it. The app and remote API still rendered, but no client connection appeared in the CLI.
+- Controlled reproduction:
+  1. Run `devvit logs fallstack_dev fallstack --connect` and wait for the human streaming banner.
+  2. Verify with `lsof -nP -iTCP:5678 -sTCP:LISTEN` that Node is listening on port 5678.
+  3. Load or reload the authenticated `?playtest=fallstack` Reddit page in Safari.
+  4. Observe the mixed-content warning and the absence of a client connection divider.
+- Ownership evidence: current CLI source defines port 5678 in `@devvit/cli/dist/lib/playtest-server.js` and describes `PlaytestServer` as the bidirectional connection for playtest clients. The official [Playtest guide](https://developers.reddit.com/docs/guides/tools/playtest) says the query parameter streams client logs and provides live reload.
+- Severity: moderate Safari compatibility/diagnostic gap. Remote app execution still worked; the affected features are local client logs and live reload.
+- Workaround: use another supported browser if it can reach the private test subreddit, or rely on server logs and manual refresh. The separate Mac Chrome profile was not authenticated, so no cross-browser result is claimed here.
+- Recommendation: provide a secure local bridge/fallback that works on every documented desktop browser. If Safari is intentionally unsupported for this feature, document and detect that limitation in the CLI/playtest page.
+- Acceptance criterion: with the CLI listener open, a supported Safari playtest page connects without a mixed-content violation and produces a client connection/log event.
+
+## 2026-07-13 07:32 UTC — Transaction read example conflicts with the current client contract
+
+- Environment: macOS arm64, Node v26.0.0, npm 11.12.1; originally reproduced on 0.13.7 and rechecked in the published 0.13.8 declarations.
 - Task attempted: implement an optimistic Redis transaction that reads contributor caps and counters after `watch()` and before `multi()`.
 - Evidence checked:
   - current official Redis guide: `https://developers.reddit.com/docs/capabilities/server/redis`
   - installed `node_modules/@devvit/redis/RedisClient.d.ts`
   - installed `node_modules/@devvit/redis/RedisClient.js`
 - Expected result: the documented `const currentRaw = await txn.get(key)` returns the current string value and type-checks as the guide shows.
-- Actual result: the installed 0.13.7 declaration returns `Promise<TxClientLike>`, and the installed implementation queues `Get` with the transaction ID then returns `this`. Treating the result as a string does not match either the type or implementation.
+- Actual result: the installed 0.13.7 declaration returns `Promise<TxClientLike>`, and the installed implementation queues `Get` with the transaction ID then returns `this`. The published 0.13.8 declaration still returns `Promise<TxClientLike>`. Treating the result as a string does not match the current contract.
 - Reproduction steps:
   1. Install `@devvit/web@0.13.7`.
   2. Call `const txn = await redis.watch(key)`.
@@ -36,6 +63,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Severity: high-confidence starter/dependency maintenance issue. The vulnerable path is development CLI code, not bundled game runtime, which reduces end-user exposure but does not remove CI/supply-chain impact.
 - Recommendation: update `packages/cli/package.json` from `inquirer@9.1.4` to at least `9.3.8` or add the safe transitive override to `devvit`; gate every released starter revision with a clean install plus `npm audit --audit-level=high`.
 - Patch validation: a disposable `devvit@0.13.7` project with `inquirer@9.3.8` forced through npm overrides installed with 0 vulnerabilities, removed the legacy `external-editor/tmp` path, and successfully ran `npx devvit --version`. This is targeted compatibility evidence, not a substitute for Reddit's full CLI test suite.
+- macOS/current-release recheck: both pinned templates reproduced the same 5 findings on macOS arm64. A separate clean `devvit@0.13.8` install retained `inquirer@9.1.4` and the same audit path; forcing 9.3.8 audited at zero and reported CLI 0.13.8 successfully.
 - Notes: plain `npm audit fix` on this npm/Linux environment failed with `EBADPLATFORM` for optional `@esbuild/aix-ppc64@0.28.1`. That secondary failure appears npm/esbuild-owned and is not being presented as a Devvit defect; the explicit `tmp` override was the reliable mitigation.
 
 ## 2026-07-12 19:04 UTC — Current quickstart, changelog, Vite guide, and templates disagree on shipped behavior
@@ -112,8 +140,9 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Severity: low-to-moderate automation/diagnostic gap. Silence is valid JSON-lines behavior, but a CI or support script cannot distinguish connected-and-empty from stalled-before-connection.
 - Workaround: use human mode for a connection banner; there is no observed completion marker for the historical window.
 - Recommendation: emit typed JSON control records such as `connected`, `history_complete`, and `heartbeat` (to stderr or behind a flag), and document whether `--since` first drains history and then tails indefinitely.
+- Current-release recheck: `@devvit/cli@0.13.8` remained silent in JSON mode during a bounded empty-log observation on macOS; human mode still printed its streaming banner.
 
-## 2026-07-12 18:35 UTC — Official test harness install stalls on an implicit Redis source download
+## 2026-07-12 18:35 UTC — Official test harness performs an undocumented native Redis setup
 
 - Environment: Ubuntu VM, Node v24.18.0, npm 11.18.0, `@devvit/test@0.13.7`, no preinstalled `redis-server`.
 - Task attempted: install the test stack recommended by the official [Testing with @devvit/test](https://developers.reddit.com/docs/guides/tools/devvit_test) guide.
@@ -128,6 +157,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Severity: significant developer-experience rough edge in the newly documented testing path.
 - Workaround: install a system Redis binary, then install with `REDISMS_DISABLE_POSTINSTALL=1` and run tests with `REDISMS_SYSTEM_BINARY=/usr/bin/redis-server`.
 - Recommendation: document the binary download, cache location, supported environment variables, compilation prerequisites, and system-binary path. Stream progress rather than buffering it until failure.
+- macOS/current-release recheck: a clean `@devvit/test@0.13.8` install on macOS arm64 downloaded Redis source and compiled `redis-server` with the Xcode/Clang toolchain during `npm install`. It completed rather than reproducing the Ubuntu 0% stall, so the stall remains environment-specific; the undocumented native download/build and opaque setup expectations generalize.
 
 ## 2026-07-12 18:38 UTC — Current official test harness introduces four unfixable audit findings
 
@@ -142,6 +172,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Workaround: none within the published dependency range. Fallstack removed the experimental dependencies after reproducing the issue; `npm uninstall --save-dev @devvit/test vitest` returned the repository to 0 audit findings.
 - Recommendation: update `packages/test/package.json` from `redis-memory-server@0.14.1` to `0.17.0`, update the same development dependency in `packages/redis/package.json`, publish a patched `@devvit/test`, and add dependency auditing to its release gate.
 - Patch validation: forcing `redis-memory-server@0.17.0` under the published `@devvit/test@0.13.7` resolved `tar@7.5.20`, removed the old UUID path, installed with 0 vulnerabilities, and passed a real Vitest Redis set/get through `createDevvitTest()` using the system Redis binary. Full upstream tests remain required before release.
+- macOS/current-release recheck: `@devvit/test@0.13.8` still resolves `redis-memory-server@0.14.1`, `tar@6.2.1`, and `uuid@8.3.2` and still reports 2 high + 2 moderate findings. Forcing 0.17.0 audited at zero and passed the focused Redis set/get test on macOS.
 
 ## 2026-07-12 18:40 UTC — Test harness cannot configure post context for a Devvit Web route
 
@@ -159,6 +190,7 @@ Document only observed Devvit or tooling failures, rough edges, and reproducible
 - Severity: testing coverage gap. Capability calls can be tested, but post-scoped Devvit Web endpoints cannot be exercised end-to-end through the obvious public API.
 - Workaround: refactor production logic behind injected service/context parameters and test below the HTTP boundary, then reserve the real boundary for uploaded playtests. This weakens the advertised production-like integration coverage.
 - Recommendation: add `headers?: Partial<Record<Header, string>>` (or typed `postId`, `commentId`, `loid`, and related fields) to `DevvitTestConfig` and merge it before `Context(headers)` is called. Add assertions against the actual exported `context`, not only the fixture object. Alternatively, document a supported request adapter that hydrates `@devvit/web/server` context from a Hono/Fetch request.
+- Current-release recheck: the 0.13.8 declaration still lacks raw headers/post/comment/`loid` inputs, source still constructs `Context(headers)` before fixture exposure, and a focused Mac test confirmed that mutating `devvit-post` does not hydrate `context.postId`.
 
 ## 2026-07-08 00:00 UTC — Raw Vite dev server is blocked by the Devvit plugin
 

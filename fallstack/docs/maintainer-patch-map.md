@@ -1,6 +1,6 @@
 # Devvit Feedback Maintainer Patch Map
 
-Date: 2026-07-12
+Date: 2026-07-14
 
 This turns reproduced Fallstack findings into source-level changes a Devvit maintainer can evaluate quickly. It is not a patch against Reddit's repository and does not claim full upstream test coverage.
 
@@ -24,13 +24,13 @@ Minimal candidate:
 
 Why 9.3.8: it replaces the legacy editor dependency with `@inquirer/external-editor` and removed the reproduced audit path.
 
-Targeted validation completed:
+Targeted validation completed on both the originally tested 0.13.7 path and a current `devvit@0.13.8` disposable project:
 
 - disposable `devvit@0.13.7` project with npm override `inquirer: 9.3.8`
 - `npm install`: passed
 - `npm audit`: 0 vulnerabilities
 - dependency tree: no legacy `external-editor/tmp` path
-- `npx devvit --version`: passed and reported CLI 0.13.7
+- `npx devvit --version`: passed and reported the corresponding CLI version, including 0.13.8 on macOS arm64
 
 Still required upstream: the CLI unit/type/lint/oclif suites and interactive prompt smoke tests.
 
@@ -48,7 +48,7 @@ Minimal candidates:
 + "redis-memory-server": "0.17.0"
 ```
 
-Targeted validation completed by overriding the dependency beneath published `@devvit/test@0.13.7`:
+Targeted validation completed by overriding the dependency beneath published `@devvit/test@0.13.7` and rechecking under 0.13.8 on macOS:
 
 - install with the documented system-binary escape hatch: passed
 - `npm audit`: 0 vulnerabilities
@@ -137,6 +137,8 @@ Pinned docs source edits:
 | `docs/guides/tools/vite.mdx` | Canonical example includes deprecated/no-op `inline: true` | Remove `inline` |
 | current React and Phaser `devvit.json` | Both emit deprecated/no-op `inline` | Remove it |
 | current React and Phaser `README.md` | Says type-check also lints/prettifies | Describe `tsc --build`, or add a real aggregate `check` script |
+| `docs/capabilities/server/redis.md` | Transaction example treats `await txn.get()` as the read value while current declarations return `TxClientLike` | Show the supported watch/read/queue/exec pattern or change the client contract |
+| current changelog/release process | Stable 0.13.7 and 0.13.8 are published but the page ends at 0.13.6 | Add entries and gate stable registry publication against changelog coverage |
 
 Recommended CI contracts:
 
@@ -145,6 +147,7 @@ Recommended CI contracts:
 3. compare template-library framework claims with template dependencies;
 4. scan current templates/examples for properties marked removed/deprecated in the active changelog;
 5. require clean-install high-severity audits for released templates.
+6. compare every stable registry version with an explicit changelog entry, including no-dev-facing-change maintenance releases.
 
 ## Patch 7 — Add a non-mutating WebView package report
 
@@ -168,6 +171,33 @@ Minimal candidate: extract the already-computed client asset manifest into a loc
 Expose this through the proposed `devvit validate` command or `devvit upload --dry-run`. Add platform-owned recommended ranges for inline launch, expanded first canvas, and mobile memory rather than promoting Vite's generic 500 kB threshold as a Reddit limit. Document whether source maps should default differently for playtest and publish.
 
 This patch does not assume source maps are fetched in ordinary execution and should not reject a Phaser build solely from raw size. Its purpose is to make the package and platform tradeoff visible before remote mutation.
+
+## Patch 8 — Make the local playtest bridge browser-compatible
+
+Current published CLI source defines an unencrypted WebSocket server on port 5678 in `@devvit/cli/dist/lib/playtest-server.js`. The Reddit playtest host attempts `ws://localhost:5678/` when the `?playtest=<app>` query is active.
+
+Authenticated Safari reproduced a mixed-content block from the HTTPS Reddit page even while `devvit logs ... --connect` was running and `lsof` confirmed the current CLI listener on port 5678. The remote app still rendered; client-log streaming and live reload did not connect.
+
+Candidate shapes, in order of product value:
+
+1. provide a secure local `wss://` bridge with a supported trust/bootstrap flow;
+2. provide an HTTPS/platform relay or another browser-compatible local transport;
+3. if Safari is intentionally unsupported, detect it and show a CLI/page warning with the supported-browser list and fallback.
+
+Acceptance test: for every documented desktop browser, a clean playtest page connects to the current CLI listener, emits a client connection record, forwards one client log, and receives one reload message without mixed-content/security errors. This needs upstream browser coverage; the current evidence is Safari-specific.
+
+## Patch 9 — Gate stable releases against release notes
+
+The npm registry published `devvit@0.13.7` on 2026-07-07 and 0.13.8 on 2026-07-13. On 2026-07-14, the official changelog still ended at 0.13.6.
+
+Minimal process change:
+
+- require a stable-version changelog record before or with registry publication;
+- allow an explicit “maintenance release; no developer-facing changes” record;
+- fail or alert when the highest stable registry version exceeds the highest changelog version;
+- link the package version to the matching docs snapshot/template baseline where possible.
+
+Acceptance test: publishing a stable release without a matching entry fails the release gate or opens a blocking release-doc task. Prerelease/`next` builds remain exempt.
 
 ## Public duplicate screening
 
