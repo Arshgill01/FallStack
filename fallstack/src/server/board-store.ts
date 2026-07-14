@@ -93,12 +93,18 @@ export type StoredBoardState = {
   recentMutations: MutationBeat[];
 };
 
+export type StoredBoardRevision = {
+  board: BoardIdentity;
+  revision: number;
+};
+
 export function createBoardStore(dependencies: BoardStoreDependencies) {
   const resolved: ResolvedBoardStoreDependencies = {
     ...dependencies,
     now: dependencies.now ?? (() => new Date()),
   };
   return {
+    loadBoardRevision: () => loadBoardRevisionWith(resolved),
     loadBoardState: () => loadBoardStateWith(resolved),
     recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
       recordFallMutationWith(resolved, input),
@@ -117,6 +123,7 @@ const defaultBoardStore = createBoardStore({
 });
 
 export const loadBoardState = defaultBoardStore.loadBoardState;
+export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
 export const recordFallMutation = defaultBoardStore.recordFallMutation;
 export const recordClearMutation = defaultBoardStore.recordClearMutation;
 export const recordSummitMutation = defaultBoardStore.recordSummitMutation;
@@ -124,12 +131,7 @@ export const recordSummitMutation = defaultBoardStore.recordSummitMutation;
 async function loadBoardStateWith(
   dependencies: ResolvedBoardStoreDependencies
 ): Promise<StoredBoardState> {
-  const seed = createDailySeed(dependencies.now());
-  const board = createBoardIdentity({
-    communityId: dependencies.context.subredditId,
-    communityName: dependencies.context.subredditName,
-    ...seed,
-  });
+  const { board, seed } = currentBoard(dependencies);
   const keys = boardKeys(board);
   const [counterFields, metaFields, achievementFields, recentMembers] =
     await Promise.all([
@@ -160,6 +162,31 @@ async function loadBoardStateWith(
       .map(({ member }) => parseMutationBeat(member))
       .filter((beat): beat is MutationBeat => Boolean(beat))
       .slice(-20),
+  };
+}
+
+async function loadBoardRevisionWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<StoredBoardRevision> {
+  const { board } = currentBoard(dependencies);
+  const acceptedEvents = safeNumber(
+    await dependencies.redis.hGet(boardKeys(board).meta, 'acceptedEvents')
+  );
+  return {
+    board,
+    revision: SEEDED_TOTAL_FALLS + acceptedEvents,
+  };
+}
+
+function currentBoard(dependencies: ResolvedBoardStoreDependencies) {
+  const seed = createDailySeed(dependencies.now());
+  return {
+    seed,
+    board: createBoardIdentity({
+      communityId: dependencies.context.subredditId,
+      communityName: dependencies.context.subredditName,
+      ...seed,
+    }),
   };
 }
 

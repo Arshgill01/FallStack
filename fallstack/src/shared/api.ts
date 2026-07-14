@@ -17,6 +17,12 @@ export type InitGameResponse = {
   snapshot: BoardSnapshot;
 };
 
+export type BoardRevisionResponse = {
+  type: 'boardRevision';
+  boardId: string;
+  revision: number;
+};
+
 export type RecordFallRequest = FallObservation & {
   eventId: string;
   boardId: string;

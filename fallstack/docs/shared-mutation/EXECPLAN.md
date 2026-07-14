@@ -136,7 +136,7 @@ Exit:
 
 ### M6 — Live community reconciliation
 
-- Use board revision to fetch/reconcile only when needed.
+- Probe only current board identity/revision, then fetch the full snapshot only when either changes.
 - Surface bounded remote mutation beats without interrupting an active jump.
 - Defer collision-body replacement until a safe reconcile point.
 - Handle background/foreground, duplicate tabs, reload, and rollover.
@@ -209,9 +209,9 @@ Exit:
 - [x] M0 Figma shared-board states and baseline score.
 - [x] M1 deterministic impact sites.
 - [x] M2 observation and receipt contracts.
-- [x] M3 transactional persistence — the production store now runs through an injectable Redis/context boundary, and a controlled watched-Redis harness proves conflicts, duplicate tabs, threshold ordering, caps, stale-day rejection, monotonic achievements, bounded history, and TTL. Hosted Devvit 0.13.7 semantics remain an M8 platform gate.
+- [x] M3 transactional persistence — the production store runs through an injectable Redis/context boundary; the controlled watched-Redis harness proves conflicts, duplicate tabs, threshold ordering, caps, stale-day rejection, monotonic achievements, bounded history, and TTL, while installed Devvit 0.13.7 accepted ordered hosted writes `R37 → R39`.
 - [ ] M4 first-viewport slice — the complete mobile/desktop receipt matrix passes locally; the five-person comprehension gate remains open.
 - [x] M5 mechanical artifacts.
-- [ ] M6 live reconciliation — safe defer/apply, remote beat, rollover, and local two-snapshot browser proof pass; hosted two-client proof remains open.
+- [x] M6 live reconciliation — safe defer/apply, remote beat, rollover, revision-only polling, local airborne proof, and signed-in hosted two-client `R37 → R39` reconciliation pass.
 - [x] M7 Tower Memory and honest daily story; the unsupported relic promise was removed instead of simulated.
 - [ ] M8 hosted validation and release audit.

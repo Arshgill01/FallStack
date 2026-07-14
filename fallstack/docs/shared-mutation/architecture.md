@@ -1,6 +1,6 @@
 # Shared Mutation Architecture
 
-Status: evidence-backed target architecture, 2026-07-13.
+Status: implemented and evidence-backed architecture, 2026-07-14.
 
 ## What Fallstack is selling
 
@@ -78,18 +78,18 @@ M2 closed the event-authority boundary. Phaser now sends bounded observation evi
 - Seeded state ensures the shared-mutation promise is visible before traffic exists, and seeded versus organic counts are exposed separately.
 - Accepted falls return a structured receipt; React shows the board/site/counter proof and Phaser outlines the exact site.
 - Artifact collision bodies are rebuilt from the latest snapshot at respawn after the event is emitted.
+- Visible clients poll one metadata field through `/api/board-revision`; they fetch and derive a full snapshot only after a newer revision or daily board identity appears.
+- The installed Devvit 0.13.7 playtest accepted two hosted fall transactions from client A (`R37 → R39`), and independent client B reconciled to `R39` and the upgraded First Gap without reload.
 
-These foundations now make an accepted fall contextual, legible, mechanically meaningful, and visible in the shared daily story. Ghost and cursed artifacts have deterministic per-attempt rules, newer revisions reconcile only at safe collision points, and Tower Memory consumes the same bounded board history. The remaining release-critical uncertainty is hosted multi-client transaction/reconciliation behavior, not the local domain or presentation contract.
+These foundations now make an accepted fall contextual, legible, mechanically meaningful, and visible in the shared daily story. Ghost and cursed artifacts have deterministic per-attempt rules, newer revisions reconcile only at safe collision points, and Tower Memory consumes the same bounded board history. The remaining release gate is direct first-time human comprehension, not the local domain, persistence adapter, or presentation contract.
 
 ## Shortcomings
 
 | Severity | Gap | Current evidence | Product consequence |
 | --- | --- | --- | --- |
-| P0 | Hosted transaction semantics are not yet proven | The real store passes a controlled Redis-compatible concurrency harness, but installed Devvit 0.13.7 transaction reads differ from current docs and the signed-in hosted browser gate is unavailable | The algorithm is locally evidenced, but its Devvit adapter behavior cannot yet carry a public hosted-authority claim |
-| P0 | Hosted two-client reconciliation is not yet proven | deterministic browser proof defers revision 41 during flight and applies it on landing, but the environment has no connected signed-in browser | The remote community consequence cannot yet be claimed from real hosted clients |
 | P1 | First-time comprehension is unmeasured | runtime and Figma states answer scope, earlier cause, personal delta, and next consequence, but the five-person check is unrun | Release confidence still lacks direct human evidence |
 | P1 | Finalized historical board archive is absent | Tower Memory is an honest live board and the false relic promise is removed; prior sealed boards are not yet retrievable in-product | The current day has a story, but later retrospective/community recap features need a separate archive contract |
-| P2 | Full snapshot refresh is still coarse | persistence is grouped into hashes, but polling returns and re-derives the whole board | Live reconciliation does more network/render work than the bounded revision/beat model requires |
+| P2 | A simultaneous hosted watch conflict has not been deliberately forced | hosted Devvit accepted two real writes with ordered revisions and reconciled a second client; forced two-user conflicts, duplicate tabs, caps, retry exhaustion, and partial-write absence are proven in the Redis-compatible production-store harness | A future Devvit transaction regression may require a hosted load harness to diagnose |
 
 ## Target schematic
 

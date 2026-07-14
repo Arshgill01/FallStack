@@ -5,6 +5,7 @@ import {
 import { Hono, type Context as HonoContext } from 'hono';
 import type {
   ApiErrorResponse,
+  BoardRevisionResponse,
   InitGameResponse,
   RecordClearRequest,
   RecordClearResponse,
@@ -25,6 +26,7 @@ import {
 import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
 import {
   boardSnapshotFor,
+  loadBoardRevision,
   loadBoardState,
   recordClearMutation,
   recordFallMutation,
@@ -32,6 +34,7 @@ import {
 } from '../board-store.js';
 
 const defaultBoardStore = {
+  loadBoardRevision,
   loadBoardState,
   recordClearMutation,
   recordFallMutation,
@@ -75,6 +78,23 @@ export function createApi(dependencies: ApiDependencies): Hono {
     } catch (err) {
       console.error('init-game failed', err);
       return error(c, 'The tower failed to wake.');
+    }
+  });
+
+  api.get('/board-revision', async (c) => {
+    if (!dependencies.context.postId)
+      return error(c, 'postId is required but missing from context');
+
+    try {
+      const state = await dependencies.boardStore.loadBoardRevision();
+      return c.json<BoardRevisionResponse>({
+        type: 'boardRevision',
+        boardId: state.board.boardId,
+        revision: state.revision,
+      });
+    } catch (err) {
+      console.error('board-revision failed', err);
+      return error(c, 'The tower failed to answer.');
     }
   });
 

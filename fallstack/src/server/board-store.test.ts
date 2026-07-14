@@ -362,6 +362,42 @@ void test('a previous-day event receives a stale receipt and writes to neither b
   assert.equal((await store.loadBoardState()).revision, previous.revision);
 });
 
+void test('the revision endpoint reads only current board metadata', async () => {
+  const redis = new InMemoryRedis();
+  const store = createBoardStore({
+    redis,
+    context: contextFor('alice'),
+    now: () => new Date('2026-07-14T12:00:00.000Z'),
+  });
+  const initial = await store.loadBoardState();
+  redis.resetReadCounts();
+  const api = createApi({
+    context: { postId: 't3_fallstack', username: 'alice' },
+    reddit: { getCurrentUsername: async () => 'alice' },
+    boardStore: store,
+    now: () => Date.parse('2026-07-14T12:00:00.000Z'),
+  });
+
+  const response = await api.request('/board-revision');
+  const body = (await response.json()) as {
+    type?: string;
+    boardId?: string;
+    revision?: number;
+  };
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, {
+    type: 'boardRevision',
+    boardId: initial.board.boardId,
+    revision: initial.revision,
+  });
+  assert.deepEqual(redis.readCounts(), {
+    hGet: 1,
+    hGetAll: 0,
+    zRange: 0,
+  });
+});
+
 void test('one user can change at most ten failure sites across the daily board', async () => {
   const redis = new InMemoryRedis();
   const store = createBoardStore({
@@ -561,6 +597,9 @@ class InMemoryRedis {
   readonly #expiresAt = new Map<string, number>();
   #forcedConflicts = 0;
   #now = 0;
+  #hGetReads = 0;
+  #hGetAllReads = 0;
+  #zRangeReads = 0;
 
   async watch(...keys: string[]): Promise<InMemoryTransaction> {
     return new InMemoryTransaction(
@@ -570,11 +609,13 @@ class InMemoryRedis {
   }
 
   async hGet(key: string, field: string): Promise<string | undefined> {
+    this.#hGetReads += 1;
     this.purgeExpired(key);
     return this.#hashes.get(key)?.get(field);
   }
 
   async hGetAll(key: string): Promise<Record<string, string>> {
+    this.#hGetAllReads += 1;
     this.purgeExpired(key);
     return Object.fromEntries(this.#hashes.get(key) ?? []);
   }
@@ -584,6 +625,7 @@ class InMemoryRedis {
     start: number | string,
     stop: number | string
   ): Promise<SortedMember[]> {
+    this.#zRangeReads += 1;
     this.purgeExpired(key);
     const members = this.sortedMembers(key);
     const [first, last] = rankRange(members.length, start, stop);
@@ -606,6 +648,20 @@ class InMemoryRedis {
 
   advanceTime(milliseconds: number): void {
     this.#now += milliseconds;
+  }
+
+  resetReadCounts(): void {
+    this.#hGetReads = 0;
+    this.#hGetAllReads = 0;
+    this.#zRangeReads = 0;
+  }
+
+  readCounts(): { hGet: number; hGetAll: number; zRange: number } {
+    return {
+      hGet: this.#hGetReads,
+      hGetAll: this.#hGetAllReads,
+      zRange: this.#zRangeReads,
+    };
   }
 
   hSet(key: string, values: Record<string, string>): number {

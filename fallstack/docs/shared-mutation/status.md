@@ -2,11 +2,11 @@
 
 ## Current gate
 
-The local vertical slice is complete through M7, including M3's controlled concurrency-harness exit. M6 still requires authenticated hosted two-client proof, M4 still requires the five-person comprehension check, and M8 still requires real Devvit 0.13.7 transaction evidence.
+The vertical slice is complete through M7, including controlled concurrency and signed-in hosted Devvit evidence. The remaining release gate is M4's five-person comprehension check; it cannot be inferred from code, screenshots, or agent simulation.
 
 ## Product read
 
-Fallstack now resolves bounded fall evidence to a real impact site on the server, stores exact site counters in a watched transaction, renders exact accepted/rejected receipts, gives Ghost/Cursed artifacts deterministic route-safe mechanics, reconciles newer boards only at safe collision points, and presents the day as a three-zone Tower Memory. The decisive remaining gap is hosted multi-client evidence; human comprehension testing is also unrun.
+Fallstack now resolves bounded fall evidence to a real impact site on the server, stores exact site counters in a watched transaction, renders exact accepted/rejected receipts, gives Ghost/Cursed artifacts deterministic route-safe mechanics, reconciles newer boards only at safe collision points, and presents the day as a three-zone Tower Memory. The installed playtest has now proven hosted writes and cross-client reconciliation. Human comprehension testing is the decisive remaining gap.
 
 ## Completed evidence
 
@@ -33,14 +33,15 @@ Fallstack now resolves bounded fall evidence to a real impact site on the server
 - Added bounded `FallObservation` validation and pure server-side site/bucket resolution. The client no longer supplies persistent zone or failure-bucket authority.
 - Added explicit community `BoardIdentity`, monotonic board revision, per-site seeded/organic counters, bounded mutation beats, and structured accepted/duplicate/capped/stale/invalid receipts.
 - Replaced scattered event reservation/cap/counter writes with one watched Redis transaction covering idempotency, contributor caps, exact site counters, totals, revision, receipt, achievements, history, and TTL. Pure planning tests submit one event 100 times and apply one mutation.
-- Added an injectable production board-store/API boundary and a Redis-compatible watched-transaction harness. Eleven server tests execute the real store and route behavior for two-user threshold races with ordered revisions, 100 concurrent duplicate tabs, the final per-site cap race, the ten-fall daily cap, fail-closed missing identity, first-summit/highest-climber/best-stabilizer races, exhausted retries with no partial event, previous-day 409 rejection with no write to either board, newest-20 history retention, and 72-hour expiry.
+- Added an injectable production board-store/API boundary and a Redis-compatible watched-transaction harness. Twelve server tests execute the real store and route behavior for two-user threshold races with ordered revisions, 100 concurrent duplicate tabs, the final per-site cap race, the ten-fall daily cap, fail-closed missing identity, first-summit/highest-climber/best-stabilizer races, exhausted retries with no partial event, previous-day 409 rejection with no write to either board, newest-20 history retention, 72-hour expiry, and a one-field revision probe.
 - Added the accepted-fall runtime receipt: `MUTATION COUNTED`, `BOARD r37 → r38`, `First Gap`, `SHORT JUMPS`, and `4 → 5`; Phaser outlines the exact receipt site for 5.2 seconds.
 - Added accepted, threshold, capped, stale, and unavailable receipt states at 375×812 plus accepted/desktop coverage at 1280×800. Transaction failure now returns a structured unchanged-board receipt when a snapshot is available.
 - Implemented a one-way 900 ms Ghost Platform and a solid 650 ms Cursed Brick crumble. Both reset per attempt; reduced motion preserves shape/state without oscillation; the baseline route remains valid across representative seeds.
-- Added 15-second revision polling, safe-point defer/apply, rollover-aware reconciliation, and sparse remote community beats. A deterministic browser proof held revision 41 while airborne and applied it on landing.
+- Added 15-second metadata-only revision polling, conditional full-board fetch, safe-point defer/apply, rollover-aware reconciliation, and sparse remote community beats. Three client tests prove unchanged, newer-revision, and new-board fetch behavior; a deterministic browser proof held revision 41 while airborne and applied it on landing.
 - Replaced `Result` with a three-zone Tower Memory using Lower Ruins, Bell Shaft, and Moon Roof. It shows the active real site, status, artifact, latest beats, summit, positive achievements, local session, and an honest UTC rollover; the unimplemented relic promise and stale celestial display names are removed.
 - Uploaded app `0.0.17` and installed playtest `v0.0.17.2` in `r/fallstack_dev`.
 - Uploaded the complete local M5–M7 build as app `0.0.18` and installed playtest `v0.0.18.2` in `r/fallstack_dev`.
+- Uploaded app `0.0.20` and installed playtest `v0.0.20.2`. In two independent signed-in Safari tabs, client A produced two real hosted falls and persisted `R37 → R39`; client B remained at its captured `R37`, then advanced without reload to `R39`, `First Gap`, six short jumps, and `Mercy Nail` through the normal poll/reconcile path.
 
 ## Baseline score
 
@@ -92,34 +93,30 @@ Production release gates still do not pass: authenticated transaction concurrenc
 | Shared scope comprehension | 3/4 | opening names one community; the server snapshot carries authenticated scope label, but five-person comprehension is unrun |
 | Spatial cause and effect | 4/4 | bounded evidence resolves to a generated route site; the accepted receipt names and outlines that exact slot |
 | Personal consequence | 4/4 | accepted runtime receipt exposes board revision, site, bucket, exact before/after count, and next consequence |
-| Persistence authority | 4/4 | the server derives the mutation and a controlled Redis-compatible harness executes the real watched store through conflict, idempotency, cap, stale-day, achievement, history, and TTL cases; hosted Devvit semantics remain a separate M8 gate |
+| Persistence authority | 4/4 | the server derives the mutation; the controlled Redis-compatible harness proves conflict/idempotency/cap/stale-day/achievement/history/TTL behavior, and installed Devvit accepted ordered hosted writes `R37 → R39` |
 | Trust and failure honesty | 4/4 | seeded/organic provenance and accepted/capped/stale/invalid/unavailable unchanged-board receipts are explicit |
 | Mechanical significance | 4/4 | all five artifacts now match their documented collision/timing semantics and preserve the baseline route |
 
-## M5–M7 local implementation score
+## M5–M7 implementation score
 
 | Criterion | Score | Evidence |
 | --- | ---: | --- |
 | Shared scope comprehension | 3/4 | opening, receipts, remote beat, and Tower Memory name one community board; five-person comprehension is unrun |
-| Community consequence | 3/4 | a deterministic newer snapshot is deferred in flight and announced/applied on landing; hosted two-client proof is unrun |
+| Community consequence | 4/4 | local proof defers an airborne update until landing; hosted client B independently advanced `R37 → R39` without reload and exposed the changed First Gap/Mercy Nail |
 | Mechanical significance | 4/4 | Ghost is one-way/temporary, Cursed is solid/crumbling, both reset per attempt, and route tests pass |
 | Trust and failure honesty | 4/4 | local practice, capped/stale/unavailable writes, seeded history, and UTC rollover are disclosed without false persistence claims |
 | Whole-board story | 4/4 | Tower Memory maps three authored spaces, real sites, artifacts, bounded beats, summit, and positive achievements |
 
 ## Active next work
 
-1. Prove that hosted Devvit 0.13.7 matches the now-controlled watched-Redis results, then show safe remote receipt application in two authenticated sessions as soon as a connected signed-in browser is available.
-2. Run [`comprehension-test.md`](comprehension-test.md) with five first-time participants; do not infer it from screenshots or prefill the evidence table.
-3. If retrospective prior-day stories become a requirement, design an archive contract separately; do not reintroduce an unsupported relic/carryover promise.
+1. Run [`comprehension-test.md`](comprehension-test.md) with five first-time participants; do not infer it from screenshots or prefill the evidence table.
+2. If retrospective prior-day stories become a requirement, design an archive contract separately; do not reintroduce an unsupported relic/carryover promise.
 
-## Open decision
+## Scope decision
 
-“Global” can mean:
+The implemented and release-scoped v1 meaning of “global” is **community-global**: every Fallstack entry point in one subreddit shares one daily tower through Devvit Redis.
 
-- **Community-global (recommended native v1):** every Fallstack entry point in one subreddit shares one daily tower through Devvit Redis.
-- **Cross-Reddit global:** every installation shares one tower through an external authoritative service.
-
-The second option is not an incremental Redis key change. It introduces infrastructure, security, abuse, privacy, availability, and operational costs and requires explicit approval before implementation.
+Cross-Reddit global remains unapproved future scope. It is not an incremental Redis key change: it requires an external authoritative service plus infrastructure, security, abuse, privacy, availability, operational ownership, and migration decisions.
 
 ## Validation log
 
@@ -159,3 +156,7 @@ The second option is not an incremental Redis key change. It introduces infrastr
 - `node --test 'dist/types/server/**/*.test.js'` — passed; 11 server tests cover watched conflict/retry behavior, exact ordered revisions and threshold crossing, 100-tab idempotency, per-site/daily/anonymous caps, monotonic achievements, stale UTC date, bounded visible history, and 72-hour retention.
 - Persistence-harness full gate — `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` passed; 104 tests pass. The existing expanded Phaser chunk warning remains.
 - Persistence-hardened Devvit upload — `npm run deploy` passed and uploaded app `0.0.19`; `npx devvit playtest fallstack_dev --show-timestamps --since 0m` installed `v0.0.19.2`, and `npx devvit list installs fallstack_dev` independently confirmed that version. Build/server/client startup completed without a streamed runtime error; this is not the still-missing signed-in two-client proof.
+- Revision-poll red/green loop — passed; `/api/board-revision` reads only `acceptedEvents` from current board metadata, unchanged clients stop after that probe, and newer revisions or board rollover fetch `/api/init-game` exactly once.
+- Revision-poll local gate — `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check` passed; 108 tests pass, including 12 production-store/API tests and three client fetch-boundary tests. The existing expanded Phaser chunk warning remains.
+- Revision-poll Devvit upload — `npm run deploy` passed and uploaded app `0.0.20`; `npx devvit playtest fallstack_dev --show-timestamps --since 0m` installed `v0.0.20.2`, and `npx devvit list installs fallstack_dev` independently confirmed that version.
+- Signed-in hosted transaction/reconciliation proof — passed in two independent Safari tabs as `u/BrightyBrainiac`. Both loaded board `R37`. Because Computer Use cannot hold the custom pointer control, Safari Web Inspector held the existing `window.fallstackInput.right` state for 1.2 seconds; it did not call an API directly or alter server data outside the normal game event path. Client A generated two falls, the installed Devvit store accepted and ordered them as `R37 → R39`, and Tower Memory showed First Gap at six short jumps with `Mercy Nail`. Client B still showed its captured `R37` on foreground, then its normal 15-second poll advanced it without reload to `R39` and the same latest change. No runtime error appeared in the streamed playtest session.

@@ -86,6 +86,7 @@ import {
 } from './game/localSnapshot';
 import { ProceduralSound } from './game/sound';
 import { mutationReceiptPresentation } from './game/receipt';
+import { fetchChangedBoardSnapshot } from './game/board-sync';
 import {
   latestRemoteBeat,
   reconciliationDecision,
@@ -103,10 +104,10 @@ declare global {
 const START_POS = { x: 240, y: WORLD_HEIGHT - 88 };
 
 function isBoardSnapshot(
-  snapshot: GameSnapshot | undefined
+  snapshot: GameSnapshot | null | undefined
 ): snapshot is BoardSnapshot {
   return (
-    snapshot !== undefined &&
+    snapshot != null &&
     'boardId' in snapshot &&
     typeof snapshot.boardId === 'string' &&
     'revision' in snapshot &&
@@ -1676,15 +1677,14 @@ export function GameApp() {
   }, [snapshot]);
 
   useEffect(() => {
-    if (!snapshot || !sharedAvailable) return;
+    if (!isBoardSnapshot(snapshot) || !sharedAvailable) return;
 
     const refreshQuietly = () => {
       if (document.visibilityState !== 'visible') return;
       void (async () => {
         try {
-          const res = await fetch('/api/init-game');
-          const data = await parseApiResponse<InitGameResponse>(res);
-          reconcileRemoteSnapshot(data.snapshot);
+          const changed = await fetchChangedBoardSnapshot(snapshot);
+          if (changed) reconcileRemoteSnapshot(changed);
         } catch (error) {
           console.error('shared refresh failed', error);
         }

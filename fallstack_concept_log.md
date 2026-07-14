@@ -986,11 +986,37 @@ Reason:
 - These are the three ways the concept can fail.
 - UI polish cannot rescue bad movement, broken generation, or invisible mutation.
 
+### 39. V1 Global Scope And Live Sync
+
+Decision:
+
+> In v1, “global” means one community-wide daily board for every Fallstack entry point in the same subreddit installation.
+
+Concrete rule:
+
+- The server derives board identity from authenticated installation/community context, UTC date, and tower version.
+- The client cannot select a subreddit, board scope, Redis key, or display identity.
+- Visible clients probe only board identity and revision every 15 seconds.
+- An unchanged revision causes no full-board read or render work.
+- A newer revision or daily board identity fetches the bounded snapshot, then applies collision changes only at a safe reconcile point.
+- Cross-Reddit global state is not v1. It requires explicit approval for an external authority, abuse/privacy/security controls, availability ownership, and migration.
+
+Evidence:
+
+- Installed Devvit playtest `v0.0.20.2` accepted client A's hosted mutations from board `R37 → R39`.
+- Independent signed-in client B retained its captured `R37`, then reconciled without reload to `R39` and the six-fall First Gap `Mercy Nail` through the normal poll path.
+
+Reason:
+
+- Devvit Redis is installation-scoped, so community-global is the strongest native authority boundary.
+- Revision-first polling preserves the live community consequence without repeatedly deriving and transporting an unchanged board.
+- Calling an installation-local board cross-Reddit global would be technically false.
+
 ---
 
 ## Pre-Grill Brainstorm (Historical)
 
-> **Note**: Everything below this line was written before the grill sessions above. It is preserved as context for how the idea evolved. Where it contradicts a numbered Settled Grill Decision (§1–§38), the grill decision is canonical. See `AGENTS.md` for the current operating spec.
+> **Note**: Everything below this line was written before the grill sessions above. It is preserved as context for how the idea evolved. Where it contradicts a numbered Settled Grill Decision (§1–§39), the grill decision is canonical. See `AGENTS.md` for the current operating spec.
 
 ## Why We Pivoted
 
