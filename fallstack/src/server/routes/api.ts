@@ -77,7 +77,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
       });
     } catch (err) {
       console.error('init-game failed', err);
-      return error(c, 'The tower failed to wake.');
+      return error(c, 'The tower failed to wake.', 500);
     }
   });
 
@@ -94,7 +94,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
       });
     } catch (err) {
       console.error('board-revision failed', err);
-      return error(c, 'The tower failed to answer.');
+      return error(c, 'The tower failed to answer.', 500);
     }
   });
 
@@ -158,7 +158,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
           'The shared board did not change. Your climb can continue.',
           500
         );
-      return error(c, 'The fall was lost in the stones.');
+      return error(c, 'The fall was lost in the stones.', 500);
     }
   });
 
@@ -223,7 +223,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
           'The shared board did not change. Your climb can continue.',
           500
         );
-      return error(c, 'The checkpoint did not hold.');
+      return error(c, 'The checkpoint did not hold.', 500);
     }
   });
 
@@ -277,7 +277,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
           'The shared board did not change. Your climb can continue.',
           500
         );
-      return error(c, 'The summit went quiet.');
+      return error(c, 'The summit went quiet.', 500);
     }
   });
 

@@ -1,7 +1,31 @@
 import { context, requestExpandedMode } from '@devvit/web/client';
+import { useEffect, useState } from 'react';
+import type { InitGameResponse } from '../shared/api.js';
+import type { GameSnapshot } from '../shared/game/mutation.js';
+import { splashSnapshotCopy } from './splashSnapshot.js';
 
 export function Splash() {
   const username = context?.username;
+  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
+  const copy = splashSnapshotCopy(snapshot);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/init-game', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Init failed with ${response.status}`);
+        return (await response.json()) as InitGameResponse;
+      })
+      .then((response) => setSnapshot(response.snapshot))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Unable to load shared tower snapshot.', error);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   return (
     <main className="splash-shell">
@@ -12,7 +36,9 @@ export function Splash() {
           </span>
           Fallstack
         </p>
-        <span className="splash-day-seal">Daily tower · 37 falls</span>
+        <span className="splash-day-seal">
+          Daily tower · {snapshot ? `${snapshot.totalFalls} falls` : 'loading'}
+        </span>
       </header>
 
       <section className="splash-tower" aria-label="Today's community-shaped opening climb">
@@ -25,14 +51,14 @@ export function Splash() {
           <i />
           <i />
         </div>
-        <div className="artifact-label">4 opening falls raised First Gap.</div>
+        <div className="artifact-label">{copy.artifactLabel}</div>
         <div className="splash-climber" aria-hidden="true" />
       </section>
 
       <section className="splash-copy">
         <p className="splash-kicker">One community · one daily tower</p>
-        <h1>The tower already remembers everyone who fell.</h1>
-        <p>Use the foothold they left behind. Your fall may shape what comes next.</p>
+        <h1>{copy.headline}</h1>
+        <p>{copy.detail}</p>
         <button
           type="button"
           className="splash-cta"
