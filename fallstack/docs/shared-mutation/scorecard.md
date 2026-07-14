@@ -2,6 +2,8 @@
 
 This scorecard is a release gate, not a taste survey. Score each item from 0 to 4 and attach evidence. A milestone cannot pass by averaging away a failed core criterion.
 
+The current candidate's requirement-by-requirement verdict is recorded in [`release-audit.md`](release-audit.md).
+
 ## Core proof gates
 
 All eight core criteria must score at least 3. The first five must score 4 before a production release.

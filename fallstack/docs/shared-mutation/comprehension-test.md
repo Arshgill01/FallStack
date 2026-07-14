@@ -15,7 +15,7 @@ All five participants must pass all three points. A majority is insufficient.
 ## Setup
 
 - Use the current installed playtest: `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack`.
-- Record the installed version before starting. Current candidate: `v0.0.19.2`.
+- Record the installed version before starting. Current candidate: `v0.0.20.2` (product-code commit `6b0b7d0`).
 - Use at least three phone-sized sessions; the remaining sessions may use desktop.
 - Use participants who have not read the product pitch, plans, Figma file, or prior test notes.
 - Do not name participants or record Reddit usernames in this document.

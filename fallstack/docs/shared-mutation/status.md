@@ -2,7 +2,7 @@
 
 ## Current gate
 
-The vertical slice is complete through M7, including controlled concurrency and signed-in hosted Devvit evidence. The remaining release gate is M4's five-person comprehension check; it cannot be inferred from code, screenshots, or agent simulation.
+The vertical slice is complete through M7, including controlled concurrency and signed-in hosted Devvit evidence. The current verdict is consolidated in [`release-audit.md`](release-audit.md). The remaining release gate is M4's five-person comprehension check; it cannot be inferred from code, screenshots, or agent simulation.
 
 ## Product read
 

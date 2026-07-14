@@ -4,13 +4,13 @@
 
 Make the community-authored tower—not the platforming shell—the unmistakable product. The shipped flow must prove shared scope before input, spatial cause-and-effect after an action, mechanical significance on the route, and a coherent whole-board story over the day.
 
-The target architecture is defined in [`architecture.md`](architecture.md). Release gates are defined in [`scorecard.md`](scorecard.md), with the human M4 protocol in [`comprehension-test.md`](comprehension-test.md). Evidence and handoffs live in [`status.md`](status.md).
+The target architecture is defined in [`architecture.md`](architecture.md). Release gates are defined in [`scorecard.md`](scorecard.md), the current requirement-by-requirement verdict lives in [`release-audit.md`](release-audit.md), and the human M4 protocol is [`comprehension-test.md`](comprehension-test.md). Historical evidence and handoffs live in [`status.md`](status.md).
 
-## Working scope decision
+## Settled v1 scope decision
 
 V1 is community-global inside one Devvit installation: all Fallstack posts in that subreddit resolve to the same daily board. Cross-subreddit global state is not available through native Redis and is out of implementation scope until the user explicitly approves an external shared service and its operational cost.
 
-This is a working contract, not permission to hide the choice. Before public positioning is finalized, confirm whether “global” means community-global or cross-Reddit.
+This is the v1 product and authority contract recorded in settled decision §39. Public positioning must say community-wide, not cross-Reddit. Cross-Reddit remains a separate future product requiring explicit approval for an external shared service and its operational costs.
 
 ## Architecture boundaries
 
@@ -214,4 +214,4 @@ Exit:
 - [x] M5 mechanical artifacts.
 - [x] M6 live reconciliation — safe defer/apply, remote beat, rollover, revision-only polling, local airborne proof, and signed-in hosted two-client `R37 → R39` reconciliation pass.
 - [x] M7 Tower Memory and honest daily story; the unsupported relic promise was removed instead of simulated.
-- [ ] M8 hosted validation and release audit.
+- [ ] M8 hosted validation and release audit — the technical audit and hosted proof pass; completion remains coupled to M4's five-person comprehension result.
