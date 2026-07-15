@@ -13,6 +13,8 @@ export const WORLD_HEIGHT = ZONE_IDS.length * ZONE_HEIGHT;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
 export const CHECKPOINT_RESPAWN_CENTER_X = 240;
 const CHECKPOINT_STACK_CLEARANCE = 96;
+const LATE_ROUTE_EDGE_MARGIN = 46;
+const PROTECTED_OPENING_LEDGE_COUNT = 7;
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit' | 'obstacle';
 
@@ -186,6 +188,10 @@ export function generateDailyTower(seed: string): GeneratedTower {
           minOffset: traversal.minHorizontalStep,
           platformWidth: pWidth,
           prevCenter,
+          sideMargin:
+            count <= PROTECTED_OPENING_LEDGE_COUNT
+              ? 30
+              : LATE_ROUTE_EDGE_MARGIN,
           prng,
         });
     const nextX = nextCenter - pWidth / 2;
@@ -522,10 +528,11 @@ function chooseNextCenter(args: {
   minOffset: number;
   platformWidth: number;
   prevCenter: number;
+  sideMargin: number;
   prng: () => number;
 }): number {
-  const minBound = 30 + args.platformWidth / 2;
-  const maxBound = WORLD_WIDTH - 30 - args.platformWidth / 2;
+  const minBound = args.sideMargin + args.platformWidth / 2;
+  const maxBound = WORLD_WIDTH - args.sideMargin - args.platformWidth / 2;
   const left = {
     min: Math.max(
       minBound,

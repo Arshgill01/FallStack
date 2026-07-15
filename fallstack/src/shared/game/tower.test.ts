@@ -225,6 +225,22 @@ void test('current opening route gives the first biome meaningful ledge separati
   }
 });
 
+void test('later generated landings stay clear of world-wall edge luck', () => {
+  for (let index = 0; index < 160; index += 1) {
+    const route = generateDailyTower(`fallstack-late-edge-${index}`).platforms
+      .filter(isRoutePlatform)
+      .sort((left, right) => right.y - left.y);
+    for (const platform of route.slice(8)) {
+      if (platform.id === 'summit') continue;
+      assert.ok(
+        platform.x >= 46 &&
+          platform.x + platform.width <= WORLD_WIDTH - 46,
+        `${platform.id} is too close to a world wall`
+      );
+    }
+  }
+});
+
 void test('checkpoint pacing stays compact without changing the known opening route', () => {
   const tower = generateDailyTower('fallstack-2026-07-11');
   const route = tower.platforms
