@@ -21,7 +21,7 @@ import {
   type ZoneMutationCounters,
 } from './mutation.js';
 import { deriveImpactSites } from './impact-sites.js';
-import { generateDailyTower, zoneForY } from './tower.js';
+import { generateDailyTower, WORLD_HEIGHT, zoneForY } from './tower.js';
 
 const MID_ZONE_ID = ZONE_IDS[Math.floor(ZONE_IDS.length / 2)] as ZoneId;
 
@@ -264,7 +264,7 @@ void test('the opening helper sits on the first jump line', () => {
   assert.ok(helper);
   assert.equal(helper.type, 'corpse_stack');
   assert.ok(helper.x >= 260);
-  assert.ok(helper.y > 71820 && helper.y < 71940);
+  assert.ok(helper.y > WORLD_HEIGHT - 180 && helper.y < WORLD_HEIGHT - 60);
 });
 
 void test('seeded opening mutation is anchored to the generated First Gap site', () => {

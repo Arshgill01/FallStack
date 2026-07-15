@@ -12,6 +12,7 @@ export const WORLD_WIDTH = 480;
 export const WORLD_HEIGHT = ZONE_IDS.length * ZONE_HEIGHT;
 export const KNOWN_GOOD_SEED = 'fallstack-known-good';
 export const CHECKPOINT_RESPAWN_CENTER_X = 240;
+const CHECKPOINT_STACK_CLEARANCE = 96;
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit' | 'obstacle';
 
@@ -137,6 +138,24 @@ export function generateDailyTower(seed: string): GeneratedTower {
         nextY = cpY;
         break;
       }
+      if (
+        prevY > cpY &&
+        nextY > cpY &&
+        nextY - cpY < CHECKPOINT_STACK_CLEARANCE
+      ) {
+        nextY =
+          prevY - cpY <= MOVEMENT_TUNING.reachableVertical
+            ? cpY
+            : cpY + CHECKPOINT_STACK_CLEARANCE;
+        break;
+      }
+    }
+
+    // Keep the final generated ledge far enough below the fixed connector to
+    // expose its top surface instead of presenting another underside ceiling.
+    const minimumSummitApproachY = MOVEMENT_TUNING.topConnectorY + 80;
+    if (nextY < minimumSummitApproachY) {
+      nextY = minimumSummitApproachY;
     }
 
     const zone = zoneForY(nextY);
@@ -160,7 +179,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
     }
 
     const nextCenter = isCP
-      ? CHECKPOINT_RESPAWN_CENTER_X
+      ? checkpointCenterForApproach(prevCenter, pWidth)
       : chooseNextCenter({
           centerTarget,
           maxOffset,
@@ -187,28 +206,37 @@ export function generateDailyTower(seed: string): GeneratedTower {
     if (!isCP && count % 8 === 0) {
       const obstacleW = 18;
       const obstacleH = 86;
-      const side = nextCenter < prevCenter ? 1 : -1;
+      // Dress the outer edge of the landing. Putting this post on the
+      // approach side makes its underside intersect the baseline jump arc.
+      const side = nextCenter < prevCenter ? -1 : 1;
       const obstacleX = clamp(
         nextCenter + side * (pWidth / 2 + 42) - obstacleW / 2,
         18,
         WORLD_WIDTH - obstacleW - 18
       );
-      platforms.push({
-        id: `obstacle-${zone.id}-${count}`,
-        zoneId: zone.id,
-        x: Math.round(obstacleX),
-        y: nextY - 64,
-        width: obstacleW,
-        height: obstacleH,
-        kind: 'obstacle',
-      });
+      const clearsLanding =
+        side < 0
+          ? obstacleX + obstacleW <= nextX
+          : obstacleX >= nextX + pWidth;
+      if (clearsLanding) {
+        platforms.push({
+          id: `obstacle-${zone.id}-${count}`,
+          zoneId: zone.id,
+          x: Math.round(obstacleX),
+          y: nextY - 64,
+          width: obstacleW,
+          height: obstacleH,
+          kind: 'obstacle',
+        });
+      }
     }
 
     // Optional ricochet chimney: the normal ledge sequence stays clear while
     // confident players can rebound between two visibly paired wall faces.
     if (!isCP && count % 12 === 0) {
       const wallWidth = 16;
-      const wallHeight = 112;
+      const wallHeight = 60;
+      const wallTopOffset = 112;
       const halfGap = 82;
       const leftX = nextCenter - halfGap - wallWidth;
       const rightX = nextCenter + halfGap;
@@ -218,7 +246,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
             id: `ricochet-${zone.id}-${count}-left`,
             zoneId: zone.id,
             x: Math.round(leftX),
-            y: nextY - 82,
+            y: nextY - wallTopOffset,
             width: wallWidth,
             height: wallHeight,
             kind: 'obstacle',
@@ -227,7 +255,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
             id: `ricochet-${zone.id}-${count}-right`,
             zoneId: zone.id,
             x: Math.round(rightX),
-            y: nextY - 82,
+            y: nextY - wallTopOffset,
             width: wallWidth,
             height: wallHeight,
             kind: 'obstacle',
@@ -243,10 +271,15 @@ export function generateDailyTower(seed: string): GeneratedTower {
 
   // Bridge the last generated ledge to the fixed summit without breaking reachability.
   const transitionW = 90;
+  // Enter the summit from one exposed side. Centering these final platforms
+  // creates a low ceiling: the player hits the connector/summit underside
+  // before rising high enough to land. Alternating across the tower leaves a
+  // readable air lane while keeping both jumps inside the movement budget.
+  const desiredTransitionCenter = prevCenter <= WORLD_WIDTH / 2 ? 360 : 120;
   const transitionCenter = clamp(
-    240,
-    prevCenter - MOVEMENT_TUNING.generatedHorizontalStep,
-    prevCenter + MOVEMENT_TUNING.generatedHorizontalStep
+    desiredTransitionCenter,
+    prevCenter - MOVEMENT_TUNING.reachableHorizontal,
+    prevCenter + MOVEMENT_TUNING.reachableHorizontal
   );
   const transitionX = transitionCenter - transitionW / 2;
   platforms.push({
@@ -363,6 +396,17 @@ function platformKindForZone(zoneId: ZoneId): PlatformKind {
   if (index >= 8) return 'moon';
   if (index >= 4) return 'metal';
   return 'stone';
+}
+
+function checkpointCenterForApproach(
+  previousCenter: number,
+  checkpointWidth: number
+): number {
+  const respawnMargin = 15;
+  const offset = checkpointWidth / 2 - respawnMargin;
+  return previousCenter <= CHECKPOINT_RESPAWN_CENTER_X
+    ? CHECKPOINT_RESPAWN_CENTER_X + offset
+    : CHECKPOINT_RESPAWN_CENTER_X - offset;
 }
 
 export const CHUNK_LIBRARY: TowerChunk[] =

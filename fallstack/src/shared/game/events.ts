@@ -15,6 +15,7 @@ import {
 const MAX_FUTURE_EVENT_MS = 10 * 60 * 1000;
 const MAX_PAST_EVENT_MS = 24 * 60 * 60 * 1000;
 const CLEAR_BOUNDARY_OVERSHOOT_Y = MOVEMENT_TUNING.reachableVertical;
+const SUMMIT_PROGRESS_MAX_Y = 300;
 
 type ValidationResult<T> =
   | { ok: true; value: T }
@@ -110,7 +111,7 @@ export function validateRecordSummitRequest(
   if (!body) return invalid('Invalid summit event.');
   if (!validEventEnvelope(body)) return invalid('Invalid summit event.');
   if (!validAttemptId(body.attemptId)) return invalid('Invalid summit event.');
-  if (!isNumberInRange(body.highestY, 0, MOVEMENT_TUNING.topConnectorY))
+  if (!isNumberInRange(body.highestY, 0, SUMMIT_PROGRESS_MAX_Y))
     return invalid('Invalid summit event.');
   if (!isPlausibleTimestamp(body.timestamp, now)) return invalid('Invalid summit event.');
 

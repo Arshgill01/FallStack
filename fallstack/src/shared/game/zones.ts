@@ -17,7 +17,9 @@ export type ZoneId = (typeof ZONE_IDS)[number];
 
 export const BOTTOM_ZONE_ID: ZoneId = ZONE_IDS[0];
 export const TOP_ZONE_ID: ZoneId = ZONE_IDS[ZONE_IDS.length - 1]!;
-export const ZONE_HEIGHT = 6000;
+// About a dozen baseline jumps per checkpoint keeps the first clear inside the
+// 60–90 second product target without changing the opening jump geometry.
+export const ZONE_HEIGHT = 1440;
 
 export const ZONE_NAMES: Record<ZoneId, string> = {
   orbital_scrapyard: 'Lower Ruins',

@@ -31,10 +31,14 @@ import {
 
 void test('known-good tower has finite dimensions and a summit', () => {
   assert.equal(WORLD_WIDTH, 480);
-  assert.ok(WORLD_HEIGHT >= 72000);
+  assert.equal(WORLD_HEIGHT, 17_280);
   assert.equal(ZONES.length, 12);
   assert.equal(WORLD_HEIGHT, ZONE_IDS.length * ZONE_HEIGHT);
-  assert.ok(PLATFORMS.length >= 560);
+  assert.ok(PLATFORMS.length >= 180 && PLATFORMS.length <= 220);
+  assert.ok(
+    PLATFORMS.filter(isRoutePlatform).length >= 150 &&
+      PLATFORMS.filter(isRoutePlatform).length <= 175
+  );
   assert.ok(
     PLATFORMS.some(
       (platform) => platform.id === 'summit' && platform.kind === 'summit'
@@ -123,8 +127,8 @@ void test('generated checkpoints cover the fixed respawn position', () => {
     assert.equal(checkpoints.length, ZONES.length - 1, tower.seed);
     for (const checkpoint of checkpoints) {
       assert.ok(
-        checkpoint.x <= CHECKPOINT_RESPAWN_CENTER_X &&
-          checkpoint.x + checkpoint.width >= CHECKPOINT_RESPAWN_CENTER_X,
+        checkpoint.x <= CHECKPOINT_RESPAWN_CENTER_X - 10 &&
+          checkpoint.x + checkpoint.width >= CHECKPOINT_RESPAWN_CENTER_X + 10,
         `${tower.seed}: ${checkpoint.id} misses respawn x`
       );
     }
@@ -163,10 +167,38 @@ void test('current first checkpoint does not respawn over empty air', () => {
   assert.ok(firstCheckpoint);
   assert.ok(bottomZone);
   assert.equal(firstCheckpoint.y, bottomZone.yTop);
-  assert.equal(
-    firstCheckpoint.x + firstCheckpoint.width / 2,
-    CHECKPOINT_RESPAWN_CENTER_X
+  assert.ok(firstCheckpoint.x <= CHECKPOINT_RESPAWN_CENTER_X - 10);
+  assert.ok(
+    firstCheckpoint.x + firstCheckpoint.width >=
+      CHECKPOINT_RESPAWN_CENTER_X + 10
   );
+});
+
+void test('generated checkpoints leave a horizontal entry lane below their underside', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const tower = generateDailyTower(`fallstack-checkpoint-entry-${index}`);
+    const route = tower.platforms
+      .filter(isRoutePlatform)
+      .sort((a, b) => b.y - a.y);
+    for (let routeIndex = 1; routeIndex < route.length; routeIndex += 1) {
+      const checkpoint = route[routeIndex]!;
+      if (!checkpoint.id.includes('checkpoint')) continue;
+      const approach = route[routeIndex - 1]!;
+      assert.ok(
+        approach.y - checkpoint.y >= 80,
+        `${tower.seed}: ${approach.id} is stacked under ${checkpoint.id}`
+      );
+      assert.ok(
+        horizontalGap(approach, checkpoint) >= 50,
+        `${tower.seed}: ${approach.id} to ${checkpoint.id}`
+      );
+      assert.ok(
+        checkpoint.x <= CHECKPOINT_RESPAWN_CENTER_X - 10 &&
+          checkpoint.x + checkpoint.width >= CHECKPOINT_RESPAWN_CENTER_X + 10,
+        `${tower.seed}: ${checkpoint.id} cannot safely respawn`
+      );
+    }
+  }
 });
 
 void test('current opening route gives the first biome meaningful ledge separation', () => {
@@ -190,28 +222,74 @@ void test('current opening route gives the first biome meaningful ledge separati
   }
 });
 
-void test('summit connector stays reachable from awkward top seeds', () => {
-  const tower = generateDailyTower('fallstack-2026-07-10-149');
+void test('checkpoint pacing stays compact without changing the known opening route', () => {
+  const tower = generateDailyTower('fallstack-2026-07-11');
   const route = tower.platforms
     .filter(isRoutePlatform)
     .sort((a, b) => b.y - a.y);
-  const connectorIndex = route.findIndex(
-    (platform) => platform.id === `ledge-${TOP_ZONE_ID}-summit-connector`
+  const firstCheckpointIndex = route.findIndex(
+    (platform) => platform.id === `${BOTTOM_ZONE_ID}-checkpoint`
   );
-  const previous = route[connectorIndex - 1];
-  const connector = route[connectorIndex];
-  const summit = route[connectorIndex + 1];
+  const opening = route.slice(0, 8).map((platform) => ({
+    id: platform.id,
+    x: platform.x,
+    width: platform.width,
+    fromFloor: WORLD_HEIGHT - platform.y,
+  }));
 
-  assert.ok(previous);
-  assert.ok(connector);
-  assert.equal(summit?.id, 'summit');
-  assert.equal(validateTower(tower), true);
-  assert.ok(
-    horizontalGap(previous, connector) <= MOVEMENT_TUNING.reachableHorizontal
-  );
-  assert.ok(
-    horizontalGap(connector, summit) <= MOVEMENT_TUNING.reachableHorizontal
-  );
+  assert.ok(firstCheckpointIndex >= 10 && firstCheckpointIndex <= 15);
+  assert.deepEqual(opening, [
+    { id: 'start', x: 180, width: 120, fromFloor: 60 },
+    { id: 'ledge-orbital_scrapyard-1', x: 53, width: 116, fromFloor: 159 },
+    { id: 'ledge-orbital_scrapyard-2', x: 152, width: 98, fromFloor: 275 },
+    { id: 'ledge-orbital_scrapyard-3', x: 276.5, width: 95, fromFloor: 381 },
+    { id: 'ledge-orbital_scrapyard-4', x: 180.5, width: 95, fromFloor: 487 },
+    { id: 'ledge-orbital_scrapyard-5', x: 48, width: 110, fromFloor: 588 },
+    { id: 'ledge-orbital_scrapyard-6', x: 135, width: 104, fromFloor: 686 },
+    { id: 'ledge-orbital_scrapyard-7', x: 221.5, width: 101, fromFloor: 787 },
+  ]);
+});
+
+void test('summit approach stays reachable without underside traps', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const tower = generateDailyTower(`fallstack-summit-approach-${index}`);
+    const route = tower.platforms
+      .filter(isRoutePlatform)
+      .sort((a, b) => b.y - a.y);
+    const connectorIndex = route.findIndex(
+      (platform) => platform.id === `ledge-${TOP_ZONE_ID}-summit-connector`
+    );
+    const previous = route[connectorIndex - 1];
+    const connector = route[connectorIndex];
+    const summit = route[connectorIndex + 1];
+
+    assert.ok(previous, tower.seed);
+    assert.ok(connector, tower.seed);
+    assert.equal(summit?.id, 'summit', tower.seed);
+    assert.equal(validateTower(tower), true, tower.seed);
+    assert.ok(
+      previous.y - connector.y >= 80 &&
+        previous.y - connector.y <= MOVEMENT_TUNING.reachableVertical,
+      `${tower.seed}: ${previous.id} is stacked under the connector`
+    );
+    assert.ok(
+      connector.y - summit.y >= 80 &&
+        connector.y - summit.y <= MOVEMENT_TUNING.reachableVertical,
+      `${tower.seed}: connector is stacked under the summit`
+    );
+    assert.ok(
+      horizontalGap(previous, connector) >= 50 &&
+        horizontalGap(previous, connector) <=
+          MOVEMENT_TUNING.reachableHorizontal,
+      `${tower.seed}: ${previous.id} to connector`
+    );
+    assert.ok(
+      horizontalGap(connector, summit) >= 100 &&
+        horizontalGap(connector, summit) <=
+          MOVEMENT_TUNING.reachableHorizontal,
+      `${tower.seed}: connector to summit`
+    );
+  }
 });
 
 void test('summit pull keeps top-zone ledges within horizontal reach', () => {
@@ -258,7 +336,54 @@ void test('generated towers include optional ricochet chimneys without changing 
   assert.ok(ricochetWalls.length >= 2);
   assert.equal(ricochetWalls.length % 2, 0);
   assert.ok(ricochetWalls.every((platform) => platform.kind === 'obstacle'));
+  for (const wall of ricochetWalls) {
+    const parts = wall.id.split('-');
+    const count = parts.at(-2);
+    const landing = tower.platforms.find((platform) =>
+      platform.id.endsWith(`-${count}`)
+    );
+    assert.ok(landing, `${wall.id} has no landing`);
+    assert.ok(
+      wall.y + wall.height <= landing.y - 40,
+      `${wall.id} seals the baseline landing lane`
+    );
+  }
   assert.equal(validateTower(tower), true);
+});
+
+void test('decorative obstacle posts stay on the outer side of their landing', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const tower = generateDailyTower(`fallstack-obstacle-side-${index}`);
+    const route = tower.platforms
+      .filter(isRoutePlatform)
+      .sort((a, b) => b.y - a.y);
+    const routeById = new Map(route.map((platform) => [platform.id, platform]));
+
+    for (const obstacle of tower.platforms.filter((platform) =>
+      platform.id.startsWith('obstacle-')
+    )) {
+      const count = obstacle.id.split('-').at(-1);
+      const landing = route.find((platform) => platform.id.endsWith(`-${count}`));
+      assert.ok(landing, `${tower.seed}: missing landing for ${obstacle.id}`);
+      const landingIndex = routeById.get(landing.id)
+        ? route.findIndex((platform) => platform.id === landing.id)
+        : -1;
+      const approach = route[landingIndex - 1];
+      assert.ok(approach, `${tower.seed}: missing approach for ${obstacle.id}`);
+      const movesRight = centerXForTest(landing) > centerXForTest(approach);
+      if (movesRight) {
+        assert.ok(
+          obstacle.x >= landing.x + landing.width,
+          `${tower.seed}: ${obstacle.id} blocks the rightward approach`
+        );
+      } else {
+        assert.ok(
+          obstacle.x + obstacle.width <= landing.x,
+          `${tower.seed}: ${obstacle.id} blocks the leftward approach`
+        );
+      }
+    }
+  }
 });
 
 void test('different daily seeds can vary the known-good tower subtly', () => {
@@ -294,4 +419,8 @@ function horizontalGap(
   to: { x: number; width: number }
 ): number {
   return Math.abs(from.x + from.width / 2 - (to.x + to.width / 2));
+}
+
+function centerXForTest(platform: { x: number; width: number }): number {
+  return platform.x + platform.width / 2;
 }

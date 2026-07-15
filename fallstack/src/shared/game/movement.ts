@@ -22,7 +22,7 @@ export const MOVEMENT_TUNING = {
   reachableVertical: 165,
   generatedMinHorizontalStep: 68,
   generatedHorizontalStep: 145,
-  topConnectorY: 300,
+  topConnectorY: 360,
 } as const;
 
 export function chargePowerForHeldMs(heldMs: number): number {
