@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { boardSnapshotFor, createBoardStore } from './board-store.js';
 import { createApi } from './routes/api.js';
+import { BOTTOM_ZONE_ID, ZONE_IDS } from '../shared/game/mutation.js';
 import { zoneById } from '../shared/game/tower.js';
 
 void test('concurrent climbers at one site preserve both mutations and ordered revisions', async () => {
@@ -578,6 +579,124 @@ void test('daily board data expires after the seventy-two hour retention window'
 
   redis.advanceTime(72 * 60 * 60 * 1000 + 1);
   assert.equal((await store.loadBoardState()).revision, initial.revision);
+});
+
+void test('authenticated checkpoints resume per player and never move backward', async () => {
+  const redis = new InMemoryRedis();
+  const now = () => new Date('2026-07-13T12:00:00.000Z');
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+
+  assert.deepEqual(await alice.loadPlayerResume(), {
+    zoneId: BOTTOM_ZONE_ID,
+    mode: 'account',
+  });
+  assert.deepEqual(await alice.advancePlayerCheckpoint(ZONE_IDS[0]), {
+    zoneId: ZONE_IDS[1],
+    mode: 'account',
+  });
+  assert.deepEqual(await alice.advancePlayerCheckpoint(ZONE_IDS[2]), {
+    zoneId: ZONE_IDS[3],
+    mode: 'account',
+  });
+  assert.deepEqual(await alice.advancePlayerCheckpoint(ZONE_IDS[1]), {
+    zoneId: ZONE_IDS[3],
+    mode: 'account',
+  });
+  assert.equal((await bob.loadPlayerResume()).zoneId, BOTTOM_ZONE_ID);
+
+  const reloaded = createBoardStore({
+    redis,
+    context: contextFor('alice'),
+    now,
+  });
+  assert.equal((await reloaded.loadPlayerResume()).zoneId, ZONE_IDS[3]);
+});
+
+void test('checkpoint resume resets on UTC rollover and stays session-only anonymously', async () => {
+  const redis = new InMemoryRedis();
+  let currentDate = new Date('2026-07-13T23:59:59.000Z');
+  const authenticated = createBoardStore({
+    redis,
+    context: contextFor('alice'),
+    now: () => currentDate,
+  });
+  await authenticated.advancePlayerCheckpoint(ZONE_IDS[0]);
+  assert.equal(
+    (await authenticated.loadPlayerResume()).zoneId,
+    ZONE_IDS[1]
+  );
+
+  currentDate = new Date('2026-07-14T00:00:01.000Z');
+  assert.equal(
+    (await authenticated.loadPlayerResume()).zoneId,
+    BOTTOM_ZONE_ID
+  );
+
+  const anonymous = createBoardStore({
+    redis,
+    context: {
+      subredditId: 'fallstack_dev',
+      subredditName: 'fallstack_dev',
+      loid: 'loid-one',
+    },
+    now: () => currentDate,
+  });
+  assert.deepEqual(await anonymous.advancePlayerCheckpoint(ZONE_IDS[0]), {
+    zoneId: ZONE_IDS[1],
+    mode: 'session',
+  });
+  assert.deepEqual(await anonymous.loadPlayerResume(), {
+    zoneId: BOTTOM_ZONE_ID,
+    mode: 'session',
+  });
+});
+
+void test('the clear API derives and returns the authenticated resume checkpoint', async () => {
+  const redis = new InMemoryRedis();
+  const currentDate = new Date('2026-07-13T12:00:00.000Z');
+  const store = createBoardStore({
+    redis,
+    context: contextFor('alice'),
+    now: () => currentDate,
+  });
+  const initial = await store.loadBoardState();
+  const api = createApi({
+    context: { postId: 't3_fallstack', username: 'alice' },
+    reddit: { getCurrentUsername: async () => 'alice' },
+    boardStore: store,
+    now: () => currentDate.getTime(),
+  });
+
+  const response = await api.request('/record-clear', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      eventId: 'clear-first-zone',
+      boardId: initial.board.boardId,
+      boardRevision: initial.revision,
+      attemptId: 'attempt-first-zone',
+      zoneId: ZONE_IDS[0],
+      highestY: zoneById(ZONE_IDS[0]).yTop,
+      timestamp: currentDate.getTime(),
+    }),
+  });
+  const body = (await response.json()) as {
+    resume?: { zoneId: string; mode: string };
+  };
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body.resume, {
+    zoneId: ZONE_IDS[1],
+    mode: 'account',
+  });
+
+  const initResponse = await api.request('/init-game');
+  const initBody = (await initResponse.json()) as {
+    resume?: { zoneId: string; mode: string };
+  };
+  assert.equal(initResponse.status, 200);
+  assert.deepEqual(initBody.resume, body.resume);
 });
 
 function contextFor(userId: string) {

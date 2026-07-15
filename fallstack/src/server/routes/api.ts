@@ -26,8 +26,10 @@ import {
 import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
 import {
   boardSnapshotFor,
+  advancePlayerCheckpoint,
   loadBoardRevision,
   loadBoardState,
+  loadPlayerResume,
   recordClearMutation,
   recordFallMutation,
   recordSummitMutation,
@@ -36,6 +38,8 @@ import {
 const defaultBoardStore = {
   loadBoardRevision,
   loadBoardState,
+  loadPlayerResume,
+  advancePlayerCheckpoint,
   recordClearMutation,
   recordFallMutation,
   recordSummitMutation,
@@ -63,7 +67,10 @@ export function createApi(dependencies: ApiDependencies): Hono {
     if (!postId) return error(c, 'postId is required but missing from context');
 
     try {
-      const state = await dependencies.boardStore.loadBoardState();
+      const [state, resume] = await Promise.all([
+        dependencies.boardStore.loadBoardState(),
+        dependencies.boardStore.loadPlayerResume(),
+      ]);
       const username =
         dependencies.context.username ??
         (await dependencies.reddit.getCurrentUsername()) ??
@@ -73,6 +80,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
         type: 'initGame',
         postId,
         username,
+        resume,
         snapshot: boardSnapshotFor(state),
       });
     } catch (err) {
@@ -202,12 +210,15 @@ export function createApi(dependencies: ApiDependencies): Hono {
         highestY: body.highestY,
         username: await currentDisplayUsername(dependencies),
       });
+      const resume =
+        await dependencies.boardStore.advancePlayerCheckpoint(body.zoneId);
 
       return c.json<RecordClearResponse>({
         type: 'recordClear',
         counted: receipt.accepted,
         message: receipt.copy,
         receipt,
+        resume,
         snapshot: boardSnapshotFor(
           await dependencies.boardStore.loadBoardState()
         ),

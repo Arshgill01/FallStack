@@ -5,6 +5,7 @@ import type {
   RecordClearResponse,
   RecordFallResponse,
   RecordSummitResponse,
+  PlayerResume,
 } from '../shared/api';
 import {
   BOTTOM_ZONE_ID,
@@ -93,6 +94,7 @@ import {
 } from './game/reconciliation';
 import { deriveTowerMemory } from './game/tower-memory';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
+import { readDeviceResume, writeDeviceResume } from './game/resume';
 
 declare global {
   interface Window {
@@ -419,6 +421,16 @@ class FallstackScene extends Phaser.Scene {
   setReducedMotion(reducedMotion: boolean) {
     this.reducedMotion = reducedMotion;
     if (reducedMotion) this.particles = [];
+  }
+
+  restoreCheckpoint(zoneId: ZoneId) {
+    const zoneIndex = ZONES.findIndex((zone) => zone.id === zoneId);
+    if (!this.player || zoneIndex < 0) return;
+    this.checkpointed = new Set(
+      ZONES.slice(0, zoneIndex).map((zone) => zone.id)
+    );
+    this.respawnZone = zoneId;
+    this.respawn();
   }
 
   showMutationReceipt(receipt: MutationReceipt, snapshot: GameSnapshot) {
@@ -1322,6 +1334,7 @@ export function GameApp() {
   const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
+  const [resume, setResume] = useState<PlayerResume | null>(null);
   const [summitOpen, setSummitOpen] = useState(false);
   const [gameplayMuted, setGameplayMuted] = useState(
     () =>
@@ -1356,6 +1369,7 @@ export function GameApp() {
     snapshot: BoardSnapshot;
     beat: MutationBeat | null;
   } | null>(null);
+  const restoredBoardRef = useRef<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
@@ -1396,6 +1410,12 @@ export function GameApp() {
         return;
       }
       const boardChanged = current.boardId !== next.boardId;
+      if (boardChanged) {
+        setResume((value) => ({
+          zoneId: BOTTOM_ZONE_ID,
+          mode: value?.mode ?? 'session',
+        }));
+      }
       const decision = reconciliationDecision(
         current.revision,
         next.revision,
@@ -1482,6 +1502,7 @@ export function GameApp() {
       const res = await fetch('/api/init-game');
       const data = await parseApiResponse<InitGameResponse>(res);
       setSharedAvailable(true);
+      setResume(data.resume);
       window.fallstackSnapshot = data.snapshot;
       setSnapshot(data.snapshot);
       if (successMessage === undefined) {
@@ -1544,6 +1565,10 @@ export function GameApp() {
         console.warn('Shared board unavailable; using local practice.', error);
         const localSnapshot = createLocalSnapshot();
         setSharedAvailable(false);
+        setResume({
+          zoneId: readDeviceResume(localStorage, localSnapshot),
+          mode: 'session',
+        });
         window.fallstackSnapshot = localSnapshot;
         setSnapshot(localSnapshot);
         showMutation(openingMutationMessage(localSnapshot, false));
@@ -1556,6 +1581,27 @@ export function GameApp() {
       cancelled = true;
     };
   }, [loadSharedState, showMutation]);
+
+  useEffect(() => {
+    if (!sceneReady || !snapshot || !resume) return;
+    const boardKey = isBoardSnapshot(snapshot)
+      ? snapshot.boardId
+      : `practice:${snapshot.dateKey}`;
+    if (restoredBoardRef.current === boardKey) return;
+    sceneRef.current?.restoreCheckpoint(resume.zoneId);
+    restoredBoardRef.current = boardKey;
+    if (resume.zoneId !== BOTTOM_ZONE_ID) {
+      const frameId = window.requestAnimationFrame(() => {
+        showCheckpoint(
+          `Checkpoint restored · ${reliquaryZoneName(resume.zoneId)}`,
+          resume.mode === 'account'
+            ? 'Saved to your Reddit account for today.'
+            : 'Saved on this device for today.'
+        );
+      });
+      return () => window.cancelAnimationFrame(frameId);
+    }
+  }, [resume, sceneReady, showCheckpoint, snapshot]);
 
   useEffect(() => {
     localStorage.setItem('fallstack:gameplay-muted', String(gameplayMuted));
@@ -1827,6 +1873,13 @@ export function GameApp() {
       if (!sharedAvailable) {
         const nextSnapshot = applyLocalClear(snapshot, detail);
         setSnapshot(nextSnapshot);
+        const nextZone = nextZoneId(detail.zoneId);
+        if (nextZone) {
+          setResume({
+            zoneId: writeDeviceResume(localStorage, snapshot, nextZone),
+            mode: 'session',
+          });
+        }
         const message = localClearMessage(nextSnapshot, detail);
         showCheckpoint(message, '');
         return;
@@ -1850,6 +1903,7 @@ export function GameApp() {
           }),
         });
         const data = await parseApiResponse<RecordClearResponse>(res);
+        setResume(data.resume);
         applyBoardSnapshot(data.snapshot);
         showCheckpoint(data.message, '');
       } catch (error) {

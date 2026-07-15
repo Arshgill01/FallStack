@@ -3,6 +3,11 @@ import type { BoardSnapshot } from './game/board';
 import type { FallObservation } from './game/mutation-events';
 import type { MutationReceipt } from './game/mutation-receipts';
 
+export type PlayerResume = {
+  zoneId: ZoneId;
+  mode: 'account' | 'session';
+};
+
 export type ApiErrorResponse = {
   status: 'error';
   message: string;
@@ -14,6 +19,7 @@ export type InitGameResponse = {
   type: 'initGame';
   postId: string;
   username: string;
+  resume: PlayerResume;
   snapshot: BoardSnapshot;
 };
 
@@ -53,6 +59,7 @@ export type RecordClearResponse = {
   counted: boolean;
   message: string;
   receipt: MutationReceipt;
+  resume: PlayerResume;
   snapshot: BoardSnapshot;
 };
 

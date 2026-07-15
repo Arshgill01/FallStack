@@ -16,8 +16,10 @@ import {
   createSeededCounters,
   createSeededSiteCounters,
   deriveSnapshot,
+  isZoneId,
   SEEDED_TOTAL_FALLS,
   TOP_ZONE_ID,
+  ZONE_IDS,
   ZERO_COUNTERS,
   type AchievementState,
   type SiteMutationCounters,
@@ -60,8 +62,13 @@ type BoardTransaction = {
 };
 
 type BoardStoreRedis = {
+  expire: (key: string, seconds: number) => Promise<unknown> | unknown;
   hGet: (key: string, field: string) => Promise<string | undefined>;
   hGetAll: (key: string) => Promise<Record<string, string>>;
+  hSet: (
+    key: string,
+    values: Record<string, string>
+  ) => Promise<unknown> | unknown;
   watch: (...keys: string[]) => Promise<BoardTransaction>;
   zRange: (
     key: string,
@@ -98,6 +105,11 @@ export type StoredBoardRevision = {
   revision: number;
 };
 
+export type PlayerResume = {
+  zoneId: ZoneId;
+  mode: 'account' | 'session';
+};
+
 export function createBoardStore(dependencies: BoardStoreDependencies) {
   const resolved: ResolvedBoardStoreDependencies = {
     ...dependencies,
@@ -106,6 +118,9 @@ export function createBoardStore(dependencies: BoardStoreDependencies) {
   return {
     loadBoardRevision: () => loadBoardRevisionWith(resolved),
     loadBoardState: () => loadBoardStateWith(resolved),
+    loadPlayerResume: () => loadPlayerResumeWith(resolved),
+    advancePlayerCheckpoint: (clearedZoneId: ZoneId) =>
+      advancePlayerCheckpointWith(resolved, clearedZoneId),
     recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
       recordFallMutationWith(resolved, input),
     recordClearMutation: (
@@ -124,6 +139,9 @@ const defaultBoardStore = createBoardStore({
 
 export const loadBoardState = defaultBoardStore.loadBoardState;
 export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
+export const loadPlayerResume = defaultBoardStore.loadPlayerResume;
+export const advancePlayerCheckpoint =
+  defaultBoardStore.advancePlayerCheckpoint;
 export const recordFallMutation = defaultBoardStore.recordFallMutation;
 export const recordClearMutation = defaultBoardStore.recordClearMutation;
 export const recordSummitMutation = defaultBoardStore.recordSummitMutation;
@@ -176,6 +194,60 @@ async function loadBoardRevisionWith(
     board,
     revision: SEEDED_TOTAL_FALLS + acceptedEvents,
   };
+}
+
+async function loadPlayerResumeWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<PlayerResume> {
+  const userId = dependencies.context.userId;
+  if (!userId) return { zoneId: ZONE_IDS[0], mode: 'session' };
+
+  const { board } = currentBoard(dependencies);
+  const stored = await dependencies.redis.hGet(
+    boardKeys(board).progress,
+    userId
+  );
+  return {
+    zoneId: isZoneId(stored) ? stored : ZONE_IDS[0],
+    mode: 'account',
+  };
+}
+
+async function advancePlayerCheckpointWith(
+  dependencies: ResolvedBoardStoreDependencies,
+  clearedZoneId: ZoneId
+): Promise<PlayerResume> {
+  const nextZoneId = ZONE_IDS[ZONE_IDS.indexOf(clearedZoneId) + 1];
+  const userId = dependencies.context.userId;
+  if (!nextZoneId)
+    return loadPlayerResumeWith(dependencies);
+  if (!userId) return { zoneId: nextZoneId, mode: 'session' };
+
+  const { board } = currentBoard(dependencies);
+  const key = boardKeys(board).progress;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < MAX_TRANSACTION_ATTEMPTS; attempt += 1) {
+    const tx = await dependencies.redis.watch(key);
+    try {
+      const stored = await dependencies.redis.hGet(key, userId);
+      const currentZoneId = isZoneId(stored) ? stored : ZONE_IDS[0];
+      if (ZONE_IDS.indexOf(currentZoneId) >= ZONE_IDS.indexOf(nextZoneId)) {
+        await tx.discard();
+        return { zoneId: currentZoneId, mode: 'account' };
+      }
+      await tx.multi();
+      await tx.hSet(key, { [userId]: nextZoneId });
+      await tx.expire(key, DAILY_KEY_TTL_SECONDS);
+      const result = await tx.exec();
+      if (result.length > 0)
+        return { zoneId: nextZoneId, mode: 'account' };
+      lastError = new Error('Checkpoint transaction conflicted.');
+    } catch (error) {
+      lastError = error;
+      await tx.discard().catch(() => {});
+    }
+  }
+  throw lastError ?? new Error('Checkpoint transaction failed.');
 }
 
 function currentBoard(dependencies: ResolvedBoardStoreDependencies) {
@@ -557,6 +629,7 @@ function boardKeys(board: BoardIdentity) {
     events: `${prefix}:events`,
     achievements: `${prefix}:achievements`,
     recent: `${prefix}:recent-mutations`,
+    progress: `${prefix}:player-progress`,
   };
 }
 
