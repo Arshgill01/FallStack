@@ -18,6 +18,7 @@ export type ApiErrorResponse = {
 export type InitGameResponse = {
   type: 'initGame';
   postId: string;
+  postUrl: string | null;
   username: string;
   resume: PlayerResume;
   snapshot: BoardSnapshot;

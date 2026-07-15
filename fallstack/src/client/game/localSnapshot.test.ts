@@ -67,11 +67,11 @@ void test('opening mutation copy names shared scope, site, and seeded origin', (
   );
   assert.equal(
     openingMutationMessage(sharedSnapshot, true),
-    'r/FallStack shares one daily tower. 4 opening falls raised First Gap.'
+    'r/FallStack shares one daily tower. 4 opening scars raised First Gap.'
   );
   assert.equal(
     openingMutationMessage(baseSnapshot(), false),
-    'Local practice only. 4 opening falls raised First Gap. Nothing here changes the shared tower.'
+    'Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.'
   );
 });
 

@@ -50,6 +50,12 @@ export type TowerMemory = {
   rolloverCopy: string;
 };
 
+export type SessionStats = {
+  falls: number;
+  clears: number;
+  summits: number;
+};
+
 export function deriveTowerMemory(snapshot: GameSnapshot): TowerMemory {
   const board = isBoardSnapshot(snapshot) ? snapshot : null;
   const recentBeats = board
@@ -96,6 +102,22 @@ export function deriveTowerMemory(snapshot: GameSnapshot): TowerMemory {
       ? `At 00:00 UTC, ${board.scopeLabel} gets a fresh shared tower.`
       : 'Local practice resets at 00:00 UTC. No shared marks are being written.',
   };
+}
+
+export function towerResultCopy(
+  snapshot: GameSnapshot,
+  session: SessionStats
+): string {
+  const board = isBoardSnapshot(snapshot) ? snapshot : null;
+  const scope = board?.scopeLabel ?? 'Local practice';
+  const boardLine = board
+    ? `${snapshot.organicFalls} community ${plural(snapshot.organicFalls, 'fall')} · ${snapshot.totalClears} clean ${plural(snapshot.totalClears, 'clear')} · ${snapshot.totalSummits} ${plural(snapshot.totalSummits, 'summit')} · board r${board.revision}`
+    : 'Shared tower unchanged';
+  return [
+    `Fallstack · ${snapshot.dateKey} · ${scope}`,
+    `My climb: ${session.falls} ${plural(session.falls, 'fall')} · ${session.clears} ${plural(session.clears, 'clear')} · ${session.summits} ${plural(session.summits, 'summit')}`,
+    `Tower: ${boardLine}`,
+  ].join('\n');
 }
 
 function macroStatusLabel(zones: ZoneSnapshot[]): string {
@@ -162,13 +184,32 @@ function siteMemoryCopy(site: SiteSnapshot): string {
     return 'No shared mark has taken hold.';
   }
 
-  if (bucket === 'short_jump')
-    return `${count} short ${plural(count, 'jump')} raised this foothold.`;
-  if (bucket === 'wall_bonk')
-    return `${count} wall ${plural(count, 'bonk')} left a one-use ghost.`;
-  if (bucket === 'overjump')
-    return `${count} ${plural(count, 'overjump')} cursed this landing.`;
-  return `${count} helper ${plural(count, 'slip')} warped this landing.`;
+  const seeded = site.seededCounters[bucket];
+  const organic = site.organicCounters[bucket];
+  const cause =
+    organic === 0
+      ? `${seeded || count} opening ${failureScarName(bucket)} scars`
+      : seeded === 0
+        ? `${organic} community ${plural(organic, failureName(bucket))}`
+        : `${seeded} opening + ${organic} community ${plural(organic, failureName(bucket))}`;
+  if (bucket === 'short_jump') return `${cause} raised this foothold.`;
+  if (bucket === 'wall_bonk') return `${cause} left a one-use ghost.`;
+  if (bucket === 'overjump') return `${cause} cursed this landing.`;
+  return `${cause} warped this landing.`;
+}
+
+function failureName(bucket: FailureBucket): string {
+  if (bucket === 'short_jump') return 'short jump';
+  if (bucket === 'wall_bonk') return 'wall bonk';
+  if (bucket === 'overjump') return 'overjump';
+  return 'helper slip';
+}
+
+function failureScarName(bucket: FailureBucket): string {
+  if (bucket === 'short_jump') return 'short-jump';
+  if (bucket === 'wall_bonk') return 'wall-bonk';
+  if (bucket === 'overjump') return 'overjump';
+  return 'helper-slip';
 }
 
 function dominantFailure(site: SiteSnapshot): [FailureBucket, number] {

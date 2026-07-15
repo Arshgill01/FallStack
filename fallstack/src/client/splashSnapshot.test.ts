@@ -37,7 +37,7 @@ void test('splash copy reflects the live snapshot instead of seeded totals', () 
   const copy = splashSnapshotCopy(board);
 
   assert.equal(copy.scopeLabel, 'r/FallStack · one daily tower');
-  assert.equal(copy.headline, "Today's tower has 46 failed climbs in it.");
+  assert.equal(copy.headline, '37 opening scars · 9 community falls');
   assert.equal(copy.artifactLabel, snapshot.zones[0]?.artifacts[0]?.label);
   assert.match(copy.detail, /what r\/FallStack climbs next\.$/);
 });

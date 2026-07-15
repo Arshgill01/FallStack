@@ -278,7 +278,7 @@ export function deriveSnapshot(input: {
     totalFalls: input.totalFalls,
     totalClears: input.totalClears,
     totalSummits: input.totalSummits,
-    headline: `Today's tower has ${input.totalFalls} failed climbs in it.`,
+    headline: `${SEEDED_TOTAL_FALLS} opening scars · ${Math.max(0, input.totalFalls - SEEDED_TOTAL_FALLS)} community ${Math.max(0, input.totalFalls - SEEDED_TOTAL_FALLS) === 1 ? 'fall' : 'falls'}`,
     sites,
     zones,
     result: deriveResult(
@@ -792,7 +792,7 @@ function makeSiteArtifact(
     anchorPlatformId: site.anchorPlatformId,
     bucket,
     solid: type !== 'lantern_trail',
-    label: artifactLabel(type, count),
+    label: artifactLabel(type, bucket, count, seededCount, organicCount),
     count,
     seededCount,
     organicCount,
@@ -845,12 +845,46 @@ function bucketArtifactName(bucket: FailureBucket, nextCount: number): string {
   return 'Cursed Brick';
 }
 
-function artifactLabel(type: ArtifactType, count: number): string {
-  if (type === 'corpse_stack') return `${count} falls made this foothold.`;
-  if (type === 'mercy_nail') return `${count} falls hammered this nail.`;
+function artifactLabel(
+  type: ArtifactType,
+  bucket: FailureBucket,
+  count: number,
+  seededCount: number,
+  organicCount: number
+): string {
+  const cause = artifactCause(bucket, count, seededCount, organicCount);
+  if (type === 'corpse_stack') return `${cause} made this foothold.`;
+  if (type === 'mercy_nail') return `${cause} hammered this nail.`;
   if (type === 'ghost_platform')
-    return `${count} bonks left a one-use ghost.`;
+    return `${cause} left a one-use ghost.`;
   if (type === 'cursed_brick')
-    return `${count} falls cursed this crumbling brick.`;
+    return `${cause} cursed this crumbling brick.`;
   return `${count} clean climbs left a trail.`;
+}
+
+function artifactCause(
+  bucket: FailureBucket,
+  count: number,
+  seededCount: number,
+  organicCount: number
+): string {
+  if (organicCount === 0)
+    return `${seededCount || count} opening ${failureScarName(bucket)} ${seededCount === 1 ? 'scar' : 'scars'}`;
+  if (seededCount === 0)
+    return `${organicCount} community ${failureCountName(bucket, organicCount)}`;
+  return `${seededCount} opening + ${organicCount} community ${failureCountName(bucket, organicCount)}`;
+}
+
+function failureScarName(bucket: FailureBucket): string {
+  if (bucket === 'short_jump') return 'short-jump';
+  if (bucket === 'wall_bonk') return 'wall-bonk';
+  if (bucket === 'overjump') return 'overjump';
+  return 'helper-slip';
+}
+
+function failureCountName(bucket: FailureBucket, count: number): string {
+  if (bucket === 'short_jump') return count === 1 ? 'short jump' : 'short jumps';
+  if (bucket === 'wall_bonk') return count === 1 ? 'wall bonk' : 'wall bonks';
+  if (bucket === 'overjump') return count === 1 ? 'overjump' : 'overjumps';
+  return count === 1 ? 'helper slip' : 'helper slips';
 }

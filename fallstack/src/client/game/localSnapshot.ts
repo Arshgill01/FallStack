@@ -40,7 +40,7 @@ export function openingMutationMessage(
   const cause = openingArtifact
     ? openingArtifact.organicCount > 0
       ? `${openingArtifact.seededCount} opening + ${openingArtifact.organicCount} community falls raised ${openingArtifact.siteName}.`
-      : `${openingArtifact.seededCount} opening falls raised ${openingArtifact.siteName}.`
+      : `${openingArtifact.seededCount} opening scars raised ${openingArtifact.siteName}.`
     : 'The day opened scarred.';
   if (!sharedAvailable) {
     return `Local practice only. ${cause} Nothing here changes the shared tower.`;

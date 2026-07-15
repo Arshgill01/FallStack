@@ -5,6 +5,7 @@ import {
 } from '@devvit/web/server';
 import { TOWER_VERSION } from '../../shared/game/board.js';
 import { deriveDailyMemory } from '../../shared/game/daily-memory.js';
+import { redditPostUrl } from '../../shared/reddit.js';
 import { loadBoardStateForDate } from '../board-store.js';
 
 const LEASE_MS = 10 * 60 * 1000;
@@ -121,8 +122,9 @@ export const createPost = createDailyPostService({
 });
 
 export function postUrl(subredditName: string, postId: string): string {
-  const id = postId.startsWith('t3_') ? postId.slice(3) : postId;
-  return `https://www.reddit.com/r/${subredditName}/comments/${id}`;
+  const url = redditPostUrl(subredditName, postId);
+  if (!url) throw new Error('Invalid Reddit post destination.');
+  return url;
 }
 
 function dailyPostFallback(previousMemory: string): string {

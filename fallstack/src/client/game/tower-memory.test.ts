@@ -10,7 +10,7 @@ import {
   deriveSnapshot,
   SEEDED_TOTAL_FALLS,
 } from '../../shared/game/mutation.js';
-import { deriveTowerMemory } from './tower-memory.js';
+import { deriveTowerMemory, towerResultCopy } from './tower-memory.js';
 
 function createGameSnapshot() {
   const dailySeed = 'fallstack-2026-07-13';
@@ -75,7 +75,7 @@ void test('tower memory reads from summit to spawn and names a real causal site'
   assert.equal(lowerRuins?.zoneName, 'Lower Ruins');
   assert.equal(lowerRuins?.statusLabel, 'Restless');
   assert.equal(lowerRuins?.siteName, 'First Gap');
-  assert.match(lowerRuins?.detail ?? '', /4 short jumps/i);
+  assert.match(lowerRuins?.detail ?? '', /4 opening short-jump scars/i);
   assert.equal(lowerRuins?.artifactLabel, 'Corpse Stack');
   assert.doesNotMatch(
     memory.zones
@@ -118,4 +118,22 @@ void test('local tower memory discloses that shared marks are not being written'
     memory.rolloverCopy,
     'Local practice resets at 00:00 UTC. No shared marks are being written.'
   );
+});
+
+void test('copied result separates personal play from organic board activity', () => {
+  const copy = towerResultCopy(createSnapshot(), {
+    falls: 3,
+    clears: 2,
+    summits: 1,
+  });
+
+  assert.equal(
+    copy,
+    [
+      'Fallstack · 2026-07-13 · r/FallStack',
+      'My climb: 3 falls · 2 clears · 1 summit',
+      'Tower: 0 community falls · 0 clean clears · 0 summits · board r40',
+    ].join('\n')
+  );
+  assert.doesNotMatch(copy, /37 community|failed climbs/);
 });

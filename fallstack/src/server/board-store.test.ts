@@ -326,7 +326,11 @@ void test('a previous-day event receives a stale receipt and writes to neither b
   currentDate = new Date('2026-07-14T00:00:01.000Z');
   const current = await store.loadBoardState();
   const api = createApi({
-    context: { postId: 't3_fallstack', username: 'alice' },
+    context: {
+      postId: 't3_fallstack',
+      subredditName: 'fallstack_dev',
+      username: 'alice',
+    },
     reddit: { getCurrentUsername: async () => 'alice' },
     boardStore: store,
     now: () => currentDate.getTime(),
@@ -662,7 +666,11 @@ void test('the clear API derives and returns the authenticated resume checkpoint
   });
   const initial = await store.loadBoardState();
   const api = createApi({
-    context: { postId: 't3_fallstack', username: 'alice' },
+    context: {
+      postId: 't3_fallstack',
+      subredditName: 'fallstack_dev',
+      username: 'alice',
+    },
     reddit: { getCurrentUsername: async () => 'alice' },
     boardStore: store,
     now: () => currentDate.getTime(),
@@ -693,9 +701,14 @@ void test('the clear API derives and returns the authenticated resume checkpoint
 
   const initResponse = await api.request('/init-game');
   const initBody = (await initResponse.json()) as {
+    postUrl?: string | null;
     resume?: { zoneId: string; mode: string };
   };
   assert.equal(initResponse.status, 200);
+  assert.equal(
+    initBody.postUrl,
+    'https://www.reddit.com/r/fallstack_dev/comments/fallstack'
+  );
   assert.deepEqual(initBody.resume, body.resume);
 });
 

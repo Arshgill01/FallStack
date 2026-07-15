@@ -31,7 +31,7 @@ export function splashSnapshotCopy(
 
   return {
     scopeLabel: `${scopeLabel} · one daily tower`,
-    headline: `Today's tower has ${snapshot.totalFalls} failed ${snapshot.totalFalls === 1 ? 'climb' : 'climbs'} in it.`,
+    headline: `${snapshot.seededFalls} opening scars · ${snapshot.organicFalls} community ${snapshot.organicFalls === 1 ? 'fall' : 'falls'}`,
     artifactLabel,
     detail: `${artifactLabel} Your fall can change what ${scopeLabel} climbs next.`,
   };

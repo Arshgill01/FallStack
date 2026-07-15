@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { navigateTo } from '@devvit/web/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   InitGameResponse,
@@ -92,7 +93,7 @@ import {
   latestRemoteBeat,
   reconciliationDecision,
 } from './game/reconciliation';
-import { deriveTowerMemory } from './game/tower-memory';
+import { deriveTowerMemory, towerResultCopy } from './game/tower-memory';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
 import { readDeviceResume, writeDeviceResume } from './game/resume';
 
@@ -120,6 +121,27 @@ function isBoardSnapshot(
 function checkpointForZone(zoneId: ZoneId): { x: number; y: number } {
   if (zoneId === BOTTOM_ZONE_ID) return START_POS;
   return { x: 240, y: zoneById(zoneId).yBottom - 60 };
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall through to selection copy for restricted webviews.
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  return copied;
 }
 
 /* ======================================================
@@ -1336,6 +1358,10 @@ export function GameApp() {
   const [sceneReady, setSceneReady] = useState(false);
   const [resume, setResume] = useState<PlayerResume | null>(null);
   const [summitOpen, setSummitOpen] = useState(false);
+  const [discussionUrl, setDiscussionUrl] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<
+    'idle' | 'copied' | 'failed'
+  >('idle');
   const [gameplayMuted, setGameplayMuted] = useState(
     () =>
       localStorage.getItem('fallstack:gameplay-muted') === 'true' ||
@@ -1502,6 +1528,7 @@ export function GameApp() {
       const res = await fetch('/api/init-game');
       const data = await parseApiResponse<InitGameResponse>(res);
       setSharedAvailable(true);
+      setDiscussionUrl(data.postUrl);
       setResume(data.resume);
       window.fallstackSnapshot = data.snapshot;
       setSnapshot(data.snapshot);
@@ -1515,9 +1542,11 @@ export function GameApp() {
   );
 
   const stats = useMemo(() => {
-    if (!snapshot) return { falls: 37, clears: 0, summits: 0 };
+    if (!snapshot)
+      return { openingScars: 37, falls: 0, clears: 0, summits: 0 };
     return {
-      falls: snapshot.totalFalls,
+      openingScars: snapshot.seededFalls,
+      falls: snapshot.organicFalls,
       clears: snapshot.totalClears,
       summits: snapshot.totalSummits,
     };
@@ -1565,6 +1594,7 @@ export function GameApp() {
         console.warn('Shared board unavailable; using local practice.', error);
         const localSnapshot = createLocalSnapshot();
         setSharedAvailable(false);
+        setDiscussionUrl(null);
         setResume({
           zoneId: readDeviceResume(localStorage, localSnapshot),
           mode: 'session',
@@ -1644,8 +1674,21 @@ export function GameApp() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSummitOpen(false);
       if (event.key === 'Tab') {
-        event.preventDefault();
-        resultCloseRef.current?.focus();
+        const focusable = Array.from(
+          resultDialogRef.current?.querySelectorAll<HTMLButtonElement>(
+            'button:not(:disabled)'
+          ) ?? []
+        );
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (!first || !last) return;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1654,6 +1697,17 @@ export function GameApp() {
       previousFocusRef.current?.focus();
     };
   }, [summitOpen]);
+
+  const copyResult = useCallback(async () => {
+    if (!snapshot) return;
+    const copied = await copyText(towerResultCopy(snapshot, sessionStats));
+    setCopyStatus(copied ? 'copied' : 'failed');
+  }, [sessionStats, snapshot]);
+
+  const closeTowerMemory = useCallback(() => {
+    setSummitOpen(false);
+    setCopyStatus('idle');
+  }, []);
 
   // Boot Phaser once, then keep it pinned to the real container size.
   useEffect(() => {
@@ -2044,7 +2098,8 @@ export function GameApp() {
             <span>Fallstack</span>
           </div>
           <div className="topbar-headline">
-            <b>{stats.falls}</b> failed climbs today
+            <b>{stats.openingScars}</b> opening scars ·{' '}
+            <b>{stats.falls}</b> community {stats.falls === 1 ? 'fall' : 'falls'}
           </div>
         </div>
 
@@ -2301,14 +2356,40 @@ export function GameApp() {
                   'At 00:00 UTC, this subreddit gets a fresh shared tower.'}
               </p>
             </div>
-            <button
-              ref={resultCloseRef}
-              type="button"
-              className="result-close-btn"
-              onClick={() => setSummitOpen(false)}
-            >
-              Return to the climb
-            </button>
+            <div className="tower-memory-actions">
+              <button
+                ref={resultCloseRef}
+                type="button"
+                className="result-close-btn"
+                onClick={closeTowerMemory}
+              >
+                Return
+              </button>
+              <button
+                type="button"
+                className="result-secondary-btn"
+                disabled={!discussionUrl}
+                onClick={() => discussionUrl && navigateTo(discussionUrl)}
+              >
+                Discuss
+              </button>
+              <button
+                type="button"
+                className="result-secondary-btn"
+                onClick={() => void copyResult()}
+              >
+                {copyStatus === 'copied' ? 'Copied' : 'Copy result'}
+              </button>
+            </div>
+            <p className="tower-memory-action-status" aria-live="polite">
+              {copyStatus === 'copied'
+                ? 'Result copied. Paste it into a comment when you choose.'
+                : copyStatus === 'failed'
+                  ? 'Copy was blocked by this webview.'
+                  : !discussionUrl
+                    ? 'Discussion opens from the shared Reddit post.'
+                    : ''}
+            </p>
           </div>
         </div>
       ) : null}

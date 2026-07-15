@@ -24,6 +24,7 @@ import {
   resolveFallObservation,
 } from '../../shared/game/mutation-events.js';
 import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
+import { redditPostUrl } from '../../shared/reddit.js';
 import {
   boardSnapshotFor,
   advancePlayerCheckpoint,
@@ -46,7 +47,7 @@ const defaultBoardStore = {
 };
 
 type ApiDependencies = {
-  context: { postId?: string; username?: string };
+  context: { postId?: string; subredditName?: string; username?: string };
   reddit: { getCurrentUsername: () => Promise<string | undefined> };
   boardStore: typeof defaultBoardStore;
   now: () => number;
@@ -79,6 +80,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
       return c.json<InitGameResponse>({
         type: 'initGame',
         postId,
+        postUrl: redditPostUrl(dependencies.context.subredditName, postId),
         username,
         resume,
         snapshot: boardSnapshotFor(state),

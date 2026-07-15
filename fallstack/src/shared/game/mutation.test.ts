@@ -43,12 +43,12 @@ void test('seeded snapshot opens with visible shared mutation hook', () => {
     achievements: createInitialAchievements(),
   });
 
-  assert.equal(snapshot.headline, "Today's tower has 37 failed climbs in it.");
+  assert.equal(snapshot.headline, '37 opening scars · 0 community falls');
   assert.equal(snapshot.zones[0]?.statusLabel, 'Restless');
   assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
   assert.ok(
     snapshot.zones.some((zone) =>
-      zone.artifacts.some((artifact) => artifact.label.includes('falls'))
+      zone.artifacts.some((artifact) => artifact.label.includes('opening'))
     )
   );
 });
@@ -243,7 +243,9 @@ void test('seeded bottom-zone artifacts are visible in the opening viewport', ()
     )
   );
   assert.ok(
-    bottomZone.artifacts.some((artifact) => artifact.label.includes('falls'))
+    bottomZone.artifacts.some((artifact) =>
+      artifact.label.includes('opening short-jump scars')
+    )
   );
 });
 
