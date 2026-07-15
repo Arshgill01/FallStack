@@ -8,6 +8,7 @@ import {
   clampedArtifactLabelCenter,
   RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
+  playerVisualDimensions,
   playerVisualState,
   reliquaryZoneFor,
   reliquaryZoneName,
@@ -73,4 +74,10 @@ void test('player pose is derived from existing simulation state', () => {
     playerVisualState({ charging: false, grounded: false, velocityY: 420 }),
     'fall'
   );
+  assert.deepEqual(playerVisualDimensions('grounded'), {
+    width: 30,
+    height: 42,
+  });
+  assert.ok(playerVisualDimensions('airborne').height > 40);
+  assert.ok(playerVisualDimensions('fall').width > 30);
 });

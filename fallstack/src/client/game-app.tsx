@@ -1627,9 +1627,9 @@ export function GameApp() {
           },
         },
         render: {
-          antialias: false,
-          pixelArt: true,
-          roundPixels: true,
+          antialias: true,
+          pixelArt: false,
+          roundPixels: false,
         },
         scene,
       });
@@ -1638,7 +1638,7 @@ export function GameApp() {
       const styleCanvas = () => {
         const canvas = container.querySelector('canvas');
         if (canvas) {
-          canvas.style.imageRendering = 'pixelated';
+          canvas.style.imageRendering = 'auto';
           canvas.style.width = '100%';
           canvas.style.height = '100%';
         }

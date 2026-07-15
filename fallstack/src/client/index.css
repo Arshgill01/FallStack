@@ -311,8 +311,6 @@ button:disabled {
   height: 100%;
   width: 100%;
   background: var(--indigo-deep);
-  /* Crisp pixel rendering on the entire column */
-  image-rendering: -webkit-optimize-contrast;
   position: relative;
 }
 

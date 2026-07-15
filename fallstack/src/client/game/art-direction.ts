@@ -28,6 +28,16 @@ export type PlayerVisualState =
   | 'airborne'
   | 'fall';
 
+export function playerVisualDimensions(state: PlayerVisualState): {
+  width: number;
+  height: number;
+} {
+  if (state === 'charge') return { width: 32, height: 36 };
+  if (state === 'airborne') return { width: 28, height: 44 };
+  if (state === 'fall') return { width: 34, height: 38 };
+  return { width: 30, height: 42 };
+}
+
 export type ArtifactVisualTier = 'base' | 'remembered' | 'saturated';
 
 export function artifactVisualTier(count: number): ArtifactVisualTier {

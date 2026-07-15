@@ -24,6 +24,14 @@ export function renderReliquaryBackdrop(
     .fillStyle(c.burgundyDeep, 1)
     .fillRect(routeLeft + 14, input.zoneTop, 452, height);
 
+  // Nested wall planes give the moving camera a persistent sense of depth.
+  graphics.fillStyle(c.ink, 0.28);
+  graphics.fillRect(routeLeft + 34, input.zoneTop, 24, height);
+  graphics.fillRect(routeRight - 58, input.zoneTop, 24, height);
+  graphics.fillStyle(c.burgundy, 0.18);
+  graphics.fillRect(routeLeft + 58, input.zoneTop, 9, height);
+  graphics.fillRect(routeRight - 67, input.zoneTop, 9, height);
+
   graphics.fillStyle(c.washiDim, 1);
   graphics.fillRect(routeLeft + 5, input.zoneTop, 8, height);
   graphics.fillRect(routeRight - 13, input.zoneTop, 8, height);
@@ -35,7 +43,7 @@ export function renderReliquaryBackdrop(
   graphics.fillRect(routeRight - 34, input.zoneTop, 3, height);
 
   const archSpacing =
-    input.zone === 'lower_ruins' ? 760 : input.zone === 'bell_shaft' ? 620 : 880;
+    input.zone === 'lower_ruins' ? 520 : input.zone === 'bell_shaft' ? 460 : 620;
   const archWidth = input.zone === 'bell_shaft' ? 286 : 350;
   for (
     let y = input.zoneTop + 260;
@@ -54,6 +62,24 @@ export function renderReliquaryBackdrop(
     graphics.fillStyle(c.indigo, 0.64);
     graphics.fillRect(cx - archWidth / 2 - 11, y, 22, 210);
     graphics.fillRect(cx + archWidth / 2 - 11, y, 22, 210);
+  }
+
+  // Broken cross-ties and recessed seams stop long climbs reading as an empty
+  // painted shaft. Their stagger preserves the central jump silhouette.
+  const seamSpacing = input.zone === 'bell_shaft' ? 170 : 210;
+  for (
+    let y = input.zoneTop + 110;
+    y < input.zoneBottom;
+    y += seamSpacing
+  ) {
+    const stagger = Math.floor((y - input.zoneTop) / seamSpacing) % 2;
+    const left = routeLeft + 54 + stagger * 22;
+    const right = routeRight - 54 - (1 - stagger) * 28;
+    graphics.lineStyle(2, c.indigoLit, 0.2);
+    graphics.lineBetween(left, y, right, y - 12);
+    graphics.fillStyle(c.indigo, 0.34);
+    graphics.fillTriangle(left - 16, y - 10, left + 10, y, left - 16, y + 18);
+    graphics.fillTriangle(right + 16, y - 22, right - 10, y - 12, right + 16, y + 6);
   }
 
   if (input.zone === 'lower_ruins') {
@@ -139,6 +165,27 @@ export function renderReliquaryPlatform(
     .fillStyle(c.indigoLit, 0.65)
     .fillRect(platform.x + 6, platform.y + 7, platform.width - 12, 3);
 
+  if (platform.width >= 84) {
+    const braceInset = Math.min(24, platform.width * 0.22);
+    graphics.fillStyle(c.ink, 0.9);
+    graphics.fillTriangle(
+      platform.x + braceInset - 6,
+      platform.y + platform.height,
+      platform.x + braceInset + 7,
+      platform.y + platform.height,
+      platform.x + braceInset - 3,
+      platform.y + platform.height + 8
+    );
+    graphics.fillTriangle(
+      platform.x + platform.width - braceInset - 7,
+      platform.y + platform.height,
+      platform.x + platform.width - braceInset + 6,
+      platform.y + platform.height,
+      platform.x + platform.width - braceInset + 3,
+      platform.y + platform.height + 8
+    );
+  }
+
   const chipSide = stableChipSide(platform.id);
   const chipX = chipSide === 'left' ? platform.x : platform.x + platform.width - 10;
   graphics.fillStyle(c.burgundyDeep, 1).fillTriangle(
@@ -181,6 +228,12 @@ export function renderReliquaryPlatform(
     }
   }
 
+  if (!metal && !moon && !checkpoint) {
+    const repairX = platform.x + 18 + stableRepairOffset(platform.id, platform.width);
+    graphics.fillStyle(c.goldDeep, 0.86).fillRect(repairX, platform.y, 5, 15);
+    graphics.fillStyle(c.gold, 0.72).fillCircle(repairX + 2.5, platform.y + 4, 1.5);
+  }
+
   if (moon && !checkpoint) {
     graphics.lineStyle(2, c.ghost, 0.55);
     graphics.lineBetween(
@@ -208,4 +261,12 @@ function stableChipSide(id: string): 'left' | 'right' {
     hash = (hash * 31 + id.charCodeAt(index)) | 0;
   }
   return Math.abs(hash) % 2 === 0 ? 'left' : 'right';
+}
+
+function stableRepairOffset(id: string, width: number): number {
+  let hash = 7;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 33 + id.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash) % Math.max(1, Math.floor(width - 46));
 }
