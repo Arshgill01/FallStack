@@ -1890,6 +1890,7 @@ export function GameApp() {
   useEffect(() => {
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
+      if (detail.percent > 0) setMutationVisible(false);
       if (detail.percent <= 0) soundRef.current?.stopCharge();
       if (chargeRef.current === 0 && detail.percent > 0)
         soundRef.current?.play('charge-start');
