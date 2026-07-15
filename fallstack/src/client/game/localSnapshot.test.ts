@@ -13,6 +13,10 @@ import {
   type GameSnapshot,
   type ZoneId,
 } from '../../shared/game/mutation.js';
+import {
+  createBoardIdentity,
+  createBoardSnapshot,
+} from '../../shared/game/board.js';
 import { zoneById } from '../../shared/game/tower.js';
 import {
   applyLocalClear,
@@ -50,13 +54,24 @@ function siteForBucket(
 }
 
 void test('opening mutation copy names shared scope, site, and seeded origin', () => {
+  const gameSnapshot = baseSnapshot();
+  const sharedSnapshot = createBoardSnapshot(
+    createBoardIdentity({
+      communityId: 't5_fallstack',
+      communityName: 'FallStack',
+      dateKey: gameSnapshot.dateKey,
+      dailySeed: gameSnapshot.dailySeed,
+    }),
+    gameSnapshot,
+    4
+  );
   assert.equal(
-    openingMutationMessage(baseSnapshot(), true),
-    'One community shares this tower. 4 opening falls raised First Gap.'
+    openingMutationMessage(sharedSnapshot, true),
+    'r/FallStack shares one daily tower. 4 opening falls raised First Gap.'
   );
   assert.equal(
     openingMutationMessage(baseSnapshot(), false),
-    'One community shares this tower. 4 opening falls raised First Gap. Shared marks are delayed.'
+    'Local practice only. 4 opening falls raised First Gap. Nothing here changes the shared tower.'
   );
 });
 

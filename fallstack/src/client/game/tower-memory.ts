@@ -40,6 +40,7 @@ export type TowerMemoryAchievement = {
 
 export type TowerMemory = {
   scopeLabel: string;
+  introCopy: string;
   revisionLabel: string;
   dateLabel: string;
   zones: TowerMemoryZone[];
@@ -60,6 +61,9 @@ export function deriveTowerMemory(snapshot: GameSnapshot): TowerMemory {
 
   return {
     scopeLabel: board?.scopeLabel ?? 'Local practice copy',
+    introCopy: board
+      ? `${board.scopeLabel} shaped this daily route. Read it from summit to spawn.`
+      : 'This was local practice. No shared tower changed.',
     revisionLabel: board ? `BOARD r${board.revision}` : 'LOCAL · NOT SHARED',
     dateLabel: snapshot.dateKey,
     zones: (['moon_roof', 'bell_shaft', 'lower_ruins'] as const).map((zoneId) => {
@@ -89,7 +93,7 @@ export function deriveTowerMemory(snapshot: GameSnapshot): TowerMemory {
       : 'The summit is still unclaimed.',
     achievements: positiveAchievements(snapshot),
     rolloverCopy: board
-      ? 'This board seals at 00:00 UTC. A fresh community tower opens next.'
+      ? `At 00:00 UTC, ${board.scopeLabel} gets a fresh shared tower.`
       : 'Local practice resets at 00:00 UTC. No shared marks are being written.',
   };
 }

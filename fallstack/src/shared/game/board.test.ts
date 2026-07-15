@@ -35,7 +35,7 @@ void test('board identity does not expose malformed community display text', () 
       dateKey: '2026-07-13',
       dailySeed: 'fallstack-2026-07-13',
     }).scopeLabel,
-    'this community'
+    'this subreddit'
   );
 });
 

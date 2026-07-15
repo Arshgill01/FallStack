@@ -7,6 +7,10 @@ import {
   createSeededCounters,
   deriveSnapshot,
 } from '../shared/game/mutation.js';
+import {
+  createBoardIdentity,
+  createBoardSnapshot,
+} from '../shared/game/board.js';
 import { splashSnapshotCopy } from './splashSnapshot.js';
 
 void test('splash copy reflects the live snapshot instead of seeded totals', () => {
@@ -20,11 +24,22 @@ void test('splash copy reflects the live snapshot instead of seeded totals', () 
     achievements: createInitialAchievements(),
   });
 
-  const copy = splashSnapshotCopy(snapshot);
+  const board = createBoardSnapshot(
+    createBoardIdentity({
+      communityId: 't5_fallstack',
+      communityName: 'FallStack',
+      dateKey: snapshot.dateKey,
+      dailySeed: snapshot.dailySeed,
+    }),
+    snapshot,
+    9
+  );
+  const copy = splashSnapshotCopy(board);
 
+  assert.equal(copy.scopeLabel, 'r/FallStack · one daily tower');
   assert.equal(copy.headline, "Today's tower has 46 failed climbs in it.");
   assert.equal(copy.artifactLabel, snapshot.zones[0]?.artifacts[0]?.label);
-  assert.match(copy.detail, /Add yours carefully\.$/);
+  assert.match(copy.detail, /what r\/FallStack climbs next\.$/);
 });
 
 void test('splash copy has a number-free loading state', () => {

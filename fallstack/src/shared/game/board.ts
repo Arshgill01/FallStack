@@ -64,7 +64,7 @@ export function createBoardIdentity(input: {
     scope: 'community',
     scopeLabel: /^[a-zA-Z0-9_]{2,21}$/.test(input.communityName)
       ? `r/${input.communityName}`
-      : 'this community',
+      : 'this subreddit',
     dateKey: input.dateKey,
     dailySeed: input.dailySeed,
     towerVersion: TOWER_VERSION,

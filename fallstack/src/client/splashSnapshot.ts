@@ -1,6 +1,7 @@
 import type { GameSnapshot } from '../shared/game/mutation.js';
 
 export type SplashSnapshotCopy = {
+  scopeLabel: string;
   headline: string;
   artifactLabel: string;
   detail: string;
@@ -11,9 +12,10 @@ export function splashSnapshotCopy(
 ): SplashSnapshotCopy {
   if (!snapshot) {
     return {
+      scopeLabel: 'This subreddit · one daily tower',
       headline: "Today's tower is loading its shared scars.",
       artifactLabel: 'Community falls shape this foothold.',
-      detail: 'See what the community changed, then add yours carefully.',
+      detail: 'See where this subreddit fell, then leave the next climber a mark.',
     };
   }
 
@@ -22,10 +24,15 @@ export function splashSnapshotCopy(
   );
   const artifactLabel =
     firstArtifact?.label ?? 'Community falls shape this foothold.';
+  const scopeLabel =
+    'scopeLabel' in snapshot && typeof snapshot.scopeLabel === 'string'
+      ? snapshot.scopeLabel
+      : 'This subreddit';
 
   return {
+    scopeLabel: `${scopeLabel} · one daily tower`,
     headline: `Today's tower has ${snapshot.totalFalls} failed ${snapshot.totalFalls === 1 ? 'climb' : 'climbs'} in it.`,
     artifactLabel,
-    detail: `${artifactLabel} Add yours carefully.`,
+    detail: `${artifactLabel} Your fall can change what ${scopeLabel} climbs next.`,
   };
 }

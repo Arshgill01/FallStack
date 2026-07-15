@@ -2136,7 +2136,8 @@ export function GameApp() {
               </div>
               <h2>Tower Memory</h2>
               <p className="tower-memory-intro">
-                One community shaped this route. Read it from summit to spawn.
+                {towerMemory?.introCopy ??
+                  'This subreddit shaped this daily route.'}
               </p>
               </header>
 
@@ -2209,7 +2210,7 @@ export function GameApp() {
               </p>
               <p className="tomorrow-hook tower-memory-rollover">
                 {towerMemory?.rolloverCopy ??
-                  'This board seals at 00:00 UTC. A fresh community tower opens next.'}
+                  'At 00:00 UTC, this subreddit gets a fresh shared tower.'}
               </p>
             </div>
             <button

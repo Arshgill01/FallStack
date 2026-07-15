@@ -61,6 +61,10 @@ void test('tower memory reads from summit to spawn and names a real causal site'
   const memory = deriveTowerMemory(createSnapshot());
 
   assert.equal(memory.scopeLabel, 'r/FallStack');
+  assert.equal(
+    memory.introCopy,
+    'r/FallStack shaped this daily route. Read it from summit to spawn.'
+  );
   assert.equal(memory.revisionLabel, 'BOARD r40');
   assert.deepEqual(
     memory.zones.map((zone) => zone.zoneId),
@@ -97,7 +101,7 @@ void test('tower memory makes only the implemented UTC rollover promise', () => 
 
   assert.equal(
     memory.rolloverCopy,
-    'This board seals at 00:00 UTC. A fresh community tower opens next.'
+    'At 00:00 UTC, r/FallStack gets a fresh shared tower.'
   );
   assert.equal(/relic|worst ledge/i.test(memory.rolloverCopy), false);
 });
@@ -106,6 +110,10 @@ void test('local tower memory discloses that shared marks are not being written'
   const memory = deriveTowerMemory(createGameSnapshot());
 
   assert.equal(memory.revisionLabel, 'LOCAL · NOT SHARED');
+  assert.equal(
+    memory.introCopy,
+    'This was local practice. No shared tower changed.'
+  );
   assert.equal(
     memory.rolloverCopy,
     'Local practice resets at 00:00 UTC. No shared marks are being written.'

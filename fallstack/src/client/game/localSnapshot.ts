@@ -42,8 +42,15 @@ export function openingMutationMessage(
       ? `${openingArtifact.seededCount} opening + ${openingArtifact.organicCount} community falls raised ${openingArtifact.siteName}.`
       : `${openingArtifact.seededCount} opening falls raised ${openingArtifact.siteName}.`
     : 'The day opened scarred.';
-  const delayed = sharedAvailable ? '' : ' Shared marks are delayed.';
-  return `One community shares this tower. ${cause}${delayed}`;
+  if (!sharedAvailable) {
+    return `Local practice only. ${cause} Nothing here changes the shared tower.`;
+  }
+
+  const scopeLabel =
+    'scopeLabel' in snapshot && typeof snapshot.scopeLabel === 'string'
+      ? snapshot.scopeLabel
+      : 'This subreddit';
+  return `${scopeLabel} shares one daily tower. ${cause}`;
 }
 
 export function applyLocalFall(

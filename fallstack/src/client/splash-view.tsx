@@ -56,7 +56,7 @@ export function Splash() {
       </section>
 
       <section className="splash-copy">
-        <p className="splash-kicker">One community · one daily tower</p>
+        <p className="splash-kicker">{copy.scopeLabel}</p>
         <h1>{copy.headline}</h1>
         <p>{copy.detail}</p>
         <button
