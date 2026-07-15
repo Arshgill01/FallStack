@@ -61,6 +61,7 @@ import {
   artifactUseWindowMs,
   canCollideWithArtifact,
 } from './game/artifact-mechanics';
+import { canCollideWithPlatform } from './game/platform-mechanics';
 import type {
   ClearEventDetail,
   FallEventDetail,
@@ -275,7 +276,7 @@ class FallstackScene extends Phaser.Scene {
       this.player,
       this.platforms,
       this.onLand,
-      undefined,
+      this.shouldCollideWithPlatform,
       this
     );
 
@@ -616,6 +617,26 @@ class FallstackScene extends Phaser.Scene {
       (type === 'ghost_platform' || type === 'cursed_brick')
     )
       this.startArtifactTimer(artifactId, type);
+  }
+
+  private shouldCollideWithPlatform(
+    playerObject: unknown,
+    platformObject: unknown
+  ): boolean {
+    const player = playerObject as Phaser.GameObjects.Rectangle & {
+      body: Phaser.Physics.Arcade.Body;
+    };
+    const platform = platformObject as Phaser.GameObjects.Rectangle & {
+      body: Phaser.Physics.Arcade.StaticBody;
+    };
+    const platformId = platform.getData('platformId');
+    return canCollideWithPlatform({
+      checkpoint:
+        typeof platformId === 'string' && platformId.includes('checkpoint'),
+      playerVelocityY: player.body.velocity.y,
+      playerBottom: player.body.bottom,
+      platformTop: platform.body.top,
+    });
   }
 
   private shouldCollideWithArtifact(

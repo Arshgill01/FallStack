@@ -331,7 +331,12 @@ function flightCorrection(state, target, launchDirection) {
       ? target.x + target.width - 25
       : targetCenter;
   const stillBelowTop = state.y + 15 > target.y;
-  const approachX = launchDirection > 0 ? target.x - 14 : target.x + target.width + 14;
+  // Stay a full player-width plus margin outside a solid platform until the
+  // climber is above its top. A four-pixel edge allowance made otherwise
+  // valid checkpoint jumps timing-dependent on VM frame scheduling.
+  const approachX = launchDirection > 0
+    ? target.x - 28
+    : target.x + target.width + 28;
   const landingX = stillBelowTop
     ? approachX
     : clamp(safeLandingX, target.x + 17, target.x + target.width - 17);
@@ -347,7 +352,7 @@ function flightCorrection(state, target, launchDirection) {
   const requiredVx = clamp((landingX - state.x) / horizon, -430, 430);
   const velocityError = requiredVx - state.vx;
   const positionError = landingX - state.x;
-  const tolerance = state.vy > 0 ? 18 : 28;
+  const tolerance = stillBelowTop ? 10 : state.vy > 0 ? 18 : 28;
 
   if (Math.abs(positionError) <= tolerance && Math.abs(velocityError) < 55) return null;
   if (velocityError > 24) return 'ArrowRight';
