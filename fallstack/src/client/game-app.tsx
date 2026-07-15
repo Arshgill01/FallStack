@@ -132,6 +132,8 @@ class FallstackScene extends Phaser.Scene {
   private graphics?: Phaser.GameObjects.Graphics;
   private bgGraphics?: Phaser.GameObjects.Graphics;
   private dynamicGraphics?: Phaser.GameObjects.Graphics;
+  private playerGraphics?: Phaser.GameObjects.Graphics;
+  private playerVisualKey = '';
   private labels: Phaser.GameObjects.Text[] = [];
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private space: Phaser.Input.Keyboard.Key | undefined;
@@ -202,10 +204,12 @@ class FallstackScene extends Phaser.Scene {
     this.bgGraphics = this.add.graphics();
     this.graphics = this.add.graphics();
     this.dynamicGraphics = this.add.graphics();
+    this.playerGraphics = this.add.graphics();
 
     this.bgGraphics.setDepth(0);
     this.graphics.setDepth(2);
     this.dynamicGraphics.setDepth(3);
+    this.playerGraphics.setDepth(4);
 
     this.platforms = this.physics.add.staticGroup();
     this.rebuildPlatformBodies();
@@ -370,21 +374,22 @@ class FallstackScene extends Phaser.Scene {
         })
       );
 
-      // Spawn land dust particles
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        this.particles.push({
-          x: this.player.x + Math.cos(angle) * 4,
-          y: this.player.y + 14,
-          vx: Math.cos(angle) * (80 + Math.random() * 60),
-          vy: -15 - Math.random() * 25,
-          color: 0xe6d9bf,
-          alpha: 0.7,
-          size: 1.5 + Math.random() * 1.5,
-          life: 400,
-          maxLife: 400,
-          type: 'dust',
-        });
+      if (!this.reducedMotion) {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          this.particles.push({
+            x: this.player.x + Math.cos(angle) * 4,
+            y: this.player.y + 14,
+            vx: Math.cos(angle) * (80 + Math.random() * 60),
+            vy: -15 - Math.random() * 25,
+            color: 0xe6d9bf,
+            alpha: 0.7,
+            size: 1.5 + Math.random() * 1.5,
+            life: 400,
+            maxLife: 400,
+            type: 'dust',
+          });
+        }
       }
     }
     this.wasGrounded = onFloor;
@@ -413,6 +418,7 @@ class FallstackScene extends Phaser.Scene {
 
   setReducedMotion(reducedMotion: boolean) {
     this.reducedMotion = reducedMotion;
+    if (reducedMotion) this.particles = [];
   }
 
   showMutationReceipt(receipt: MutationReceipt, snapshot: GameSnapshot) {
@@ -733,19 +739,21 @@ class FallstackScene extends Phaser.Scene {
       })
     );
 
-    for (let i = 0; i < 10; i += 1) {
-      this.particles.push({
-        x: this.player?.x ?? 0,
-        y: (this.player?.y ?? 0) + (Math.random() * 18 - 9),
-        vx: -direction * (90 + Math.random() * 110),
-        vy: -50 + Math.random() * 90,
-        color: 0xffd36a,
-        alpha: 0.75,
-        size: 1.3 + Math.random() * 2,
-        life: 360,
-        maxLife: 360,
-        type: 'dust',
-      });
+    if (!this.reducedMotion) {
+      for (let i = 0; i < 10; i += 1) {
+        this.particles.push({
+          x: this.player?.x ?? 0,
+          y: (this.player?.y ?? 0) + (Math.random() * 18 - 9),
+          vx: -direction * (90 + Math.random() * 110),
+          vy: -50 + Math.random() * 90,
+          color: 0xffd36a,
+          alpha: 0.75,
+          size: 1.3 + Math.random() * 2,
+          life: 360,
+          maxLife: 360,
+          type: 'dust',
+        });
+      }
     }
   }
 
@@ -974,8 +982,8 @@ class FallstackScene extends Phaser.Scene {
     // 6. DRAW THE EXACT SITE NAMED BY THE LATEST MUTATION RECEIPT
     this.drawMutationHighlight(g);
 
-    // 7. DRAW PLAYER
-    this.drawPlayer(g);
+    // 7. DRAW PLAYER ON ITS OWN CACHED POSE LAYER
+    this.drawPlayer();
   }
 
   private drawArtifactTimers(g: Phaser.GameObjects.Graphics) {
@@ -1065,16 +1073,33 @@ class FallstackScene extends Phaser.Scene {
     );
   }
 
-  private drawPlayer(g: Phaser.GameObjects.Graphics) {
-    if (!this.player) return;
-    renderReliquaryPlayer(g, {
-      x: this.player.x,
-      y: this.player.y,
+  private drawPlayer() {
+    if (!this.player || !this.playerGraphics) return;
+    const grounded =
+      this.player.body.blocked.down || this.player.body.touching.down;
+    const velocityY = this.player.body.velocity.y;
+    const chargeRatio = chargePowerForHeldMs(this.chargeTime);
+    const pose = this.charging
+      ? 'charge'
+      : grounded
+        ? 'grounded'
+        : velocityY > 160
+          ? 'fall'
+          : 'airborne';
+    const chargeTier = Math.round(chargeRatio * 8);
+    const visualKey = `${pose}:${this.facing}:${chargeTier}:${this.reducedMotion}`;
+    this.playerGraphics.setPosition(this.player.x, this.player.y);
+    if (visualKey === this.playerVisualKey) return;
+    this.playerVisualKey = visualKey;
+    this.playerGraphics.clear();
+    renderReliquaryPlayer(this.playerGraphics, {
+      x: 0,
+      y: 0,
       facing: this.facing,
       charging: this.charging,
-      grounded: this.player.body.blocked.down || this.player.body.touching.down,
-      velocityY: this.player.body.velocity.y,
-      chargeRatio: chargePowerForHeldMs(this.chargeTime),
+      grounded,
+      velocityY,
+      chargeRatio,
       reducedMotion: this.reducedMotion,
     });
   }
@@ -1086,7 +1111,7 @@ class FallstackScene extends Phaser.Scene {
     for (const platform of this.towerPlatforms) {
       const layout = this.layoutPlatform(platform);
       const isCheckpoint = layout.id.includes('checkpoint');
-      if (isCheckpoint) {
+      if (isCheckpoint && this.isCameraVisibleY(layout.y, 80)) {
         const cx = layout.x + layout.width / 2;
         const postH = 46;
         const leftHangerX = cx - layout.width * 0.32;
@@ -1135,12 +1160,15 @@ class FallstackScene extends Phaser.Scene {
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
     const time = this.time.now;
+    const activeZoneIds = this.activeZoneIds();
 
     for (const zone of snapshot.zones) {
+      if (!activeZoneIds.has(zone.id)) continue;
       for (const artifact of zone.artifacts) {
         if (artifact.type === 'cursed_brick') {
           if (this.expiredArtifactIds.has(artifact.id)) continue;
           const layout = this.layoutArtifact(artifact);
+          if (!this.isCameraVisibleY(layout.y, 60)) continue;
           // Touching check
           let isStanding = false;
           if (this.player) {
@@ -1205,6 +1233,11 @@ class FallstackScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  private isCameraVisibleY(y: number, margin: number): boolean {
+    const camera = this.cameras.main;
+    return y >= camera.scrollY - margin && y <= camera.scrollY + camera.height + margin;
   }
 
   private addZoneLabel(
@@ -1508,7 +1541,7 @@ export function GameApp() {
         if (cancelled) return;
         await loadSharedState();
       } catch (error) {
-        console.error('init-game failed', error);
+        console.warn('Shared board unavailable; using local practice.', error);
         const localSnapshot = createLocalSnapshot();
         setSharedAvailable(false);
         window.fallstackSnapshot = localSnapshot;
@@ -1608,7 +1641,7 @@ export function GameApp() {
       const scene = new FallstackScene('FallstackScene');
       sceneRef.current = scene;
       const game = new Phaser.Game({
-        type: Phaser.AUTO,
+        type: Phaser.CANVAS,
         parent: 'game-canvas',
         backgroundColor: '#1b262f',
         width: gameW,
