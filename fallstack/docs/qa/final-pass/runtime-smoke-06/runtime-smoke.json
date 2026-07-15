@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-07-15T06:43:12.529Z",
+  "touch": {
+    "movedLogicalPixels": 28.5,
+    "launchVelocityY": -863.1,
+    "launchEvents": 1,
+    "inputReleased": true
+  },
+  "reducedMotion": {
+    "sceneEnabled": true,
+    "mediaQueryMatches": true,
+    "chargeParticles": 0
+  },
+  "frames": {
+    "samples": 120,
+    "medianMs": 16.7,
+    "p95Ms": 16.8,
+    "maxMs": 16.8,
+    "over34ms": 0
+  },
+  "reducedFrames": {
+    "samples": 90,
+    "medianMs": 16.7,
+    "p95Ms": 16.8,
+    "maxMs": 16.8,
+    "over34ms": 0
+  },
+  "localFallback": {
+    "warningCount": 2,
+    "appErrorCount": 0
+  }
+}

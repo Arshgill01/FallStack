@@ -67,6 +67,10 @@ Direction C wins because the tower reads as a physical object, community mutatio
 
 ## Baseline findings
 
+- Final-pass runtime baseline (2026-07-15) captured at 320×568, 375×812, and 1280×800 under `docs/qa/final-pass/`. It confirms that the bottom mobile mutation plaque obstructs the spawn/jump corridor, the canvas still forces pixel-art filtering against the approved smooth-rendering grammar, and the 659-platform baseline route misses the canonical first-checkpoint pacing target. Remediation is active; opening jump geometry remains frozen.
+
+- Final-pass remediation is complete in `docs/qa/final-pass/report.md`: a real-input 154-platform run reached the summit through every zone; a two-client shared-board run proved safe deferred reconciliation and visible remote mutation; 320×568 touch/reduced-motion checks passed; and the Canvas renderer held 16.7ms median / 16.8ms p95 in the VM. The exact opening geometry remains frozen.
+
 - The first viewport now communicates community failure, but the labels look pasted onto the playfield instead of belonging to the tower.
 - Platforms, artifacts, and background depth remain mostly flat procedural shapes with inconsistent material cues.
 - The mint shell/controls and burgundy celestial playfield read as separate visual systems.

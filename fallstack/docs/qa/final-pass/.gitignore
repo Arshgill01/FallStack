@@ -1,0 +1,10 @@
+*
+!.gitignore
+!report.md
+!full-playthrough-07-final/
+!full-playthrough-07-final/screenshots/
+!full-playthrough-07-final/screenshots/**
+!shared-session-06-final/
+!shared-session-06-final/**
+!runtime-smoke-06/
+!runtime-smoke-06/**
