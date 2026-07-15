@@ -21,6 +21,14 @@
   "permissions": {
     "redis": true
   },
+  "scheduler": {
+    "tasks": {
+      "daily-fallstack-post": {
+        "endpoint": "/internal/scheduler/daily-post",
+        "cron": "5 0 * * *"
+      }
+    }
+  },
   "menu": {
     "items": [
       {

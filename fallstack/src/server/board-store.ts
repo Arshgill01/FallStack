@@ -118,6 +118,8 @@ export function createBoardStore(dependencies: BoardStoreDependencies) {
   return {
     loadBoardRevision: () => loadBoardRevisionWith(resolved),
     loadBoardState: () => loadBoardStateWith(resolved),
+    loadBoardStateForDate: (date: Date) =>
+      loadBoardStateWith({ ...resolved, now: () => date }),
     loadPlayerResume: () => loadPlayerResumeWith(resolved),
     advancePlayerCheckpoint: (clearedZoneId: ZoneId) =>
       advancePlayerCheckpointWith(resolved, clearedZoneId),
@@ -138,6 +140,7 @@ const defaultBoardStore = createBoardStore({
 });
 
 export const loadBoardState = defaultBoardStore.loadBoardState;
+export const loadBoardStateForDate = defaultBoardStore.loadBoardStateForDate;
 export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
 export const loadPlayerResume = defaultBoardStore.loadPlayerResume;
 export const advancePlayerCheckpoint =

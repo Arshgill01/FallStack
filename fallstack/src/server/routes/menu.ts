@@ -1,17 +1,24 @@
 import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
 import { context } from '@devvit/web/server';
-import { createPost } from '../core/post';
+import { createPost, postUrl } from '../core/post';
 
 export const menu = new Hono();
 
 menu.post('/post-create', async (c) => {
   try {
-    const post = await createPost();
+    const result = await createPost();
+
+    if (result.status === 'pending') {
+      return c.json<UiResponse>(
+        { showToast: "Today's tower post is already being created." },
+        200
+      );
+    }
 
     return c.json<UiResponse>(
       {
-        navigateTo: `https://reddit.com/r/${context.subredditName}/comments/${post.id}`,
+        navigateTo: postUrl(context.subredditName, result.postId),
       },
       200
     );
