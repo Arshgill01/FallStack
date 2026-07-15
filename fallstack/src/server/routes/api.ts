@@ -1,6 +1,7 @@
 import {
   context as devvitContext,
   reddit as devvitReddit,
+  realtime as devvitRealtime,
 } from '@devvit/web/server';
 import { Hono, type Context as HonoContext } from 'hono';
 import type {
@@ -25,6 +26,7 @@ import {
 } from '../../shared/game/mutation-events.js';
 import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
 import { redditPostUrl } from '../../shared/reddit.js';
+import { realtimeChannelForBoard } from '../../shared/realtime.js';
 import {
   boardSnapshotFor,
   advancePlayerCheckpoint,
@@ -49,6 +51,16 @@ const defaultBoardStore = {
 type ApiDependencies = {
   context: { postId?: string; subredditName?: string; username?: string };
   reddit: { getCurrentUsername: () => Promise<string | undefined> };
+  realtime?: {
+    send: (
+      channel: string,
+      message: {
+        type: 'board-revision';
+        boardId: string;
+        revision: number;
+      }
+    ) => Promise<void>;
+  };
   boardStore: typeof defaultBoardStore;
   now: () => number;
 };
@@ -56,6 +68,7 @@ type ApiDependencies = {
 export const api = createApi({
   context: devvitContext,
   reddit: devvitReddit,
+  realtime: devvitRealtime,
   boardStore: defaultBoardStore,
   now: Date.now,
 });
@@ -147,15 +160,21 @@ export function createApi(dependencies: ApiDependencies): Hono {
         highestY: body.highestY,
         username: await currentDisplayUsername(dependencies),
       });
+      const snapshot = boardSnapshotFor(
+        await dependencies.boardStore.loadBoardState()
+      );
+      await publishBoardRevision(
+        dependencies,
+        receipt.accepted && receipt.revisionAfter > state.revision,
+        snapshot
+      );
 
       return c.json<RecordFallResponse>({
         type: 'recordFall',
         counted: receipt.accepted,
         message: receipt.copy,
         receipt,
-        snapshot: boardSnapshotFor(
-          await dependencies.boardStore.loadBoardState()
-        ),
+        snapshot,
       });
     } catch (err) {
       console.error('record-fall failed', err);
@@ -214,6 +233,14 @@ export function createApi(dependencies: ApiDependencies): Hono {
       });
       const resume =
         await dependencies.boardStore.advancePlayerCheckpoint(body.zoneId);
+      const snapshot = boardSnapshotFor(
+        await dependencies.boardStore.loadBoardState()
+      );
+      await publishBoardRevision(
+        dependencies,
+        receipt.accepted && receipt.revisionAfter > state.revision,
+        snapshot
+      );
 
       return c.json<RecordClearResponse>({
         type: 'recordClear',
@@ -221,9 +248,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
         message: receipt.copy,
         receipt,
         resume,
-        snapshot: boardSnapshotFor(
-          await dependencies.boardStore.loadBoardState()
-        ),
+        snapshot,
       });
     } catch (err) {
       console.error('record-clear failed', err);
@@ -269,15 +294,21 @@ export function createApi(dependencies: ApiDependencies): Hono {
         highestY: body.highestY,
         username: await currentDisplayUsername(dependencies),
       });
+      const snapshot = boardSnapshotFor(
+        await dependencies.boardStore.loadBoardState()
+      );
+      await publishBoardRevision(
+        dependencies,
+        receipt.accepted && receipt.revisionAfter > state.revision,
+        snapshot
+      );
 
       return c.json<RecordSummitResponse>({
         type: 'recordSummit',
         counted: receipt.accepted,
         message: receipt.copy,
         receipt,
-        snapshot: boardSnapshotFor(
-          await dependencies.boardStore.loadBoardState()
-        ),
+        snapshot,
       });
     } catch (err) {
       console.error('record-summit failed', err);
@@ -315,6 +346,23 @@ async function currentDisplayUsername(
     (await dependencies.reddit.getCurrentUsername()) ??
     null;
   return username ? `u/${username}` : 'a quiet climber';
+}
+
+async function publishBoardRevision(
+  dependencies: ApiDependencies,
+  accepted: boolean,
+  snapshot: ReturnType<typeof boardSnapshotFor>
+): Promise<void> {
+  if (!accepted || !dependencies.realtime) return;
+  await dependencies.realtime
+    .send(realtimeChannelForBoard(snapshot.boardId), {
+      type: 'board-revision',
+      boardId: snapshot.boardId,
+      revision: snapshot.revision,
+    })
+    .catch((error: unknown) => {
+      console.warn('Realtime revision hint failed; polling will recover.', error);
+    });
 }
 
 function mutationError(

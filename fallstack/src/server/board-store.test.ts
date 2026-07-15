@@ -658,6 +658,10 @@ void test('checkpoint resume resets on UTC rollover and stays session-only anony
 
 void test('the clear API derives and returns the authenticated resume checkpoint', async () => {
   const redis = new InMemoryRedis();
+  const realtimeMessages: Array<{
+    channel: string;
+    message: { boardId: string; revision: number };
+  }> = [];
   const currentDate = new Date('2026-07-13T12:00:00.000Z');
   const store = createBoardStore({
     redis,
@@ -672,6 +676,11 @@ void test('the clear API derives and returns the authenticated resume checkpoint
       username: 'alice',
     },
     reddit: { getCurrentUsername: async () => 'alice' },
+    realtime: {
+      send: async (channel, message) => {
+        realtimeMessages.push({ channel, message });
+      },
+    },
     boardStore: store,
     now: () => currentDate.getTime(),
   });
@@ -698,6 +707,16 @@ void test('the clear API derives and returns the authenticated resume checkpoint
     zoneId: ZONE_IDS[1],
     mode: 'account',
   });
+  assert.deepEqual(realtimeMessages, [
+    {
+      channel: 'fallstack_community_fallstack_dev_2026_07_13_v1',
+      message: {
+        type: 'board-revision',
+        boardId: initial.board.boardId,
+        revision: initial.revision + 1,
+      },
+    },
+  ]);
 
   const initResponse = await api.request('/init-game');
   const initBody = (await initResponse.json()) as {

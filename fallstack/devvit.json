@@ -19,7 +19,8 @@
     "entry": "index.cjs"
   },
   "permissions": {
-    "redis": true
+    "redis": true,
+    "realtime": true
   },
   "scheduler": {
     "tasks": {

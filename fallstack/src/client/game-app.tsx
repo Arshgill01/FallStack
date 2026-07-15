@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
-import { navigateTo } from '@devvit/web/client';
+import {
+  connectRealtime,
+  disconnectRealtime,
+  navigateTo,
+} from '@devvit/web/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   InitGameResponse,
@@ -31,6 +35,11 @@ import type {
   BoardSnapshot,
   MutationBeat,
 } from '../shared/game/board.js';
+import {
+  isBoardRevisionMessage,
+  isNewerBoardRevision,
+  realtimeChannelForBoard,
+} from '../shared/realtime.js';
 import {
   generateDailyTower,
   nextZoneId,
@@ -1564,6 +1573,7 @@ export function GameApp() {
     () => (snapshot ? deriveTowerMemory(snapshot) : null),
     [snapshot]
   );
+  const sharedBoardId = isBoardSnapshot(snapshot) ? snapshot.boardId : null;
 
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
@@ -1831,6 +1841,42 @@ export function GameApp() {
       document.removeEventListener('visibilitychange', refreshQuietly);
     };
   }, [reconcileRemoteSnapshot, sharedAvailable, snapshot]);
+
+  useEffect(() => {
+    if (!sharedBoardId || !sharedAvailable) return;
+    const channel = realtimeChannelForBoard(sharedBoardId);
+    let requestInFlight = false;
+    connectRealtime({
+      channel,
+      onMessage: (message: unknown) => {
+        const current = window.fallstackSnapshot;
+        if (
+          requestInFlight ||
+          !isBoardSnapshot(current) ||
+          !isBoardRevisionMessage(message) ||
+          !isNewerBoardRevision(current, message)
+        )
+          return;
+        requestInFlight = true;
+        void (async () => {
+          try {
+            const response = await fetch('/api/init-game');
+            const data = await parseApiResponse<InitGameResponse>(response);
+            reconcileRemoteSnapshot(data.snapshot);
+          } catch (error) {
+            console.error('Realtime refresh failed; polling will recover.', error);
+          } finally {
+            requestInFlight = false;
+          }
+        })();
+      },
+    });
+    return () => disconnectRealtime(channel);
+  }, [
+    reconcileRemoteSnapshot,
+    sharedAvailable,
+    sharedBoardId,
+  ]);
 
   useEffect(() => {
     const apply = () =>
