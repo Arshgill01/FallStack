@@ -15,7 +15,7 @@ All five participants must pass all three points. A majority is insufficient.
 ## Setup
 
 - Use the current installed playtest: `https://www.reddit.com/r/fallstack_dev/?playtest=fallstack`.
-- Record the installed version before starting. Current candidate: `v0.0.20.2` (product-code commit `6b0b7d0`).
+- Record the installed app version and exact product-code commit before starting. Do not reuse a historical candidate identifier.
 - Use at least three phone-sized sessions; the remaining sessions may use desktop.
 - Use participants who have not read the product pitch, plans, Figma file, or prior test notes.
 - Do not name participants or record Reddit usernames in this document.
@@ -50,6 +50,8 @@ Do not correct an answer during the session. Stop after the participant answers 
 Count paraphrases as correct; do not require product vocabulary. Record the participant's words before assigning pass/fail.
 
 ## Result record
+
+Use the blank [`../submission-closeout/comprehension-evidence.md`](../submission-closeout/comprehension-evidence.md) sheet. Do not prefill answers from automated runs, project contributors, or agent interpretation.
 
 | Participant | Device / viewport | Verbatim first description | Scope | Earlier cause | Personal next consequence | Pass |
 | --- | --- | --- | --- | --- | --- | --- |

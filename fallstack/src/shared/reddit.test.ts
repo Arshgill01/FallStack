@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { redditPostUrl } from './reddit.js';
+import { redditModmailUrl, redditPostUrl } from './reddit.js';
 
 void test('Reddit post URLs accept fullnames but reject untrusted destinations', () => {
   assert.equal(
@@ -9,4 +9,12 @@ void test('Reddit post URLs accept fullnames but reject untrusted destinations',
   );
   assert.equal(redditPostUrl('<script>', 't3_abc123'), null);
   assert.equal(redditPostUrl('FallStack', '../comments/evil'), null);
+});
+
+void test('support stays on a validated subreddit modmail route', () => {
+  assert.equal(
+    redditModmailUrl('FallStack'),
+    'https://www.reddit.com/message/compose?to=/r/FallStack'
+  );
+  assert.equal(redditModmailUrl('r/FallStack'), null);
 });

@@ -721,12 +721,17 @@ void test('the clear API derives and returns the authenticated resume checkpoint
   const initResponse = await api.request('/init-game');
   const initBody = (await initResponse.json()) as {
     postUrl?: string | null;
+    supportUrl?: string | null;
     resume?: { zoneId: string; mode: string };
   };
   assert.equal(initResponse.status, 200);
   assert.equal(
     initBody.postUrl,
     'https://www.reddit.com/r/fallstack_dev/comments/fallstack'
+  );
+  assert.equal(
+    initBody.supportUrl,
+    'https://www.reddit.com/message/compose?to=/r/fallstack_dev'
   );
   assert.deepEqual(initBody.resume, body.resume);
 });

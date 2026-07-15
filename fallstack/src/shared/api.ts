@@ -19,6 +19,7 @@ export type InitGameResponse = {
   type: 'initGame';
   postId: string;
   postUrl: string | null;
+  supportUrl: string | null;
   username: string;
   resume: PlayerResume;
   snapshot: BoardSnapshot;

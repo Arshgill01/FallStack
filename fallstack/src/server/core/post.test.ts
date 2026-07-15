@@ -54,6 +54,10 @@ void test('concurrent and repeated daily post requests submit only once', async 
     String((submissions[0]?.textFallback as { text: string }).text),
     /4 community falls, 2 clean clears, and 1 summit/
   );
+  assert.match(
+    String((submissions[0]?.textFallback as { text: string }).text),
+    /Report a problem via r\/fallstack modmail/
+  );
 });
 
 void test('a failed submission releases its lease and can be retried', async () => {

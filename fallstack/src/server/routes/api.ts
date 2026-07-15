@@ -25,7 +25,7 @@ import {
   resolveFallObservation,
 } from '../../shared/game/mutation-events.js';
 import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
-import { redditPostUrl } from '../../shared/reddit.js';
+import { redditModmailUrl, redditPostUrl } from '../../shared/reddit.js';
 import { realtimeChannelForBoard } from '../../shared/realtime.js';
 import {
   boardSnapshotFor,
@@ -94,6 +94,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
         type: 'initGame',
         postId,
         postUrl: redditPostUrl(dependencies.context.subredditName, postId),
+        supportUrl: redditModmailUrl(dependencies.context.subredditName),
         username,
         resume,
         snapshot: boardSnapshotFor(state),

@@ -5,7 +5,7 @@ import {
 } from '@devvit/web/server';
 import { TOWER_VERSION } from '../../shared/game/board.js';
 import { deriveDailyMemory } from '../../shared/game/daily-memory.js';
-import { redditPostUrl } from '../../shared/reddit.js';
+import { redditModmailUrl, redditPostUrl } from '../../shared/reddit.js';
 import { loadBoardStateForDate } from '../board-store.js';
 
 const LEASE_MS = 10 * 60 * 1000;
@@ -94,7 +94,10 @@ export function createDailyPostService(dependencies: DailyPostDependencies) {
           previousDate: memory.dateKey,
         },
         textFallback: {
-          text: dailyPostFallback(memory.copy),
+          text: dailyPostFallback(
+            memory.copy,
+            dependencies.context.subredditName
+          ),
         },
         styles: {
           backgroundColor: '#f3ead7ff',
@@ -127,7 +130,11 @@ export function postUrl(subredditName: string, postId: string): string {
   return url;
 }
 
-function dailyPostFallback(previousMemory: string): string {
+function dailyPostFallback(
+  previousMemory: string,
+  subredditName: string
+): string {
+  const supportUrl = redditModmailUrl(subredditName);
   return [
     '# Fallstack',
     '',
@@ -136,6 +143,9 @@ function dailyPostFallback(previousMemory: string): string {
     previousMemory,
     '',
     'Open this post in the current Reddit app to play. Desktop: arrows move; hold Space and release to leap. Mobile: use the fixed Left, Jump, and Right controls.',
+    ...(supportUrl
+      ? ['', `[Report a problem via r/${subredditName} modmail](${supportUrl}).`]
+      : []),
   ].join('\n');
 }
 

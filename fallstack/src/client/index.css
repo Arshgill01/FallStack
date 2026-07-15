@@ -1675,6 +1675,17 @@ button:disabled {
   text-align: center;
 }
 
+.tower-memory-support {
+  align-self: center;
+  margin: 1px auto 0;
+  padding: 4px 6px;
+  background: transparent;
+  color: #592337;
+  font-size: 9px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .tower-memory-header {
   position: relative;
   padding: 0 4px 14px;

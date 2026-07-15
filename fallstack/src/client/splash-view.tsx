@@ -37,7 +37,10 @@ export function Splash() {
           Fallstack
         </p>
         <span className="splash-day-seal">
-          Daily tower · {snapshot ? `${snapshot.totalFalls} falls` : 'loading'}
+          Daily tower ·{' '}
+          {snapshot
+            ? `${snapshot.seededFalls} opening · ${snapshot.organicFalls} community`
+            : 'loading'}
         </span>
       </header>
 

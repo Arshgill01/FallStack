@@ -1368,6 +1368,7 @@ export function GameApp() {
   const [resume, setResume] = useState<PlayerResume | null>(null);
   const [summitOpen, setSummitOpen] = useState(false);
   const [discussionUrl, setDiscussionUrl] = useState<string | null>(null);
+  const [supportUrl, setSupportUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<
     'idle' | 'copied' | 'failed'
   >('idle');
@@ -1538,6 +1539,7 @@ export function GameApp() {
       const data = await parseApiResponse<InitGameResponse>(res);
       setSharedAvailable(true);
       setDiscussionUrl(data.postUrl);
+      setSupportUrl(data.supportUrl);
       setResume(data.resume);
       window.fallstackSnapshot = data.snapshot;
       setSnapshot(data.snapshot);
@@ -1605,6 +1607,7 @@ export function GameApp() {
         const localSnapshot = createLocalSnapshot();
         setSharedAvailable(false);
         setDiscussionUrl(null);
+        setSupportUrl(null);
         setResume({
           zoneId: readDeviceResume(localStorage, localSnapshot),
           mode: 'session',
@@ -2436,6 +2439,15 @@ export function GameApp() {
                     ? 'Discussion opens from the shared Reddit post.'
                     : ''}
             </p>
+            {supportUrl ? (
+              <button
+                type="button"
+                className="tower-memory-support"
+                onClick={() => navigateTo(supportUrl)}
+              >
+                Report a problem via subreddit modmail
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
