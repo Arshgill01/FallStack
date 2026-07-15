@@ -104,7 +104,11 @@ import {
 } from './game/reconciliation';
 import { deriveTowerMemory, towerResultCopy } from './game/tower-memory';
 import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
-import { readDeviceResume, writeDeviceResume } from './game/resume';
+import {
+  checkpointedZonesBefore,
+  readDeviceResume,
+  writeDeviceResume,
+} from './game/resume';
 
 declare global {
   interface Window {
@@ -455,11 +459,8 @@ class FallstackScene extends Phaser.Scene {
   }
 
   restoreCheckpoint(zoneId: ZoneId) {
-    const zoneIndex = ZONES.findIndex((zone) => zone.id === zoneId);
-    if (!this.player || zoneIndex < 0) return;
-    this.checkpointed = new Set(
-      ZONES.slice(0, zoneIndex).map((zone) => zone.id)
-    );
+    if (!this.player) return;
+    this.checkpointed = new Set(checkpointedZonesBefore(zoneId));
     this.respawnZone = zoneId;
     this.respawn();
   }

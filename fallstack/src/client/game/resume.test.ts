@@ -3,6 +3,7 @@ import test from 'node:test';
 import { BOTTOM_ZONE_ID, ZONE_IDS } from '../../shared/game/mutation.js';
 import {
   deviceResumeKey,
+  checkpointedZonesBefore,
   readDeviceResume,
   writeDeviceResume,
 } from './resume.js';
@@ -24,4 +25,9 @@ void test('practice resume is daily, validated, and monotonic', () => {
 
   values.set(deviceResumeKey(tuesday), 'not-a-zone');
   assert.equal(readDeviceResume(storage, tuesday), BOTTOM_ZONE_ID);
+});
+
+void test('restored checkpoints use climb order rather than render order', () => {
+  assert.deepEqual(checkpointedZonesBefore(BOTTOM_ZONE_ID), []);
+  assert.deepEqual(checkpointedZonesBefore(ZONE_IDS[3]), ZONE_IDS.slice(0, 3));
 });

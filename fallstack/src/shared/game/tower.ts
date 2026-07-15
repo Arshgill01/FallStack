@@ -307,14 +307,17 @@ export function generateDailyTower(seed: string): GeneratedTower {
     kind: 'summit',
   });
 
+  const collisionSafePlatforms = removeRouteBlockingObstacles(platforms);
+
   // Expose generated zone chunks for validation and downstream metadata.
   const chunks: TowerChunk[] = ZONES.map((zone) => {
-    const zoneLedges = platforms.filter(
+    const zoneLedges = collisionSafePlatforms.filter(
       (p) => p.zoneId === zone.id && isRoutePlatform(p)
     );
-    const entrance = zoneLedges[0] ?? platforms[0]!;
+    const entrance = zoneLedges[0] ?? collisionSafePlatforms[0]!;
     const exit =
-      zoneLedges[zoneLedges.length - 1] ?? platforms[platforms.length - 1]!;
+      zoneLedges[zoneLedges.length - 1] ??
+      collisionSafePlatforms[collisionSafePlatforms.length - 1]!;
     return {
       id: `${zone.id}-chunk-gen`,
       theme: zone.id,
@@ -335,7 +338,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   return {
     seed,
     zones: ZONES,
-    platforms,
+    platforms: collisionSafePlatforms,
     chunks,
   };
 }
@@ -417,6 +420,27 @@ export function isRoutePlatform(platform: Platform): boolean {
   return platform.kind !== 'obstacle';
 }
 
+function removeRouteBlockingObstacles(platforms: Platform[]): Platform[] {
+  const route = platforms.filter(isRoutePlatform);
+  const blockedIds = new Set<string>();
+  for (const obstacle of platforms.filter(
+    (platform) => platform.kind === 'obstacle'
+  )) {
+    if (!route.some((platform) => rectanglesOverlap(obstacle, platform)))
+      continue;
+    if (obstacle.id.startsWith('ricochet-')) {
+      const pairPrefix = obstacle.id.replace(/-(?:left|right)$/, '');
+      for (const candidate of platforms) {
+        if (candidate.id.startsWith(`${pairPrefix}-`))
+          blockedIds.add(candidate.id);
+      }
+    } else {
+      blockedIds.add(obstacle.id);
+    }
+  }
+  return platforms.filter((platform) => !blockedIds.has(platform.id));
+}
+
 export function validateTower(tower: GeneratedTower): boolean {
   const byZone = new Map<ZoneId, Platform[]>();
   for (const zone of ZONES) byZone.set(zone.id, []);
@@ -428,6 +452,18 @@ export function validateTower(tower: GeneratedTower): boolean {
       return false;
     if (isRoutePlatform(platform)) byZone.get(platform.zoneId)?.push(platform);
   }
+
+  const routePlatforms = tower.platforms.filter(isRoutePlatform);
+  if (
+    tower.platforms
+      .filter((platform) => platform.kind === 'obstacle')
+      .some((obstacle) =>
+        routePlatforms.some((platform) =>
+          rectanglesOverlap(obstacle, platform)
+        )
+      )
+  )
+    return false;
 
   if (
     !tower.platforms.some(
@@ -452,6 +488,15 @@ export function validateTower(tower: GeneratedTower): boolean {
   }
 
   return true;
+}
+
+function rectanglesOverlap(left: Platform, right: Platform): boolean {
+  return (
+    left.x < right.x + right.width &&
+    left.x + left.width > right.x &&
+    left.y < right.y + right.height &&
+    left.y + left.height > right.y
+  );
 }
 
 function isReachable(from: Platform, to: Platform): boolean {

@@ -27,6 +27,7 @@ import {
   nextZoneId,
   validateTower,
   zoneForY,
+  type Platform,
 } from './tower.js';
 
 void test('known-good tower has finite dimensions and a summit', () => {
@@ -34,7 +35,7 @@ void test('known-good tower has finite dimensions and a summit', () => {
   assert.equal(WORLD_HEIGHT, 17_280);
   assert.equal(ZONES.length, 12);
   assert.equal(WORLD_HEIGHT, ZONE_IDS.length * ZONE_HEIGHT);
-  assert.ok(PLATFORMS.length >= 180 && PLATFORMS.length <= 220);
+  assert.ok(PLATFORMS.length >= 160 && PLATFORMS.length <= 220);
   assert.ok(
     PLATFORMS.filter(isRoutePlatform).length >= 150 &&
       PLATFORMS.filter(isRoutePlatform).length <= 175
@@ -44,7 +45,9 @@ void test('known-good tower has finite dimensions and a summit', () => {
       (platform) => platform.id === 'summit' && platform.kind === 'summit'
     )
   );
-  assert.ok(PLATFORMS.some((platform) => platform.kind === 'obstacle'));
+  assert.ok(
+    PLATFORMS.filter((platform) => platform.kind === 'obstacle').length >= 10
+  );
 });
 
 void test('movement tuning supports generated tower reachability', () => {
@@ -351,6 +354,38 @@ void test('generated towers include optional ricochet chimneys without changing 
   assert.equal(validateTower(tower), true);
 });
 
+void test('optional obstacles never overlap a baseline route surface', () => {
+  for (let index = 0; index < 240; index += 1) {
+    const tower = generateDailyTower(`fallstack-obstacle-overlap-${index}`);
+    const route = tower.platforms.filter(isRoutePlatform);
+    for (const obstacle of tower.platforms.filter(
+      (platform) => platform.kind === 'obstacle'
+    )) {
+      assert.equal(
+        route.some((platform) => rectanglesOverlap(obstacle, platform)),
+        false,
+        `${tower.seed}: ${obstacle.id} overlaps the baseline route`
+      );
+    }
+  }
+});
+
+void test('tower validation rejects a decorative post inside a route landing', () => {
+  const tower = generateDailyTower('fallstack-route-overlap-validation');
+  const landing = tower.platforms.find(isRoutePlatform);
+  assert.ok(landing);
+  tower.platforms.push({
+    id: 'forged-route-obstacle',
+    zoneId: landing.zoneId,
+    x: landing.x + 10,
+    y: landing.y,
+    width: 16,
+    height: 60,
+    kind: 'obstacle',
+  });
+  assert.equal(validateTower(tower), false);
+});
+
 void test('decorative obstacle posts stay on the outer side of their landing', () => {
   for (let index = 0; index < 120; index += 1) {
     const tower = generateDailyTower(`fallstack-obstacle-side-${index}`);
@@ -385,6 +420,15 @@ void test('decorative obstacle posts stay on the outer side of their landing', (
     }
   }
 });
+
+function rectanglesOverlap(left: Platform, right: Platform): boolean {
+  return (
+    left.x < right.x + right.width &&
+    left.x + left.width > right.x &&
+    left.y < right.y + right.height &&
+    left.y + left.height > right.y
+  );
+}
 
 void test('different daily seeds can vary the known-good tower subtly', () => {
   const first = generateDailyTower('fallstack-2026-07-08');

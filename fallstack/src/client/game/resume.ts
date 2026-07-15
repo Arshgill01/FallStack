@@ -42,3 +42,8 @@ export function deviceResumeKey(
 ): string {
   return `fallstack:practice-resume:${snapshot.dateKey}:v${TOWER_VERSION}`;
 }
+
+export function checkpointedZonesBefore(zoneId: ZoneId): ZoneId[] {
+  const zoneIndex = ZONE_IDS.indexOf(zoneId);
+  return zoneIndex < 0 ? [] : ZONE_IDS.slice(0, zoneIndex);
+}
