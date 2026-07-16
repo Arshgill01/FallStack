@@ -745,8 +745,7 @@ class FallstackScene extends Phaser.Scene {
   private respawn() {
     if (!this.player) return;
     const checkpoint = checkpointForZone(this.respawnZone);
-    this.player.setPosition(this.layoutX(checkpoint.x), checkpoint.y);
-    this.player.body.setVelocity(0, 0);
+    this.player.body.reset(this.layoutX(checkpoint.x), checkpoint.y);
     this.player.body.setAcceleration(0, 0);
     this.player.body.setGravityY(0);
     this.currentZone = this.respawnZone;

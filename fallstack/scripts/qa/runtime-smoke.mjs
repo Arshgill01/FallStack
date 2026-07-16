@@ -36,6 +36,34 @@ try {
   assert.ok(afterMove.x > beforeMove.x + 10, 'right touch control moves the climber');
   assert.equal(afterMove.input.right, false, 'right touch releases cleanly');
 
+  const fallsBefore = afterMove.events.falls;
+  await holdTouch(cdp, await centerOf(touchPage, '[aria-label="Move right"]'), 500);
+  await touchPage.waitForFunction(
+    (count) => window.__fallstackQa.falls > count,
+    fallsBefore
+  );
+  await waitForGrounded(touchPage);
+  await touchPage.waitForTimeout(500);
+  const afterRespawn = await readScene(touchPage);
+  assert.equal(
+    afterRespawn.events.falls,
+    fallsBefore + 1,
+    'one touch-driven fall produces exactly one respawn'
+  );
+  assert.equal(afterRespawn.grounded, true, 'touch-driven respawn settles on its checkpoint');
+  assert.equal(afterRespawn.input.right, false, 'falling touch releases before respawn');
+
+  const beforeRespawnMove = await readScene(touchPage);
+  await holdTouch(cdp, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
+  const afterRespawnMove = await readScene(touchPage);
+  const openingMove = afterMove.x - beforeMove.x;
+  const respawnMove = afterRespawnMove.x - beforeRespawnMove.x;
+  assert.ok(respawnMove > 10, 'touch input still moves after respawn');
+  assert.ok(
+    respawnMove >= openingMove * 0.7 && respawnMove <= openingMove * 1.3,
+    'opening and post-respawn ground movement stay within 30%'
+  );
+
   await touchPage.reload();
   await waitForReady(touchPage);
   const jumpStart = await readScene(touchPage);
@@ -111,7 +139,10 @@ try {
   const report = {
     generatedAt: new Date().toISOString(),
     touch: {
-      movedLogicalPixels: round(afterMove.x - beforeMove.x),
+      openingMovedLogicalPixels: round(openingMove),
+      postRespawnMovedLogicalPixels: round(respawnMove),
+      fallEvents: afterRespawn.events.falls,
+      respawnGrounded: afterRespawn.grounded,
       launchVelocityY: round(afterJump.vy),
       launchEvents: afterJump.events.launches,
       inputReleased: !afterJump.input.right && !afterJump.input.jump,
@@ -139,9 +170,12 @@ try {
 
 async function installSceneProbe(context) {
   await context.addInitScript(() => {
-    window.__fallstackQa = { launches: 0 };
+    window.__fallstackQa = { launches: 0, falls: 0 };
     window.addEventListener('fallstack:launch', () => {
       window.__fallstackQa.launches += 1;
+    });
+    window.addEventListener('fallstack:fall', () => {
+      window.__fallstackQa.falls += 1;
     });
     window.__fallstackFindScene = () => {
       const root = document.querySelector('#root');
@@ -189,6 +223,7 @@ async function readScene(page) {
       y: player.y,
       vx: player.body.velocity.x,
       vy: player.body.velocity.y,
+      grounded: Boolean(player.body.blocked.down || player.body.touching.down),
       particleCount: scene.particles.length,
       reducedMotion: scene.reducedMotion,
       mediaReducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -196,6 +231,17 @@ async function readScene(page) {
       events: { ...window.__fallstackQa },
     };
   });
+}
+
+async function waitForGrounded(page) {
+  await page.waitForFunction(
+    () => {
+      const body = window.__fallstackFindScene?.()?.player?.body;
+      return Boolean(body && (body.blocked.down || body.touching.down));
+    },
+    null,
+    { timeout: 8_000 }
+  );
 }
 
 async function centerOf(page, selector) {

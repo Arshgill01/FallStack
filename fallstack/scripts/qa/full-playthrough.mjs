@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -7,14 +7,20 @@ const options = parseArgs(process.argv.slice(2));
 const outputDir = path.resolve(options.output);
 await mkdir(path.join(outputDir, 'screenshots'), { recursive: true });
 
-const browser = await chromium.launch({
+const browserType = { chromium, webkit }[options.browser];
+if (!browserType) throw new Error(`Unsupported browser: ${options.browser}`);
+const browser = await browserType.launch({
   headless: true,
-  args: [
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-web-security',
-    ...(options.canvas ? ['--disable-webgl'] : []),
-  ],
+  ...(options.browser === 'chromium'
+    ? {
+        args: [
+          '--no-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-web-security',
+          ...(options.canvas ? ['--disable-webgl'] : []),
+        ],
+      }
+    : {}),
 });
 const context = await browser.newContext({
   viewport: { width: options.width, height: options.height },
@@ -103,7 +109,7 @@ try {
   let lastZone = initial.currentZone;
 
   await capture(page, outputDir, '00-opening');
-  if (options.introFall) await performIntroFall(page);
+  const introFall = options.introFall ? await performIntroFall(page) : null;
 
   while (targetIndex < route.length && totalJumps < options.maxJumps) {
     const state = await waitForGrounded(page, 12_000);
@@ -197,6 +203,7 @@ try {
   const report = {
     generatedAt: new Date().toISOString(),
     url: options.url,
+    browser: options.browser,
     viewport: { width: options.width, height: options.height },
     renderer: options.canvas ? 'canvas-for-mechanical-replay' : 'default',
     reducedMotion: options.reducedMotion,
@@ -207,6 +214,7 @@ try {
     landingCount: landings.filter((landing) => landing.advanced).length,
     failureCount: failures.length,
     finalState: compactState(finalState),
+    introFall,
     events,
     failures,
     landings,
@@ -359,8 +367,29 @@ async function performIntroFall(page) {
     );
   }
 
-  await waitForGrounded(page, 8_000);
+  const settled = await waitForGrounded(page, 8_000);
   await page.waitForTimeout(500);
+  const after = await readScene(page, false);
+  const fallEvents = await page.evaluate(
+    (initialAttemptId) =>
+      (window.__fallstackQaEvents ?? []).filter(
+        (event) =>
+          event.name === 'fall' &&
+          event.detail?.attemptId !== initialAttemptId
+      ),
+    before.attemptId
+  );
+  if (fallEvents.length > 0) {
+    throw new Error(
+      `Respawn emitted ${fallEvents.length} duplicate fall event(s) before the next launch`
+    );
+  }
+  return {
+    initialAttemptId: before.attemptId,
+    respawnAttemptId: after.attemptId,
+    settled: compactState(settled),
+    after: compactState(after),
+  };
 }
 
 async function positionOnSupport(page, support, desiredX) {
@@ -582,6 +611,7 @@ function parseArgs(args) {
   return {
     url: values.get('url') ?? 'http://127.0.0.1:8080/game.html',
     output: values.get('output') ?? 'docs/qa/final-pass/full-playthrough',
+    browser: values.get('browser') ?? 'chromium',
     width: numberOption(values, 'width', 375),
     height: numberOption(values, 'height', 812),
     maxJumps: numberOption(values, 'max-jumps', 1_500),
