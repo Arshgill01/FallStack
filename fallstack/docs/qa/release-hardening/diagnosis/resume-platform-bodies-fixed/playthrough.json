@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-07-16T14:30:57.059Z",
+  "url": "http://127.0.0.1:8080/game.html",
+  "browser": "chromium",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "renderer": "canvas-for-mechanical-replay",
+  "reducedMotion": false,
+  "requestedResumeZone": "ring_citadel",
+  "elapsedMs": 3044,
+  "completed": false,
+  "routePlatforms": 154,
+  "totalJumps": 1,
+  "landingCount": 1,
+  "failureCount": 0,
+  "finalState": {
+    "x": 184.7,
+    "y": 11404,
+    "vx": 210,
+    "vy": 0,
+    "grounded": true,
+    "lastPlatformId": "ledge-ring_citadel-52",
+    "currentZone": "ring_citadel",
+    "respawnZone": "ring_citadel",
+    "highestY": 11323.6,
+    "summitSent": false
+  },
+  "introFall": null,
+  "resumeCheck": {
+    "requestedZone": "ring_citadel",
+    "settled": {
+      "x": 240,
+      "y": 11506,
+      "vx": 0,
+      "vy": 0,
+      "grounded": true,
+      "lastPlatformId": "nebula_vault-checkpoint",
+      "currentZone": "ring_citadel",
+      "respawnZone": "ring_citadel",
+      "highestY": 11460,
+      "summitSent": false
+    }
+  },
+  "events": [
+    {
+      "name": "ready",
+      "at": 509.59999999403954,
+      "detail": null
+    },
+    {
+      "name": "zone",
+      "at": 512.3000000119209,
+      "detail": {
+        "zoneId": "ring_citadel"
+      }
+    },
+    {
+      "name": "land",
+      "at": 742.6999999880791,
+      "detail": {
+        "zoneId": "ring_citadel"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 2025.699999988079,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 2058.9000000059605,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "launch",
+      "at": 2075.800000011921,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 2076.0999999940395,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 2826,
+      "detail": {
+        "zoneId": "ring_citadel"
+      }
+    }
+  ],
+  "failures": [],
+  "landings": [
+    {
+      "jump": 1,
+      "targetIndex": 52,
+      "targetId": "ledge-ring_citadel-52",
+      "targetZone": "ring_citadel",
+      "targetGeometry": {
+        "x": 155,
+        "y": 11418,
+        "width": 108,
+        "height": 22
+      },
+      "fromId": "nebula_vault-checkpoint",
+      "fromGeometry": {
+        "x": 225,
+        "y": 11520,
+        "width": 148,
+        "height": 22
+      },
+      "attemptAtTarget": 1,
+      "result": {
+        "outcome": "target",
+        "peakY": 11323.5718,
+        "frames": 36,
+        "direction": -1,
+        "wallBounce": false,
+        "bounced": false,
+        "blockerIds": [],
+        "setupState": {
+          "x": 357,
+          "y": 11506,
+          "vx": 11.5,
+          "vy": 0,
+          "grounded": true,
+          "lastPlatformId": "nebula_vault-checkpoint",
+          "currentZone": "ring_citadel",
+          "respawnZone": "ring_citadel",
+          "highestY": 11460,
+          "summitSent": false
+        },
+        "launchState": {
+          "x": 351.7,
+          "y": 11506,
+          "vx": -326.9,
+          "vy": -837.1,
+          "grounded": true,
+          "lastPlatformId": "nebula_vault-checkpoint",
+          "currentZone": "ring_citadel",
+          "respawnZone": "ring_citadel",
+          "highestY": 11460,
+          "summitSent": false
+        }
+      },
+      "after": {
+        "x": 184.7,
+        "y": 11404,
+        "vx": 210,
+        "vy": 0,
+        "grounded": true,
+        "lastPlatformId": "ledge-ring_citadel-52",
+        "currentZone": "ring_citadel",
+        "respawnZone": "ring_citadel",
+        "highestY": 11323.6,
+        "summitSent": false
+      },
+      "advanced": true
+    }
+  ],
+  "consoleEntries": [
+    {
+      "type": "log",
+      "text": "%cPhaser v4.2.1 (Canvas | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC\"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "warning",
+      "text": "Shared board unavailable; using local practice. Wt: The tower did not answer.\n    at Jt (http://127.0.0.1:8080/game.js:103:26972)\n    at async http://127.0.0.1:8080/game.js:104:25973\n    at async http://127.0.0.1:8080/game.js:104:26812"
+    }
+  ],
+  "pageErrors": []
+}

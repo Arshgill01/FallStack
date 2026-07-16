@@ -176,3 +176,12 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - Replaced the repeated gold flash with cut, horizontal whip, vertical lift, and camera-punch entrances plus three one-off accents for the fall, theme montage, and final lockup.
 - Replaced the locally synthesized score with a mastered 58-second edit of “Forest Walk” by Eugenio Mininni under the Mixkit Stock Music Free License. Source, checksum, license, and edit details are recorded in `video/MUSIC.md`.
 - Revised master verification passed at 58.048 seconds, 1920×1080, 30 fps, H.264/AAC, with zero detected black runs. Representative fall/theme frames and the nine-beat contact sheet were visually inspected.
+
+## Mobile release hardening
+
+- 2026-07-16: Authenticated Safari review and production captures confirmed the user's report that architectural changes alone did not make the three visual zones distinct; the backdrop and route surfaces still shared one global magenta/burgundy palette.
+- Kept the selected Cutaway Reliquary direction and its washi/indigo/persimmon anchors. Added a typed palette layer to the existing three architectural treatments: warm repaired masonry for Lower Ruins, verdigris/brass for Bell Shaft, and lunar indigo/ghost-mint for Moon Roof. Collision meanings, tower geometry, artifacts, typography, overlays, and movement remain unchanged.
+- Browser proof includes complete 320×568 reduced-motion, 375×812 Chromium/WebKit, restored-checkpoint, and 1280×800 desktop climbs. Cropped gameplay frames identify each zone without relying on its text label; transition frames show the palettes remaining coherent when adjacent zones share the viewport.
+- The existing 96/100 score remains valid: shared mutation 5/5, tower composition 5/5, tactile depth 4/5, collision readability 5/5, opening jump/feedback 5/5, mobile/accessibility 5/5, coherence 5/5, runtime feasibility 4/5. The palette pass strengthens zone identification without adding an asset payload or changing runtime feasibility.
+- Exact lifecycle, performance, playthrough, and visual evidence is recorded in [`../qa/release-hardening/report.md`](../qa/release-hardening/report.md).
+- Release gate: `npm run type-check`, `npm run lint`, `npm test` (136/136), `npm run build`, and final Chromium/WebKit runtime-control checks passed. Six complete production-build routes reached the summit. Devvit built, uploaded, and installed the combined release as `v0.0.23` on `r/fallstack_dev`; an independent installation listing confirmed the same version.

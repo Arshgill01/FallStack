@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-07-16T14:40:36.960Z",
+  "browser": "webkit",
+  "touch": {
+    "openingMovedLogicalPixels": 16.3,
+    "warmMovedLogicalPixels": 19,
+    "postRespawnMovedLogicalPixels": 19,
+    "fallEvents": 1,
+    "respawnGrounded": true,
+    "launchVelocityY": -824.6,
+    "launchEvents": 1,
+    "inputReleased": true
+  },
+  "reducedMotion": {
+    "sceneEnabled": true,
+    "mediaQueryMatches": true,
+    "chargeParticles": 0
+  },
+  "frames": {
+    "samples": 120,
+    "medianMs": 17,
+    "p95Ms": 18,
+    "maxMs": 18,
+    "over34ms": 0
+  },
+  "reducedFrames": {
+    "samples": 90,
+    "medianMs": 17,
+    "p95Ms": 17,
+    "maxMs": 19,
+    "over34ms": 0
+  },
+  "localFallback": {
+    "warningCount": 2,
+    "appErrorCount": 0
+  }
+}

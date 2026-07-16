@@ -128,9 +128,11 @@ Exit: local public-play gate passes, commits are reviewable, the installed/local
 ## Progress
 
 - [x] M0 prior work checkpointed in `dae7310`; local CLI and installed `v0.0.21` recorded.
-- [ ] M1 reported symptoms reproduced or narrowed with deterministic evidence.
-- [ ] M2 infinite-fall root cause fixed and regression-protected.
-- [ ] M3 opening-speed behavior measured and corrected where application-owned.
-- [ ] M4 repeated playthrough matrix passes.
-- [ ] M5 biome differentiation passes visual validation.
-- [ ] M6 full project/deployment closeout complete.
+- [x] M1 unintended post-respawn fall reproduced in 9/10 fresh contexts; opening touch/frame behavior measured in repeated Chromium and WebKit contexts.
+- [x] M2 Arcade body reset fixed the fresh-session loop; active-body rebuild fixed restored-checkpoint fall-through; browser regressions cover both chains.
+- [x] M3 warm and post-respawn movement are identical across five Chromium runs with stable 16.7 ms cadence; no multi-jump physics ramp was found, so global movement constants were preserved.
+- [x] M4 six production-build climbs reached the summit across fresh, opening-fall, restored, reduced-motion, compact, desktop, Chromium, and WebKit paths.
+- [x] M5 typed warm/verdigris/lunar palettes passed tests and mobile/desktop/WebKit capture review without changing collision semantics.
+- [x] M6 full project/deployment closeout complete; type-check, lint, 136 tests, build, Chromium/WebKit runtime gates, upload, install, and independent install listing passed.
+
+Detailed evidence is archived in [`../qa/release-hardening/report.md`](../qa/release-hardening/report.md). The urgent body-reset fix was installed as `v0.0.22`; the complete build containing the body reset, checkpoint-body rebuild, and palette commits was independently confirmed installed as `v0.0.23`.

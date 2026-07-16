@@ -1,0 +1,111 @@
+{
+  "generatedAt": "2026-07-16T14:05:28.257Z",
+  "error": {
+    "message": "Respawn emitted 1 duplicate fall event(s) before the next launch",
+    "stack": "Error: Respawn emitted 1 duplicate fall event(s) before the next launch\n    at performIntroFall (file:///Users/arshdeepsingh/Developer/FallStack/fallstack/scripts/qa/full-playthrough.mjs:376:11)\n    at async file:///Users/arshdeepsingh/Developer/FallStack/fallstack/scripts/qa/full-playthrough.mjs:106:41"
+  },
+  "elapsedMs": 3090,
+  "events": [
+    {
+      "name": "ready",
+      "at": 348,
+      "detail": null
+    },
+    {
+      "name": "land",
+      "at": 480.69999998807907,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 697.1999999880791,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 730.5,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "launch",
+      "at": 747.6999999880791,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 747.6999999880791,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 1279.7999999821186,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "fall",
+      "at": 2148,
+      "detail": {
+        "attemptId": "attempt_mrnkzyq7_826c64c3-422b-4937-b5ff-f55dd33bc6e7",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 403.0000000000001,
+        "fallY": 17327.63055555556,
+        "highestY": 16984.35277777778,
+        "lastPlatformId": "start",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": "start",
+        "launchChargePercent": 47,
+        "launchDirection": 1
+      }
+    },
+    {
+      "name": "fall",
+      "at": 2513.9000000059605,
+      "detail": {
+        "attemptId": "attempt_mrnl004e_bcbb1b54-fe6a-4b93-b2d6-32ecfb2704eb",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 240,
+        "fallY": 17329.750000000004,
+        "highestY": 17192,
+        "lastPlatformId": "start",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 47,
+        "launchDirection": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 2564.4000000059605,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    }
+  ],
+  "failures": [],
+  "landings": [],
+  "consoleEntries": [
+    {
+      "type": "log",
+      "text": "%cPhaser v4.2.1 (Canvas | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC\"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "warning",
+      "text": "Shared board unavailable; using local practice. Wt: The tower did not answer.\n    at Jt (http://127.0.0.1:8080/game.js:103:26972)\n    at async http://127.0.0.1:8080/game.js:104:25979\n    at async http://127.0.0.1:8080/game.js:104:26818"
+    }
+  ],
+  "pageErrors": []
+}

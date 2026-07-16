@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-07-16T14:05:55.468Z",
+  "url": "http://127.0.0.1:8080/game.html",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "renderer": "canvas-for-mechanical-replay",
+  "reducedMotion": false,
+  "elapsedMs": 4030,
+  "completed": false,
+  "routePlatforms": 154,
+  "totalJumps": 1,
+  "landingCount": 1,
+  "failureCount": 0,
+  "finalState": {
+    "x": 119.4,
+    "y": 17094,
+    "vx": 210,
+    "vy": 0,
+    "grounded": true,
+    "lastPlatformId": "ledge-orbital_scrapyard-1",
+    "currentZone": "orbital_scrapyard",
+    "respawnZone": "orbital_scrapyard",
+    "highestY": 17020.5,
+    "summitSent": false
+  },
+  "introFall": {
+    "initialAttemptId": "attempt_mrnl0j0q_3016f573-36f6-4560-9bb4-7a30b3ab1d99",
+    "respawnAttemptId": "attempt_mrnl0kdw_5e175b38-6a17-47dd-a9aa-0b8d478b883f",
+    "settled": {
+      "x": 240,
+      "y": 17206,
+      "vx": 0,
+      "vy": 0,
+      "grounded": true,
+      "lastPlatformId": "start",
+      "currentZone": "orbital_scrapyard",
+      "respawnZone": "orbital_scrapyard",
+      "highestY": 17192,
+      "summitSent": false
+    },
+    "after": {
+      "x": 240,
+      "y": 17206,
+      "vx": 0,
+      "vy": 0,
+      "grounded": true,
+      "lastPlatformId": "start",
+      "currentZone": "orbital_scrapyard",
+      "respawnZone": "orbital_scrapyard",
+      "highestY": 17192,
+      "summitSent": false
+    }
+  },
+  "events": [
+    {
+      "name": "ready",
+      "at": 375.5,
+      "detail": null
+    },
+    {
+      "name": "land",
+      "at": 508.40000000596046,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 691.7000000178814,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 723.4000000059605,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "launch",
+      "at": 741.5,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 741.5,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 1275,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "fall",
+      "at": 2140.100000023842,
+      "detail": {
+        "attemptId": "attempt_mrnl0j0q_3016f573-36f6-4560-9bb4-7a30b3ab1d99",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 403.0000000000001,
+        "fallY": 17327.63055555556,
+        "highestY": 16984.35277777778,
+        "lastPlatformId": "start",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": "start",
+        "launchChargePercent": 47,
+        "launchDirection": 1
+      }
+    },
+    {
+      "name": "land",
+      "at": 2256.600000023842,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 3091.600000023842,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 3124.9000000059605,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "launch",
+      "at": 3158.300000011921,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 3158.4000000059605,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 3892.100000023842,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    }
+  ],
+  "failures": [],
+  "landings": [
+    {
+      "jump": 1,
+      "targetIndex": 1,
+      "targetId": "ledge-orbital_scrapyard-1",
+      "targetZone": "orbital_scrapyard",
+      "targetGeometry": {
+        "x": 99,
+        "y": 17108,
+        "width": 98,
+        "height": 22
+      },
+      "fromId": "start",
+      "fromGeometry": {
+        "x": 180,
+        "y": 17220,
+        "width": 120,
+        "height": 28
+      },
+      "attemptAtTarget": 1,
+      "result": {
+        "outcome": "target",
+        "peakY": 17020.71562222222,
+        "frames": 37,
+        "direction": -1,
+        "wallBounce": false,
+        "bounced": false,
+        "blockerIds": [],
+        "setupState": {
+          "x": 287.3,
+          "y": 17206,
+          "vx": 11.5,
+          "vy": 0,
+          "grounded": true,
+          "lastPlatformId": "start",
+          "currentZone": "orbital_scrapyard",
+          "respawnZone": "orbital_scrapyard",
+          "highestY": 17192,
+          "summitSent": false
+        },
+        "launchState": {
+          "x": 281.4,
+          "y": 17206,
+          "vx": -36.9,
+          "vy": 0,
+          "grounded": true,
+          "lastPlatformId": "start",
+          "currentZone": "orbital_scrapyard",
+          "respawnZone": "orbital_scrapyard",
+          "highestY": 17192,
+          "summitSent": false
+        }
+      },
+      "after": {
+        "x": 119.4,
+        "y": 17094,
+        "vx": 210,
+        "vy": 0,
+        "grounded": true,
+        "lastPlatformId": "ledge-orbital_scrapyard-1",
+        "currentZone": "orbital_scrapyard",
+        "respawnZone": "orbital_scrapyard",
+        "highestY": 17020.5,
+        "summitSent": false
+      },
+      "advanced": true
+    }
+  ],
+  "consoleEntries": [
+    {
+      "type": "log",
+      "text": "%cPhaser v4.2.1 (Canvas | Web Audio)%c https://phaser.io/v4021 color: #ffffff; background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARBJREFUeNpi/P//P0OHsPB/BiCoePuWkYFEwALSXJElzMBgLwE2CNkQxgWr/yMr/p8QimlBu5DQ//+8vBBco/ofzAe6imH+qv/53/6jYJAYSA4ZoxoANYTPKhiuCQZwGcJU+e4dqpMmvsDq14krV2MPAxDha2CMKvoXoiE/PBQUDgQD8j82UFae9B9bOIC8B9UD9gIjjIMN7Ns6lWHn4XMoYu62RgxO3tkMjIyMII2MYAOAtmFVhA+ADHf2ycGMRhANjUq8YO+WKWCvgAORIV8CkpDCrzIwsLIymC1qAtuAD4Bsh3sBmqAY3qcGwL2AC4DCpKtzHlgzOLWihwEuzTCN0GhDJHeYC4gByBphACDAAH2dDIxdjr+VAAAAAElFTkSuQmCC\"), linear-gradient(to bottom, #000814, #001d3d, #003566); background-repeat: no-repeat; background-position: 4px center, 0 0; padding: 2px 6px 2px 24px; background: transparent"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "warning",
+      "text": "Shared board unavailable; using local practice. Wt: The tower did not answer.\n    at Jt (http://127.0.0.1:8080/game.js:103:26972)\n    at async http://127.0.0.1:8080/game.js:104:25944\n    at async http://127.0.0.1:8080/game.js:104:26783"
+    }
+  ],
+  "pageErrors": []
+}
