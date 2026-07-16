@@ -6,6 +6,7 @@ import {
   ARTIFACT_COLLISION_CLASS,
   artifactVisualTier,
   clampedArtifactLabelCenter,
+  RELIQUARY_ZONE_PALETTES,
   RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
   playerVisualDimensions,
@@ -48,6 +49,17 @@ void test('each visual zone has a distinct architectural and material contract',
   assert.equal(new Set(treatments.map((item) => item.density)).size, 3);
   assert.equal(new Set(treatments.map((item) => item.platformMaterial)).size, 3);
   assert.equal(new Set(treatments.map((item) => item.lightEmphasis)).size, 3);
+});
+
+void test('each visual zone has a distinct backdrop and route-surface palette', () => {
+  const palettes = Object.values(RELIQUARY_ZONE_PALETTES);
+  for (const key of ['outer', 'cavity', 'wall', 'platform', 'edge'] as const) {
+    assert.equal(new Set(palettes.map((palette) => palette[key])).size, 3);
+  }
+  for (const palette of palettes) {
+    assert.notEqual(palette.cavity, palette.platform);
+    assert.notEqual(palette.platform, palette.edge);
+  }
 });
 
 void test('reduced motion removes ambience without hiding state', () => {

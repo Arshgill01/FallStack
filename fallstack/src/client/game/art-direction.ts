@@ -117,6 +117,54 @@ export const RELIQUARY_ZONE_NAMES: Record<ReliquaryZone, string> = {
   moon_roof: 'Moon Roof',
 };
 
+export type ReliquaryZonePalette = {
+  outer: number;
+  cavity: number;
+  wall: number;
+  wallLit: number;
+  trim: number;
+  trimLit: number;
+  platform: number;
+  platformLit: number;
+  edge: number;
+};
+
+export const RELIQUARY_ZONE_PALETTES = {
+  lower_ruins: {
+    outer: 0x1c1422,
+    cavity: 0x35171f,
+    wall: 0x4a2730,
+    wallLit: 0x704139,
+    trim: 0x76512c,
+    trimLit: 0xd9a453,
+    platform: 0x4a3037,
+    platformLit: 0x75504b,
+    edge: 0xd8cdb7,
+  },
+  bell_shaft: {
+    outer: 0x10191d,
+    cavity: 0x17272a,
+    wall: 0x263d3c,
+    wallLit: 0x46645b,
+    trim: 0x725d35,
+    trimLit: 0xc69d4e,
+    platform: 0x293c3b,
+    platformLit: 0x567068,
+    edge: 0xb89b55,
+  },
+  moon_roof: {
+    outer: 0x111427,
+    cavity: 0x1d2740,
+    wall: 0x303b5a,
+    wallLit: 0x596987,
+    trim: 0x3f696c,
+    trimLit: 0x9bcfc8,
+    platform: 0x35405e,
+    platformLit: 0x667594,
+    edge: 0xbde5d9,
+  },
+} as const satisfies Record<ReliquaryZone, ReliquaryZonePalette>;
+
 export const RELIQUARY_ZONE_TREATMENTS = {
   lower_ruins: {
     density: 'broad-broken-arches',
