@@ -11,7 +11,8 @@ The separate `award-criteria-audit.md` maps the completed package to Reddit's pu
 
 | Required question | Answer status | Evidence basis | Remaining uncertainty |
 | --- | --- | --- | --- |
-| Future hackathon category | Ready | Product thesis, Reddit-native shared mutation design, working aggregate state architecture | Preference, not an empirical platform claim |
+| Future hackathon category | Ready | Reddit's differentiated community context, persistent state, recurring participation, and discussion surfaces | Preference, not an empirical platform claim |
+| Platform recommendation | Ready at 7/10 | Working Web architecture and authenticated host behavior balanced against the verified testing, dependency, documentation, playtest, and observability gaps below | Subjective recommendation based on the audited developer experience |
 | Developer-experience rating | Ready at 3/5 | Real build/upload/read-back, authenticated Chrome/Safari host QA, shared-board reconciliation, two-tab race, current template/CLI audits, current harness install/audit/context experiments, and 101 real route requests | Physical-mobile, successful `loid`, uncapped hosted write, and cross-browser playtest-bridge comparison remain |
 | Why DX rating | Ready | Exact versions, dependency paths, timings, route tests, verified candidate dependency bumps | Candidate bumps have targeted—not full upstream—coverage |
 | Documentation satisfaction | Ready at 3/5 | Current docs, schema, changelog, templates, CLI commands, public docs source | Pages can change after audit date |

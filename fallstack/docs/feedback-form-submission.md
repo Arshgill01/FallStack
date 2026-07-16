@@ -7,7 +7,17 @@ Use these answers for the Google form. Keep the evidence cutoff/version if space
 
 ## If we ran another Hackathon, what would you like the category to be?
 
-**Shared Worlds / Community Co-creation.** Reward apps where many redditors leave durable consequences in one shared object, story, puzzle, or world—not single-player experiences with Reddit branding added afterward. The category should favor ideas that genuinely require subreddit context, aggregate identity/state, recurring posts, and discussion. Fallstack is an example: failures and clean clears physically mutate the same daily tower, giving later players reasons to thank, blame, and discuss the community that shaped their route.
+**Shared Worlds / Community Co-creation.** A category for apps where many redditors leave durable consequences in a shared object, story, puzzle, or world. It should reward ideas that genuinely depend on subreddit context, persistent aggregate state, recurring participation, and discussion—not experiences that could work unchanged as standalone web apps.
+
+## How likely are you to recommend Reddit's Developer Platform to another dev?
+
+**7/10**
+
+## Why or why not?
+
+I would recommend it, especially to developers building apps that are inherently social or community-scoped. Devvit Web combines familiar web tooling with Reddit distribution, identity, persistence, and conversation in a way few platforms do, and its client/server model is sensible.
+
+I would qualify that recommendation for teams building stateful production apps today. The testing ladder, clean-install dependency health, documentation and template consistency, browser playtest bridge, and request-level observability still make iteration and failure diagnosis less predictable than they should be. Those are fixable tooling and process gaps rather than problems with the platform's direction, which is why my score is 7 rather than lower—and not yet a 9 or 10.
 
 ## How satisfied are you with the developer experience? Provide a rating on the scale of 1-5.
 
@@ -44,7 +54,7 @@ The rating is 3 because the current golden path has several mechanically prevent
 
 These should be contract-tested, not fixed one typo at a time: execute documented commands in CI, generate duplicated constraints from the schema, compare framework claims with template dependencies, and scan active examples for current deprecations.
 
-Game guidance also needs Reddit-specific budgets and a package report. The first-party Vite plugin enables maps but disables compressed-size reporting; the CLI uploader then selects every client file. In Fallstack, 12.57 MB of 14.40 MB selected raw client bytes were maps, while runtime files were 1.83 MB raw/~0.52 MB gzip-estimated. Maps were not requested during observed execution, so this is packaging volume—not a map-caused first-paint claim. Across three authenticated same-version v0.0.15 runs, expanded FCP ranged from 0.392 to 4.164 seconds cold (3.292-second median) versus 0.400–0.412 seconds warm; the identical 372 kB encoded bundle ranged from 90.5 ms to 2.223 seconds cold. One VM is not a platform percentile, but the variability proves why tooling should show manifests, repeated samples, entrypoint budgets, and cold/warm desktop/mobile targets before remote mutation.
+Game guidance also needs Reddit-specific budgets and a package report. The first-party Vite plugin enables maps but disables compressed-size reporting; the CLI uploader then selects every client file. In the audited Phaser app, 12.57 MB of 14.40 MB selected raw client bytes were maps, while runtime files were 1.83 MB raw/~0.52 MB gzip-estimated. Maps were not requested during observed execution, so this is packaging volume—not a map-caused first-paint claim. Across three authenticated same-version v0.0.15 runs, expanded FCP ranged from 0.392 to 4.164 seconds cold (3.292-second median) versus 0.400–0.412 seconds warm; the identical 372 kB encoded bundle ranged from 90.5 ms to 2.223 seconds cold. One VM is not a platform percentile, but the variability proves why tooling should show manifests, repeated samples, entrypoint budgets, and cold/warm desktop/mobile targets before remote mutation.
 
 ## How satisfied are you with support in our communities?
 
@@ -93,7 +103,9 @@ The highest-leverage fixes I verified are small enough to evaluate quickly:
 - report the exact upload manifest, runtime/map/compressed-size estimates, and host-specific Phaser/game performance baselines before remote mutation;
 - surface the installed version in playtest host/log context so concurrent uploads cannot be mistaken for cache or runtime regressions.
 
-I separated platform findings from my own bugs and environment issues. For example, I did not blame Devvit for automated Reddit network-security blocking, browser setup, a static fallback bug, or Fallstack's interrupted-idempotency risk. The full evidence package records commands, pinned revisions, expected/actual behavior, ownership, severity, workaround, candidate source files, targeted patch validation, and remaining uncertainty. If the form permits a repository/appendix link, I would be happy to share it.
+I separated platform findings from my own bugs and environment issues. For example, I did not blame Devvit for automated Reddit network-security blocking, browser setup, a static fallback bug, or an application-owned interrupted-idempotency risk. The full evidence package records commands, pinned revisions, expected/actual behavior, ownership, severity, workaround, candidate source files, targeted patch validation, and remaining uncertainty.
+
+Detailed evidence, reproductions, and acceptance criteria: https://github.com/Arshgill01/FallStack/blob/master/fallstack/docs/maintainer-triage-brief.md
 
 ## Developer handoff appendix (not a form field)
 

@@ -60,6 +60,29 @@ let completed = false;
 
 try {
   await page.goto(options.url, { waitUntil: 'domcontentloaded' });
+  if (options.boardOnly) {
+    await page.addStyleTag({
+      content: `
+        html, body, #root, .game-shell {
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          background: #171426 !important;
+        }
+        .topbar, .touch-controls, .hud-overlay, .charge-bar,
+        .loading-overlay, .result-backdrop {
+          display: none !important;
+        }
+        .tower-wrap {
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+        }
+      `,
+    });
+  }
   await page.waitForFunction(() => window.__fallstackQaEvents?.some((event) => event.name === 'ready'), null, {
     timeout: 30_000,
   });
@@ -80,6 +103,7 @@ try {
   let lastZone = initial.currentZone;
 
   await capture(page, outputDir, '00-opening');
+  if (options.introFall) await performIntroFall(page);
 
   while (targetIndex < route.length && totalJumps < options.maxJumps) {
     const state = await waitForGrounded(page, 12_000);
@@ -294,6 +318,49 @@ async function performJump(page, current, target, attempt, blockers) {
     setupState: compactState(setupState),
     launchState: compactState(launchState),
   };
+}
+
+async function performIntroFall(page) {
+  const before = await readScene(page, false);
+  await page.keyboard.down('ArrowRight');
+  await page.keyboard.down('Space');
+  await page.waitForTimeout(46);
+  await page.keyboard.up('Space');
+  await page.waitForTimeout(620);
+  await page.keyboard.up('ArrowRight');
+
+  const fell = await page
+    .waitForFunction(
+      (attemptId) => {
+        const events = window.__fallstackQaEvents ?? [];
+        return events.some(
+          (event) =>
+            event.name === 'fall' && event.detail?.attemptId === attemptId
+        );
+      },
+      before.attemptId,
+      { timeout: 5_500 }
+    )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!fell) {
+    await page.keyboard.down('ArrowRight');
+    await page.waitForTimeout(1_300);
+    await page.keyboard.up('ArrowRight');
+    await page.waitForFunction(
+      (attemptId) =>
+        (window.__fallstackQaEvents ?? []).some(
+          (event) =>
+            event.name === 'fall' && event.detail?.attemptId === attemptId
+        ),
+      before.attemptId,
+      { timeout: 5_500 }
+    );
+  }
+
+  await waitForGrounded(page, 8_000);
+  await page.waitForTimeout(500);
 }
 
 async function positionOnSupport(page, support, desiredX) {
@@ -522,6 +589,8 @@ function parseArgs(args) {
     canvas: values.get('canvas') !== 'false',
     reducedMotion: values.get('reduced-motion') === 'true',
     video: values.get('video') === 'true',
+    boardOnly: values.get('board-only') === 'true',
+    introFall: values.get('intro-fall') === 'true',
     requireSummit: values.get('require-summit') !== 'false',
   };
 }

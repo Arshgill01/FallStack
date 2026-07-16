@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "name": "fallstack-pitch-video",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "capture": "node scripts/capture.mjs",
+    "assets": "node scripts/prepare.mjs",
+    "score": "node scripts/generate-score.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts FallstackPitch output/fallstack-pitch.mp4 --codec=h264 --audio-codec=aac --crf=16 --pixel-format=yuv420p --color-space=bt709 --concurrency=50%",
+    "render:frame": "remotion still src/index.ts FallstackPitch output/preview.png --frame=870",
+    "verify": "node scripts/verify.mjs",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.489",
+    "@remotion/media": "4.0.489",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.489"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.2"
+  }
+}
