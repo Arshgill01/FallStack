@@ -2,16 +2,23 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/runtime-smoke'
 );
+const browserName = process.argv
+  .find((value) => value.startsWith('--browser='))
+  ?.slice('--browser='.length) ?? 'chromium';
+const browserType = { chromium, webkit }[browserName];
+if (!browserType) throw new Error(`Unsupported browser: ${browserName}`);
 await mkdir(outputDir, { recursive: true });
 
-const browser = await chromium.launch({
+const browser = await browserType.launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  ...(browserName === 'chromium'
+    ? { args: ['--no-sandbox', '--disable-dev-shm-usage'] }
+    : {}),
 });
 
 try {
@@ -28,16 +35,24 @@ try {
   );
   await touchPage.goto('http://127.0.0.1:8080/game.html');
   await waitForReady(touchPage);
-  const cdp = await touchContext.newCDPSession(touchPage);
+  const pointer = await createPointerDriver(touchContext, touchPage, browserName);
 
   const beforeMove = await readScene(touchPage);
-  await holdTouch(cdp, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
+  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
   const afterMove = await readScene(touchPage);
   assert.ok(afterMove.x > beforeMove.x + 10, 'right touch control moves the climber');
   assert.equal(afterMove.input.right, false, 'right touch releases cleanly');
 
-  const fallsBefore = afterMove.events.falls;
-  await holdTouch(cdp, await centerOf(touchPage, '[aria-label="Move right"]'), 500);
+  await touchPage.waitForTimeout(250);
+  const beforeWarmMove = await readScene(touchPage);
+  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move left"]'), 140);
+  const afterWarmMove = await readScene(touchPage);
+  const warmMove = beforeWarmMove.x - afterWarmMove.x;
+  assert.ok(warmMove > 10, 'a repeated touch moves the climber');
+  assert.equal(afterWarmMove.input.left, false, 'repeated touch releases cleanly');
+
+  const fallsBefore = afterWarmMove.events.falls;
+  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 500);
   await touchPage.waitForFunction(
     (count) => window.__fallstackQa.falls > count,
     fallsBefore
@@ -54,22 +69,22 @@ try {
   assert.equal(afterRespawn.input.right, false, 'falling touch releases before respawn');
 
   const beforeRespawnMove = await readScene(touchPage);
-  await holdTouch(cdp, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
+  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
   const afterRespawnMove = await readScene(touchPage);
   const openingMove = afterMove.x - beforeMove.x;
   const respawnMove = afterRespawnMove.x - beforeRespawnMove.x;
   assert.ok(respawnMove > 10, 'touch input still moves after respawn');
   assert.ok(
-    respawnMove >= openingMove * 0.7 && respawnMove <= openingMove * 1.3,
-    'opening and post-respawn ground movement stay within 30%'
+    respawnMove >= warmMove * 0.7 && respawnMove <= warmMove * 1.3,
+    `warm and post-respawn ground movement stay within 30% (${round(warmMove)}px vs ${round(respawnMove)}px)`
   );
 
   await touchPage.reload();
   await waitForReady(touchPage);
   const jumpStart = await readScene(touchPage);
   const launchesBefore = jumpStart.events.launches;
-  await holdTouch(
-    cdp,
+  await holdPointer(
+    pointer,
     await centerOf(touchPage, '[aria-label="Hold to charge jump"]'),
     90
   );
@@ -100,15 +115,16 @@ try {
   const reducedBefore = await readScene(reducedPage);
   assert.equal(reducedBefore.reducedMotion, true);
   assert.equal(reducedBefore.mediaReducedMotion, true);
-  const reducedCdp = await reducedContext.newCDPSession(reducedPage);
+  const reducedPointer = await createPointerDriver(
+    reducedContext,
+    reducedPage,
+    browserName
+  );
   const jumpCenter = await centerOf(
     reducedPage,
     '[aria-label="Hold to charge jump"]'
   );
-  await reducedCdp.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ ...jumpCenter, radiusX: 1, radiusY: 1, force: 1 }],
-  });
+  await reducedPointer.down(jumpCenter);
   await reducedPage.waitForTimeout(220);
   const reducedDuringCharge = await readScene(reducedPage);
   assert.equal(
@@ -116,10 +132,7 @@ try {
     0,
     'reduced motion suppresses charge particles'
   );
-  await reducedCdp.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
-    touchPoints: [],
-  });
+  await reducedPointer.up();
   const reducedFrames = await measureFrames(reducedPage, 1_500);
   await reducedPage
     .locator('.game-shell')
@@ -138,8 +151,10 @@ try {
 
   const report = {
     generatedAt: new Date().toISOString(),
+    browser: browserName,
     touch: {
       openingMovedLogicalPixels: round(openingMove),
+      warmMovedLogicalPixels: round(warmMove),
       postRespawnMovedLogicalPixels: round(respawnMove),
       fallEvents: afterRespawn.events.falls,
       respawnGrounded: afterRespawn.grounded,
@@ -208,7 +223,10 @@ async function installSceneProbe(context) {
 async function waitForReady(page) {
   await page.waitForFunction(() =>
     Boolean(
-      window.__fallstackFindScene?.()?.controlsReady && window.fallstackSnapshot
+      window.__fallstackFindScene?.()?.controlsReady &&
+      window.fallstackSnapshot &&
+      !document.querySelector('[aria-label="Move right"]')?.hasAttribute('disabled') &&
+      !document.querySelector('.loading-overlay')
     )
   );
 }
@@ -250,16 +268,39 @@ async function centerOf(page, selector) {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
-async function holdTouch(cdp, point, durationMs) {
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ ...point, radiusX: 1, radiusY: 1, force: 1 }],
-  });
+async function createPointerDriver(context, page, name) {
+  if (name === 'webkit') {
+    return {
+      async down(point) {
+        await page.mouse.move(point.x, point.y);
+        await page.mouse.down();
+      },
+      async up() {
+        await page.mouse.up();
+      },
+    };
+  }
+  const cdp = await context.newCDPSession(page);
+  return {
+    async down(point) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ ...point, radiusX: 1, radiusY: 1, force: 1 }],
+      });
+    },
+    async up() {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      });
+    },
+  };
+}
+
+async function holdPointer(pointer, point, durationMs) {
+  await pointer.down(point);
   await new Promise((resolve) => setTimeout(resolve, durationMs));
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
-    touchPoints: [],
-  });
+  await pointer.up();
 }
 
 async function measureFrames(page, durationMs) {

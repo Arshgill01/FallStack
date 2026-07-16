@@ -37,6 +37,13 @@ page.on('console', (message) => {
 });
 page.on('pageerror', (error) => pageErrors.push(String(error)));
 
+if (options.resumeZone) {
+  await page.addInitScript((zoneId) => {
+    const dateKey = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`fallstack:practice-resume:${dateKey}:v1`, zoneId);
+  }, options.resumeZone);
+}
+
 await page.addInitScript(() => {
   window.__fallstackQaEvents = [];
   for (const name of [
@@ -93,6 +100,9 @@ try {
     timeout: 30_000,
   });
   await page.waitForTimeout(250);
+  const resumeCheck = options.resumeZone
+    ? await validateRestoredCheckpoint(page, options.resumeZone)
+    : null;
 
   const initial = await readScene(page, true);
   const allPlatforms = initial.platforms;
@@ -207,6 +217,7 @@ try {
     viewport: { width: options.width, height: options.height },
     renderer: options.canvas ? 'canvas-for-mechanical-replay' : 'default',
     reducedMotion: options.reducedMotion,
+    requestedResumeZone: options.resumeZone,
     elapsedMs: Date.now() - startedAt,
     completed,
     routePlatforms: route.length,
@@ -215,6 +226,7 @@ try {
     failureCount: failures.length,
     finalState: compactState(finalState),
     introFall,
+    resumeCheck,
     events,
     failures,
     landings,
@@ -390,6 +402,29 @@ async function performIntroFall(page) {
     settled: compactState(settled),
     after: compactState(after),
   };
+}
+
+async function validateRestoredCheckpoint(page, requestedZone) {
+  await page.waitForTimeout(500);
+  const state = await waitForGrounded(page, 8_000);
+  const wrongZoneEvents = await page.evaluate(
+    (zoneId) =>
+      (window.__fallstackQaEvents ?? []).filter(
+        (event) => event.name === 'zone' && event.detail?.zoneId !== zoneId
+      ),
+    requestedZone
+  );
+  if (state.currentZone !== requestedZone || state.respawnZone !== requestedZone) {
+    throw new Error(
+      `Checkpoint restored to ${state.currentZone}/${state.respawnZone}, expected ${requestedZone}`
+    );
+  }
+  if (wrongZoneEvents.length > 0) {
+    throw new Error(
+      `Checkpoint restore crossed ${wrongZoneEvents.length} unintended zone(s) before input`
+    );
+  }
+  return { requestedZone, settled: compactState(state) };
 }
 
 async function positionOnSupport(page, support, desiredX) {
@@ -621,6 +656,7 @@ function parseArgs(args) {
     video: values.get('video') === 'true',
     boardOnly: values.get('board-only') === 'true',
     introFall: values.get('intro-fall') === 'true',
+    resumeZone: values.get('resume-zone') ?? null,
     requireSummit: values.get('require-summit') !== 'false',
   };
 }

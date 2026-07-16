@@ -749,6 +749,7 @@ class FallstackScene extends Phaser.Scene {
     this.player.body.setAcceleration(0, 0);
     this.player.body.setGravityY(0);
     this.currentZone = this.respawnZone;
+    this.rebuildPlatformBodies();
     this.publishZone();
     this.currentAttemptId = newAttemptId('attempt');
     this.highestY = checkpoint.y;
