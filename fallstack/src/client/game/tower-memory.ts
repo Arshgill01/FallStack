@@ -28,6 +28,7 @@ export type TowerMemoryZone = {
   siteId: string | null;
   siteName: string | null;
   detail: string;
+  effect: string;
   artifactLabel: string | null;
   tone: TowerMemoryTone;
   latest: boolean;
@@ -82,12 +83,17 @@ export function deriveTowerMemory(snapshot: GameSnapshot): TowerMemory {
       return {
         zoneId,
         zoneName: RELIQUARY_ZONE_NAMES[zoneId],
-        statusLabel: macroStatusLabel(macroZones),
+        statusLabel: primary
+          ? siteEffectLabel(primary)
+          : macroStatusLabel(macroZones),
         siteId: primary?.id ?? null,
         siteName: primary?.name ?? null,
         detail: primary
           ? siteMemoryCopy(primary)
           : 'No shared mark has taken hold.',
+        effect: primary
+          ? siteEffectCopy(primary)
+          : 'No visible helper or hazard changes this route.',
         artifactLabel: primary ? preferredArtifactLabel(primary) : null,
         tone: primary ? siteTone(primary) : 'quiet',
         latest: primary?.id === latestSiteId,
@@ -124,7 +130,7 @@ function macroStatusLabel(zones: ZoneSnapshot[]): string {
   return (
     [...zones].sort(
       (left, right) => statusStoryScore(right.status) - statusStoryScore(left.status)
-    )[0]?.statusLabel ?? 'Untouched'
+    )[0]?.statusLabel ?? 'Low activity'
   );
 }
 
@@ -227,10 +233,51 @@ function plural(count: number, singular: string): string {
 }
 
 function preferredArtifactLabel(site: SiteSnapshot): string | null {
-  const artifact = [...site.artifacts].sort(
+  const artifact = preferredArtifact(site);
+  return artifact ? artifactName(artifact) : null;
+}
+
+function preferredArtifact(site: SiteSnapshot): Artifact | undefined {
+  return [...site.artifacts].sort(
     (left, right) => artifactStoryScore(right) - artifactStoryScore(left)
   )[0];
-  return artifact ? artifactName(artifact) : null;
+}
+
+function siteEffectLabel(site: SiteSnapshot): string {
+  const artifact = preferredArtifact(site);
+  if (artifact?.type === 'cursed_brick') return 'Hazard active';
+  if (artifact?.type === 'ghost_platform') return 'Ghost active';
+  if (
+    artifact?.type === 'corpse_stack' ||
+    artifact?.type === 'mercy_nail'
+  )
+    return 'Helper active';
+  if (
+    site.status === 'Stabilized' ||
+    site.status === 'Reinforced' ||
+    artifact?.type === 'lantern_trail'
+  )
+    return 'Clean clears';
+  return 'No active mark';
+}
+
+function siteEffectCopy(site: SiteSnapshot): string {
+  const artifact = preferredArtifact(site);
+  if (artifact?.type === 'cursed_brick')
+    return 'Cursed Brick · crumbles shortly after landing.';
+  if (artifact?.type === 'ghost_platform')
+    return 'Ghost Platform · temporary one-way foothold.';
+  if (artifact?.type === 'corpse_stack')
+    return 'Corpse Stack · solid helper foothold.';
+  if (artifact?.type === 'mercy_nail')
+    return 'Mercy Nail · solid helper foothold.';
+  if (
+    site.status === 'Stabilized' ||
+    site.status === 'Reinforced' ||
+    artifact?.type === 'lantern_trail'
+  )
+    return 'Clean clears are repairing this route.';
+  return 'No visible helper or hazard changes this route.';
 }
 
 function artifactStoryScore(artifact: Artifact): number {

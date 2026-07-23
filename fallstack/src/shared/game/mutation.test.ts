@@ -44,7 +44,7 @@ void test('seeded snapshot opens with visible shared mutation hook', () => {
   });
 
   assert.equal(snapshot.headline, '37 opening scars · 0 community falls');
-  assert.equal(snapshot.zones[0]?.statusLabel, 'Restless');
+  assert.equal(snapshot.zones[0]?.statusLabel, 'Many falls');
   assert.ok(snapshot.zones.flatMap((zone) => zone.artifacts).length >= 3);
   assert.ok(
     snapshot.zones.some((zone) =>
@@ -302,11 +302,11 @@ void test('seeded opening mutation is anchored to the generated First Gap site',
 });
 
 void test('zone status display labels do not leak internal state names', () => {
-  assert.equal(displayZoneStatus('Quiet'), 'Untouched');
-  assert.equal(displayZoneStatus('Haunted'), 'Restless');
-  assert.equal(displayZoneStatus('Cursed'), 'Overgrown');
-  assert.equal(displayZoneStatus('Reinforced'), 'Well-Trodden');
-  assert.equal(displayZoneStatus('Stabilized'), 'Blessed');
+  assert.equal(displayZoneStatus('Quiet'), 'Low activity');
+  assert.equal(displayZoneStatus('Haunted'), 'Many falls');
+  assert.equal(displayZoneStatus('Cursed'), 'Hazard pressure');
+  assert.equal(displayZoneStatus('Reinforced'), 'Clean clears');
+  assert.equal(displayZoneStatus('Stabilized'), 'Stabilized');
 });
 
 void test('artifact derivation stays capped per zone under high traffic', () => {
@@ -343,7 +343,7 @@ void test('artifact derivation stays capped per zone under high traffic', () => 
     true
   );
   assert.equal(snapshot.result.summitStatus, 'Summit Cleared');
-  assert.equal(snapshot.result.mostCursedStatus, 'Blessed');
+  assert.equal(snapshot.result.mostCursedStatus, 'Stabilized');
 });
 
 void test('fall feedback is short, specific, and cap-aware', () => {
@@ -411,7 +411,7 @@ void test('clear feedback uses player-facing zone status labels', () => {
       counted: true,
       nextZoneStatus: 'Quiet',
     }),
-    'Lower Ruins cleared. Next: Untouched.'
+    'Lower Ruins cleared. Next: Low activity.'
   );
 });
 

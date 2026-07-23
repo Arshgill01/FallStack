@@ -73,9 +73,10 @@ void test('tower memory reads from summit to spawn and names a real causal site'
 
   const lowerRuins = memory.zones.at(-1);
   assert.equal(lowerRuins?.zoneName, 'Lower Ruins');
-  assert.equal(lowerRuins?.statusLabel, 'Restless');
+  assert.equal(lowerRuins?.statusLabel, 'Helper active');
   assert.equal(lowerRuins?.siteName, 'First Gap');
   assert.match(lowerRuins?.detail ?? '', /4 opening short-jump scars/i);
+  assert.match(lowerRuins?.effect ?? '', /solid helper foothold/i);
   assert.equal(lowerRuins?.artifactLabel, 'Corpse Stack');
   assert.doesNotMatch(
     memory.zones

@@ -710,11 +710,11 @@ function deriveResult(
 }
 
 export function displayZoneStatus(status: ZoneStatus): string {
-  if (status === 'Quiet') return 'Untouched';
-  if (status === 'Haunted') return 'Restless';
-  if (status === 'Cursed') return 'Overgrown';
-  if (status === 'Reinforced') return 'Well-Trodden';
-  return 'Blessed';
+  if (status === 'Quiet') return 'Low activity';
+  if (status === 'Haunted') return 'Many falls';
+  if (status === 'Cursed') return 'Hazard pressure';
+  if (status === 'Reinforced') return 'Clean clears';
+  return 'Stabilized';
 }
 
 function curseScore(zone: ZoneSnapshot): number {

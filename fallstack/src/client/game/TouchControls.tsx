@@ -62,7 +62,7 @@ export function TouchControls({ disabled, charge }: TouchControlsProps) {
       <button
         type="button"
         className="jump-btn"
-        aria-label="Hold to charge jump"
+        aria-label="Hold to charge; release to leap"
         disabled={disabled}
         {...bind('jump')}
       >
@@ -70,7 +70,7 @@ export function TouchControls({ disabled, charge }: TouchControlsProps) {
           className="jump-charge-fill"
           style={{ transform: `scaleX(${charge / 100})` }}
         />
-        <span className="jump-btn-label">Hold Jump</span>
+        <span className="jump-btn-label">Hold · Release</span>
       </button>
       <button
         type="button"

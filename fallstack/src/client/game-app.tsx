@@ -105,7 +105,7 @@ import {
   reconciliationDecision,
 } from './game/reconciliation';
 import { deriveTowerMemory, towerResultCopy } from './game/tower-memory';
-import { BADGE_DISPLAY, STATUS_TO_BADGE_CLASS } from './game/ui';
+import { zoneEffectPresentation } from './game/ui';
 import {
   checkpointedZonesBefore,
   readDeviceResume,
@@ -915,6 +915,9 @@ class FallstackScene extends Phaser.Scene {
     const activeZones = ZONES.filter((zone) => activeZoneIds.has(zone.id));
 
     for (const zone of activeZones) {
+      const zoneSnapshot = window.fallstackSnapshot?.zones.find(
+        (item) => item.id === zone.id
+      );
       renderReliquaryBackdrop(this.bgGraphics, {
         zoneTop: zone.yTop,
         zoneBottom: zone.yBottom,
@@ -926,8 +929,9 @@ class FallstackScene extends Phaser.Scene {
         this.layoutX(42),
         zone.yBottom - 1180,
         reliquaryZoneName(zone.id),
-        window.fallstackSnapshot?.zones.find((item) => item.id === zone.id)
-          ?.statusLabel ?? 'Untouched'
+        zoneSnapshot
+          ? zoneEffectPresentation(zoneSnapshot).label
+          : 'No active mark'
       );
     }
 
@@ -1483,6 +1487,7 @@ export function GameApp() {
   const [sceneReady, setSceneReady] = useState(false);
   const [resume, setResume] = useState<PlayerResume | null>(null);
   const [summitOpen, setSummitOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [discussionUrl, setDiscussionUrl] = useState<string | null>(null);
   const [supportUrl, setSupportUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<
@@ -1513,6 +1518,8 @@ export function GameApp() {
   const resultDialogRef = useRef<HTMLDivElement | null>(null);
   const resultCloseRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const guideDialogRef = useRef<HTMLDivElement | null>(null);
+  const previousGuideFocusRef = useRef<HTMLElement | null>(null);
   const chargeRef = useRef(0);
   const mutationTimerRef = useRef<number | null>(null);
   const checkpointTimerRef = useRef<number | null>(null);
@@ -1669,14 +1676,7 @@ export function GameApp() {
   );
 
   const stats = useMemo(() => {
-    if (!snapshot)
-      return { openingScars: 37, falls: 0, clears: 0, summits: 0 };
-    return {
-      openingScars: snapshot.seededFalls,
-      falls: snapshot.organicFalls,
-      clears: snapshot.totalClears,
-      summits: snapshot.totalSummits,
-    };
+    return { falls: snapshot?.organicFalls ?? 0 };
   }, [snapshot]);
 
   const receiptPresentation = useMemo(
@@ -1695,15 +1695,25 @@ export function GameApp() {
 
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
-      return { name: reliquaryZoneName(BOTTOM_ZONE_ID), statusLabel: 'Quiet' };
+      return { name: reliquaryZoneName(BOTTOM_ZONE_ID), segment: null };
     const segment =
       snapshot.zones.find((zone) => zone.id === currentZoneId) ??
-      snapshot.zones[0] ?? {
-        name: zoneById(BOTTOM_ZONE_ID).name,
-        statusLabel: 'Quiet',
-      };
-    return { ...segment, name: reliquaryZoneName(currentZoneId) };
+      snapshot.zones[0] ??
+      null;
+    return { name: reliquaryZoneName(currentZoneId), segment };
   }, [currentZoneId, snapshot]);
+
+  const currentZoneEffect = useMemo(
+    () =>
+      currentZoneInfo.segment
+        ? zoneEffectPresentation(currentZoneInfo.segment)
+        : {
+            label: 'Reading tower',
+            description: 'The daily route state is loading.',
+            badgeClass: 'badge-quiet',
+          },
+    [currentZoneInfo.segment]
+  );
 
   useEffect(() => {
     const onReady = () => setSceneReady(true);
@@ -1826,6 +1836,43 @@ export function GameApp() {
       previousFocusRef.current?.focus();
     };
   }, [summitOpen]);
+
+  useEffect(() => {
+    if (!guideOpen) return;
+    previousGuideFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    window.setTimeout(() => {
+      guideDialogRef.current?.scrollTo({ top: 0 });
+      guideDialogRef.current?.focus({ preventScroll: true });
+    }, 0);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setGuideOpen(false);
+      if (event.key === 'Tab') {
+        const focusable = Array.from(
+          guideDialogRef.current?.querySelectorAll<HTMLButtonElement>(
+            'button:not(:disabled)'
+          ) ?? []
+        );
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (!first || !last) return;
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      previousGuideFocusRef.current?.focus();
+    };
+  }, [guideOpen]);
 
   const copyResult = useCallback(async () => {
     if (!snapshot) return;
@@ -2249,11 +2296,6 @@ export function GameApp() {
     };
   }, [postClear, postFall, postSummit]);
 
-  // Derive zone status badge class from snapshot
-  const zoneBadgeClass = useMemo(() => {
-    const label = currentZoneInfo.statusLabel ?? 'Untouched';
-    return STATUS_TO_BADGE_CLASS[label] ?? 'badge-quiet';
-  }, [currentZoneInfo.statusLabel]);
   return (
     <main className="game-shell">
       {/* ── TOP BAR ── */}
@@ -2266,55 +2308,37 @@ export function GameApp() {
             </span>
             <span>Fallstack</span>
           </div>
-          <div className="topbar-headline">
-            <b>{stats.openingScars}</b> opening scars ·{' '}
-            <b>{stats.falls}</b> community {stats.falls === 1 ? 'fall' : 'falls'}
-          </div>
         </div>
 
-        {/* Stats cluster */}
-        <dl className="stats-cluster" aria-label="Community climb stats">
-          <div className="stat-cell">
-            <dt className="stat-label">Falls</dt>
-            <dd className="stat-value">{stats.falls}</dd>
-          </div>
-          <div className="stat-cell">
-            <dt className="stat-label">Clears</dt>
-            <dd className="stat-value">{stats.clears}</dd>
-          </div>
-          <div className="stat-cell">
-            <dt className="stat-label">Tops</dt>
-            <dd className="stat-value">{stats.summits}</dd>
-          </div>
-        </dl>
+        <div
+          className="community-tally"
+          aria-label={`${stats.falls} community ${stats.falls === 1 ? 'fall' : 'falls'} today`}
+        >
+          <strong>{stats.falls}</strong>
+          <span>Community falls</span>
+        </div>
 
-        {/* Action buttons */}
-        <div className="topbar-actions" aria-label="Game controls">
+        <div className="topbar-actions" aria-label="Game reference">
           <button
             type="button"
             className="action-btn"
-            onClick={() => setSummitOpen(true)}
+            onClick={() => {
+              setSummitOpen(false);
+              setGuideOpen(true);
+            }}
+          >
+            Guide
+          </button>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => {
+              setGuideOpen(false);
+              setSummitOpen(true);
+            }}
             disabled={!snapshot}
           >
             Memory
-          </button>
-          <button
-            type="button"
-            className="action-btn"
-            onClick={() => setMusicMuted(muted => !muted)}
-            aria-pressed={musicMuted}
-            aria-label={musicMuted ? 'Turn music on' : 'Turn music off'}
-          >
-            Music {musicMuted ? 'Off' : 'On'}
-          </button>
-          <button
-            type="button"
-            className="action-btn"
-            onClick={() => setGameplayMuted(muted => !muted)}
-            aria-pressed={gameplayMuted}
-            aria-label={gameplayMuted ? 'Turn sound effects on' : 'Turn sound effects off'}
-          >
-            SFX {gameplayMuted ? 'Off' : 'On'}
           </button>
         </div>
       </header>
@@ -2327,12 +2351,11 @@ export function GameApp() {
         <div
           className="hud-overlay zone-tag"
           role="status"
-          aria-label={`Current zone: ${currentZoneInfo.name}, ${currentZoneInfo.statusLabel}`}
+          aria-label={`Current zone: ${currentZoneInfo.name}. ${currentZoneEffect.description}`}
         >
           {currentZoneInfo.name}
-          <span className={`zone-badge ${zoneBadgeClass}`}>
-            {BADGE_DISPLAY[currentZoneInfo.statusLabel] ??
-              currentZoneInfo.statusLabel}
+          <span className={`zone-badge ${currentZoneEffect.badgeClass}`}>
+            {currentZoneEffect.label}
           </span>
         </div>
 
@@ -2419,7 +2442,109 @@ export function GameApp() {
       </section>
 
       {/* ── TOUCH CONTROLS ── */}
-      <TouchControls disabled={summitOpen || !sceneReady} charge={charge} />
+      <TouchControls
+        disabled={summitOpen || guideOpen || !sceneReady}
+        charge={charge}
+      />
+
+      {guideOpen ? (
+        <div
+          className="result-backdrop guide-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fallstack-guide-title"
+        >
+          <div
+            ref={guideDialogRef}
+            className="result-card guide-card"
+            tabIndex={-1}
+          >
+            <header className="guide-header">
+              <p className="guide-kicker">Keep this open whenever you need it</p>
+              <h2 id="fallstack-guide-title">How to climb</h2>
+            </header>
+
+            <ol className="guide-steps">
+              <li>
+                <b>Face</b>
+                <span>Arrows or side buttons move and choose a direction.</span>
+              </li>
+              <li>
+                <b>Charge</b>
+                <span>
+                  Hold Space or Jump. The dotted arc is your committed leap.
+                </span>
+              </li>
+              <li>
+                <b>Leap</b>
+                <span>
+                  Release. Arrows only nudge the arc once you are airborne.
+                </span>
+              </li>
+            </ol>
+
+            <section className="guide-section" aria-labelledby="tower-rules-title">
+              <h3 id="tower-rules-title">How the shared tower changes</h3>
+              <p>
+                Falls add one anonymous scar at the missed jump. Repeated misses
+                can grow helpers, temporary ghosts, or crumbling hazards. A clean
+                zone clear repairs the route and becomes your checkpoint.
+              </p>
+              <dl className="guide-key">
+                <div>
+                  <dt>Helper active</dt>
+                  <dd>Solid community-made foothold.</dd>
+                </div>
+                <div>
+                  <dt>Ghost active</dt>
+                  <dd>Temporary one-way foothold.</dd>
+                </div>
+                <div>
+                  <dt>Hazard active</dt>
+                  <dd>Cursed Brick crumbles after landing.</dd>
+                </div>
+                <div>
+                  <dt>Clean clears</dt>
+                  <dd>The community is repairing this route.</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="guide-section guide-sound" aria-labelledby="sound-title">
+              <div>
+                <h3 id="sound-title">Sound</h3>
+                <p>Preferences stay on this device.</p>
+              </div>
+              <div className="guide-sound-actions">
+                <button
+                  type="button"
+                  className="guide-toggle"
+                  onClick={() => setMusicMuted(muted => !muted)}
+                  aria-pressed={!musicMuted}
+                >
+                  Music {musicMuted ? 'Off' : 'On'}
+                </button>
+                <button
+                  type="button"
+                  className="guide-toggle"
+                  onClick={() => setGameplayMuted(muted => !muted)}
+                  aria-pressed={!gameplayMuted}
+                >
+                  SFX {gameplayMuted ? 'Off' : 'On'}
+                </button>
+              </div>
+            </section>
+
+            <button
+              type="button"
+              className="result-close-btn guide-close"
+              onClick={() => setGuideOpen(false)}
+            >
+              Return to climb
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── RESULT CARD ── */}
       {summitOpen ? (
@@ -2480,6 +2605,7 @@ export function GameApp() {
                         </div>
                       ) : null}
                       <p>{zone.detail}</p>
+                      <p className="tower-memory-effect">{zone.effect}</p>
                       {zone.artifactLabel ? (
                         <span className="tower-memory-artifact">
                           {zone.artifactLabel}

@@ -105,6 +105,44 @@ activates practice mode. Full landing/event evidence is archived in
 [`movement-playthrough-v2/playthrough.json`](movement-playthrough-v2/playthrough.json).
 ![Movement playthrough summit](movement-playthrough-v2/screenshots/99-summit.png)
 
+### 3. Quieter HUD, mechanic-first board language, and replayable Guide
+
+The permanent header now contains one community-fall tally plus two reference
+actions, Guide and Memory. Clears, summits, Music, and SFX no longer compete with
+the first jump; the full board owns aggregate detail, while audio preferences
+live in Guide.
+
+![Simplified first viewport at 320×568](screenshots/ui-fix-320x568.png)
+![Simplified first viewport at 1280×800](screenshots/ui-fix-1280x800.png)
+
+Guide is available before the board finishes loading and on every return visit.
+It teaches the complete three-step contract—face, charge, release—then explains
+anonymous scars, helpers, ghosts, hazards, clean clears, and checkpoints. It
+also contains the two persisted audio preferences. Escape closes and restores
+focus to Guide; reopening preserves the changed audio preference. At 320×568
+the panel has a 542 px viewport over 666 px of content, exposes `touch-action:
+pan-y`, scrolls to the close action, and never traps the player below an
+unreachable button.
+
+![Replayable Guide at 375×812](screenshots/ui-fix-guide-375x812.png)
+![Scrollable Guide close action at 320×568](screenshots/ui-fix-guide-scroll-320x568.png)
+
+The live HUD and Tower Memory no longer expose `Untouched`, `Restless`,
+`Overgrown`, `Well-Trodden`, or `Blessed`. The HUD derives the highest-priority
+active mechanic from real artifacts. Memory names each route `Helper active`,
+`Ghost active`, `Hazard active`, `Clean clears`, or `No active mark`, then states
+the exact collision consequence beneath the causal counter.
+
+![Mechanic-first Tower Memory](screenshots/ui-fix-memory-375x812.png)
+
+Validation: 24 targeted state/Memory tests, full type-check, lint, 140-test
+suite, production build, and `git diff --check` passed. Browser checks passed at
+320×568, 375×812, and 1280×800 with non-overlapping header bounds, disabled
+climb controls while dialogs are open, focus restoration, persisted audio
+preference, mobile vertical scrolling, and no unexpected runtime errors.
+Representative text contrast is 12.90:1 for ink/washi, 10.63:1 for
+burgundy/washi, and 5.92:1 for muted brown/washi.
+
 ## Issues
 
 ### ISSUE-001: Essential Phaser labels are too small and visibly softer than the DOM shell

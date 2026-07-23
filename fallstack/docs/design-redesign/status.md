@@ -214,3 +214,15 @@ Direction C wins because the tower reads as a physical object, community mutatio
   21 recoverable automation failures, 11 checkpoint clears, one summit event,
   and zero page errors. The only console error was the expected local `/api` 404
   that activates practice mode.
+- Comprehension checkpoint complete: the permanent header is reduced to one
+  community-fall tally plus Guide and Memory. Music/SFX moved into a replayable,
+  focus-trapped Guide that teaches face, charge, release, air correction,
+  anonymous scars, artifact consequences, clean clears, and checkpoints.
+- Opaque mood labels are gone from the live UI. The HUD and Tower Memory now
+  derive mechanic-first labels from real artifacts and pair them with exact
+  collision effects. The 320×568 Guide scrolls with touch-safe `pan-y`; Escape
+  restores focus; audio preferences persist across reopen.
+- The comprehension gate passed 24 targeted tests, the full 140-test suite,
+  type-check, lint, build, contrast checks, and browser validation at 320×568,
+  375×812, and 1280×800. The Cutaway Reliquary visual grammar remains intact,
+  with fewer permanent bordered regions and no new asset cost.
