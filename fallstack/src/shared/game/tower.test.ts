@@ -6,6 +6,7 @@ import {
   chargePowerForHeldMs,
   chargeRatioForHeldMs,
   jumpArcForHeldMs,
+  launchVelocityForChargeRatio,
   MOVEMENT_TUNING,
 } from './movement.js';
 import {
@@ -93,6 +94,19 @@ void test('the responsive controller produces quick useful arcs', () => {
   assert.ok(full.sameHeightDistance > 400);
   assert.ok(full.sameHeightDurationMs < 1200);
   assert.ok(tap.rise < half.rise && half.rise < full.rise);
+});
+
+void test('air steering corrects a jump without reversing its committed arc', () => {
+  const tap = jumpArcForHeldMs(0);
+  const minimumLaunch = launchVelocityForChargeRatio(
+    MOVEMENT_TUNING.minChargePercent
+  );
+  const oppositeVelocityDelta =
+    MOVEMENT_TUNING.airSteerAccelerationX *
+    (tap.sameHeightDurationMs / 1000);
+
+  assert.equal(MOVEMENT_TUNING.airSteerAccelerationX, 180);
+  assert.ok(oppositeVelocityDelta < minimumLaunch.x);
 });
 
 void test('all platforms live inside the logical world', () => {

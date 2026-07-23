@@ -66,6 +66,7 @@ import type {
   ClearEventDetail,
   FallEventDetail,
   LandEventDetail,
+  LaunchEventDetail,
   SummitEventDetail,
   ZoneEventDetail,
 } from './game/events';
@@ -180,6 +181,7 @@ class FallstackScene extends Phaser.Scene {
   private wasGrounded = false;
   private charging = false;
   private chargeStart = 0;
+  private chargeDirection: -1 | 1 = 1;
   private lastChargePercent = 0;
   private lastLaunchDirection: -1 | 0 | 1 = 0;
   private lastPlatformId: string | null = 'start';
@@ -335,8 +337,10 @@ class FallstackScene extends Phaser.Scene {
     this.updateCurrentZone();
     this.highestY = Math.min(this.highestY, this.player.y);
 
-    if (input.left) this.facing = -1;
-    if (input.right) this.facing = 1;
+    if (!this.charging) {
+      if (input.left) this.facing = -1;
+      if (input.right) this.facing = 1;
+    }
     body.setGravityY(0);
     if (onFloor) {
       body.setAccelerationX(0);
@@ -346,15 +350,13 @@ class FallstackScene extends Phaser.Scene {
         MOVEMENT_TUNING.maxVelocityY
       );
       body.setVelocityX(
-        input.left
-          ? -(this.charging
-              ? MOVEMENT_TUNING.chargingGroundSpeed
-              : MOVEMENT_TUNING.groundSpeed)
-          : input.right
-            ? this.charging
-              ? MOVEMENT_TUNING.chargingGroundSpeed
-              : MOVEMENT_TUNING.groundSpeed
-            : Phaser.Math.Linear(body.velocity.x, 0, 0.32)
+        this.charging
+          ? 0
+          : input.left
+            ? -MOVEMENT_TUNING.groundSpeed
+            : input.right
+              ? MOVEMENT_TUNING.groundSpeed
+              : Phaser.Math.Linear(body.velocity.x, 0, 0.32)
       );
       this.wallBonkPlatformId = null;
     } else {
@@ -375,6 +377,8 @@ class FallstackScene extends Phaser.Scene {
     if (onFloor && input.jump && !this.charging) {
       this.charging = true;
       this.chargeStart = this.time.now;
+      this.chargeDirection = this.facing;
+      body.setVelocityX(0);
     }
 
     if (this.charging) {
@@ -397,9 +401,20 @@ class FallstackScene extends Phaser.Scene {
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
         const launch = launchVelocityForChargeRatio(percent);
-        this.lastLaunchDirection = this.facing;
-        body.setVelocity(this.facing * launch.x, launch.y);
-        window.dispatchEvent(new CustomEvent('fallstack:launch'));
+        this.facing = this.chargeDirection;
+        this.lastLaunchDirection = this.chargeDirection;
+        body.setVelocity(this.chargeDirection * launch.x, launch.y);
+        window.dispatchEvent(
+          new CustomEvent<LaunchEventDetail>('fallstack:launch', {
+            detail: {
+              direction: this.chargeDirection,
+              chargePercent: this.lastChargePercent,
+              originX: this.player.x,
+              velocityX: this.chargeDirection * launch.x,
+              velocityY: launch.y,
+            },
+          })
+        );
       }
       this.charging = false;
       this.chargeTime = 0;
@@ -1074,8 +1089,55 @@ class FallstackScene extends Phaser.Scene {
     // 6. DRAW THE EXACT SITE NAMED BY THE LATEST MUTATION RECEIPT
     this.drawMutationHighlight(g);
 
-    // 7. DRAW PLAYER ON ITS OWN CACHED POSE LAYER
+    // 7. DRAW THE COMMITTED CHARGE ARC
+    this.drawChargeIntent(g);
+
+    // 8. DRAW PLAYER ON ITS OWN CACHED POSE LAYER
     this.drawPlayer();
+  }
+
+  private drawChargeIntent(g: Phaser.GameObjects.Graphics) {
+    if (!this.charging || !this.player) return;
+    const player = this.player;
+    const chargeRatio = chargeRatioForHeldMs(this.chargeTime);
+    const launch = launchVelocityForChargeRatio(chargeRatio);
+    const direction = this.chargeDirection;
+    const points = Array.from({ length: 5 }, (_, index) => {
+      const seconds = (index + 1) * 0.045;
+      return {
+        x: player.x + direction * launch.x * seconds,
+        y:
+          player.y +
+          launch.y * seconds +
+          0.5 * MOVEMENT_TUNING.gravityY * seconds * seconds,
+      };
+    });
+
+    g.lineStyle(2, RELIQUARY_COLORS.washi, 0.52);
+    g.beginPath();
+    g.moveTo(player.x + direction * 12, player.y - 8);
+    for (const point of points) g.lineTo(point.x, point.y);
+    g.strokePath();
+
+    for (const [index, point] of points.entries()) {
+      g.fillStyle(
+        index === points.length - 1
+          ? RELIQUARY_COLORS.persimmon
+          : RELIQUARY_COLORS.gold,
+        0.7 + index * 0.06
+      );
+      g.fillCircle(point.x, point.y, index === points.length - 1 ? 3.5 : 2.5);
+    }
+
+    const tip = points[0]!;
+    g.fillStyle(RELIQUARY_COLORS.washi, 0.95).fillTriangle(
+      tip.x + direction * 8,
+      tip.y,
+      tip.x,
+      tip.y - 5,
+      tip.x,
+      tip.y + 5
+    );
   }
 
   private drawArtifactTimers(g: Phaser.GameObjects.Graphics) {

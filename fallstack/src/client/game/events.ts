@@ -19,6 +19,13 @@ export type SummitEventDetail = Omit<
 >;
 export type LandEventDetail = { zoneId: ZoneId };
 export type ZoneEventDetail = { zoneId: ZoneId };
+export type LaunchEventDetail = {
+  direction: -1 | 1;
+  chargePercent: number;
+  originX: number;
+  velocityX: number;
+  velocityY: number;
+};
 export type SoundId =
   | 'charge-start'
   | 'launch'

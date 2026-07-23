@@ -76,6 +76,35 @@ the backing scale.
 Validation: targeted layout tests passed (4/4); full type-check, lint, 137-test
 suite, production build, and `git diff --check` passed.
 
+### 2. Committed jump direction and correction-only air input
+
+Charging now commits to the player's facing at charge start and plants the
+launch origin until release. Pressing the opposite direction during charge does
+not move or flip the impending jump. A five-point in-world arc grows with charge
+and ends in a persimmon aim point, exposing both direction and approximate power
+before the player commits.
+
+![Right direction remains locked while Left is held](screenshots/jump-fix-locked-charge.png)
+![Left direction remains locked while Right is held](screenshots/jump-fix-left-locked-charge.png)
+
+Two fresh rightward trials deliberately held Left during charge. Both emitted
+the same structured launch evidence: `direction 1`, `charge 100`, `originX 240`,
+`velocityX 460`, and `velocityY -1050`. A mirrored trial held Right during a
+leftward charge and emitted `direction -1` from the same origin with exactly
+mirrored horizontal velocity. Air steering dropped from 520 to 180 px/s²; the
+pure movement test proves a full opposite input cannot reverse even the minimum
+charged arc.
+
+Validation: targeted movement tests passed (24/24); full type-check, lint,
+138-test suite, production build, `git diff --check`, and real browser
+direction-lock trials passed. A real-keyboard production-build playthrough
+cleared all 154 route platforms and reached the summit in 232 jumps with 21
+recoverable automation failures, 11 checkpoint clears, one summit event, and
+zero page errors. The only console error was the expected local `/api` 404 that
+activates practice mode. Full landing/event evidence is archived in
+[`movement-playthrough-v2/playthrough.json`](movement-playthrough-v2/playthrough.json).
+![Movement playthrough summit](movement-playthrough-v2/screenshots/99-summit.png)
+
 ## Issues
 
 ### ISSUE-001: Essential Phaser labels are too small and visibly softer than the DOM shell

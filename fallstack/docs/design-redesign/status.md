@@ -201,3 +201,16 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - The full local gate passed with 137 tests. A real-input 320×568 smoke completed
   move, charge, launch, fall, mutation feedback, and respawn with no unexpected
   runtime error.
+- Movement checkpoint complete: charging now locks the selected direction and
+  plants the launch origin, an in-world five-point arc previews the committed
+  jump, and air steering is correction-only rather than reversal-strength. Two
+  fresh rightward browser trials produced identical origin/charge/velocity
+  evidence despite opposed charge input; the mirrored left trial matched.
+- The movement gate passed 24 targeted movement tests, the full 138-test suite,
+  type-check, lint, build, and real browser direction-lock trials. The selected
+  visual grammar and unchanged tower geometry remain intact.
+- Finishability proof passed on the production build at 375×812: real keyboard
+  input cleared all 154 route platforms and reached the summit in 232 jumps with
+  21 recoverable automation failures, 11 checkpoint clears, one summit event,
+  and zero page errors. The only console error was the expected local `/api` 404
+  that activates practice mode.
