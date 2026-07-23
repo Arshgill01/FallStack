@@ -10,20 +10,34 @@ export type GameDimensions = {
   containerH: number;
   gameW: number;
   gameH: number;
+  renderScale: number;
 };
 
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
 
-export function computeGameDimensions(bounds: ContainerBounds): GameDimensions {
+export function computeGameDimensions(
+  bounds: ContainerBounds,
+  devicePixelRatio = 1
+): GameDimensions {
   const containerW = cleanPixelSize(bounds.width);
   const containerH = cleanPixelSize(bounds.height);
+  const renderScale = renderScaleForDevicePixelRatio(devicePixelRatio);
   return {
     containerW,
     containerH,
-    gameW: gameWorldWidth(containerW),
-    gameH: containerH,
+    gameW: cleanPixelSize(containerW * renderScale),
+    gameH: cleanPixelSize(containerH * renderScale),
+    renderScale,
   };
+}
+
+export function renderScaleForDevicePixelRatio(
+  devicePixelRatio: number
+): number {
+  return Number.isFinite(devicePixelRatio)
+    ? Math.min(2, Math.max(1, devicePixelRatio))
+    : 1;
 }
 
 export function gameWorldWidth(viewportWidth: number): number {

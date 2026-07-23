@@ -185,3 +185,19 @@ Direction C wins because the tower reads as a physical object, community mutatio
 - The existing 96/100 score remains valid: shared mutation 5/5, tower composition 5/5, tactile depth 4/5, collision readability 5/5, opening jump/feedback 5/5, mobile/accessibility 5/5, coherence 5/5, runtime feasibility 4/5. The palette pass strengthens zone identification without adding an asset payload or changing runtime feasibility.
 - Exact lifecycle, performance, playthrough, and visual evidence is recorded in [`../qa/release-hardening/report.md`](../qa/release-hardening/report.md).
 - Release gate: `npm run type-check`, `npm run lint`, `npm test` (136/136), `npm run build`, and final Chromium/WebKit runtime-control checks passed. Six complete production-build routes reached the summit. Devvit built, uploaded, and installed the combined release as `v0.0.23` on `r/fallstack_dev`; an independent installation listing confirmed the same version.
+
+## Moderator-feedback iteration
+
+- 2026-07-23 baseline reproduced six first-session issues locally and in the
+  authenticated Reddit playtest: soft canvas text, crowded hierarchy, opaque
+  daily-state language, non-replayable guidance, silent music, and hidden jump
+  intent. Evidence and exact root causes are recorded in
+  [`../qa/moderator-feedback-2026-07-23/report.md`](../qa/moderator-feedback-2026-07-23/report.md).
+- Rendering checkpoint complete: narrow viewports now use a native-size
+  horizontally following camera over the unchanged 480 px physics world instead
+  of squeezing the whole route. Canvas backing resolution follows DPR up to 2×,
+  essential Phaser labels render at 12 px, and the selected Cutaway Reliquary
+  composition remains intact at 320×568, 375×812, DPR 2, and 1280×800.
+- The full local gate passed with 137 tests. A real-input 320×568 smoke completed
+  move, charge, launch, fall, mutation feedback, and respawn with no unexpected
+  runtime error.

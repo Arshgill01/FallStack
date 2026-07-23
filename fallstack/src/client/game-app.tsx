@@ -162,6 +162,7 @@ async function copyText(text: string): Promise<boolean> {
    PHASER SCENE
    ====================================================== */
 class FallstackScene extends Phaser.Scene {
+  private renderScale = 1;
   private player?: Phaser.GameObjects.Rectangle & {
     body: Phaser.Physics.Arcade.Body;
   };
@@ -219,6 +220,10 @@ class FallstackScene extends Phaser.Scene {
     }
   >();
 
+  setRenderScale(renderScale: number) {
+    this.renderScale = renderScale;
+  }
+
   // Visual enhancements
   private particles: Array<{
     x: number;
@@ -235,6 +240,7 @@ class FallstackScene extends Phaser.Scene {
 
   create() {
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
+    this.cameras.main.setZoom(this.renderScale);
     this.applyViewportLayout(false);
     this.physics.world.gravity.y = MOVEMENT_TUNING.gravityY;
 
@@ -293,8 +299,6 @@ class FallstackScene extends Phaser.Scene {
     this.space = this.input.keyboard?.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
-
-    this.cameras.main.setZoom(1);
 
     this.scale.on('resize', () => {
       this.applyViewportLayout(true);
@@ -488,7 +492,15 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private gameWidth() {
-    return gameWorldWidth(this.cameras.main.width);
+    return gameWorldWidth(this.viewportWidth());
+  }
+
+  private viewportWidth() {
+    return this.cameras.main.width / this.renderScale;
+  }
+
+  private viewportHeight() {
+    return this.cameras.main.height / this.renderScale;
   }
 
   private routeOffsetX() {
@@ -532,7 +544,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private cameraTargetY(y: number) {
-    const camH = this.cameras.main.height || 480;
+    const camH = this.viewportHeight() || 480;
     return Phaser.Math.Clamp(
       y - (camH - this.cameraBottomPadding()),
       0,
@@ -540,9 +552,18 @@ class FallstackScene extends Phaser.Scene {
     );
   }
 
+  private cameraTargetX(x: number) {
+    const camW = this.viewportWidth();
+    return Phaser.Math.Clamp(
+      x - camW / 2,
+      0,
+      Math.max(0, this.gameWidth() - camW)
+    );
+  }
+
   private snapCameraToPlayer() {
     if (!this.player) return;
-    this.cameras.main.scrollX = 0;
+    this.cameras.main.scrollX = this.cameraTargetX(this.player.x);
     this.cameras.main.scrollY = this.cameraTargetY(this.player.y);
   }
 
@@ -824,20 +845,26 @@ class FallstackScene extends Phaser.Scene {
 
   private updateCamera(deltaMs: number) {
     if (!this.player) return;
+    const targetX = this.cameraTargetX(this.player.x);
     const targetY = this.cameraTargetY(this.player.y);
 
     if (this.reducedMotion) {
+      this.cameras.main.scrollX = targetX;
       this.cameras.main.scrollY = targetY;
     } else {
-      const current = this.cameras.main.scrollY;
+      const currentX = this.cameras.main.scrollX;
+      const currentY = this.cameras.main.scrollY;
+      this.cameras.main.scrollX = Phaser.Math.Linear(
+        currentX,
+        targetX,
+        Math.min(1, deltaMs / 90)
+      );
       this.cameras.main.scrollY = Phaser.Math.Linear(
-        current,
+        currentY,
         targetY,
         Math.min(1, deltaMs / 120)
       );
     }
-
-    this.cameras.main.scrollX = 0;
   }
 
   private updateCurrentZone() {
@@ -1302,7 +1329,10 @@ class FallstackScene extends Phaser.Scene {
 
   private isCameraVisibleY(y: number, margin: number): boolean {
     const camera = this.cameras.main;
-    return y >= camera.scrollY - margin && y <= camera.scrollY + camera.height + margin;
+    return (
+      y >= camera.scrollY - margin &&
+      y <= camera.scrollY + this.viewportHeight() + margin
+    );
   }
 
   private addZoneLabel(
@@ -1313,8 +1343,9 @@ class FallstackScene extends Phaser.Scene {
   ) {
     const label = this.add.text(x, y, `${name} · ${statusLabel}`, {
       fontFamily: '"Shippori Mincho", serif',
-      fontSize: '11px',
+      fontSize: '12px',
       fontStyle: 'bold',
+      resolution: this.renderScale,
       color: '#d9b45c',
       backgroundColor: 'rgba(23, 20, 38, 0.86)',
       padding: { left: 6, right: 6, top: 3, bottom: 3 },
@@ -1337,8 +1368,9 @@ class FallstackScene extends Phaser.Scene {
     this.graphics?.fillStyle(0x180d18, 1).fillCircle(centerX, y - 2, 2.5);
     const label = this.add.text(clampedX, y, text, {
       fontFamily: '"Zen Maru Gothic", sans-serif',
-      fontSize: '11px',
+      fontSize: '12px',
       fontStyle: '700',
+      resolution: this.renderScale,
       color: '#180d18',
       backgroundColor: 'rgba(244, 239, 226, 0.97)',
       padding: { left: 7, right: 7, top: 4, bottom: 4 },
@@ -1754,7 +1786,8 @@ export function GameApp() {
       const container = document.getElementById('game-canvas');
       if (!container || !gameRef.current) return;
       const { containerW, containerH, gameW, gameH } = computeGameDimensions(
-        container.getBoundingClientRect()
+        container.getBoundingClientRect(),
+        window.devicePixelRatio
       );
       if (containerW === 0 || containerH === 0) return;
       gameRef.current.scale.resize(gameW, gameH);
@@ -1763,9 +1796,11 @@ export function GameApp() {
     const initGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container) return;
-      const { containerW, containerH, gameW, gameH } = computeGameDimensions(
-        container.getBoundingClientRect()
-      );
+      const { containerW, containerH, gameW, gameH, renderScale } =
+        computeGameDimensions(
+          container.getBoundingClientRect(),
+          window.devicePixelRatio
+        );
 
       // Wait until browser layout has completed and container has dimensions
       if (containerW === 0 || containerH === 0) {
@@ -1774,6 +1809,7 @@ export function GameApp() {
       }
 
       const scene = new FallstackScene('FallstackScene');
+      scene.setRenderScale(renderScale);
       sceneRef.current = scene;
       const game = new Phaser.Game({
         type: Phaser.CANVAS,
