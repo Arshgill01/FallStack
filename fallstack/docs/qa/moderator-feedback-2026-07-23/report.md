@@ -1,4 +1,4 @@
-# Moderator Feedback Baseline
+# Moderator Feedback Iteration
 
 | Field          | Value                                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -17,6 +17,10 @@
 | Medium    | 6     |
 | Low       | 0     |
 | **Total** | **6** |
+
+All six reproduced issues are resolved in the production source and covered by
+the verification checkpoints below. The issue records remain in this report as
+the before-state and reproduction evidence.
 
 ## Root-cause and rules experiment
 
@@ -172,6 +176,24 @@ all passed.
 
 ![Music running after the first input](screenshots/audio-fix-playing.png)
 ![Music restarted after an off/on cycle](screenshots/audio-fix-restarted.png)
+
+### 5. Final local regression
+
+- The refreshed splash, 375×812 mobile, 1280×800 desktop, and 1920×1080
+  screenshot matrix passed current header-region and action-overlap assertions.
+- Chromium completed real touch move/reverse, one fall and grounded respawn,
+  post-respawn movement, release-to-leap, and reduced-motion charge. Normal
+  frames measured 16.7 ms median and 16.8 ms p95 with no frame over 34 ms.
+- WebKit completed the same functional lifecycle using Playwright's held-mouse
+  fallback. That fallback needs longer holds than Chromium's CDP touch driver;
+  the harness now encodes those engine-specific durations instead of comparing
+  their absolute displacement.
+- The two-client shared-session harness deferred revision 39 while airborne,
+  reconciled on a safe point, rendered the six-fall Mercy Nail at First Gap, and
+  reloaded at the same revision with no errors.
+- A fresh production-build climb with an intentional opening fall cleared all
+  154 route platforms and reached the summit in 336 launches with 25 recoverable
+  automation failures and zero page errors.
 
 ## Issues
 

@@ -235,3 +235,8 @@ Direction C wins because the tower reads as a physical object, community mutatio
   oscillators. Targeted regression tests cover the initialized-bus bug and
   idempotent muted/pending/active states. Type-check, lint, the full 142-test
   suite, production build, and diff validation passed.
+- Final local regression passed the refreshed splash/mobile/desktop/fullscreen
+  matrix, Chromium and WebKit touch/fall/respawn/jump/reduced-motion lifecycles,
+  a two-client deferred shared-board reconciliation, and a fresh 154-platform
+  summit replay with an intentional opening fall. The screenshot and runtime
+  harnesses now assert the current Guide/Memory header and accessibility labels.

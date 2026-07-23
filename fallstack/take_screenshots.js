@@ -9,27 +9,33 @@ const baseUrl = process.env.FALLSTACK_SCREENSHOT_URL ?? 'http://127.0.0.1:8080';
 async function assertHeaderBounds(page) {
   await page.locator('.topbar').waitFor();
   const overflow = await page.locator('.topbar').evaluate(header => {
-    const cluster = header.querySelector('.stats-cluster');
-    if (!cluster) return [{ label: 'Missing stats cluster' }];
-    const clusterRect = cluster.getBoundingClientRect();
-    const statOverflow = [...cluster.querySelectorAll('.stat-value')]
-      .map(value => {
-        const valueRect = value.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    const regions = [
+      ['Brand', header.querySelector('.topbar-brand')],
+      ['Community tally', header.querySelector('.community-tally')],
+      ['Actions', header.querySelector('.topbar-actions')]
+    ];
+    const missing = regions
+      .filter(([, region]) => !region)
+      .map(([label]) => ({ label: `Missing ${label}` }));
+    const regionOverflow = regions
+      .filter(([, region]) => region)
+      .map(([label, region]) => {
+        const rect = region.getBoundingClientRect();
         return {
-          label: value.previousElementSibling?.textContent ?? 'Unknown stat',
-          left: valueRect.left,
-          right: valueRect.right,
-          top: valueRect.top,
-          bottom: valueRect.bottom
+          label,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom
         };
       })
       .filter(
-        value =>
-          (value.right > value.left || value.bottom > value.top) &&
-          (value.left < clusterRect.left ||
-            value.right > clusterRect.right ||
-            value.top < clusterRect.top ||
-            value.bottom > clusterRect.bottom)
+        region =>
+          region.left < headerRect.left ||
+          region.right > headerRect.right ||
+          region.top < headerRect.top ||
+          region.bottom > headerRect.bottom
       );
     const actionRects = [...header.querySelectorAll('.topbar-actions button')].map(button => {
       const rect = button.getBoundingClientRect();
@@ -39,11 +45,11 @@ async function assertHeaderBounds(page) {
       action.left < actionRects[index].right ? [action] : []
     );
 
-    return [...statOverflow, ...actionOverlap];
+    return [...missing, ...regionOverflow, ...actionOverlap];
   });
 
   if (overflow.length > 0) {
-    throw new Error(`Header stat overflow: ${JSON.stringify(overflow)}`);
+    throw new Error(`Header layout overflow: ${JSON.stringify(overflow)}`);
   }
 }
 

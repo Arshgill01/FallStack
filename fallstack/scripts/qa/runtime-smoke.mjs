@@ -12,6 +12,9 @@ const browserName = process.argv
   ?.slice('--browser='.length) ?? 'chromium';
 const browserType = { chromium, webkit }[browserName];
 if (!browserType) throw new Error(`Unsupported browser: ${browserName}`);
+const MOVE_HOLD_MS = browserName === 'webkit' ? 340 : 140;
+const MOVE_SETTLE_MS = browserName === 'webkit' ? 500 : 250;
+const FALL_HOLD_MS = browserName === 'webkit' ? 1_800 : 500;
 await mkdir(outputDir, { recursive: true });
 
 const browser = await browserType.launch({
@@ -38,21 +41,33 @@ try {
   const pointer = await createPointerDriver(touchContext, touchPage, browserName);
 
   const beforeMove = await readScene(touchPage);
-  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
+  await holdPointer(
+    pointer,
+    await centerOf(touchPage, '[aria-label="Move right"]'),
+    MOVE_HOLD_MS
+  );
   const afterMove = await readScene(touchPage);
   assert.ok(afterMove.x > beforeMove.x + 10, 'right touch control moves the climber');
   assert.equal(afterMove.input.right, false, 'right touch releases cleanly');
 
-  await touchPage.waitForTimeout(250);
+  await touchPage.waitForTimeout(MOVE_SETTLE_MS);
   const beforeWarmMove = await readScene(touchPage);
-  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move left"]'), 140);
+  await holdPointer(
+    pointer,
+    await centerOf(touchPage, '[aria-label="Move left"]'),
+    MOVE_HOLD_MS
+  );
   const afterWarmMove = await readScene(touchPage);
   const warmMove = beforeWarmMove.x - afterWarmMove.x;
   assert.ok(warmMove > 10, 'a repeated touch moves the climber');
   assert.equal(afterWarmMove.input.left, false, 'repeated touch releases cleanly');
 
   const fallsBefore = afterWarmMove.events.falls;
-  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 500);
+  await holdPointer(
+    pointer,
+    await centerOf(touchPage, '[aria-label="Move right"]'),
+    FALL_HOLD_MS
+  );
   await touchPage.waitForFunction(
     (count) => window.__fallstackQa.falls > count,
     fallsBefore
@@ -69,7 +84,11 @@ try {
   assert.equal(afterRespawn.input.right, false, 'falling touch releases before respawn');
 
   const beforeRespawnMove = await readScene(touchPage);
-  await holdPointer(pointer, await centerOf(touchPage, '[aria-label="Move right"]'), 140);
+  await holdPointer(
+    pointer,
+    await centerOf(touchPage, '[aria-label="Move right"]'),
+    MOVE_HOLD_MS
+  );
   const afterRespawnMove = await readScene(touchPage);
   const openingMove = afterMove.x - beforeMove.x;
   const respawnMove = afterRespawnMove.x - beforeRespawnMove.x;
@@ -85,7 +104,7 @@ try {
   const launchesBefore = jumpStart.events.launches;
   await holdPointer(
     pointer,
-    await centerOf(touchPage, '[aria-label="Hold to charge jump"]'),
+    await centerOf(touchPage, '[aria-label="Hold to charge; release to leap"]'),
     90
   );
   await touchPage.waitForFunction(
@@ -122,7 +141,7 @@ try {
   );
   const jumpCenter = await centerOf(
     reducedPage,
-    '[aria-label="Hold to charge jump"]'
+    '[aria-label="Hold to charge; release to leap"]'
   );
   await reducedPointer.down(jumpCenter);
   await reducedPage.waitForTimeout(220);
