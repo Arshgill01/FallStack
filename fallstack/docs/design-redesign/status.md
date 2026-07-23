@@ -240,3 +240,8 @@ Direction C wins because the tower reads as a physical object, community mutatio
   a two-client deferred shared-board reconciliation, and a fresh 154-platform
   summit replay with an intentional opening fall. The screenshot and runtime
   harnesses now assert the current Guide/Memory header and accessibility labels.
+- Reddit playtest closeout complete: app `0.0.24` built successfully and
+  `v0.0.24.2` is independently confirmed installed in `r/fallstack_dev`.
+  Authenticated expanded-app QA verified Guide, mechanic-first Tower Memory,
+  native canvas sizing, and actual music source start/mute/restart behavior
+  while leaving the hosted session at zero falls, clears, and summits.

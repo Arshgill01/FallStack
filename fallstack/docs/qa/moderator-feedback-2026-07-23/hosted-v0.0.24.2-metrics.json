@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-07-23",
+  "host": "authenticated Reddit expanded app",
+  "subreddit": "r/fallstack_dev",
+  "uploadedVersion": "0.0.24",
+  "installedPlaytestVersion": "v0.0.24.2",
+  "boardRevision": 37,
+  "sessionEvents": {
+    "falls": 0,
+    "clears": 0,
+    "summits": 0
+  },
+  "canvas": {
+    "cssWidth": 758,
+    "cssHeight": 527,
+    "backingWidth": 758,
+    "backingHeight": 527,
+    "devicePixelRatio": 1
+  },
+  "guideVerified": true,
+  "mechanicFirstMemoryVerified": true,
+  "audio": {
+    "initialMusic": "Music On",
+    "afterStart": {
+      "contextStates": ["running", "running"],
+      "oscillatorStarts": 7,
+      "oscillatorStops": 4
+    },
+    "afterMute": {
+      "contextStates": ["running", "running"],
+      "oscillatorStarts": 7,
+      "oscillatorStops": 7
+    },
+    "afterRestart": {
+      "contextStates": ["running", "running"],
+      "oscillatorStarts": 12,
+      "oscillatorStops": 9
+    }
+  },
+  "sharedGameplayStateWritten": false
+}

@@ -195,6 +195,29 @@ all passed.
   154 route platforms and reached the summit in 336 launches with 25 recoverable
   automation failures and zero page errors.
 
+### 6. Installed Reddit playtest
+
+The verified local candidate was uploaded as app version `0.0.24` and installed
+only in `r/fallstack_dev` as playtest `v0.0.24.2`. A separate
+`devvit list installs fallstack_dev` read-back reported the same installed
+version, and `devvit view fallstack --json` reported the uploaded version built
+successfully.
+
+The signed-in Reddit expanded app loaded the current Guide and mechanic-first
+Tower Memory at board revision 37. Memory showed `NO ACTIVE MARK`,
+`HAZARD ACTIVE`, `Cursed Brick · crumbles shortly after landing`, and
+`HELPER ACTIVE`; none of the removed mood labels appeared. The session remained
+at zero falls, clears, and summits because hosted QA did not move the climber or
+submit a gameplay event.
+
+Hosted pre-load WebAudio instrumentation observed two running contexts and
+7 starts / 4 stops after first-input music startup. Music Off raised stops to 7.
+Music On then raised starts to 12, proving a fresh source graph was created in
+the installed build. Exact observations are archived in
+[`hosted-v0.0.24.2-metrics.json`](hosted-v0.0.24.2-metrics.json).
+
+![Installed v0.0.24.2 mechanic-first Tower Memory](screenshots/hosted-v0.0.24.2-memory.png)
+
 ## Issues
 
 ### ISSUE-001: Essential Phaser labels are too small and visibly softer than the DOM shell
