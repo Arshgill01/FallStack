@@ -1,0 +1,32 @@
+{
+  "capturedAt": "2026-07-23",
+  "viewport": "375x812",
+  "probe": "audio-probe.js injected before application load",
+  "beforeGesture": {
+    "contextStates": ["suspended", "suspended"],
+    "resumeCalls": 2,
+    "oscillatorStarts": 2,
+    "oscillatorStops": 2,
+    "musicPreference": "on"
+  },
+  "afterGestureAndStartDelay": {
+    "contextStates": ["running", "running"],
+    "resumeCalls": 5,
+    "oscillatorStarts": 15,
+    "oscillatorStops": 12,
+    "musicControl": "Music On"
+  },
+  "afterMuteAndCleanup": {
+    "contextStates": ["running", "running"],
+    "oscillatorStarts": 15,
+    "oscillatorStops": 15,
+    "musicControl": "Music Off"
+  },
+  "afterUnmuteAndRestartDelay": {
+    "contextStates": ["running", "running"],
+    "oscillatorStarts": 20,
+    "oscillatorStops": 17,
+    "musicControl": "Music On"
+  },
+  "interpretation": "The off transition stopped the three persistent music oscillators. The on transition created five new sources: three persistent drone/pulse oscillators and two scheduled bell oscillators."
+}

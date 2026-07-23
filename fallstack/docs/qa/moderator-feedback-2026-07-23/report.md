@@ -143,6 +143,36 @@ preference, mobile vertical scrolling, and no unexpected runtime errors.
 Representative text contrast is 12.90:1 for ink/washi, 10.63:1 for
 burgundy/washi, and 5.92:1 for muted brown/washi.
 
+### 4. Reliable music start, mute, and restart
+
+`unlock()` previously created the music gain bus and then checked
+`!musicGain` before scheduling music. The bus creation made that condition
+permanently false. The repaired condition checks the state that actually
+matters: music is unmuted, no source nodes exist, and no start is pending. A
+regression test protects the initialized-bus/no-sources case and the start path
+remains idempotent while muted, pending, or already active.
+
+The pre-load WebAudio probe now observes:
+
+| Step | Contexts | Starts | Stops | Control |
+| --- | --- | ---: | ---: | --- |
+| Before gesture | suspended / suspended | 2 | 2 | preference on |
+| First input + 2.6 s | running / running | 15 | 12 | Music On |
+| Music Off + cleanup | running / running | 15 | 15 | Music Off |
+| Music On + 2.6 s | running / running | 20 | 17 | Music On |
+
+Turning music off stopped the three persistent drone/pulse sources. Turning it
+back on created five new sources: three persistent sources and two scheduled
+bells. This directly reverses the baseline failure, where the same off/on cycle
+created no oscillator at all. Exact raw observations are archived in
+[`audio-fix-metrics.json`](audio-fix-metrics.json). Guide copy now says sound
+starts after the first input, avoiding an autoplay claim before browser unlock.
+Type-check, lint, the full 142-test suite, production build, and diff validation
+all passed.
+
+![Music running after the first input](screenshots/audio-fix-playing.png)
+![Music restarted after an off/on cycle](screenshots/audio-fix-restarted.png)
+
 ## Issues
 
 ### ISSUE-001: Essential Phaser labels are too small and visibly softer than the DOM shell

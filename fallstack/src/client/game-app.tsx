@@ -2513,7 +2513,7 @@ export function GameApp() {
             <section className="guide-section guide-sound" aria-labelledby="sound-title">
               <div>
                 <h3 id="sound-title">Sound</h3>
-                <p>Preferences stay on this device.</p>
+                <p>Starts after your first input. Preferences stay here.</p>
               </div>
               <div className="guide-sound-actions">
                 <button

@@ -1,4 +1,4 @@
-import { ZONE_IDS, type ZoneId } from '../../shared/game/mutation';
+import { ZONE_IDS, type ZoneId } from '../../shared/game/mutation.js';
 import type { SoundId } from './events';
 
 declare global {
@@ -11,6 +11,18 @@ type SoundOptions = {
   gameplayMuted: boolean;
   musicMuted: boolean;
 };
+
+export function shouldScheduleMusicStart(input: {
+  musicMuted: boolean;
+  musicNodeCount: number;
+  startPending: boolean;
+}): boolean {
+  return (
+    !input.musicMuted &&
+    input.musicNodeCount === 0 &&
+    !input.startPending
+  );
+}
 
 const MUSIC_PHRASE = [293.66, 440, 369.99, 329.63, 246.94, 293.66, 220, 246.94] as const;
 
@@ -52,9 +64,11 @@ export class ProceduralSound {
     this.ensureOutputBuses();
     if (this.context.state === 'suspended') void this.context.resume();
     if (
-      !this.options.musicMuted &&
-      !this.musicGain &&
-      this.musicStartTimer === null
+      shouldScheduleMusicStart({
+        musicMuted: this.options.musicMuted,
+        musicNodeCount: this.musicNodes.length,
+        startPending: this.musicStartTimer !== null,
+      })
     ) {
       this.musicStartTimer = window.setTimeout(() => {
         this.musicStartTimer = null;

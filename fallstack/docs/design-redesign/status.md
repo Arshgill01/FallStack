@@ -226,3 +226,12 @@ Direction C wins because the tower reads as a physical object, community mutatio
   type-check, lint, build, contrast checks, and browser validation at 320×568,
   375×812, and 1280×800. The Cutaway Reliquary visual grammar remains intact,
   with fewer permanent bordered regions and no new asset cost.
+- Audio checkpoint complete: music startup now keys off source-node and pending
+  state instead of the always-present output bus. The Guide truthfully states
+  that sound begins after first input.
+- Pre-load WebAudio instrumentation proved both contexts running after unlock,
+  three persistent sources stopping on Music Off, and five fresh sources
+  starting after Music On. The same baseline cycle had created zero new
+  oscillators. Targeted regression tests cover the initialized-bus bug and
+  idempotent muted/pending/active states. Type-check, lint, the full 142-test
+  suite, production build, and diff validation passed.
