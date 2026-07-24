@@ -2321,6 +2321,7 @@ export function GameApp() {
     };
     const onFall = (event: Event) => {
       const detail = (event as CustomEvent<FallEventDetail>).detail;
+      resetSharedInput();
       void postFall(detail);
     };
     const onClear = (event: Event) => {
