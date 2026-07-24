@@ -6,6 +6,7 @@ import {
   ARTIFACT_COLLISION_CLASS,
   artifactVisualTier,
   clampedArtifactLabelCenter,
+  inWorldArtifactLabel,
   RELIQUARY_ZONE_PALETTES,
   RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
@@ -14,6 +15,7 @@ import {
   reliquaryZoneFor,
   reliquaryZoneName,
   shouldAnimateArtifact,
+  shouldShowArtifactLabels,
 } from './art-direction.js';
 
 void test('every artifact has a distinct collision presentation contract', () => {
@@ -36,6 +38,59 @@ void test('artifact labels stay inside narrow and wide tower bounds', () => {
   assert.equal(clampedArtifactLabelCenter(-20, 375), 80);
   assert.equal(clampedArtifactLabelCenter(500, 375), 295);
   assert.equal(clampedArtifactLabelCenter(240, 480), 240);
+});
+
+void test('in-world artifact labels keep causes concise', () => {
+  assert.equal(
+    inWorldArtifactLabel({ bucket: 'short_jump', count: 5 }),
+    '5 short jumps raised this foothold.'
+  );
+  assert.equal(
+    inWorldArtifactLabel({ bucket: 'wall_bonk', count: 1 }),
+    '1 wall bonk left this ghost.'
+  );
+  assert.ok(
+    inWorldArtifactLabel({ bucket: 'helper_overuse', count: 12 }).length <= 38
+  );
+});
+
+void test('artifact explanations clear the active jump corridor', () => {
+  assert.equal(
+    shouldShowArtifactLabels({
+      charging: false,
+      dismissed: false,
+      grounded: true,
+      velocityY: 0,
+    }),
+    true
+  );
+  assert.equal(
+    shouldShowArtifactLabels({
+      charging: true,
+      dismissed: false,
+      grounded: true,
+      velocityY: 0,
+    }),
+    false
+  );
+  assert.equal(
+    shouldShowArtifactLabels({
+      charging: false,
+      dismissed: false,
+      grounded: false,
+      velocityY: -420,
+    }),
+    false
+  );
+  assert.equal(
+    shouldShowArtifactLabels({
+      charging: false,
+      dismissed: true,
+      grounded: true,
+      velocityY: 0,
+    }),
+    false
+  );
 });
 
 void test('twelve persistence segments resolve to three visual zones', () => {

@@ -1,5 +1,6 @@
 import {
   ZONE_IDS,
+  type Artifact,
   type ArtifactType,
   type ZoneId,
 } from '../../shared/game/mutation.js';
@@ -55,6 +56,34 @@ export function clampedArtifactLabelCenter(
   const minimum = labelWidth / 2 + gutter;
   const maximum = Math.max(minimum, gameWidth - labelWidth / 2 - gutter);
   return Math.min(maximum, Math.max(minimum, centerX));
+}
+
+export function inWorldArtifactLabel(
+  artifact: Pick<Artifact, 'bucket' | 'count'>
+): string {
+  if (artifact.bucket === 'short_jump')
+    return `${artifact.count} short ${artifact.count === 1 ? 'jump' : 'jumps'} raised this foothold.`;
+  if (artifact.bucket === 'wall_bonk')
+    return `${artifact.count} wall ${artifact.count === 1 ? 'bonk' : 'bonks'} left this ghost.`;
+  if (artifact.bucket === 'overjump')
+    return `${artifact.count} ${artifact.count === 1 ? 'overjump' : 'overjumps'} cursed this brick.`;
+  if (artifact.bucket === 'helper_overuse')
+    return `${artifact.count} helper ${artifact.count === 1 ? 'slip' : 'slips'} cursed this brick.`;
+  return `${artifact.count} clean ${artifact.count === 1 ? 'climb lit' : 'climbs lit'} this trail.`;
+}
+
+export function shouldShowArtifactLabels(input: {
+  charging: boolean;
+  dismissed: boolean;
+  grounded: boolean;
+  velocityY: number;
+}): boolean {
+  return (
+    !input.dismissed &&
+    input.grounded &&
+    !input.charging &&
+    Math.abs(input.velocityY) < 1
+  );
 }
 
 export type MotionDecision = {

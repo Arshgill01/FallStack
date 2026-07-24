@@ -73,9 +73,11 @@ import type {
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
   clampedArtifactLabelCenter,
+  inWorldArtifactLabel,
   RELIQUARY_COLORS,
   reliquaryZoneFor,
   reliquaryZoneName,
+  shouldShowArtifactLabels,
 } from './game/art-direction';
 import {
   cameraBottomPaddingForGameWidth,
@@ -175,6 +177,8 @@ class FallstackScene extends Phaser.Scene {
   private playerGraphics?: Phaser.GameObjects.Graphics;
   private playerVisualKey = '';
   private labels: Phaser.GameObjects.Text[] = [];
+  private artifactLabels: Phaser.GameObjects.Text[] = [];
+  private artifactLabelDismissedZones = new Set<ZoneId>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
   private space: Phaser.Input.Keyboard.Key | undefined;
   private facing: -1 | 1 = 1;
@@ -381,6 +385,9 @@ class FallstackScene extends Phaser.Scene {
       body.setVelocityX(0);
     }
 
+    if (input.left || input.right || this.charging || !onFloor)
+      this.artifactLabelDismissedZones.add(this.currentZone);
+
     if (this.charging) {
       this.chargeTime = Math.max(0, this.time.now - this.chargeStart);
       const percent = chargeRatioForHeldMs(this.chargeTime);
@@ -423,6 +430,15 @@ class FallstackScene extends Phaser.Scene {
         new CustomEvent('fallstack:charge', { detail: { percent: 0 } })
       );
     }
+
+    const showArtifactLabels = shouldShowArtifactLabels({
+      charging: this.charging,
+      dismissed: this.artifactLabelDismissedZones.has(this.currentZone),
+      grounded: onFloor,
+      velocityY: body.velocity.y,
+    });
+    for (const label of this.artifactLabels)
+      label.setVisible(showArtifactLabels);
 
     if (!this.wasGrounded && onFloor) {
       window.dispatchEvent(
@@ -908,6 +924,7 @@ class FallstackScene extends Phaser.Scene {
     this.graphics.clear();
     for (const label of this.labels) label.destroy();
     this.labels = [];
+    this.artifactLabels = [];
 
     const drawW = this.gameWidth();
 
@@ -963,8 +980,8 @@ class FallstackScene extends Phaser.Scene {
     renderReliquaryArtifact(this.graphics, artifact, {
       reducedMotion: this.reducedMotion,
       timeMs: this.time.now,
-      addLabel: (centerX, y, text) =>
-        this.addArtifactLabel(centerX, y, text),
+      addLabel: (centerX, y) =>
+        this.addArtifactLabel(centerX, y, inWorldArtifactLabel(artifact)),
     });
   }
 
@@ -1422,7 +1439,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private addArtifactLabel(centerX: number, y: number, text: string) {
-    const labelWidth = 148;
+    const labelWidth = this.gameWidth() < 420 ? 120 : 148;
     const clampedX = clampedArtifactLabelCenter(
       centerX,
       this.gameWidth(),
@@ -1445,6 +1462,7 @@ class FallstackScene extends Phaser.Scene {
     label.setOrigin(0.5, 1);
     label.setDepth(4);
     this.labels.push(label);
+    this.artifactLabels.push(label);
   }
 
   private rebuildArtifactBodies() {
