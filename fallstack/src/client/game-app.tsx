@@ -99,7 +99,7 @@ import {
   localFallMessage,
   openingMutationMessage,
 } from './game/localSnapshot';
-import { ProceduralSound } from './game/sound';
+import { ProceduralSound, type AudioDiagnostics } from './game/sound';
 import { mutationReceiptPresentation } from './game/receipt';
 import { fetchChangedBoardSnapshot } from './game/board-sync';
 import {
@@ -118,6 +118,7 @@ declare global {
   interface Window {
     fallstackInput: InputState;
     fallstackSnapshot?: GameSnapshot;
+    fallstackAudioDiagnostics?: () => AudioDiagnostics;
   }
 }
 
@@ -1551,6 +1552,19 @@ export function GameApp() {
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
+  const toggleMusic = useCallback(() => {
+    const nextMuted = !musicMuted;
+    soundRef.current?.setMusicMuted(nextMuted);
+    setMusicMuted(nextMuted);
+  }, [musicMuted]);
+
+  const toggleGameplaySound = useCallback(() => {
+    const nextMuted = !gameplayMuted;
+    soundRef.current?.setGameplayMuted(nextMuted);
+    if (!nextMuted) soundRef.current?.previewGameplay();
+    setGameplayMuted(nextMuted);
+  }, [gameplayMuted]);
+
   const showMutation = useCallback(
     (text: string, receipt: MutationReceipt | null = null) => {
       setMessage(text);
@@ -1810,11 +1824,36 @@ export function GameApp() {
 
   useEffect(() => {
     const unlock = () => soundRef.current?.unlock();
+    const resumeVisibleAudio = () => {
+      if (!document.hidden) unlock();
+    };
     window.addEventListener('pointerdown', unlock);
+    window.addEventListener('touchstart', unlock, { passive: true });
+    window.addEventListener('click', unlock);
     window.addEventListener('keydown', unlock);
+    window.addEventListener('pageshow', unlock);
+    document.addEventListener('visibilitychange', resumeVisibleAudio);
     return () => {
       window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('click', unlock);
       window.removeEventListener('keydown', unlock);
+      window.removeEventListener('pageshow', unlock);
+      document.removeEventListener('visibilitychange', resumeVisibleAudio);
+    };
+  }, []);
+
+  useEffect(() => {
+    window.fallstackAudioDiagnostics = () =>
+      soundRef.current?.getDiagnostics() ?? {
+        contextState: 'uninitialized',
+        musicActive: false,
+        musicStartPending: false,
+        outputPeak: 0,
+        outputRms: 0,
+      };
+    return () => {
+      delete window.fallstackAudioDiagnostics;
     };
   }, []);
 
@@ -2531,13 +2570,16 @@ export function GameApp() {
             <section className="guide-section guide-sound" aria-labelledby="sound-title">
               <div>
                 <h3 id="sound-title">Sound</h3>
-                <p>Starts after your first input. Preferences stay here.</p>
+                <p>
+                  Starts on your first press. Turning either switch on plays
+                  immediately.
+                </p>
               </div>
               <div className="guide-sound-actions">
                 <button
                   type="button"
                   className="guide-toggle"
-                  onClick={() => setMusicMuted(muted => !muted)}
+                  onClick={toggleMusic}
                   aria-pressed={!musicMuted}
                 >
                   Music {musicMuted ? 'Off' : 'On'}
@@ -2545,7 +2587,7 @@ export function GameApp() {
                 <button
                   type="button"
                   className="guide-toggle"
-                  onClick={() => setGameplayMuted(muted => !muted)}
+                  onClick={toggleGameplaySound}
                   aria-pressed={!gameplayMuted}
                 >
                   SFX {gameplayMuted ? 'Off' : 'On'}

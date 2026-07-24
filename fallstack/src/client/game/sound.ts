@@ -12,6 +12,40 @@ type SoundOptions = {
   musicMuted: boolean;
 };
 
+export const AUDIO_LEVELS = {
+  master: 0.86,
+  gameplay: 0.95,
+  music: 0.34,
+  musicStart: 0.26,
+  musicDroneA: 0.065,
+  musicDroneB: 0.04,
+  musicBellPrimary: 0.12,
+  musicBellSecondary: 0.085,
+  charge: 0.06,
+  launchPrimary: 0.09,
+  launchSecondary: 0.055,
+  land: 0.07,
+  fallNoise: 0.08,
+  fallTone: 0.06,
+  mutation: 0.075,
+  checkpointPrimary: 0.085,
+  checkpointSecondary: 0.07,
+} as const;
+
+export const MUSIC_START_DELAY_MS = 80;
+
+export type AudioDiagnostics = {
+  contextState: string;
+  musicActive: boolean;
+  musicStartPending: boolean;
+  outputPeak: number;
+  outputRms: number;
+};
+
+export function shouldResumeAudioContext(state: string): boolean {
+  return state !== 'running' && state !== 'closed';
+}
+
 export function shouldScheduleMusicStart(input: {
   musicMuted: boolean;
   musicNodeCount: number;
@@ -33,6 +67,9 @@ export class ProceduralSound {
   private masterGain: GainNode | null = null;
   private gameplayGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private outputAnalyser: AnalyserNode | null = null;
+  private outputSamples: Uint8Array<ArrayBuffer> | null = null;
+  private outputPrimed = false;
   private musicNodes: AudioNode[] = [];
   private musicTimers: number[] = [];
   private musicStopTimer: number | null = null;
@@ -57,12 +94,59 @@ export class ProceduralSound {
     if (!musicMuted && this.context) this.unlock();
   }
 
+  previewGameplay() {
+    if (this.options.gameplayMuted) return;
+    this.unlock();
+    this.ping(523.25, 0.14, AUDIO_LEVELS.checkpointPrimary);
+  }
+
+  getDiagnostics(): AudioDiagnostics {
+    const samples = this.outputSamples;
+    if (!this.outputAnalyser || !samples) {
+      return {
+        contextState: this.context?.state ?? 'uninitialized',
+        musicActive: this.musicNodes.length > 0,
+        musicStartPending: this.musicStartTimer !== null,
+        outputPeak: 0,
+        outputRms: 0,
+      };
+    }
+
+    this.outputAnalyser.getByteTimeDomainData(samples);
+    let peak = 0;
+    let squareSum = 0;
+    for (const sample of samples) {
+      const centered = (sample - 128) / 128;
+      peak = Math.max(peak, Math.abs(centered));
+      squareSum += centered * centered;
+    }
+
+    return {
+      contextState: this.context?.state ?? 'uninitialized',
+      musicActive: this.musicNodes.length > 0,
+      musicStartPending: this.musicStartTimer !== null,
+      outputPeak: Number(peak.toFixed(4)),
+      outputRms: Number(Math.sqrt(squareSum / samples.length).toFixed(4)),
+    };
+  }
+
   unlock() {
     const AudioContextCtor = window.AudioContext ?? window.webkitAudioContext;
     if (!AudioContextCtor) return;
-    this.context ??= new AudioContextCtor();
+    if (!this.context || this.context.state === 'closed') {
+      this.context = new AudioContextCtor();
+      this.masterGain = null;
+      this.gameplayGain = null;
+      this.musicGain = null;
+      this.outputAnalyser = null;
+      this.outputSamples = null;
+      this.outputPrimed = false;
+      this.musicNodes = [];
+    }
     this.ensureOutputBuses();
-    if (this.context.state === 'suspended') void this.context.resume();
+    this.primeOutput();
+    if (shouldResumeAudioContext(this.context.state))
+      void this.context.resume().catch(() => undefined);
     if (
       shouldScheduleMusicStart({
         musicMuted: this.options.musicMuted,
@@ -73,7 +157,7 @@ export class ProceduralSound {
       this.musicStartTimer = window.setTimeout(() => {
         this.musicStartTimer = null;
         this.startMusic();
-      }, 2000);
+      }, MUSIC_START_DELAY_MS);
     }
   }
 
@@ -85,9 +169,10 @@ export class ProceduralSound {
     if (id === 'launch') return this.launch();
     if (id === 'land') return this.land(zoneId);
     if (id === 'fall') return this.fall();
-    if (id === 'mutation') return this.ping(369.99, 0.16, 0.026);
+    if (id === 'mutation')
+      return this.ping(369.99, 0.16, AUDIO_LEVELS.mutation);
     if (id === 'checkpoint') return this.checkpoint();
-    return this.noise(0.035, 900, 0.014);
+    return this.noise(0.035, 900, 0.05);
   }
 
   stopCharge() {
@@ -112,7 +197,7 @@ export class ProceduralSound {
     if (this.musicGain && this.musicNodes.length > 0) {
       const now = this.context.currentTime;
       this.musicGain.gain.cancelScheduledValues(now);
-      this.musicGain.gain.setTargetAtTime(0.16, now, 0.35);
+      this.musicGain.gain.setTargetAtTime(AUDIO_LEVELS.music, now, 0.18);
       if (this.musicTimers.length === 0) this.startBellLoop();
       return;
     }
@@ -120,8 +205,11 @@ export class ProceduralSound {
     const now = this.context.currentTime;
     this.ensureOutputBuses();
     if (!this.musicGain) return;
-    this.musicGain.gain.setValueAtTime(0.0001, now);
-    this.musicGain.gain.exponentialRampToValueAtTime(0.16, now + 2.4);
+    this.musicGain.gain.setValueAtTime(AUDIO_LEVELS.musicStart, now);
+    this.musicGain.gain.exponentialRampToValueAtTime(
+      AUDIO_LEVELS.music,
+      now + 0.5
+    );
 
     const filter = this.context.createBiquadFilter();
     filter.type = 'lowpass';
@@ -134,7 +222,7 @@ export class ProceduralSound {
     const droneAGain = this.context.createGain();
     droneA.type = 'triangle';
     droneA.frequency.setValueAtTime(146.83, now);
-    droneAGain.gain.setValueAtTime(0.055, now);
+    droneAGain.gain.setValueAtTime(AUDIO_LEVELS.musicDroneA, now);
     droneA.connect(droneAGain).connect(filter);
     droneA.start(now);
 
@@ -142,7 +230,7 @@ export class ProceduralSound {
     const droneBGain = this.context.createGain();
     droneB.type = 'sine';
     droneB.frequency.setValueAtTime(220, now);
-    droneBGain.gain.setValueAtTime(0.035, now);
+    droneBGain.gain.setValueAtTime(AUDIO_LEVELS.musicDroneB, now);
     droneB.connect(droneBGain).connect(filter);
     droneB.start(now);
 
@@ -196,8 +284,8 @@ export class ProceduralSound {
     const first = MUSIC_PHRASE[this.musicPhraseIndex % MUSIC_PHRASE.length]!;
     const second = MUSIC_PHRASE[(this.musicPhraseIndex + 1) % MUSIC_PHRASE.length]!;
     this.musicPhraseIndex = (this.musicPhraseIndex + 2) % MUSIC_PHRASE.length;
-    this.musicBell(first, now + 0.08, 0.055);
-    this.musicBell(second, now + 1.72, 0.038);
+    this.musicBell(first, now + 0.08, AUDIO_LEVELS.musicBellPrimary);
+    this.musicBell(second, now + 1.72, AUDIO_LEVELS.musicBellSecondary);
   }
 
   private musicBell(frequency: number, startAt: number, volume: number) {
@@ -236,32 +324,46 @@ export class ProceduralSound {
     this.chargeOsc.frequency.setValueAtTime(130, now);
     this.chargeOsc.frequency.exponentialRampToValueAtTime(330, now + 0.9);
     this.chargeGain.gain.setValueAtTime(0.0001, now);
-    this.chargeGain.gain.exponentialRampToValueAtTime(0.025, now + 0.16);
+    this.chargeGain.gain.exponentialRampToValueAtTime(
+      AUDIO_LEVELS.charge,
+      now + 0.16
+    );
     this.chargeOsc.connect(this.chargeGain).connect(this.gameplayOutput());
     this.chargeOsc.start(now);
   }
 
   private launch() {
     this.stopCharge();
-    this.ping(220, 0.1, 0.028);
-    window.setTimeout(() => this.ping(293.66, 0.09, 0.018), 34);
+    this.ping(220, 0.1, AUDIO_LEVELS.launchPrimary);
+    window.setTimeout(
+      () => this.ping(293.66, 0.09, AUDIO_LEVELS.launchSecondary),
+      34
+    );
   }
 
   private land(zoneId?: ZoneId) {
     const zoneIndex = zoneId ? ZONE_IDS.indexOf(zoneId) : 0;
-    if (zoneIndex >= ZONE_IDS.length * 0.66) return this.ping(440, 0.15, 0.02);
-    if (zoneIndex >= ZONE_IDS.length * 0.33) return this.ping(329.63, 0.12, 0.022);
-    return this.ping(164.81, 0.08, 0.026);
+    if (zoneIndex >= ZONE_IDS.length * 0.66)
+      return this.ping(440, 0.15, AUDIO_LEVELS.land);
+    if (zoneIndex >= ZONE_IDS.length * 0.33)
+      return this.ping(329.63, 0.12, AUDIO_LEVELS.land);
+    return this.ping(164.81, 0.08, AUDIO_LEVELS.land);
   }
 
   private fall() {
-    this.noise(0.12, 260, 0.035);
-    window.setTimeout(() => this.ping(146.83, 0.2, 0.022), 90);
+    this.noise(0.12, 260, AUDIO_LEVELS.fallNoise);
+    window.setTimeout(
+      () => this.ping(146.83, 0.2, AUDIO_LEVELS.fallTone),
+      90
+    );
   }
 
   private checkpoint() {
-    this.ping(293.66, 0.18, 0.026);
-    window.setTimeout(() => this.ping(440, 0.24, 0.022), 110);
+    this.ping(293.66, 0.18, AUDIO_LEVELS.checkpointPrimary);
+    window.setTimeout(
+      () => this.ping(440, 0.24, AUDIO_LEVELS.checkpointSecondary),
+      110
+    );
   }
 
   private ping(frequency: number, duration: number, volume: number) {
@@ -311,15 +413,36 @@ export class ProceduralSound {
     compressor.release.setValueAtTime(0.24, now);
 
     this.masterGain = this.context.createGain();
-    this.masterGain.gain.setValueAtTime(0.72, now);
+    this.masterGain.gain.setValueAtTime(AUDIO_LEVELS.master, now);
     this.gameplayGain = this.context.createGain();
-    this.gameplayGain.gain.setValueAtTime(0.8, now);
+    this.gameplayGain.gain.setValueAtTime(AUDIO_LEVELS.gameplay, now);
     this.musicGain = this.context.createGain();
     this.musicGain.gain.setValueAtTime(0.0001, now);
+    this.outputAnalyser = this.context.createAnalyser();
+    this.outputAnalyser.fftSize = 256;
+    this.outputAnalyser.smoothingTimeConstant = 0.35;
+    this.outputSamples = new Uint8Array(this.outputAnalyser.fftSize);
 
     this.gameplayGain.connect(this.masterGain);
     this.musicGain.connect(this.masterGain);
-    this.masterGain.connect(compressor).connect(this.context.destination);
+    this.masterGain
+      .connect(compressor)
+      .connect(this.outputAnalyser)
+      .connect(this.context.destination);
+  }
+
+  private primeOutput() {
+    if (!this.context || this.outputPrimed) return;
+    const source = this.context.createBufferSource();
+    source.buffer = this.context.createBuffer(1, 1, this.context.sampleRate);
+    source.connect(this.masterGain ?? this.context.destination);
+    source.start();
+    source.addEventListener(
+      'ended',
+      () => source.disconnect(),
+      { once: true }
+    );
+    this.outputPrimed = true;
   }
 
   private gameplayOutput() {
