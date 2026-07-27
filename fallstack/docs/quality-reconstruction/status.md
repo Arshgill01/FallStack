@@ -9,7 +9,9 @@ evidence-based quality gates.
 
 ## Current gate
 
-Gate 1 — baseline census and verified issue resolution in progress.
+Gate 1 is complete. Gate 2 integration is waiting on the QR-004 music
+selection and the QR-003 current-Mac listening decision; production music
+remains unchanged until that user-owned gate closes.
 
 Gate 0 is complete on the current Mac. The project checks,
 Chromium/WebKit runtime lifecycle, mocked two-client reconciliation, signed-in
@@ -25,12 +27,13 @@ all eleven zone clears to the summit.
 | Pull current `master` | Complete | Fast-forwarded `7875568 → 7c4e06f` |
 | Define root goal | Complete | Commit `0aaf5b8` |
 | Mac toolchain | Complete | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7 |
-| Project checks | Complete | Type-check, lint, 152 tests, build passed |
+| Project checks | Complete | Type-check, lint, 153 tests, build passed |
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
 | Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
+| Exact Gate 1 baseline | Complete | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
 | Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
@@ -70,6 +73,10 @@ These are investigation records, not all approved fixes.
   handoffs were removed from the goal.
 - 2026-07-27: Latest pulled fixes are treated as baseline evidence, not assumed
   resolution of the user's current reports.
+- 2026-07-27: The authoritative Gate 1 before-state is a fresh production build
+  from detached commit `7c4e06f` on the current Mac. Frames identify real
+  input separately from QA-positioned presentation and never treat a forced
+  summit frame as climb proof.
 - 2026-07-27: Automated oscillator counts and analyser values may approve
   signal flow but cannot approve sound quality.
 - 2026-07-27: The current Cutaway Reliquary grammar remains frozen. Character
@@ -234,6 +241,19 @@ npm run type-check
 npm run lint
 npm test
 npm run build
+git worktree add --detach /tmp/fallstack-gate1-baseline-TJXF3m 7c4e06f
+npm run build # from the detached baseline worktree
+FALLSTACK_QA_BASE_URL=http://127.0.0.1:8082 FALLSTACK_QA_SOURCE_COMMIT=7c4e06f npm run qa:baseline -- docs/quality-reconstruction/evidence/gate-1-baseline
+FALLSTACK_QA_BASE_URL=http://127.0.0.1:8082 npm run qa:world-bounds -- docs/quality-reconstruction/evidence/gate-1-baseline/world-bounds-red
+FALLSTACK_QA_BASE_URL=http://127.0.0.1:8082 npm run qa:ui-readability -- docs/quality-reconstruction/evidence/gate-1-baseline/ui-readability-red
+FALLSTACK_QA_SOURCE_COMMIT=776999a npm run qa:baseline -- /tmp/fallstack-quality/baseline-harness-current-green
+npm run qa:world-bounds -- /tmp/fallstack-quality/gate1-current-world-bounds
+npm run qa:ui-readability -- /tmp/fallstack-quality/gate1-current-ui-readability
+npm run type-check
+npm run lint
+npm test
+npm run build
+git diff --check
 ```
 
 Results:
@@ -362,6 +382,21 @@ Results:
   480 px and the original 758 px desktop outer edge. Both runtime smokes,
   48/48 Chromium and WebKit accessibility checks, 266/266 overlay checks, and
   mobile readability pass.
+- The detached `7c4e06f` baseline matrix passed with 20 captures, zero page
+  errors, and zero unexpected console errors. It records one false landing in
+  every untouched pre-input game and another after one fall/respawn.
+- The exact baseline world-bound probe failed the expected twelve mobile
+  assertions at 320, 375, and 480 px while passing the unchanged 758 px desktop
+  edge. The exact baseline readability probe failed 36 functional-text
+  assertions across 320×568 and 375×812. These commands are intentional red
+  reproductions; their JSON reports were written before the non-zero exit.
+- The baseline visual score is 88/100. Audio and character judgments remain in
+  their separate records. Every QR-001–017 ledger entry now has a dedicated
+  `issues/ISSUE-NNN.md` record.
+- The same 20-state baseline harness passes against the current build with zero
+  pre-input and post-respawn false landings, zero page errors, and zero
+  unexpected console errors. Current world-bound and readability contracts
+  pass, as do type-check, lint, all 153 tests, build, and `git diff --check`.
 
 ## Worktree safety
 

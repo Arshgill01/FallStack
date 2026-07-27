@@ -7,6 +7,8 @@ import { chromium } from 'playwright';
 const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
 const MOBILE_BREAKPOINT = 600;
+const baseUrl =
+  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/world-bounds'
 );
@@ -30,7 +32,7 @@ try {
     const context = await browser.newContext({ viewport });
     await installSceneProbe(context);
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:8080/game.html', {
+    await page.goto(`${baseUrl}/game.html`, {
       waitUntil: 'domcontentloaded',
     });
     await page.waitForFunction(

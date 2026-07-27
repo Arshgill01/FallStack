@@ -1,0 +1,322 @@
+{
+  "generatedAt": "2026-07-27T13:31:50.577Z",
+  "source": {
+    "commit": "7c4e06f",
+    "url": "http://127.0.0.1:8082",
+    "environment": "current Mac",
+    "session": "local practice",
+    "browser": "Chromium"
+  },
+  "captureKinds": {
+    "pre-input": "No gameplay input after the scene readiness contract.",
+    "real input": "Keyboard input drove the production Phaser scene and event path.",
+    "QA-positioned": "The production scene checkpoint/summit methods were invoked only to expose a deterministic presentation state; this is not climb proof."
+  },
+  "captures": [
+    {
+      "label": "splash-mobile",
+      "file": "splash-mobile.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 375,
+        "height": 500
+      },
+      "surface": "inline splash"
+    },
+    {
+      "label": "splash-desktop",
+      "file": "splash-desktop.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 1280,
+        "height": 500
+      },
+      "surface": "inline splash"
+    },
+    {
+      "label": "expanded-pre-input-320x568",
+      "file": "expanded-pre-input-320x568.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "expanded-pre-input-375x812",
+      "file": "expanded-pre-input-375x812.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "expanded-pre-input-1280x800",
+      "file": "expanded-pre-input-1280x800.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "expanded-fullscreen-1920x1080",
+      "file": "expanded-fullscreen-1920x1080.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "actual-charge",
+      "file": "actual-charge.png",
+      "kind": "real input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      },
+      "chargePercent": "60"
+    },
+    {
+      "label": "actual-launch",
+      "file": "actual-launch.png",
+      "kind": "real input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 1,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "landing-contact",
+      "file": "landing-contact.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 2
+      },
+      "note": "Production collision and landing event after a QA-positioned short drop."
+    },
+    {
+      "label": "actual-fall",
+      "file": "actual-fall.png",
+      "kind": "real input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "mutation-receipt",
+      "file": "mutation-receipt.png",
+      "kind": "real input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 1,
+        "lands": 2
+      },
+      "text": "Your fall counted here. 1 more short jump spawns Mercy Nail."
+    },
+    {
+      "label": "grounded-respawn",
+      "file": "grounded-respawn.png",
+      "kind": "real input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 1,
+        "lands": 2
+      }
+    },
+    {
+      "label": "guide-mobile",
+      "file": "guide-mobile.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "tower-memory-mobile",
+      "file": "tower-memory-mobile.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    },
+    {
+      "label": "biome-lower-ruins",
+      "file": "biome-lower-ruins.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 2
+      },
+      "zoneId": "orbital_scrapyard",
+      "biome": "Lower Ruins"
+    },
+    {
+      "label": "biome-bell-shaft",
+      "file": "biome-bell-shaft.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 2
+      },
+      "zoneId": "ring_citadel",
+      "biome": "Bell Shaft"
+    },
+    {
+      "label": "biome-moon-roof",
+      "file": "biome-moon-roof.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 3
+      },
+      "zoneId": "black_hole_chapel",
+      "biome": "Moon Roof"
+    },
+    {
+      "label": "checkpoint-feedback",
+      "file": "checkpoint-feedback.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 4
+      },
+      "note": "Production clear handler, QA-authored deterministic event detail."
+    },
+    {
+      "label": "summit-result",
+      "file": "summit-result.png",
+      "kind": "QA-positioned",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 4
+      },
+      "note": "Production summit handler, invoked directly; not climb proof."
+    },
+    {
+      "label": "expanded-reduced-motion-375x812",
+      "file": "expanded-reduced-motion-375x812.png",
+      "kind": "pre-input",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": "expanded game",
+      "eventCounts": {
+        "launches": 0,
+        "falls": 0,
+        "lands": 1
+      }
+    }
+  ],
+  "diagnostics": {
+    "pageErrors": [],
+    "consoleErrors": []
+  }
+}

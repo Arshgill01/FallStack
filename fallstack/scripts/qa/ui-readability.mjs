@@ -6,6 +6,8 @@ import { chromium } from 'playwright';
 
 const MIN_BODY_FONT_SIZE = 13;
 const MIN_TOUCH_TARGET = 44;
+const baseUrl =
+  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-readability'
 );
@@ -26,7 +28,7 @@ try {
   for (const viewport of viewports) {
     const context = await browser.newContext({ viewport });
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:8080/game.html', {
+    await page.goto(`${baseUrl}/game.html`, {
       waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.topbar', { timeout: 30_000 });
