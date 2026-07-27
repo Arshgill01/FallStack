@@ -9,6 +9,7 @@ import {
 import {
   CAMERA_AIR_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
+  cameraBottomPaddingForViewport,
   cameraScrollXForPlayer,
   computeGameDimensions,
   gameWorldWidth,
@@ -52,6 +53,12 @@ void test('logical game world still preserves the full tower route', () => {
   assert.equal(gameWorldWidth(900), 900);
   assert.equal(routeOffsetForGameWidth(900), (900 - WORLD_WIDTH) / 2);
   assert.equal(cameraBottomPaddingForGameWidth(900), 260);
+});
+
+void test('short landscape cameras keep the player inside the viewport', () => {
+  assert.equal(cameraBottomPaddingForViewport(900, 600), 260);
+  assert.equal(cameraBottomPaddingForViewport(760, 254), 152.4);
+  assert.equal(cameraBottomPaddingForViewport(WORLD_WIDTH, 254), 150);
 });
 
 void test('physical route bounds follow the reliquary wall planes', () => {

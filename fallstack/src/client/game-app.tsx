@@ -86,7 +86,7 @@ import {
 } from './game/art-direction';
 import {
   CAMERA_AIR_LOOKAHEAD,
-  cameraBottomPaddingForGameWidth,
+  cameraBottomPaddingForViewport,
   cameraScrollXForPlayer,
   computeGameDimensions,
   gameWorldWidth,
@@ -666,7 +666,10 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private cameraBottomPadding() {
-    return cameraBottomPaddingForGameWidth(this.gameWidth());
+    return cameraBottomPaddingForViewport(
+      this.gameWidth(),
+      this.viewportHeight()
+    );
   }
 
   private cameraTargetY(y: number) {

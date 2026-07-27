@@ -57,9 +57,14 @@ Observed red/green result:
   outer edge the user confirmed already works.
 - The green probe reaches both mode-specific collision edges without crossing
   them and keeps contacts inside the camera at all four viewports.
+- The later orientation regression preserves those same horizontal bounds:
+  coarse-pointer landscape keeps touch input, short-screen camera padding keeps
+  an airborne player visible, and the 758 px desktop edge remains unchanged.
 
 Evidence:
 [`world-bounds.json`](evidence/world-bounds-fix/world-bounds.json).
+Orientation evidence:
+[`ui-resize.json`](evidence/ui-resize-fix/chromium/ui-resize.json).
 
 ## Tower ledge status
 

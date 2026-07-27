@@ -1,0 +1,677 @@
+{
+  "generatedAt": "2026-07-27T12:54:09.298Z",
+  "browser": "webkit",
+  "observations": {
+    "portrait": {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "coarsePointer": true,
+      "controlsHintDisplay": "none",
+      "touchControls": {
+        "display": "flex",
+        "buttons": [
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 190,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          }
+        ]
+      },
+      "scene": {
+        "logicalX": 240,
+        "y": 17206,
+        "vx": 0,
+        "vy": 0,
+        "charge": 0,
+        "charging": false,
+        "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+        "playerRect": {
+          "left": 177.5,
+          "right": 197.5,
+          "top": 658,
+          "bottom": 686
+        },
+        "playerVisible": true
+      },
+      "events": {
+        "launches": 0,
+        "falls": 0
+      }
+    },
+    "landscape": {
+      "viewport": {
+        "width": 812,
+        "height": 375
+      },
+      "coarsePointer": true,
+      "controlsHintDisplay": "none",
+      "touchControls": {
+        "display": "flex",
+        "buttons": [
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 190,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          }
+        ]
+      },
+      "scene": {
+        "logicalX": 240,
+        "y": 17206,
+        "vx": 0,
+        "vy": 0,
+        "charge": 0,
+        "charging": false,
+        "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+        "playerRect": {
+          "left": 396,
+          "right": 416,
+          "top": 221,
+          "bottom": 249
+        },
+        "playerVisible": true
+      },
+      "events": {
+        "launches": 0,
+        "falls": 0
+      }
+    },
+    "charging": {
+      "before": {
+        "viewport": {
+          "width": 812,
+          "height": 375
+        },
+        "coarsePointer": true,
+        "controlsHintDisplay": "none",
+        "touchControls": {
+          "display": "flex",
+          "buttons": [
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 190,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            }
+          ]
+        },
+        "scene": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 40,
+          "charging": true,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 462.5000000000004,
+            "right": 482.5000000000004,
+            "top": 221,
+            "bottom": 249
+          },
+          "playerVisible": true
+        },
+        "events": {
+          "launches": 0,
+          "falls": 0
+        }
+      },
+      "after": {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "coarsePointer": true,
+        "controlsHintDisplay": "none",
+        "touchControls": {
+          "display": "flex",
+          "buttons": [
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 180,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            }
+          ]
+        },
+        "scene": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 70,
+          "charging": true,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 136.5000000000004,
+            "right": 156.5000000000004,
+            "top": 414,
+            "bottom": 442
+          },
+          "playerVisible": true
+        },
+        "events": {
+          "launches": 0,
+          "falls": 0
+        }
+      }
+    },
+    "airborne": {
+      "before": {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "coarsePointer": true,
+        "controlsHintDisplay": "none",
+        "touchControls": {
+          "display": "flex",
+          "buttons": [
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 180,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            }
+          ]
+        },
+        "scene": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 391.3666666666667,
+          "vy": -940.1866666666667,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 136.5000000000004,
+            "right": 156.5000000000004,
+            "top": 414,
+            "bottom": 442
+          },
+          "playerVisible": true
+        },
+        "events": {
+          "launches": 1,
+          "falls": 0
+        }
+      },
+      "after": {
+        "viewport": {
+          "width": 812,
+          "height": 375
+        },
+        "coarsePointer": true,
+        "controlsHintDisplay": "none",
+        "touchControls": {
+          "display": "flex",
+          "buttons": [
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 190,
+              "height": 50,
+              "disabled": false
+            },
+            {
+              "width": 52,
+              "height": 50,
+              "disabled": false
+            }
+          ]
+        },
+        "scene": {
+          "logicalX": 366.3872222222226,
+          "y": 17018.23877777778,
+          "vx": 51.366666666666674,
+          "vy": -416.01999999999964,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 522.3872222222226,
+            "right": 542.3872222222226,
+            "top": 91.6403227069859,
+            "bottom": 119.6403227069859
+          },
+          "playerVisible": true
+        },
+        "events": {
+          "launches": 1,
+          "falls": 0
+        }
+      }
+    },
+    "dialog": {
+      "landscape": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 211,
+          "right": 601,
+          "top": 15,
+          "bottom": 360,
+          "width": 390,
+          "height": 345
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      },
+      "portrait": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 10,
+          "right": 310,
+          "top": 10,
+          "bottom": 558,
+          "width": 300,
+          "height": 548
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      }
+    },
+    "desktop": {
+      "coarsePointer": false,
+      "touchControlsDisplay": "none",
+      "controlsHintDisplay": "block"
+    }
+  },
+  "checks": [
+    {
+      "name": "coarse-pointer landscape keeps fixed touch controls",
+      "pass": true,
+      "actual": {
+        "display": "flex",
+        "buttons": [
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 190,
+            "height": 50,
+            "disabled": false
+          },
+          {
+            "width": 52,
+            "height": 50,
+            "disabled": false
+          }
+        ]
+      },
+      "expected": "display flex"
+    },
+    {
+      "name": "coarse-pointer landscape hides keyboard-only hint",
+      "pass": true,
+      "actual": "none",
+      "expected": "none"
+    },
+    {
+      "name": "landscape touch controls retain 44px targets",
+      "pass": true,
+      "actual": [
+        {
+          "width": 52,
+          "height": 50,
+          "disabled": false
+        },
+        {
+          "width": 190,
+          "height": 50,
+          "disabled": false
+        },
+        {
+          "width": 52,
+          "height": 50,
+          "disabled": false
+        }
+      ],
+      "expected": "all dimensions >= 44px"
+    },
+    {
+      "name": "grounded orientation preserves attempt and logical position",
+      "pass": true,
+      "actual": {
+        "portrait": {
+          "logicalX": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 177.5,
+            "right": 197.5,
+            "top": 658,
+            "bottom": 686
+          },
+          "playerVisible": true
+        },
+        "landscape": {
+          "logicalX": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 396,
+            "right": 416,
+            "top": 221,
+            "bottom": 249
+          },
+          "playerVisible": true
+        }
+      },
+      "expected": "same attempt and logical x within 1px"
+    },
+    {
+      "name": "grounded player remains visible after landscape resize",
+      "pass": true,
+      "actual": {
+        "left": 396,
+        "right": 416,
+        "top": 221,
+        "bottom": 249
+      },
+      "expected": "inside canvas"
+    },
+    {
+      "name": "landscape touch control moves the player",
+      "pass": true,
+      "actual": {
+        "beforeX": 240,
+        "afterX": 303.3333333333337,
+        "delta": 63.33333333333371
+      },
+      "expected": "delta > 10 logical pixels"
+    },
+    {
+      "name": "charge survives landscape-to-portrait resize",
+      "pass": true,
+      "actual": {
+        "before": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 40,
+          "charging": true,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 462.5000000000004,
+            "right": 482.5000000000004,
+            "top": 221,
+            "bottom": 249
+          },
+          "playerVisible": true
+        },
+        "after": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 70,
+          "charging": true,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 136.5000000000004,
+            "right": 156.5000000000004,
+            "top": 414,
+            "bottom": 442
+          },
+          "playerVisible": true
+        }
+      },
+      "expected": "charging, nondecreasing charge, same attempt"
+    },
+    {
+      "name": "charging player remains visible after portrait resize",
+      "pass": true,
+      "actual": {
+        "left": 136.5000000000004,
+        "right": 156.5000000000004,
+        "top": 414,
+        "bottom": 442
+      },
+      "expected": "inside canvas"
+    },
+    {
+      "name": "airborne resize preserves attempt without a synthetic fall",
+      "pass": true,
+      "actual": {
+        "before": {
+          "logicalX": 306.5000000000004,
+          "y": 17206,
+          "vx": 391.3666666666667,
+          "vy": -940.1866666666667,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 136.5000000000004,
+            "right": 156.5000000000004,
+            "top": 414,
+            "bottom": 442
+          },
+          "playerVisible": true
+        },
+        "after": {
+          "logicalX": 366.3872222222226,
+          "y": 17018.23877777778,
+          "vx": 51.366666666666674,
+          "vy": -416.01999999999964,
+          "charge": 0,
+          "charging": false,
+          "attemptId": "attempt_ms38alyf_23f9a708-2bcc-4ce9-a3db-ea7430152dcd",
+          "playerRect": {
+            "left": 522.3872222222226,
+            "right": 542.3872222222226,
+            "top": 91.6403227069859,
+            "bottom": 119.6403227069859
+          },
+          "playerVisible": true
+        },
+        "events": {
+          "launches": 1,
+          "falls": 0
+        }
+      },
+      "expected": "same attempt and fall count"
+    },
+    {
+      "name": "airborne player remains visible after landscape resize",
+      "pass": true,
+      "actual": {
+        "left": 522.3872222222226,
+        "right": 542.3872222222226,
+        "top": 91.6403227069859,
+        "bottom": 119.6403227069859
+      },
+      "expected": "inside canvas"
+    },
+    {
+      "name": "Guide remains focused, paused, and contained in landscape",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 211,
+          "right": 601,
+          "top": 15,
+          "bottom": 360,
+          "width": 390,
+          "height": 345
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      },
+      "expected": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true
+      }
+    },
+    {
+      "name": "Guide keeps visible disabled touch controls in landscape",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 211,
+          "right": 601,
+          "top": 15,
+          "bottom": 360,
+          "width": 390,
+          "height": 345
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      },
+      "expected": {
+        "display": "flex",
+        "disabled": true
+      }
+    },
+    {
+      "name": "Guide remains focused, paused, and contained in portrait",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 10,
+          "right": 310,
+          "top": 10,
+          "bottom": 558,
+          "width": 300,
+          "height": 548
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      },
+      "expected": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true
+      }
+    },
+    {
+      "name": "Guide keeps visible disabled touch controls in portrait",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "inputPaused": true,
+        "focusInside": true,
+        "insideViewport": true,
+        "cardRect": {
+          "left": 10,
+          "right": 310,
+          "top": 10,
+          "bottom": 558,
+          "width": 300,
+          "height": 548
+        },
+        "touchControlsDisplay": "flex",
+        "touchControlsDisabled": true
+      },
+      "expected": {
+        "display": "flex",
+        "disabled": true
+      }
+    },
+    {
+      "name": "Guide restores focus after orientation changes",
+      "pass": true,
+      "actual": "登Fallstack0Community fallsGuideMemoryLower RuinsHazard activeArrows move · Hold Space · Release to leapLocal practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.◀Hold · Release▶",
+      "expected": "Guide"
+    },
+    {
+      "name": "fine-pointer landscape keeps desktop controls",
+      "pass": true,
+      "actual": {
+        "coarsePointer": false,
+        "touchControlsDisplay": "none",
+        "controlsHintDisplay": "block"
+      },
+      "expected": {
+        "coarsePointer": false,
+        "touchControlsDisplay": "none",
+        "controlsHintDisplay": "block"
+      }
+    }
+  ],
+  "failures": []
+}

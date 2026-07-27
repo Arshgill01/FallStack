@@ -84,9 +84,25 @@ checks across five notice states, two viewports, and every start/checkpoint
 recovery with zero player, target, notice, or viewport overlap. Details are in
 [`ISSUE-016`](issues/ISSUE-016.md).
 
+## QR-017 — mobile orientation continuity
+
+Rotating a coarse-pointer phone to 812×375 crossed the width-only desktop
+breakpoint, removed all touch controls, and showed the keyboard hint. Once the
+controls were restored, the short wide camera's fixed 260 px bottom padding
+also proved taller than the 254 px game viewport and could place an airborne
+climber above the canvas.
+
+Input visibility now follows pointer capability, while the existing wide header
+layout remains width-based. Camera padding retains its original tall-screen
+targets but is capped to 60% of the live viewport height on short screens.
+[Chromium](evidence/ui-resize-fix/chromium/ui-resize.json) and
+[WebKit](evidence/ui-resize-fix/webkit/ui-resize.json) each pass 16 checks
+through grounded, charging, airborne, dialog, and fine-pointer desktop states.
+Horizontal desktop/fullscreen physics edges are unchanged. Details are in
+[`ISSUE-017`](issues/ISSUE-017.md).
+
 ## Remaining UI gate
 
-QR-011 and QR-014–016 are closed. Workstream G is not: exhaustive contrast
-sampling beyond the audited primary/receipt actions, orientation/resize, and
-live server-backed error/capped/stale states still require a complete
-interaction audit.
+QR-011 and QR-014–017 are closed. Workstream G is not: exhaustive contrast
+sampling beyond the audited primary/receipt actions and live server-backed
+error/capped/stale states still require a complete interaction audit.

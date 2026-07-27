@@ -15,6 +15,7 @@ export type GameDimensions = {
 
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
+const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
 export const ROUTE_PLAYABLE_INSET = 34;
 export const CAMERA_AIR_LOOKAHEAD = 64;
 export const MOBILE_GAME_BREAKPOINT = 600;
@@ -108,6 +109,16 @@ export function cameraBottomPaddingForGameWidth(gameWidth: number): number {
   return gameWorldWidth(gameWidth) > WORLD_WIDTH
     ? WIDE_CAMERA_BOTTOM_PADDING
     : NARROW_CAMERA_BOTTOM_PADDING;
+}
+
+export function cameraBottomPaddingForViewport(
+  gameWidth: number,
+  viewportHeight: number
+): number {
+  return Math.min(
+    cameraBottomPaddingForGameWidth(gameWidth),
+    Math.max(0, viewportHeight) * MAX_CAMERA_BOTTOM_PADDING_RATIO
+  );
 }
 
 function cleanPixelSize(value: number): number {

@@ -567,6 +567,12 @@ button:disabled {
   }
 }
 
+@media (pointer: coarse) {
+  .controls-hint {
+    display: none !important;
+  }
+}
+
 /* Mutation banner — slides down cleanly from below the top header */
 .mutation-banner {
   position: absolute;
@@ -1198,12 +1204,15 @@ button:disabled {
 }
 
 /* =============================================
-   TOUCH CONTROLS - HIDE ON DESKTOP
+   TOUCH CONTROLS - HIDE FOR DESKTOP INPUT
    ============================================= */
-@media (min-width: 600px) {
+@media (min-width: 600px) and (pointer: fine) {
   .touch-controls {
     display: none !important;
   }
+}
+
+@media (min-width: 600px) {
   .topbar {
     display: flex;
     min-height: 66px;

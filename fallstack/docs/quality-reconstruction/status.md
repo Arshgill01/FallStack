@@ -25,7 +25,7 @@ all eleven zone clears to the summit.
 | Pull current `master` | Complete | Fast-forwarded `7875568 → 7c4e06f` |
 | Define root goal | Complete | Commit `0aaf5b8` |
 | Mac toolchain | Complete | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7 |
-| Project checks | Complete | Type-check, lint, 151 tests, build passed |
+| Project checks | Complete | Type-check, lint, 152 tests, build passed |
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
@@ -36,6 +36,7 @@ all eleven zone clears to the summit.
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
 | Dialog input/accessibility | Complete | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified |
 | Temporary HUD overlays | Complete | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point |
+| Mobile orientation | Complete | Chromium and WebKit pass grounded, charging, airborne, modal, and desktop-control continuity checks |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
@@ -61,6 +62,7 @@ These are investigation records, not all approved fixes.
 | QR-014 | High | UI/input | Fixed and browser-regressed | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower |
 | QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
 | QR-016 | Medium | UI/feedback | Fixed and browser-regressed | Short-screen receipts and simultaneous remote notices no longer cover the player or next recovery landing |
+| QR-017 | High | UI/input/camera | Fixed and browser-regressed | Coarse-pointer landscape retains touch controls and short-screen camera framing without changing desktop/fullscreen edges |
 
 ## Decisions
 
@@ -108,6 +110,12 @@ These are investigation records, not all approved fixes.
   launch, and prevents hidden persistent events until the dialog closes.
 - 2026-07-27: Browser zoom remains available on the document and tower.
   `touch-action: none` is retained only by the fixed hold controls.
+- 2026-07-27: Touch-control visibility follows pointer capability rather than
+  viewport width. Wide layout styling remains width-based, and horizontal
+  desktop/fullscreen physics bounds remain unchanged.
+- 2026-07-27: Camera bottom padding keeps its established 150/260 px targets
+  but may occupy at most 60% of a short live viewport so rotation cannot place
+  the player above the canvas.
 - 2026-07-27: At 320×568-class layouts, a local receipt takes priority over a
   simultaneous remote beat. The full receipt remains in the live region while
   the visible proof is compact enough to preserve the recovery jump.
@@ -292,7 +300,7 @@ Results:
   The green report passes at 320×568 and 375×812 with `13 px` body/status,
   `14 px` result body, 66–67 px non-overlapping headers, and no horizontal
   sheet overflow. Chromium and WebKit runtime smokes pass afterward.
-- Current repository checks pass: 151/151 tests, type-check, lint, build, and
+- Current repository checks pass: 152/152 tests, type-check, lint, build, and
   `git diff --check`. The known Phaser chunk warning remains.
 - The three QR-004 direction previews are each 48.008-second stereo Opus at
   48 kHz. They measure `-22.1…-22.0 LUFS`, `5.6…6.5 LU` LRA, and
@@ -323,6 +331,19 @@ Results:
   landing, one another, or the tower viewport at every start/checkpoint
   recovery. The compact receipt is 91.5 px with 13 px explanation text and a
   10.63:1 counter.
+- The orientation red run reproduced five coarse-pointer landscape failures:
+  touch controls were hidden, the keyboard hint appeared, all touch targets
+  collapsed to 0×0, touch movement was unavailable, and the Guide exposed no
+  visible disabled controls. Restoring pointer-aware controls then exposed the
+  fixed 260 px camera padding exceeding a 254 px landscape game viewport.
+- Chromium and WebKit now pass 16/16 resize checks each. Grounded position,
+  charging, airborne attempt identity, fall count, player visibility, dialog
+  isolation, and focus restore survive rotation. The fine-pointer 812×375
+  presentation still uses desktop controls.
+- The post-orientation regression preserves mobile wall planes at 320, 375, and
+  480 px and the original 758 px desktop outer edge. Both runtime smokes,
+  48/48 Chromium and WebKit accessibility checks, 266/266 overlay checks, and
+  mobile readability pass.
 
 ## Worktree safety
 
