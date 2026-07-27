@@ -43,8 +43,35 @@ reports zero failures at 320×568 and 375×812:
 Before/after diagnosis and the six production screenshots are indexed in
 [`ISSUE-011`](issues/ISSUE-011.md).
 
+## QR-014 — modal gameplay isolation
+
+Guide and Tower Memory visually covered the game and disabled touch controls,
+but Phaser continued reading raw cursor and Space keys. A production red run
+launched the player behind the 375×812 Guide and produced a hidden desktop fall.
+
+Both dialogs now pause the whole scene, reset shared and Phaser input, cancel a
+planted charge without launching, and resume cleanly after close. The
+[Chromium](evidence/ui-accessibility-fix/chromium/ui-accessibility.json) and
+[WebKit](evidence/ui-accessibility-fix/webkit/ui-accessibility.json) reports
+show zero position, attempt, charge, launch, and fall deltas for both dialogs at
+375×812 and 1280×800. Details are in
+[`ISSUE-014`](issues/ISSUE-014.md).
+
+## QR-015 — browser and dialog accessibility
+
+The same production audit reproduced disabled browser zoom, incomplete focus
+containment, an unassociated Tower Memory heading, absent theme metadata, and
+2.51:1 contrast on the primary modal action.
+
+Zoom is available again while the three hold controls retain direct touch
+ownership. Both dialog focus loops are explicit in Chromium and WebKit, Tower
+Memory references its visible title, and the action contrast is now 6.93:1.
+Each browser passes 48 checks at mobile and desktop presentation sizes. Details
+and screenshots are in [`ISSUE-015`](issues/ISSUE-015.md).
+
 ## Remaining UI gate
 
-QR-011 is closed. Workstream G is not: contrast sampling, focus trap/restore,
-temporary-message landing occlusion, long/edge copy, orientation/resize, and
-all error/capped/stale states still require a complete interaction audit.
+QR-011, QR-014, and QR-015 are closed. Workstream G is not: exhaustive contrast
+sampling, temporary-message landing occlusion, long/edge copy,
+orientation/resize, and all error/capped/stale states still require a complete
+interaction audit.

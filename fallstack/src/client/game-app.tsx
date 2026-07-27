@@ -237,6 +237,8 @@ class FallstackScene extends Phaser.Scene {
     .platforms;
   private chargeTime = 0;
   private publishedChargePercent = -1;
+  private inputPaused = false;
+  private sceneBooted = false;
   private stableFrameCount = 0;
   private controlsReady = false;
   private currentRouteOffset = 0;
@@ -261,6 +263,35 @@ class FallstackScene extends Phaser.Scene {
     this.renderScale = renderScale;
   }
 
+  setInputPaused(inputPaused: boolean) {
+    this.inputPaused = inputPaused;
+    resetSharedInput();
+    this.cursors?.left?.reset();
+    this.cursors?.right?.reset();
+    this.space?.reset();
+
+    if (inputPaused && this.charging) {
+      this.charging = false;
+      this.chargeTime = 0;
+      this.publishedChargePercent = 0;
+      window.dispatchEvent(
+        new CustomEvent('fallstack:charge', { detail: { percent: 0 } })
+      );
+    }
+
+    if (inputPaused && this.player) {
+      const body = this.player.body;
+      if (body.blocked.down || body.touching.down) {
+        body.setAccelerationX(0);
+        body.setVelocityX(0);
+      }
+    }
+
+    if (!this.sceneBooted) return;
+    if (inputPaused) this.scene.pause();
+    else this.scene.resume();
+  }
+
   // Visual enhancements
   private particles: Array<{
     x: number;
@@ -276,6 +307,7 @@ class FallstackScene extends Phaser.Scene {
   }> = [];
 
   create() {
+    this.sceneBooted = true;
     window.fallstackInput = window.fallstackInput ?? { ...INITIAL_INPUT };
     this.cameras.main.setZoom(this.renderScale);
     this.applyViewportLayout(false);
@@ -348,6 +380,7 @@ class FallstackScene extends Phaser.Scene {
     this.refreshSnapshot(window.fallstackSnapshot);
     this.publishZone();
     this.snapCameraToPlayer();
+    if (this.inputPaused) this.scene.pause();
   }
 
   override update(_time: number, deltaMs: number) {
@@ -701,6 +734,7 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private readInput(): InputState {
+    if (this.inputPaused) return { ...INITIAL_INPUT };
     return {
       left: Boolean(window.fallstackInput?.left || this.cursors?.left?.isDown),
       right: Boolean(
@@ -1653,6 +1687,7 @@ export function GameApp() {
   const [remoteBeat, setRemoteBeat] = useState<MutationBeat | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<FallstackScene | null>(null);
+  const inputPausedRef = useRef(false);
   const soundRef = useRef<ProceduralSound | null>(
     new ProceduralSound({ gameplayMuted, musicMuted })
   );
@@ -2019,18 +2054,30 @@ export function GameApp() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSummitOpen(false);
       if (event.key === 'Tab') {
+        const dialog = resultDialogRef.current;
         const focusable = Array.from(
-          resultDialogRef.current?.querySelectorAll<HTMLButtonElement>(
+          dialog?.querySelectorAll<HTMLButtonElement>(
             'button:not(:disabled)'
           ) ?? []
         );
         const first = focusable[0];
         const last = focusable.at(-1);
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
+        if (!dialog || !first || !last) return;
+        const activeElement = document.activeElement;
+        if (
+          event.shiftKey &&
+          (activeElement === dialog ||
+            activeElement === first ||
+            !dialog.contains(activeElement))
+        ) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
+        } else if (
+          !event.shiftKey &&
+          (activeElement === dialog ||
+            activeElement === last ||
+            !dialog.contains(activeElement))
+        ) {
           event.preventDefault();
           first.focus();
         }
@@ -2056,18 +2103,30 @@ export function GameApp() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setGuideOpen(false);
       if (event.key === 'Tab') {
+        const dialog = guideDialogRef.current;
         const focusable = Array.from(
-          guideDialogRef.current?.querySelectorAll<HTMLButtonElement>(
+          dialog?.querySelectorAll<HTMLButtonElement>(
             'button:not(:disabled)'
           ) ?? []
         );
         const first = focusable[0];
         const last = focusable.at(-1);
-        if (!first || !last) return;
-        if (event.shiftKey && document.activeElement === first) {
+        if (!dialog || !first || !last) return;
+        const activeElement = document.activeElement;
+        if (
+          event.shiftKey &&
+          (activeElement === dialog ||
+            activeElement === first ||
+            !dialog.contains(activeElement))
+        ) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
+        } else if (
+          !event.shiftKey &&
+          (activeElement === dialog ||
+            activeElement === last ||
+            !dialog.contains(activeElement))
+        ) {
           event.preventDefault();
           first.focus();
         }
@@ -2079,6 +2138,13 @@ export function GameApp() {
       previousGuideFocusRef.current?.focus();
     };
   }, [guideOpen]);
+
+  useEffect(() => {
+    const inputPaused = summitOpen || guideOpen;
+    inputPausedRef.current = inputPaused;
+    resetSharedInput();
+    sceneRef.current?.setInputPaused(inputPaused);
+  }, [guideOpen, summitOpen]);
 
   const copyResult = useCallback(async () => {
     if (!snapshot) return;
@@ -2125,6 +2191,7 @@ export function GameApp() {
 
       const scene = new FallstackScene('FallstackScene');
       scene.setRenderScale(renderScale);
+      scene.setInputPaused(inputPausedRef.current);
       sceneRef.current = scene;
       const game = new Phaser.Game({
         type: Phaser.CANVAS,
@@ -2789,7 +2856,7 @@ export function GameApp() {
           className="result-backdrop"
           role="dialog"
           aria-modal="true"
-          aria-label="Tower Memory"
+          aria-labelledby="fallstack-memory-title"
         >
           <div
             ref={resultDialogRef}
@@ -2808,7 +2875,7 @@ export function GameApp() {
                 <span>{towerMemory?.scopeLabel ?? 'This community'}</span>
                 <span>{towerMemory?.revisionLabel ?? 'BOARD'}</span>
               </div>
-              <h2>Tower Memory</h2>
+              <h2 id="fallstack-memory-title">Tower Memory</h2>
               <p className="tower-memory-intro">
                 {towerMemory?.introCopy ??
                   'This subreddit shaped this daily route.'}

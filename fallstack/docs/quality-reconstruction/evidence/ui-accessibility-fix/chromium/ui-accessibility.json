@@ -1,0 +1,697 @@
+{
+  "generatedAt": "2026-07-27T12:35:11.533Z",
+  "browser": "chromium",
+  "observations": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "surface": {
+        "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "themeColor": "#08050a",
+        "bodyTouchAction": "manipulation",
+        "towerTouchAction": "pinch-zoom",
+        "touchControlsTouchAction": "none"
+      },
+      "guide": {
+        "semantics": {
+          "role": "dialog",
+          "modal": "true",
+          "labelledBy": "fallstack-guide-title",
+          "labelExists": true,
+          "expectedLabelledBy": "fallstack-guide-title",
+          "focusedCard": true,
+          "touchControlsDisabled": true
+        },
+        "reverseTabInside": true,
+        "forwardTabInside": true,
+        "dialogStillOpen": true,
+        "closeButtonEnabled": true,
+        "before": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m4gs_fbc492ce-5536-4ce0-a54b-ae35ab44453c",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "after": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m4gs_fbc492ce-5536-4ce0-a54b-ae35ab44453c",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "deltas": {
+          "x": 0,
+          "y": 0,
+          "launches": 0,
+          "falls": 0,
+          "charge": 0
+        }
+      },
+      "guideContrast": {
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "memory": {
+        "semantics": {
+          "role": "dialog",
+          "modal": "true",
+          "labelledBy": "fallstack-memory-title",
+          "labelExists": true,
+          "expectedLabelledBy": "fallstack-memory-title",
+          "focusedCard": true,
+          "touchControlsDisabled": true
+        },
+        "reverseTabInside": true,
+        "forwardTabInside": true,
+        "dialogStillOpen": true,
+        "closeButtonEnabled": true,
+        "before": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m634_d37b232e-c221-483a-a2e6-a5d2ea92883e",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "after": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m634_d37b232e-c221-483a-a2e6-a5d2ea92883e",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "deltas": {
+          "x": 0,
+          "y": 0,
+          "launches": 0,
+          "falls": 0,
+          "charge": 0
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "surface": {
+        "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "themeColor": "#08050a",
+        "bodyTouchAction": "manipulation",
+        "towerTouchAction": "pinch-zoom",
+        "touchControlsTouchAction": "none"
+      },
+      "guide": {
+        "semantics": {
+          "role": "dialog",
+          "modal": "true",
+          "labelledBy": "fallstack-guide-title",
+          "labelExists": true,
+          "expectedLabelledBy": "fallstack-guide-title",
+          "focusedCard": true,
+          "touchControlsDisabled": true
+        },
+        "reverseTabInside": true,
+        "forwardTabInside": true,
+        "dialogStillOpen": true,
+        "closeButtonEnabled": true,
+        "before": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m7g7_1139534d-2ed9-4333-ad2b-2f2789cab19d",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "after": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m7g7_1139534d-2ed9-4333-ad2b-2f2789cab19d",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "deltas": {
+          "x": 0,
+          "y": 0,
+          "launches": 0,
+          "falls": 0,
+          "charge": 0
+        }
+      },
+      "guideContrast": {
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "memory": {
+        "semantics": {
+          "role": "dialog",
+          "modal": "true",
+          "labelledBy": "fallstack-memory-title",
+          "labelExists": true,
+          "expectedLabelledBy": "fallstack-memory-title",
+          "focusedCard": true,
+          "touchControlsDisabled": true
+        },
+        "reverseTabInside": true,
+        "forwardTabInside": true,
+        "dialogStillOpen": true,
+        "closeButtonEnabled": true,
+        "before": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m91l_8df4ae98-fd26-49c3-857f-1b951525456d",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "after": {
+          "x": 240,
+          "y": 17206,
+          "vx": 0,
+          "vy": 0,
+          "charge": 0,
+          "charging": false,
+          "inputPaused": true,
+          "attemptId": "attempt_ms37m91l_8df4ae98-fd26-49c3-857f-1b951525456d",
+          "events": {
+            "launches": 0,
+            "falls": 0
+          }
+        },
+        "deltas": {
+          "x": 0,
+          "y": 0,
+          "launches": 0,
+          "falls": 0,
+          "charge": 0
+        }
+      }
+    }
+  ],
+  "splashMetadata": {
+    "viewport": "width=device-width, initial-scale=1.0",
+    "themeColor": "#08050a"
+  },
+  "checks": [
+    {
+      "name": "375x812 game viewport permits browser zoom",
+      "pass": true,
+      "actual": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "expected": "no user-scalable=no or maximum-scale"
+    },
+    {
+      "name": "375x812 game declares a browser theme color",
+      "pass": true,
+      "actual": "#08050a",
+      "expected": "#08050a"
+    },
+    {
+      "name": "375x812 body preserves browser zoom gestures",
+      "pass": true,
+      "actual": "manipulation",
+      "expected": "manipulation"
+    },
+    {
+      "name": "375x812 tower preserves pinch zoom",
+      "pass": true,
+      "actual": "pinch-zoom",
+      "expected": "pinch-zoom"
+    },
+    {
+      "name": "375x812 hold controls retain direct touch ownership",
+      "pass": true,
+      "actual": "none",
+      "expected": "none"
+    },
+    {
+      "name": "375x812 Guide has a visible programmatic title",
+      "pass": true,
+      "actual": {
+        "role": "dialog",
+        "modal": "true",
+        "labelledBy": "fallstack-guide-title",
+        "labelExists": true,
+        "expectedLabelledBy": "fallstack-guide-title",
+        "focusedCard": true,
+        "touchControlsDisabled": true
+      },
+      "expected": "aria-labelledby=fallstack-guide-title"
+    },
+    {
+      "name": "375x812 Guide receives focus on open",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "375x812 Guide traps forward and reverse Tab",
+      "pass": true,
+      "actual": {
+        "reverse": true,
+        "forward": true
+      },
+      "expected": {
+        "reverse": true,
+        "forward": true
+      }
+    },
+    {
+      "name": "375x812 Guide disables touch controls",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "375x812 Guide pauses Phaser input while open",
+      "pass": true,
+      "actual": {
+        "before": true,
+        "after": true
+      },
+      "expected": {
+        "before": true,
+        "after": true
+      }
+    },
+    {
+      "name": "375x812 Guide blocks hidden movement, charge, launch, and fall",
+      "pass": true,
+      "actual": {
+        "x": 0,
+        "y": 0,
+        "launches": 0,
+        "falls": 0,
+        "charge": 0
+      },
+      "expected": {
+        "absX": "<= 0.5",
+        "launches": 0,
+        "falls": 0,
+        "unchangedAttempt": true,
+        "charge": 0
+      }
+    },
+    {
+      "name": "375x812 Guide remains operable after ignored gameplay keys",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "closeEnabled": true
+      },
+      "expected": {
+        "open": true,
+        "closeEnabled": true
+      }
+    },
+    {
+      "name": "375x812 Guide primary action meets 4.5:1 text contrast",
+      "pass": true,
+      "actual": {
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide restores focus to its opener",
+      "pass": true,
+      "actual": "Guide",
+      "expected": "Guide"
+    },
+    {
+      "name": "375x812 keyboard input resumes after Guide closes",
+      "pass": true,
+      "actual": 38,
+      "expected": "> 10 logical pixels"
+    },
+    {
+      "name": "375x812 Tower Memory has a visible programmatic title",
+      "pass": true,
+      "actual": {
+        "role": "dialog",
+        "modal": "true",
+        "labelledBy": "fallstack-memory-title",
+        "labelExists": true,
+        "expectedLabelledBy": "fallstack-memory-title",
+        "focusedCard": true,
+        "touchControlsDisabled": true
+      },
+      "expected": "aria-labelledby=fallstack-memory-title"
+    },
+    {
+      "name": "375x812 Tower Memory receives focus on open",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "375x812 Tower Memory traps forward and reverse Tab",
+      "pass": true,
+      "actual": {
+        "reverse": true,
+        "forward": true
+      },
+      "expected": {
+        "reverse": true,
+        "forward": true
+      }
+    },
+    {
+      "name": "375x812 Tower Memory disables touch controls",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "375x812 Tower Memory pauses Phaser input while open",
+      "pass": true,
+      "actual": {
+        "before": true,
+        "after": true
+      },
+      "expected": {
+        "before": true,
+        "after": true
+      }
+    },
+    {
+      "name": "375x812 Tower Memory blocks hidden movement, charge, launch, and fall",
+      "pass": true,
+      "actual": {
+        "x": 0,
+        "y": 0,
+        "launches": 0,
+        "falls": 0,
+        "charge": 0
+      },
+      "expected": {
+        "absX": "<= 0.5",
+        "launches": 0,
+        "falls": 0,
+        "unchangedAttempt": true,
+        "charge": 0
+      }
+    },
+    {
+      "name": "375x812 Tower Memory remains operable after ignored gameplay keys",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "closeEnabled": true
+      },
+      "expected": {
+        "open": true,
+        "closeEnabled": true
+      }
+    },
+    {
+      "name": "375x812 Tower Memory restores focus to its opener",
+      "pass": true,
+      "actual": "Memory",
+      "expected": "Memory"
+    },
+    {
+      "name": "1280x800 game viewport permits browser zoom",
+      "pass": true,
+      "actual": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+      "expected": "no user-scalable=no or maximum-scale"
+    },
+    {
+      "name": "1280x800 game declares a browser theme color",
+      "pass": true,
+      "actual": "#08050a",
+      "expected": "#08050a"
+    },
+    {
+      "name": "1280x800 body preserves browser zoom gestures",
+      "pass": true,
+      "actual": "manipulation",
+      "expected": "manipulation"
+    },
+    {
+      "name": "1280x800 tower preserves pinch zoom",
+      "pass": true,
+      "actual": "pinch-zoom",
+      "expected": "pinch-zoom"
+    },
+    {
+      "name": "1280x800 hold controls retain direct touch ownership",
+      "pass": true,
+      "actual": "none",
+      "expected": "none"
+    },
+    {
+      "name": "1280x800 Guide has a visible programmatic title",
+      "pass": true,
+      "actual": {
+        "role": "dialog",
+        "modal": "true",
+        "labelledBy": "fallstack-guide-title",
+        "labelExists": true,
+        "expectedLabelledBy": "fallstack-guide-title",
+        "focusedCard": true,
+        "touchControlsDisabled": true
+      },
+      "expected": "aria-labelledby=fallstack-guide-title"
+    },
+    {
+      "name": "1280x800 Guide receives focus on open",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "1280x800 Guide traps forward and reverse Tab",
+      "pass": true,
+      "actual": {
+        "reverse": true,
+        "forward": true
+      },
+      "expected": {
+        "reverse": true,
+        "forward": true
+      }
+    },
+    {
+      "name": "1280x800 Guide disables touch controls",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "1280x800 Guide pauses Phaser input while open",
+      "pass": true,
+      "actual": {
+        "before": true,
+        "after": true
+      },
+      "expected": {
+        "before": true,
+        "after": true
+      }
+    },
+    {
+      "name": "1280x800 Guide blocks hidden movement, charge, launch, and fall",
+      "pass": true,
+      "actual": {
+        "x": 0,
+        "y": 0,
+        "launches": 0,
+        "falls": 0,
+        "charge": 0
+      },
+      "expected": {
+        "absX": "<= 0.5",
+        "launches": 0,
+        "falls": 0,
+        "unchangedAttempt": true,
+        "charge": 0
+      }
+    },
+    {
+      "name": "1280x800 Guide remains operable after ignored gameplay keys",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "closeEnabled": true
+      },
+      "expected": {
+        "open": true,
+        "closeEnabled": true
+      }
+    },
+    {
+      "name": "1280x800 Guide primary action meets 4.5:1 text contrast",
+      "pass": true,
+      "actual": {
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide restores focus to its opener",
+      "pass": true,
+      "actual": "Guide",
+      "expected": "Guide"
+    },
+    {
+      "name": "1280x800 keyboard input resumes after Guide closes",
+      "pass": true,
+      "actual": 41.16666666666691,
+      "expected": "> 10 logical pixels"
+    },
+    {
+      "name": "1280x800 Tower Memory has a visible programmatic title",
+      "pass": true,
+      "actual": {
+        "role": "dialog",
+        "modal": "true",
+        "labelledBy": "fallstack-memory-title",
+        "labelExists": true,
+        "expectedLabelledBy": "fallstack-memory-title",
+        "focusedCard": true,
+        "touchControlsDisabled": true
+      },
+      "expected": "aria-labelledby=fallstack-memory-title"
+    },
+    {
+      "name": "1280x800 Tower Memory receives focus on open",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "1280x800 Tower Memory traps forward and reverse Tab",
+      "pass": true,
+      "actual": {
+        "reverse": true,
+        "forward": true
+      },
+      "expected": {
+        "reverse": true,
+        "forward": true
+      }
+    },
+    {
+      "name": "1280x800 Tower Memory disables touch controls",
+      "pass": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "1280x800 Tower Memory pauses Phaser input while open",
+      "pass": true,
+      "actual": {
+        "before": true,
+        "after": true
+      },
+      "expected": {
+        "before": true,
+        "after": true
+      }
+    },
+    {
+      "name": "1280x800 Tower Memory blocks hidden movement, charge, launch, and fall",
+      "pass": true,
+      "actual": {
+        "x": 0,
+        "y": 0,
+        "launches": 0,
+        "falls": 0,
+        "charge": 0
+      },
+      "expected": {
+        "absX": "<= 0.5",
+        "launches": 0,
+        "falls": 0,
+        "unchangedAttempt": true,
+        "charge": 0
+      }
+    },
+    {
+      "name": "1280x800 Tower Memory remains operable after ignored gameplay keys",
+      "pass": true,
+      "actual": {
+        "open": true,
+        "closeEnabled": true
+      },
+      "expected": {
+        "open": true,
+        "closeEnabled": true
+      }
+    },
+    {
+      "name": "1280x800 Tower Memory restores focus to its opener",
+      "pass": true,
+      "actual": "Memory",
+      "expected": "Memory"
+    },
+    {
+      "name": "splash viewport permits browser zoom",
+      "pass": true,
+      "actual": "width=device-width, initial-scale=1.0",
+      "expected": "no user-scalable=no or maximum-scale"
+    },
+    {
+      "name": "splash declares a browser theme color",
+      "pass": true,
+      "actual": "#08050a",
+      "expected": "#08050a"
+    }
+  ],
+  "failures": []
+}

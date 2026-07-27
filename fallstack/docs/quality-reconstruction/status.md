@@ -34,6 +34,7 @@ all eleven zone clears to the summit.
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
 | Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
+| Dialog input/accessibility | Complete | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
@@ -56,6 +57,8 @@ These are investigation records, not all approved fixes.
 | QR-011 | Medium | UI | Fixed and browser-regressed | Mobile functional text now meets its role minimum without header or sheet overflow |
 | QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
 | QR-013 | High | QA/playthrough | Fixed and production-replayed | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
+| QR-014 | High | UI/input | Fixed and browser-regressed | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower |
+| QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
 
 ## Decisions
 
@@ -98,6 +101,11 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: QR-004 pauses before production integration. Three original
   directions may be compared at matched loudness, but automated metrics and an
   authoring scorecard do not choose music or approve fatigue.
+- 2026-07-27: Guide and Tower Memory pause the complete Phaser scene. This
+  freezes committed motion and scene timers, cancels planted charge without a
+  launch, and prevents hidden persistent events until the dialog closes.
+- 2026-07-27: Browser zoom remains available on the document and tower.
+  `touch-action: none` is retained only by the fixed hold controls.
 
 ## Commands run
 
@@ -167,6 +175,21 @@ npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-event-hori
 npm run qa:playthrough -- --output docs/quality-reconstruction/evidence/full-playthrough-fixed --browser=chromium --intro-fall --retries=40 --max-jumps=1500
 npm run qa:music-directions -- docs/quality-reconstruction/evidence/music-directions
 npm run qa:music-directions -- /tmp/fallstack-quality/music-directions-repeat
+npm run qa:ui-accessibility -- /tmp/fallstack-quality/ui-accessibility-red --browser=chromium
+npm run type-check
+npm run lint
+npm run build
+npm run qa:ui-accessibility -- docs/quality-reconstruction/evidence/ui-accessibility-fix/chromium --browser=chromium
+npm run qa:ui-accessibility -- docs/quality-reconstruction/evidence/ui-accessibility-fix/webkit --browser=webkit
+npm test
+npm run qa:ui-readability -- /tmp/fallstack-quality/ui-readability-after-accessibility
+npm run qa:world-bounds -- /tmp/fallstack-quality/world-bounds-after-accessibility
+npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit --browser=webkit
+npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit-retry --browser=webkit
+npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit-green --browser=webkit
+node --check scripts/qa/ui-accessibility.mjs
+git diff --check
 ```
 
 Results:
@@ -261,6 +284,18 @@ Results:
   continuous five-beat transients in Crooked Procession, and longer breath
   chambers in Breathing Reliquary. This proves compositional contrast, not
   taste or long-session approval.
+- The UI accessibility red run reproduced hidden dialog input, launch/fall
+  events, reverse-Tab escape, disabled zoom, missing Tower Memory title
+  association, missing theme metadata, and 2.51:1 primary-action contrast.
+- Chromium and WebKit now pass 48/48 accessibility checks each at 375×812 and
+  1280×800. Both dialogs hold position, attempt, charge, launch, and fall counts
+  at zero delta; input resumes after close; primary-action contrast is 6.93:1.
+- The post-fix mobile wall regression still contains 320, 375, and 480 px
+  players at the reliquary wall planes while 1280×800 preserves the existing
+  758 px desktop outer edge.
+- Chromium runtime passed immediately. WebKit's 90 ms synthetic post-reload
+  jump missed two consecutive frame windows; matching the harness's existing
+  browser-specific timing policy at 220 ms produced a clean runtime pass.
 
 ## Worktree safety
 

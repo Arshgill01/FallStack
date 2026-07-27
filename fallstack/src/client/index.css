@@ -94,7 +94,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   user-select: none;
-  touch-action: none;
+  touch-action: manipulation;
 }
 
 #root {
@@ -473,7 +473,7 @@ button:disabled {
   min-height: 0;
   overflow: hidden;
   background: var(--indigo-deep);
-  touch-action: none;
+  touch-action: pinch-zoom;
 }
 
 /* The Phaser canvas must NOT be stretched with CSS — let Phaser control it */
@@ -1642,6 +1642,7 @@ button:disabled {
 .result-close-btn {
   border: 2px solid #180d18;
   border-radius: 2px;
+  color: #180d18;
 }
 
 .tower-memory-card {

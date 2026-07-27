@@ -9,8 +9,9 @@ the soundscape and player presentation where evidence supports it, and closing
 each verified issue with tests, browser proof, documentation, and a focused
 commit.
 
-The primary and only execution environment is the current Mac. Gate 0 proves
-that its local browsers, authenticated Safari session, audio output/capture, and
+The primary and only execution environment is the current Mac. Remote
+provisioning, probing, and handoff are out of scope. Gate 0 proves that the
+Mac's local browsers, authenticated Safari session, audio output/capture, and
 project toolchain form a complete feedback loop before product behavior changes.
 
 ## Starting point
@@ -117,11 +118,6 @@ Store generated proof under
 throwaway captures with shipped assets. Evidence files must state whether they
 came from local practice, a mocked shared session, or an authenticated Reddit
 playtest.
-
-Sub-agents may investigate independent workstreams in parallel. The primary
-agent owns integration, resolves overlap before edits, and prevents multiple
-agents from changing the same source files concurrently. Findings must land in
-the appropriate record rather than surviving only in chat.
 
 ## Gate 0 — Prove the Mac feedback loop
 

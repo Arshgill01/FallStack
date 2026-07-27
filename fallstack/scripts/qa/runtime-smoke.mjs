@@ -15,6 +15,7 @@ if (!browserType) throw new Error(`Unsupported browser: ${browserName}`);
 const MOVE_HOLD_MS = browserName === 'webkit' ? 340 : 140;
 const MOVE_SETTLE_MS = browserName === 'webkit' ? 500 : 250;
 const FALL_HOLD_MS = browserName === 'webkit' ? 1_800 : 500;
+const JUMP_HOLD_MS = browserName === 'webkit' ? 220 : 90;
 await mkdir(outputDir, { recursive: true });
 
 const browser = await browserType.launch({
@@ -117,7 +118,7 @@ try {
   await holdPointer(
     pointer,
     await centerOf(touchPage, '[aria-label="Hold to charge; release to leap"]'),
-    90
+    JUMP_HOLD_MS
   );
   await touchPage.waitForFunction(
     (count) => window.__fallstackQa.launches > count,
