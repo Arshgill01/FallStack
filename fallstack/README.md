@@ -70,6 +70,7 @@ npm run qa:audio-lifecycle
 npm run qa:audio-palette
 npm run qa:music-directions
 npm run qa:ui-accessibility
+npm run qa:ui-overlays
 npm run qa:ui-readability
 npm run qa:world-bounds
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
@@ -86,6 +87,9 @@ metrics without changing the production score.
 `qa:ui-accessibility` verifies modal gameplay isolation, keyboard focus,
 browser zoom metadata, direct-touch ownership, dialog naming, and representative
 contrast in Chromium and WebKit at mobile and desktop presentation sizes.
+`qa:ui-overlays` projects the player and next required landing from every
+checkpoint at 320×568 and 375×812, then rejects temporary notices that cover
+either or overlap one another.
 
 `npm run dev`, `npm run deploy`, and `npm run launch` interact with Reddit/Devvit. They are intentionally not part of local verification and should only be run by an authenticated maintainer who intends that external change.
 

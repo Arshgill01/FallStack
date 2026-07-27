@@ -1427,7 +1427,7 @@ button:disabled {
 }
 
 .receipt-proof strong {
-  color: #e95f45;
+  color: #592337;
   font-family: 'Shippori Mincho', serif;
   font-size: 20px;
   line-height: 1;
@@ -2231,6 +2231,10 @@ button:disabled {
     max-width: none;
   }
 
+  .receipt-copy {
+    font-size: 13px;
+  }
+
   .remote-beat {
     top: 54px;
     right: 12px;
@@ -2283,6 +2287,53 @@ button:disabled {
   }
 
   .community-tally-word {
+    display: none;
+  }
+}
+
+@media (max-width: 374px) and (max-height: 620px) {
+  .mutation-banner.receipt {
+    max-height: 116px;
+  }
+
+  .receipt-stamp {
+    min-height: 20px;
+    padding: 3px 6px 2px;
+  }
+
+  .receipt-proof {
+    gap: 8px;
+    padding: 5px 8px 4px;
+  }
+
+  .receipt-site {
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .receipt-site small {
+    display: inline;
+    margin: 0 0 0 6px;
+    font-size: 8px;
+  }
+
+  .receipt-proof strong {
+    font-size: 16px;
+  }
+
+  .receipt-copy {
+    display: -webkit-box;
+    overflow: hidden;
+    padding: 4px 8px 5px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .remote-beat.below-receipt {
     display: none;
   }
 }

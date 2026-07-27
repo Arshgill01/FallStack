@@ -35,6 +35,7 @@ all eleven zone clears to the summit.
 | Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
 | Dialog input/accessibility | Complete | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified |
+| Temporary HUD overlays | Complete | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
@@ -59,6 +60,7 @@ These are investigation records, not all approved fixes.
 | QR-013 | High | QA/playthrough | Fixed and production-replayed | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
 | QR-014 | High | UI/input | Fixed and browser-regressed | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower |
 | QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
+| QR-016 | Medium | UI/feedback | Fixed and browser-regressed | Short-screen receipts and simultaneous remote notices no longer cover the player or next recovery landing |
 
 ## Decisions
 
@@ -106,6 +108,9 @@ These are investigation records, not all approved fixes.
   launch, and prevents hidden persistent events until the dialog closes.
 - 2026-07-27: Browser zoom remains available on the document and tower.
   `touch-action: none` is retained only by the fixed hold controls.
+- 2026-07-27: At 320×568-class layouts, a local receipt takes priority over a
+  simultaneous remote beat. The full receipt remains in the live region while
+  the visible proof is compact enough to preserve the recovery jump.
 
 ## Commands run
 
@@ -189,6 +194,19 @@ npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit --brow
 npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit-retry --browser=webkit
 npm run qa:runtime -- /tmp/fallstack-quality/accessibility-runtime-webkit-green --browser=webkit
 node --check scripts/qa/ui-accessibility.mjs
+git diff --check
+npm run qa:ui-overlays -- /tmp/fallstack-quality/ui-overlays-red
+npm run qa:ui-overlays -- /tmp/fallstack-quality/ui-overlays-contrast-red
+npm run type-check
+npm run lint
+npm run build
+npm run qa:ui-overlays -- docs/quality-reconstruction/evidence/ui-overlays-fix
+npm run qa:ui-readability -- /tmp/fallstack-quality/ui-readability-after-overlays
+npm run qa:ui-accessibility -- /tmp/fallstack-quality/ui-accessibility-after-overlays --browser=chromium
+npm test
+npm run qa:runtime -- /tmp/fallstack-quality/overlay-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/overlay-runtime-webkit --browser=webkit
+node --check scripts/qa/ui-overlays.mjs
 git diff --check
 ```
 
@@ -296,6 +314,15 @@ Results:
 - Chromium runtime passed immediately. WebKit's 90 ms synthetic post-reload
   jump missed two consecutive frame windows; matching the harness's existing
   browser-specific timing policy at 220 ms produced a clean runtime pass.
+- The overlay red run measured a 166.1 px receipt at 320×568, 9 px explanation
+  text, one covered required landing, and a combined receipt/remote notice over
+  the player at every sampled recovery. The highlighted counter then failed a
+  dedicated contrast check at 2.96:1.
+- The green overlay report passes 266/266 checks. Receipt, checkpoint, remote,
+  combined, and long-message states have zero overlap with the player, next
+  landing, one another, or the tower viewport at every start/checkpoint
+  recovery. The compact receipt is 91.5 px with 13 px explanation text and a
+  10.63:1 counter.
 
 ## Worktree safety
 

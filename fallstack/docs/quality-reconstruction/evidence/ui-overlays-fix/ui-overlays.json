@@ -1,0 +1,2438 @@
+{
+  "generatedAt": "2026-07-27T12:46:54.015Z",
+  "viewports": [
+    {
+      "width": 320,
+      "height": 568
+    },
+    {
+      "width": 375,
+      "height": 812
+    }
+  ],
+  "states": [
+    "message",
+    "receipt",
+    "checkpoint",
+    "remote",
+    "combined"
+  ],
+  "checkCount": 266,
+  "results": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "states": {
+        "message": {
+          "tower": {
+            "left": 0,
+            "right": 320,
+            "top": 66,
+            "bottom": 502
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 308,
+              "top": 120,
+              "bottom": 176.09375,
+              "width": 296,
+              "height": 56.09375
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 413,
+                "bottom": 441
+              },
+              "targetRect": {
+                "left": -4.5,
+                "right": 104.5,
+                "top": 339,
+                "bottom": 361
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 239.5,
+                "right": 338.5,
+                "top": 253,
+                "bottom": 275
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 11,
+                "right": 109,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 200,
+                "right": 312,
+                "top": 256,
+                "bottom": 278
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 183.5,
+                "right": 288.5,
+                "top": 244,
+                "bottom": 266
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 34.5,
+                "right": 131.5,
+                "top": 268,
+                "bottom": 290
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 29.5,
+                "right": 124.5,
+                "top": 248,
+                "bottom": 270
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": -19.5,
+                "right": 95.5,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 28.5,
+                "right": 123.5,
+                "top": 247,
+                "bottom": 269
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 244,
+                "right": 344,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 219,
+                "right": 323,
+                "top": 261,
+                "bottom": 283
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 33.5,
+                "right": 128.5,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "receipt": {
+          "tower": {
+            "left": 0,
+            "right": 320,
+            "top": 66,
+            "bottom": 502
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 308,
+              "top": 120,
+              "bottom": 211.5,
+              "width": 296,
+              "height": 91.5
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 413,
+                "bottom": 441
+              },
+              "targetRect": {
+                "left": -4.5,
+                "right": 104.5,
+                "top": 339,
+                "bottom": 361
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 239.5,
+                "right": 338.5,
+                "top": 253,
+                "bottom": 275
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 11,
+                "right": 109,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 200,
+                "right": 312,
+                "top": 256,
+                "bottom": 278
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 183.5,
+                "right": 288.5,
+                "top": 244,
+                "bottom": 266
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 34.5,
+                "right": 131.5,
+                "top": 268,
+                "bottom": 290
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 29.5,
+                "right": 124.5,
+                "top": 248,
+                "bottom": 270
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": -19.5,
+                "right": 95.5,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 28.5,
+                "right": 123.5,
+                "top": 247,
+                "bottom": 269
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 244,
+                "right": 344,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 219,
+                "right": 323,
+                "top": 261,
+                "bottom": 283
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 33.5,
+                "right": 128.5,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "checkpoint": {
+          "tower": {
+            "left": 0,
+            "right": 320,
+            "top": 66,
+            "bottom": 502
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 308,
+              "top": 123.98994445800781,
+              "bottom": 205.9899444580078,
+              "width": 296,
+              "height": 82
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 413,
+                "bottom": 441
+              },
+              "targetRect": {
+                "left": -4.5,
+                "right": 104.5,
+                "top": 339,
+                "bottom": 361
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 239.5,
+                "right": 338.5,
+                "top": 253,
+                "bottom": 275
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 11,
+                "right": 109,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 200,
+                "right": 312,
+                "top": 256,
+                "bottom": 278
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 183.5,
+                "right": 288.5,
+                "top": 244,
+                "bottom": 266
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 34.5,
+                "right": 131.5,
+                "top": 268,
+                "bottom": 290
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 29.5,
+                "right": 124.5,
+                "top": 248,
+                "bottom": 270
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": -19.5,
+                "right": 95.5,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 28.5,
+                "right": 123.5,
+                "top": 247,
+                "bottom": 269
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 244,
+                "right": 344,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 219,
+                "right": 323,
+                "top": 261,
+                "bottom": 283
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 33.5,
+                "right": 128.5,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "remote": {
+          "tower": {
+            "left": 0,
+            "right": 320,
+            "top": 66,
+            "bottom": 502
+          },
+          "overlays": [
+            {
+              "left": 58,
+              "right": 308,
+              "top": 120,
+              "bottom": 177.078125,
+              "width": 250,
+              "height": 57.078125
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 413,
+                "bottom": 441
+              },
+              "targetRect": {
+                "left": -4.5,
+                "right": 104.5,
+                "top": 339,
+                "bottom": 361
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 239.5,
+                "right": 338.5,
+                "top": 253,
+                "bottom": 275
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 11,
+                "right": 109,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 200,
+                "right": 312,
+                "top": 256,
+                "bottom": 278
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 183.5,
+                "right": 288.5,
+                "top": 244,
+                "bottom": 266
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 34.5,
+                "right": 131.5,
+                "top": 268,
+                "bottom": 290
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 29.5,
+                "right": 124.5,
+                "top": 248,
+                "bottom": 270
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": -19.5,
+                "right": 95.5,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 28.5,
+                "right": 123.5,
+                "top": 247,
+                "bottom": 269
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 244,
+                "right": 344,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 219,
+                "right": 323,
+                "top": 261,
+                "bottom": 283
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 33.5,
+                "right": 128.5,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "combined": {
+          "tower": {
+            "left": 0,
+            "right": 320,
+            "top": 66,
+            "bottom": 502
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 308,
+              "top": 120,
+              "bottom": 211.5,
+              "width": 296,
+              "height": 91.5
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 413,
+                "bottom": 441
+              },
+              "targetRect": {
+                "left": -4.5,
+                "right": 104.5,
+                "top": 339,
+                "bottom": 361
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 239.5,
+                "right": 338.5,
+                "top": 253,
+                "bottom": 275
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 11,
+                "right": 109,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 200,
+                "right": 312,
+                "top": 256,
+                "bottom": 278
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 183.5,
+                "right": 288.5,
+                "top": 244,
+                "bottom": 266
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 34.5,
+                "right": 131.5,
+                "top": 268,
+                "bottom": 290
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 29.5,
+                "right": 124.5,
+                "top": 248,
+                "bottom": 270
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": -19.5,
+                "right": 95.5,
+                "top": 255,
+                "bottom": 277
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 28.5,
+                "right": 123.5,
+                "top": 247,
+                "bottom": 269
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 244,
+                "right": 344,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 219,
+                "right": 323,
+                "top": 261,
+                "bottom": 283
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 150,
+                "right": 170,
+                "top": 338,
+                "bottom": 366
+              },
+              "targetRect": {
+                "left": 33.5,
+                "right": 128.5,
+                "top": 264,
+                "bottom": 286
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        }
+      },
+      "receiptTypography": {
+        "bannerHeight": 91.5,
+        "copyFontSize": 13,
+        "copyLineHeight": 16.25,
+        "copyClientHeight": 42,
+        "copyScrollHeight": 58,
+        "siteClientWidth": 110,
+        "siteScrollWidth": 282,
+        "counterContrast": 10.632386375941755
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "states": {
+        "message": {
+          "tower": {
+            "left": 0,
+            "right": 375,
+            "top": 67,
+            "bottom": 746
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 363,
+              "top": 121,
+              "bottom": 177.09375,
+              "width": 351,
+              "height": 56.09375
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 177.5,
+                "right": 197.5,
+                "top": 657,
+                "bottom": 685
+              },
+              "targetRect": {
+                "left": 23,
+                "right": 132,
+                "top": 583,
+                "bottom": 605
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 260.5,
+                "right": 359.5,
+                "top": 497,
+                "bottom": 519
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 45,
+                "right": 143,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 221,
+                "right": 333,
+                "top": 500,
+                "bottom": 522
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 217.5,
+                "right": 322.5,
+                "top": 488,
+                "bottom": 510
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 55.5,
+                "right": 152.5,
+                "top": 512,
+                "bottom": 534
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 50.5,
+                "right": 145.5,
+                "top": 492,
+                "bottom": 514
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 14.5,
+                "right": 129.5,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 62.5,
+                "right": 157.5,
+                "top": 491,
+                "bottom": 513
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 265,
+                "right": 365,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 240,
+                "right": 344,
+                "top": 505,
+                "bottom": 527
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 67.5,
+                "right": 162.5,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "receipt": {
+          "tower": {
+            "left": 0,
+            "right": 375,
+            "top": 67,
+            "bottom": 746
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 363,
+              "top": 121,
+              "bottom": 273.734375,
+              "width": 351,
+              "height": 152.734375
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 177.5,
+                "right": 197.5,
+                "top": 657,
+                "bottom": 685
+              },
+              "targetRect": {
+                "left": 23,
+                "right": 132,
+                "top": 583,
+                "bottom": 605
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 260.5,
+                "right": 359.5,
+                "top": 497,
+                "bottom": 519
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 45,
+                "right": 143,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 221,
+                "right": 333,
+                "top": 500,
+                "bottom": 522
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 217.5,
+                "right": 322.5,
+                "top": 488,
+                "bottom": 510
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 55.5,
+                "right": 152.5,
+                "top": 512,
+                "bottom": 534
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 50.5,
+                "right": 145.5,
+                "top": 492,
+                "bottom": 514
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 14.5,
+                "right": 129.5,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 62.5,
+                "right": 157.5,
+                "top": 491,
+                "bottom": 513
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 265,
+                "right": 365,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 240,
+                "right": 344,
+                "top": 505,
+                "bottom": 527
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 67.5,
+                "right": 162.5,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "checkpoint": {
+          "tower": {
+            "left": 0,
+            "right": 375,
+            "top": 67,
+            "bottom": 746
+          },
+          "overlays": [
+            {
+              "left": 34.5,
+              "right": 340.5,
+              "top": 124.98941040039062,
+              "bottom": 206.98941040039062,
+              "width": 306,
+              "height": 82
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 177.5,
+                "right": 197.5,
+                "top": 657,
+                "bottom": 685
+              },
+              "targetRect": {
+                "left": 23,
+                "right": 132,
+                "top": 583,
+                "bottom": 605
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 260.5,
+                "right": 359.5,
+                "top": 497,
+                "bottom": 519
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 45,
+                "right": 143,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 221,
+                "right": 333,
+                "top": 500,
+                "bottom": 522
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 217.5,
+                "right": 322.5,
+                "top": 488,
+                "bottom": 510
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 55.5,
+                "right": 152.5,
+                "top": 512,
+                "bottom": 534
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 50.5,
+                "right": 145.5,
+                "top": 492,
+                "bottom": 514
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 14.5,
+                "right": 129.5,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 62.5,
+                "right": 157.5,
+                "top": 491,
+                "bottom": 513
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 265,
+                "right": 365,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 240,
+                "right": 344,
+                "top": 505,
+                "bottom": 527
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 67.5,
+                "right": 162.5,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "remote": {
+          "tower": {
+            "left": 0,
+            "right": 375,
+            "top": 67,
+            "bottom": 746
+          },
+          "overlays": [
+            {
+              "left": 113,
+              "right": 363,
+              "top": 121,
+              "bottom": 178.078125,
+              "width": 250,
+              "height": 57.078125
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 177.5,
+                "right": 197.5,
+                "top": 657,
+                "bottom": 685
+              },
+              "targetRect": {
+                "left": 23,
+                "right": 132,
+                "top": 583,
+                "bottom": 605
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 260.5,
+                "right": 359.5,
+                "top": 497,
+                "bottom": 519
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 45,
+                "right": 143,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 221,
+                "right": 333,
+                "top": 500,
+                "bottom": 522
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 217.5,
+                "right": 322.5,
+                "top": 488,
+                "bottom": 510
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 55.5,
+                "right": 152.5,
+                "top": 512,
+                "bottom": 534
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 50.5,
+                "right": 145.5,
+                "top": 492,
+                "bottom": 514
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 14.5,
+                "right": 129.5,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 62.5,
+                "right": 157.5,
+                "top": 491,
+                "bottom": 513
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 265,
+                "right": 365,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 240,
+                "right": 344,
+                "top": 505,
+                "bottom": 527
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 67.5,
+                "right": 162.5,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        },
+        "combined": {
+          "tower": {
+            "left": 0,
+            "right": 375,
+            "top": 67,
+            "bottom": 746
+          },
+          "overlays": [
+            {
+              "left": 12,
+              "right": 363,
+              "top": 121,
+              "bottom": 273.734375,
+              "width": 351,
+              "height": 152.734375
+            },
+            {
+              "left": 113,
+              "right": 363,
+              "top": 289,
+              "bottom": 346.078125,
+              "width": 250,
+              "height": 57.078125
+            }
+          ],
+          "overlayOverlap": 0,
+          "samples": [
+            {
+              "supportId": "start",
+              "targetId": "ledge-orbital_scrapyard-1",
+              "playerRect": {
+                "left": 177.5,
+                "right": 197.5,
+                "top": 657,
+                "bottom": 685
+              },
+              "targetRect": {
+                "left": 23,
+                "right": 132,
+                "top": 583,
+                "bottom": 605
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "orbital_scrapyard-checkpoint",
+              "targetId": "ledge-crater_foundry-14",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 260.5,
+                "right": 359.5,
+                "top": 497,
+                "bottom": 519
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "crater_foundry-checkpoint",
+              "targetId": "ledge-comet_reef-27",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 45,
+                "right": 143,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "comet_reef-checkpoint",
+              "targetId": "ledge-nebula_vault-40",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 221,
+                "right": 333,
+                "top": 500,
+                "bottom": 522
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "nebula_vault-checkpoint",
+              "targetId": "ledge-ring_citadel-53",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 217.5,
+                "right": 322.5,
+                "top": 488,
+                "bottom": 510
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "ring_citadel-checkpoint",
+              "targetId": "ledge-dwarf_garden-66",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 55.5,
+                "right": 152.5,
+                "top": 512,
+                "bottom": 534
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dwarf_garden-checkpoint",
+              "targetId": "ledge-pulsar_spine-79",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 50.5,
+                "right": 145.5,
+                "top": 492,
+                "bottom": 514
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "pulsar_spine-checkpoint",
+              "targetId": "ledge-neutron_forge-92",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 14.5,
+                "right": 129.5,
+                "top": 499,
+                "bottom": 521
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "neutron_forge-checkpoint",
+              "targetId": "ledge-black_hole_chapel-105",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 62.5,
+                "right": 157.5,
+                "top": 491,
+                "bottom": 513
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "black_hole_chapel-checkpoint",
+              "targetId": "ledge-galaxy_reef-118",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 265,
+                "right": 365,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "galaxy_reef-checkpoint",
+              "targetId": "ledge-dying_star_garden-131",
+              "playerRect": {
+                "left": 171,
+                "right": 191,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 240,
+                "right": 344,
+                "top": 505,
+                "bottom": 527
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            },
+            {
+              "supportId": "dying_star_garden-checkpoint",
+              "targetId": "ledge-event_horizon_crown-144",
+              "playerRect": {
+                "left": 184,
+                "right": 204,
+                "top": 582,
+                "bottom": 610
+              },
+              "targetRect": {
+                "left": 67.5,
+                "right": 162.5,
+                "top": 508,
+                "bottom": 530
+              },
+              "overlayPlayerOverlap": 0,
+              "overlayTargetOverlap": 0
+            }
+          ]
+        }
+      },
+      "receiptTypography": {
+        "bannerHeight": 152.734375,
+        "copyFontSize": 13,
+        "copyLineHeight": 17.55,
+        "copyClientHeight": 49,
+        "copyScrollHeight": 49,
+        "siteClientWidth": 118,
+        "siteScrollWidth": 118,
+        "counterContrast": 10.632386375941755
+      }
+    }
+  ],
+  "failures": []
+}

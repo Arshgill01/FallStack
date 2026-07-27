@@ -69,9 +69,24 @@ Memory references its visible title, and the action contrast is now 6.93:1.
 Each browser passes 48 checks at mobile and desktop presentation sizes. Details
 and screenshots are in [`ISSUE-015`](issues/ISSUE-015.md).
 
+## QR-016 — recovery-message occlusion
+
+At 320×568, a long mutation receipt covered the next required landing from the
+final checkpoint. A simultaneous remote beat extended over the player at every
+sampled recovery, while receipt body text remained at 9 px and its highlighted
+counter measured 2.96:1 contrast.
+
+The short/narrow receipt now occupies 91.5 px, preserves a 13 px explanation,
+and uses 10.63:1 counter contrast. The constrained layout does not show a remote
+beat underneath a local receipt. The route-aware
+[`ui-overlays.json`](evidence/ui-overlays-fix/ui-overlays.json) passes 266
+checks across five notice states, two viewports, and every start/checkpoint
+recovery with zero player, target, notice, or viewport overlap. Details are in
+[`ISSUE-016`](issues/ISSUE-016.md).
+
 ## Remaining UI gate
 
-QR-011, QR-014, and QR-015 are closed. Workstream G is not: exhaustive contrast
-sampling, temporary-message landing occlusion, long/edge copy,
-orientation/resize, and all error/capped/stale states still require a complete
+QR-011 and QR-014–016 are closed. Workstream G is not: exhaustive contrast
+sampling beyond the audited primary/receipt actions, orientation/resize, and
+live server-backed error/capped/stale states still require a complete
 interaction audit.
