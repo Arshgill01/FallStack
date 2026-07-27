@@ -63,11 +63,16 @@ import {
 } from './game/artifact-mechanics';
 import { canCollideWithPlatform } from './game/platform-mechanics';
 import type {
+  ArtifactCollapseEventDetail,
   ClearEventDetail,
   FallEventDetail,
   LandEventDetail,
+  LandingMaterial,
+  LandingSurface,
   LaunchEventDetail,
+  SoundId,
   SummitEventDetail,
+  WallBonkEventDetail,
   ZoneEventDetail,
 } from './game/events';
 import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
@@ -107,6 +112,7 @@ import {
   resolveGameplayMuted,
   type AudioCaptureApi,
   type AudioDiagnostics,
+  type SoundPlaybackDetail,
 } from './game/sound';
 import { mutationReceiptPresentation } from './game/receipt';
 import { fetchChangedBoardSnapshot } from './game/board-sync';
@@ -128,6 +134,8 @@ declare global {
     fallstackSnapshot?: GameSnapshot;
     fallstackAudioDiagnostics?: () => AudioDiagnostics;
     fallstackAudioCapture?: AudioCaptureApi;
+    fallstackAudioPreview?: (id: SoundId, detail?: SoundPlaybackDetail) => void;
+    fallstackAudioStopPreview?: () => void;
   }
 }
 
@@ -148,6 +156,13 @@ function isBoardSnapshot(
 function checkpointForZone(zoneId: ZoneId): { x: number; y: number } {
   if (zoneId === BOTTOM_ZONE_ID) return START_POS;
   return { x: 240, y: zoneById(zoneId).yBottom - 60 };
+}
+
+function artifactLandingMaterial(type: Artifact['type']): LandingMaterial {
+  if (type === 'corpse_stack') return 'corpse';
+  if (type === 'mercy_nail') return 'mercy';
+  if (type === 'ghost_platform') return 'ghost';
+  return 'cursed';
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -194,6 +209,10 @@ class FallstackScene extends Phaser.Scene {
   private facing: -1 | 1 = 1;
   private wasGrounded = false;
   private suppressNextLanding = false;
+  private pendingImpactSpeed = 0;
+  private pendingWallImpactSpeed = 0;
+  private landingMaterial: LandingMaterial = 'stone';
+  private landingSurface: LandingSurface = 'route';
   private charging = false;
   private chargeStart = 0;
   private chargeDirection: -1 | 1 = 1;
@@ -232,6 +251,7 @@ class FallstackScene extends Phaser.Scene {
     string,
     {
       type: 'ghost_platform' | 'cursed_brick';
+      zoneId: ZoneId;
       collapseAt: number;
       attemptId: string;
     }
@@ -350,6 +370,14 @@ class FallstackScene extends Phaser.Scene {
     const input = this.readInput();
     const body = this.player.body;
     const onFloor = body.blocked.down || body.touching.down;
+    if (!onFloor) {
+      this.pendingImpactSpeed = Math.max(
+        this.pendingImpactSpeed,
+        Math.max(0, body.velocity.y)
+      );
+      const horizontalSpeed = Math.abs(body.velocity.x);
+      if (horizontalSpeed > 0.5) this.pendingWallImpactSpeed = horizontalSpeed;
+    }
     this.updateCurrentZone();
     this.highestY = Math.min(this.highestY, this.player.y);
 
@@ -420,6 +448,8 @@ class FallstackScene extends Phaser.Scene {
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
         const launch = launchVelocityForChargeRatio(percent);
+        this.pendingImpactSpeed = 0;
+        this.pendingWallImpactSpeed = 0;
         this.facing = this.chargeDirection;
         this.lastLaunchDirection = this.chargeDirection;
         body.setVelocity(this.chargeDirection * launch.x, launch.y);
@@ -454,12 +484,21 @@ class FallstackScene extends Phaser.Scene {
 
     if (this.suppressNextLanding && onFloor) {
       this.suppressNextLanding = false;
+      this.pendingImpactSpeed = 0;
+      this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
       window.dispatchEvent(
         new CustomEvent<LandEventDetail>('fallstack:land', {
-          detail: { zoneId: this.currentZone },
+          detail: {
+            zoneId: this.currentZone,
+            material: this.landingMaterial,
+            surface: this.landingSurface,
+            impactSpeed: Math.round(this.pendingImpactSpeed),
+          },
         })
       );
+      this.pendingImpactSpeed = 0;
+      this.pendingWallImpactSpeed = 0;
 
       if (!this.reducedMotion) {
         for (let i = 0; i < 8; i++) {
@@ -671,10 +710,23 @@ class FallstackScene extends Phaser.Scene {
     };
   }
 
-  private onLand(_player: unknown, platformObject: unknown) {
+  private onLand(playerObject: unknown, platformObject: unknown) {
+    const player = playerObject as Phaser.GameObjects.Rectangle & {
+      body: Phaser.Physics.Arcade.Body;
+    };
     const object = platformObject as Phaser.GameObjects.GameObject;
     const platformId = object.getData('platformId');
+    const platformKind = object.getData('kind') as Platform['kind'];
     if (typeof platformId === 'string') this.lastPlatformId = platformId;
+    if (player.body.blocked.down || player.body.touching.down) {
+      this.landingMaterial = platformKind;
+      this.landingSurface =
+        platformId === 'summit'
+          ? 'summit'
+          : typeof platformId === 'string' && platformId.includes('checkpoint')
+            ? 'checkpoint'
+            : 'route';
+    }
     if (platformId === 'summit' && !this.summitSent) {
       this.summitSent = true;
       window.dispatchEvent(
@@ -688,10 +740,18 @@ class FallstackScene extends Phaser.Scene {
     }
   }
 
-  private onArtifactTouch(_player: unknown, artifactObject: unknown) {
+  private onArtifactTouch(playerObject: unknown, artifactObject: unknown) {
+    const player = playerObject as Phaser.GameObjects.Rectangle & {
+      body: Phaser.Physics.Arcade.Body;
+    };
     const object = artifactObject as Phaser.GameObjects.GameObject;
     const type = object.getData('artifactType') as Artifact['type'];
     const artifactId = object.getData('artifactId');
+    const artifactZoneId = object.getData('artifactZoneId') as ZoneId;
+    if (player.body.blocked.down || player.body.touching.down) {
+      this.landingMaterial = artifactLandingMaterial(type);
+      this.landingSurface = 'artifact';
+    }
     if (type === 'corpse_stack' || type === 'mercy_nail') {
       if (typeof artifactId === 'string') {
         this.lastHelperArtifactId = artifactId;
@@ -702,7 +762,7 @@ class FallstackScene extends Phaser.Scene {
       typeof artifactId === 'string' &&
       (type === 'ghost_platform' || type === 'cursed_brick')
     )
-      this.startArtifactTimer(artifactId, type);
+      this.startArtifactTimer(artifactId, type, artifactZoneId);
   }
 
   private shouldCollideWithPlatform(
@@ -752,7 +812,8 @@ class FallstackScene extends Phaser.Scene {
 
   private startArtifactTimer(
     artifactId: string,
-    type: 'ghost_platform' | 'cursed_brick'
+    type: 'ghost_platform' | 'cursed_brick',
+    zoneId: ZoneId
   ) {
     if (this.artifactTimers.has(artifactId)) return;
     const duration = artifactUseWindowMs(type);
@@ -760,6 +821,7 @@ class FallstackScene extends Phaser.Scene {
     const attemptId = this.currentAttemptId;
     this.artifactTimers.set(artifactId, {
       type,
+      zoneId,
       collapseAt: this.time.now + duration,
       attemptId,
     });
@@ -768,6 +830,14 @@ class FallstackScene extends Phaser.Scene {
       if (!timer || timer.attemptId !== this.currentAttemptId) return;
       this.artifactTimers.delete(artifactId);
       this.expiredArtifactIds.add(artifactId);
+      window.dispatchEvent(
+        new CustomEvent<ArtifactCollapseEventDetail>(
+          'fallstack:artifact-collapse',
+          {
+            detail: { zoneId: timer.zoneId, type },
+          }
+        )
+      );
       this.drawWorld();
       this.rebuildArtifactBodies();
     });
@@ -848,6 +918,10 @@ class FallstackScene extends Phaser.Scene {
     this.lastHelperArtifactId = null;
     this.wallBonkPlatformId = null;
     this.lastLaunchDirection = 0;
+    this.pendingImpactSpeed = 0;
+    this.pendingWallImpactSpeed = 0;
+    this.landingMaterial = 'stone';
+    this.landingSurface = 'route';
     this.lastPlatformId =
       this.respawnZone === BOTTOM_ZONE_ID ? 'start' : null;
     this.artifactTimers.clear();
@@ -879,6 +953,11 @@ class FallstackScene extends Phaser.Scene {
     const direction = intoLeft ? 1 : intoRight ? -1 : 0;
     if (direction === 0) return;
 
+    const impactSpeed = Math.max(
+      Math.abs(body.velocity.x),
+      this.pendingWallImpactSpeed
+    );
+    const side = intoLeft ? 'left' : 'right';
     body.setVelocityX(direction * MOVEMENT_TUNING.wallBounceVelocityX);
     body.setVelocityY(
       Math.min(body.velocity.y, MOVEMENT_TUNING.wallBounceLiftVelocityY)
@@ -886,9 +965,14 @@ class FallstackScene extends Phaser.Scene {
     this.facing = direction as -1 | 1;
     this.wallBonkPlatformId = this.lastPlatformId;
     this.lastWallBounceAt = now;
+    this.pendingWallImpactSpeed = 0;
     window.dispatchEvent(
-      new CustomEvent('fallstack:land', {
-        detail: { zoneId: this.currentZone },
+      new CustomEvent<WallBonkEventDetail>('fallstack:wall-bonk', {
+        detail: {
+          zoneId: this.currentZone,
+          side,
+          impactSpeed: Math.round(impactSpeed),
+        },
       })
     );
 
@@ -1521,6 +1605,7 @@ class FallstackScene extends Phaser.Scene {
       );
       rect.setData('artifactType', artifact.type);
       rect.setData('artifactId', artifact.id);
+      rect.setData('artifactZoneId', artifact.zoneId);
       this.artifactBodies.add(rect);
     }
   }
@@ -1908,8 +1993,16 @@ export function GameApp() {
         return soundRef.current.stopCapture();
       },
     };
+    window.fallstackAudioPreview = (id, detail) => {
+      soundRef.current?.play(id, detail);
+    };
+    window.fallstackAudioStopPreview = () => {
+      soundRef.current?.stopCharge();
+    };
     return () => {
       delete window.fallstackAudioCapture;
+      delete window.fallstackAudioPreview;
+      delete window.fallstackAudioStopPreview;
     };
   }, []);
 
@@ -2315,7 +2408,7 @@ export function GameApp() {
         ...current,
         summits: current.summits + 1,
       }));
-      soundRef.current?.play('checkpoint');
+      soundRef.current?.play('summit');
 
       if (!sharedAvailable) {
         setSnapshot(applyLocalSummit(snapshot, detail));
@@ -2373,10 +2466,24 @@ export function GameApp() {
     const onLand = (event: Event) => {
       const detail = (event as CustomEvent<LandEventDetail>).detail;
       setCharge(0);
-      soundRef.current?.play('land', detail.zoneId);
+      soundRef.current?.play('land', detail);
     };
-    const onLaunch = () => {
-      soundRef.current?.play('launch');
+    const onWallBonk = (event: Event) => {
+      const detail = (event as CustomEvent<WallBonkEventDetail>).detail;
+      soundRef.current?.play('wall-bonk', detail);
+    };
+    const onArtifactCollapse = (event: Event) => {
+      const detail = (event as CustomEvent<ArtifactCollapseEventDetail>).detail;
+      soundRef.current?.play('artifact-collapse', {
+        zoneId: detail.zoneId,
+        artifactType: detail.type,
+      });
+    };
+    const onLaunch = (event: Event) => {
+      const detail = (event as CustomEvent<LaunchEventDetail>).detail;
+      soundRef.current?.play('launch', {
+        chargePercent: detail.chargePercent,
+      });
     };
     const onFall = (event: Event) => {
       const detail = (event as CustomEvent<FallEventDetail>).detail;
@@ -2397,6 +2504,8 @@ export function GameApp() {
     };
     window.addEventListener('fallstack:charge', onCharge);
     window.addEventListener('fallstack:land', onLand);
+    window.addEventListener('fallstack:wall-bonk', onWallBonk);
+    window.addEventListener('fallstack:artifact-collapse', onArtifactCollapse);
     window.addEventListener('fallstack:launch', onLaunch);
     window.addEventListener('fallstack:fall', onFall);
     window.addEventListener('fallstack:clear', onClear);
@@ -2405,6 +2514,11 @@ export function GameApp() {
     return () => {
       window.removeEventListener('fallstack:charge', onCharge);
       window.removeEventListener('fallstack:land', onLand);
+      window.removeEventListener('fallstack:wall-bonk', onWallBonk);
+      window.removeEventListener(
+        'fallstack:artifact-collapse',
+        onArtifactCollapse
+      );
       window.removeEventListener('fallstack:launch', onLaunch);
       window.removeEventListener('fallstack:fall', onFall);
       window.removeEventListener('fallstack:clear', onClear);

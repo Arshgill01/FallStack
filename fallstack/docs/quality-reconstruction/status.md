@@ -9,7 +9,7 @@ evidence-based quality gates.
 
 ## Current gate
 
-Gate 1 — baseline census and reproduction.
+Gate 1 — baseline census and verified issue resolution in progress.
 
 Gate 0 is complete on the current Mac. The project checks,
 Chromium/WebKit runtime lifecycle, mocked two-client reconciliation, signed-in
@@ -24,12 +24,13 @@ remains open after partial checkpointed replay progress.
 | Pull current `master` | Complete | Fast-forwarded `7875568 → 7c4e06f` |
 | Define root goal | Complete | Commit `0aaf5b8` |
 | Mac toolchain | Complete | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7 |
-| Project checks | Complete | Type-check, lint, 150 tests, build passed |
+| Project checks | Complete | Type-check, lint, 151 tests, build passed |
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
 | Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
+| Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
 | Full playthrough | Open | Mobile rerun crossed the opening blocker and checkpointed probes reached Black Hole Chapel; uninterrupted summit still missing |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
@@ -41,7 +42,7 @@ These are investigation records, not all approved fixes.
 | --- | --- | --- | --- | --- |
 | QR-001 | High | Gameplay/world | Fixed and browser-regressed | Mobile inherited an off-frame playable gutter before its readable side boundary; desktop/fullscreen outer edges were already correct |
 | QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
-| QR-003 | High | Audio/design | Baseline confirmed | Current oscillator cues do not provide the requested tactile event vocabulary |
+| QR-003 | High | Audio/design | Implemented; listening gate open | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains |
 | QR-004 | High | Music | Baseline confirmed | Two drones plus an eight-note bell phrase repeat every 17.6 seconds with no biome response |
 | QR-005 | Medium | Audio/lifecycle | Fixed and browser-regressed | Rapid Music Off/On reopened untracked bell tails and overlapped a new pair |
 | QR-006 | Medium | Audio/preferences | Fixed and browser-regressed | Legacy combined mute key forced SFX off again after reload |
@@ -79,6 +80,12 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: Character implementation pauses at the direction gate. Bell
   Warden is recommended from three generated state-complete concept boards, but
   the user owns the final selection.
+- 2026-07-27: The SFX palette may use deterministic procedural noise and short
+  resonances, but collision meaning comes from Phaser's event payload rather
+  than biome inference inside the sound layer.
+- 2026-07-27: QR-003 can reach a verified implementation checkpoint on
+  automated and browser evidence, but it cannot close without a current-Mac
+  listening decision.
 
 ## Commands run
 
@@ -123,6 +130,15 @@ npm run build
 npm run qa:world-bounds -- docs/quality-reconstruction/evidence/world-bounds-fix
 npm run qa:runtime -- /tmp/fallstack-quality/world-runtime-chromium --browser=chromium
 npm run qa:runtime -- /tmp/fallstack-quality/world-runtime-webkit --browser=webkit
+npm run qa:audio-palette -- docs/quality-reconstruction/evidence/sfx-palette-comparison tactile
+FALLSTACK_QA_BASE_URL=http://127.0.0.1:8081 npm run qa:audio-palette -- docs/quality-reconstruction/evidence/sfx-palette-comparison baseline
+npm run qa:audio-events -- docs/quality-reconstruction/evidence/sfx-event-contract
+npm run qa:audio-lifecycle -- docs/quality-reconstruction/evidence/sfx-lifecycle
+npm run qa:audio -- docs/quality-reconstruction/evidence/sfx-gameplay-capture
+npm run qa:runtime -- /tmp/fallstack-quality/sfx-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/sfx-runtime-webkit --browser=webkit
+ffmpeg -i docs/quality-reconstruction/evidence/sfx-palette-comparison/{baseline,tactile}.webm -af ebur128=peak=true -f null -
+ffmpeg -i docs/quality-reconstruction/evidence/sfx-gameplay-capture/final-master.webm -af ebur128=peak=true -f null -
 ```
 
 Results:
@@ -179,6 +195,20 @@ Results:
 - Final mobile-boundary checkpoint checks passed: 150/150 tests, production
   build, world-contact regression, Chromium runtime smoke, and isolated WebKit
   runtime smoke.
+- The matched baseline/tactile SFX reels contain 15 cues over 14.34 seconds.
+  The tactile pass replaces identical soft/hard and generic-fallback cues with
+  material/impact profiles and dedicated wall, collapse, mutation, checkpoint,
+  and summit vocabulary. It measures `-30.8 LUFS` and `-18.8 dBFS` true peak.
+- The real gameplay audio capture contains charge, launch, and a material-aware
+  landing, measures `-29.2 LUFS` and `-16.8 dBFS` true peak, and contains no
+  opening-settle landing.
+- The real-event probe records a `740`-impact stone landing and a separate
+  `353`-impact wall bonk with zero simultaneous landing aliases.
+- The revised lifecycle probe tracks oscillator and buffer sources. Immediate
+  SFX Off starts zero delayed sources; Chromium and WebKit runtime smokes pass
+  after the palette change.
+- Current repository checks pass: 151/151 tests, type-check, lint, build, and
+  `git diff --check`. The known Phaser chunk warning remains.
 
 ## Worktree safety
 

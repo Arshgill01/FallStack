@@ -1,0 +1,191 @@
+{
+  "generatedAt": "2026-07-27T11:25:09.848Z",
+  "label": "baseline",
+  "artifact": "docs/quality-reconstruction/evidence/sfx-palette-comparison/baseline.webm",
+  "byteLength": 165239,
+  "mimeType": "audio/webm;codecs=opus",
+  "stream": {
+    "codec_name": "opus",
+    "codec_type": "audio",
+    "sample_rate": "48000",
+    "channels": 2
+  },
+  "durationSeconds": 14.337199,
+  "cues": [
+    {
+      "name": "charge-cancel",
+      "id": "charge-start",
+      "detail": {},
+      "chargeMs": 360,
+      "cancel": true,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0859,
+      "maxRms": 0.0519
+    },
+    {
+      "name": "launch-low",
+      "id": "launch",
+      "detail": {
+        "chargePercent": 42
+      },
+      "chargeMs": 200,
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0859,
+      "maxRms": 0.0509
+    },
+    {
+      "name": "launch-mid",
+      "id": "launch",
+      "detail": {
+        "chargePercent": 68
+      },
+      "chargeMs": 520,
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0859,
+      "maxRms": 0.0517
+    },
+    {
+      "name": "launch-full",
+      "id": "launch",
+      "detail": {
+        "chargePercent": 100
+      },
+      "chargeMs": 900,
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0859,
+      "maxRms": 0.0527
+    },
+    {
+      "name": "land-stone-soft",
+      "id": "land",
+      "detail": {
+        "zoneId": "orbital_scrapyard",
+        "material": "stone",
+        "surface": "route",
+        "impactSpeed": 180
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0057
+    },
+    {
+      "name": "land-stone-hard",
+      "id": "land",
+      "detail": {
+        "zoneId": "orbital_scrapyard",
+        "material": "stone",
+        "surface": "route",
+        "impactSpeed": 920
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0057
+    },
+    {
+      "name": "land-metal",
+      "id": "land",
+      "detail": {
+        "zoneId": "pulsar_spine",
+        "material": "metal",
+        "surface": "route",
+        "impactSpeed": 620
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0234,
+      "maxRms": 0.0137
+    },
+    {
+      "name": "land-ghost",
+      "id": "land",
+      "detail": {
+        "zoneId": "comet_reef",
+        "material": "ghost",
+        "surface": "artifact",
+        "impactSpeed": 520
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0156,
+      "maxRms": 0.0066
+    },
+    {
+      "name": "wall-bonk",
+      "id": "wall-bonk",
+      "detail": {
+        "zoneId": "crater_foundry",
+        "side": "right",
+        "impactSpeed": 360
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0051
+    },
+    {
+      "name": "ghost-collapse",
+      "id": "artifact-collapse",
+      "detail": {
+        "zoneId": "comet_reef",
+        "artifactType": "ghost_platform"
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0043
+    },
+    {
+      "name": "cursed-collapse",
+      "id": "artifact-collapse",
+      "detail": {
+        "zoneId": "nebula_vault",
+        "artifactType": "cursed_brick"
+      },
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0043
+    },
+    {
+      "name": "fall",
+      "id": "fall",
+      "detail": {},
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0313,
+      "maxRms": 0.0223
+    },
+    {
+      "name": "mutation-stamp",
+      "id": "mutation",
+      "detail": {},
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0234,
+      "maxRms": 0.0163
+    },
+    {
+      "name": "checkpoint",
+      "id": "checkpoint",
+      "detail": {},
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0859,
+      "maxRms": 0.0557
+    },
+    {
+      "name": "summit",
+      "id": "summit",
+      "detail": {},
+      "cancel": false,
+      "playbackPath": "legacy-react-ref",
+      "maxPeak": 0.0078,
+      "maxRms": 0.0043
+    }
+  ]
+}

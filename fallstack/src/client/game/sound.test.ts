@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AUDIO_LEVELS,
+  landingProfile,
   MUSIC_START_DELAY_MS,
   resolveGameplayMuted,
   shouldResumeAudioContext,
@@ -69,9 +70,39 @@ void test('music starts promptly at a perceptible output level', () => {
       0.025
   );
   assert.ok(
-    AUDIO_LEVELS.launchPrimary *
+    (AUDIO_LEVELS.launchSnap + AUDIO_LEVELS.launchBody) *
       AUDIO_LEVELS.gameplay *
       AUDIO_LEVELS.master >=
-      0.07
+      0.1
   );
+});
+
+void test('landing profiles respond to material and bounded impact weight', () => {
+  const softStone = landingProfile({
+    material: 'stone',
+    surface: 'route',
+    impactSpeed: 120,
+  });
+  const hardStone = landingProfile({
+    material: 'stone',
+    surface: 'route',
+    impactSpeed: 1_400,
+  });
+  const metal = landingProfile({
+    material: 'metal',
+    surface: 'route',
+    impactSpeed: 600,
+  });
+  const ghost = landingProfile({
+    material: 'ghost',
+    surface: 'artifact',
+    impactSpeed: 600,
+  });
+
+  assert.ok(hardStone.weight > softStone.weight);
+  assert.ok(hardStone.noiseVolume > softStone.noiseVolume);
+  assert.ok(hardStone.resonanceVolume > softStone.resonanceVolume);
+  assert.notEqual(metal.resonanceFrequency, softStone.resonanceFrequency);
+  assert.notEqual(ghost.noiseFilterFrequency, metal.noiseFilterFrequency);
+  assert.ok(hardStone.weight <= 1);
 });

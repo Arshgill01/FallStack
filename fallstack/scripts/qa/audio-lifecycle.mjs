@@ -43,8 +43,8 @@ try {
 
   report.immediateMute = await probeImmediateMute();
   check(
-    report.immediateMute.oscillatorsStartedAfterLaunch === 1,
-    'SFX Off cancels the queued secondary launch tone'
+    report.immediateMute.sourcesStartedAfterMute === 0,
+    'SFX Off prevents every queued launch source from starting'
   );
 
   report.rapidMusicToggle = await probeRapidMusicToggle();
@@ -108,24 +108,28 @@ async function probeImmediateMute() {
   const page = await context.newPage();
   await loadReady(page);
   await page.getByRole('button', { name: 'Guide' }).click();
-  const startsBefore = await page.evaluate(
-    () => window.__fallstackAudioProbe.starts.length
-  );
-  await page.evaluate(() => {
+  const muteState = await page.evaluate(() => {
     window.dispatchEvent(new CustomEvent('fallstack:launch'));
     const sfx = [...document.querySelectorAll('button')].find((button) =>
       button.textContent?.includes('SFX On')
     );
     sfx?.click();
+    return {
+      mutedAt: performance.now(),
+      startsAtMute: window.__fallstackAudioProbe.starts.length,
+    };
   });
   await page.waitForTimeout(120);
   const result = await page.evaluate(
-    (before) => ({
-      oscillatorsStartedAfterLaunch:
-        window.__fallstackAudioProbe.starts.length - before,
-      starts: window.__fallstackAudioProbe.starts.slice(before),
+    ({ mutedAt, startsAtMute }) => ({
+      sourcesStartedAtMute: startsAtMute,
+      sourcesStartedAfterMute: window.__fallstackAudioProbe.starts.filter(
+        (entry) => entry.at > mutedAt
+      ).length,
+      starts: window.__fallstackAudioProbe.starts,
+      diagnostics: window.fallstackAudioDiagnostics?.(),
     }),
-    startsBefore
+    muteState
   );
   await context.close();
   return result;
@@ -148,7 +152,10 @@ async function probeRapidMusicToggle() {
   await page.waitForTimeout(700);
   const result = await page.evaluate(() => ({
     activeOscillators: window.__fallstackAudioProbe.activeOscillators,
-    totalOscillatorStarts: window.__fallstackAudioProbe.starts.length,
+    totalSourceStarts: window.__fallstackAudioProbe.starts.length,
+    totalOscillatorStarts: window.__fallstackAudioProbe.starts.filter(
+      (entry) => entry.kind === 'oscillator'
+    ).length,
     diagnostics: window.fallstackAudioDiagnostics?.(),
   }));
   await context.close();
@@ -238,6 +245,7 @@ async function instrumentedContext({
             oscillator.start = (...startArgs) => {
               window.__fallstackAudioProbe.starts.push({
                 at: performance.now(),
+                kind: 'oscillator',
               });
               window.__fallstackAudioProbe.activeOscillators += 1;
               oscillator.addEventListener(
@@ -250,6 +258,19 @@ async function instrumentedContext({
               return start(...startArgs);
             };
             return oscillator;
+          };
+          const createBufferSource = this.createBufferSource.bind(this);
+          this.createBufferSource = () => {
+            const source = createBufferSource();
+            const start = source.start.bind(source);
+            source.start = (...startArgs) => {
+              window.__fallstackAudioProbe.starts.push({
+                at: performance.now(),
+                kind: 'buffer',
+              });
+              return start(...startArgs);
+            };
+            return source;
           };
         }
       };

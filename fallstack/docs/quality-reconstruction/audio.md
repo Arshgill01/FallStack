@@ -183,19 +183,57 @@ initial `AudioContext` instead of two.
 The consolidated evidence is
 [`audio-lifecycle.json`](evidence/audio-lifecycle-fix/audio-lifecycle.json).
 
-## Sound-design gap
+## Gameplay SFX palette checkpoint
 
-The current cues are mostly plain oscillator pings. The event vocabulary does
-not yet distinguish:
+QR-003 now has a semantic and tactile implementation:
 
-- real floor landing from wall bonk;
-- material/platform and bounded impact weight;
-- artifact collapse/curse;
-- checkpoint latch from summit/result;
-- mutation stamp/clack from generic pitch feedback.
+- `LandEventDetail` carries material, surface role, and pre-contact impact
+  speed.
+- Wall bonk and artifact collapse are separate events instead of false landing
+  aliases.
+- Launch receives charge strength, and summit no longer reuses checkpoint.
+- Landing profiles cover route stone/metal/moon/obstacle/summit surfaces plus
+  corpse, Mercy, ghost, and cursed artifacts.
+- Deterministic filtered noise provides onset/material while short resonances
+  provide weight. This replaces the baseline's mostly plain oscillator pings.
 
-`LandEventDetail` currently contains only `zoneId`, so a tactile landing system
-cannot reliably derive material, impact, or collision type.
+The deterministic comparison is stored under
+[`evidence/sfx-palette-comparison`](evidence/sfx-palette-comparison/):
+
+| Capture            | Duration | Integrated loudness |     LRA |  True peak |
+| ------------------ | -------: | ------------------: | ------: | ---------: |
+| Baseline `4e11711` |  14.34 s |          -29.0 LUFS | 17.6 LU | -14.8 dBFS |
+| Tactile checkpoint |  14.34 s |          -30.8 LUFS | 15.3 LU | -18.8 dBFS |
+
+Both final-master reels are stereo Opus at 48 kHz and contain the same ordered
+review sequence: charge/cancel, three charged launches, soft/hard stone,
+metal, ghost, wall bonk, ghost/cursed collapse, fall, mutation, checkpoint, and
+summit. The baseline sound class did not recognize wall, collapse, or summit,
+so those entries honestly exercise its generic fallback.
+
+The analyser is intentionally diagnostic rather than a taste score. It does
+show that soft and hard stone are no longer identical: in the current capture
+the hard landing reaches RMS `0.0157` versus `0.0073` for the soft landing. The
+spectra also show broader transient and resonant structures across the event
+sequence.
+
+Real gameplay evidence is separate from the preview reel:
+
+- [`sfx-event-contract/audio-events.json`](evidence/sfx-event-contract/audio-events.json)
+  records an actual stone landing at impact `740`, a left wall bonk at impact
+  `353`, and zero fake simultaneous landing events.
+- [`sfx-gameplay-capture/final-master.webm`](evidence/sfx-gameplay-capture/final-master.webm)
+  records charge, launch, and that real landing at `-29.2 LUFS` with a
+  `-16.8 dBFS` true peak.
+- The updated lifecycle probe counts noise buffers as well as oscillators.
+  [`sfx-lifecycle/audio-lifecycle.json`](evidence/sfx-lifecycle/audio-lifecycle.json)
+  records zero delayed sources after immediate SFX Off and a silent final bus.
+
+Issue details and residual risk are in
+[`issues/ISSUE-003.md`](issues/ISSUE-003.md). This checkpoint passes automated
+signal, event, lifecycle, and browser gates. It is not a human listening
+approval: the two reels still need review on the current Mac output for timbre,
+fatigue, timing clarity, and damaged-reliquary fit.
 
 ## Music-design gap
 

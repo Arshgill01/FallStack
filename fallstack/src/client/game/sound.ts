@@ -1,5 +1,11 @@
-import { ZONE_IDS, type ZoneId } from '../../shared/game/mutation.js';
-import type { SoundId } from './events';
+import type { ZoneId } from '../../shared/game/mutation.js';
+import type {
+  ArtifactCollapseEventDetail,
+  LandingMaterial,
+  LandingSurface,
+  SoundId,
+  WallBonkEventDetail,
+} from './events';
 
 declare global {
   interface Window {
@@ -21,15 +27,19 @@ export const AUDIO_LEVELS = {
   musicDroneB: 0.04,
   musicBellPrimary: 0.12,
   musicBellSecondary: 0.085,
-  charge: 0.06,
-  launchPrimary: 0.09,
-  launchSecondary: 0.055,
-  land: 0.07,
-  fallNoise: 0.08,
-  fallTone: 0.06,
-  mutation: 0.075,
-  checkpointPrimary: 0.085,
-  checkpointSecondary: 0.07,
+  charge: 0.052,
+  launchSnap: 0.075,
+  launchBody: 0.055,
+  landNoise: 0.07,
+  landResonance: 0.052,
+  wallBonkNoise: 0.085,
+  wallBonkRing: 0.065,
+  fallNoise: 0.072,
+  fallTone: 0.052,
+  mutationStamp: 0.095,
+  checkpointLatch: 0.078,
+  checkpointBell: 0.056,
+  summitBell: 0.06,
 } as const;
 
 export const MUSIC_START_DELAY_MS = 80;
@@ -46,6 +56,132 @@ export type AudioCaptureApi = {
   start: () => Promise<void>;
   stop: () => Promise<Blob>;
 };
+
+export type SoundPlaybackDetail = {
+  zoneId?: ZoneId;
+  chargePercent?: number;
+  material?: LandingMaterial;
+  surface?: LandingSurface;
+  impactSpeed?: number;
+  side?: WallBonkEventDetail['side'];
+  artifactType?: ArtifactCollapseEventDetail['type'];
+};
+
+export type LandingProfile = {
+  weight: number;
+  noiseDuration: number;
+  noiseFilterFrequency: number;
+  noiseVolume: number;
+  resonanceFrequency: number;
+  resonanceDuration: number;
+  resonanceVolume: number;
+};
+
+const LANDING_MATERIALS: Record<
+  LandingMaterial,
+  {
+    noiseFilterFrequency: number;
+    resonanceFrequency: number;
+    resonanceDuration: number;
+    noiseScale: number;
+    resonanceScale: number;
+  }
+> = {
+  stone: {
+    noiseFilterFrequency: 540,
+    resonanceFrequency: 112,
+    resonanceDuration: 0.11,
+    noiseScale: 1,
+    resonanceScale: 1,
+  },
+  metal: {
+    noiseFilterFrequency: 1_650,
+    resonanceFrequency: 286,
+    resonanceDuration: 0.17,
+    noiseScale: 0.72,
+    resonanceScale: 0.92,
+  },
+  moon: {
+    noiseFilterFrequency: 880,
+    resonanceFrequency: 174,
+    resonanceDuration: 0.15,
+    noiseScale: 0.78,
+    resonanceScale: 0.82,
+  },
+  obstacle: {
+    noiseFilterFrequency: 1_100,
+    resonanceFrequency: 196,
+    resonanceDuration: 0.09,
+    noiseScale: 0.82,
+    resonanceScale: 0.7,
+  },
+  summit: {
+    noiseFilterFrequency: 1_250,
+    resonanceFrequency: 220,
+    resonanceDuration: 0.2,
+    noiseScale: 0.62,
+    resonanceScale: 0.78,
+  },
+  corpse: {
+    noiseFilterFrequency: 360,
+    resonanceFrequency: 92,
+    resonanceDuration: 0.08,
+    noiseScale: 0.66,
+    resonanceScale: 0.58,
+  },
+  mercy: {
+    noiseFilterFrequency: 1_350,
+    resonanceFrequency: 246,
+    resonanceDuration: 0.13,
+    noiseScale: 0.55,
+    resonanceScale: 0.72,
+  },
+  ghost: {
+    noiseFilterFrequency: 2_400,
+    resonanceFrequency: 392,
+    resonanceDuration: 0.2,
+    noiseScale: 0.45,
+    resonanceScale: 0.52,
+  },
+  cursed: {
+    noiseFilterFrequency: 1_900,
+    resonanceFrequency: 138,
+    resonanceDuration: 0.12,
+    noiseScale: 0.9,
+    resonanceScale: 0.84,
+  },
+};
+
+export function landingProfile(input: {
+  material: LandingMaterial;
+  surface: LandingSurface;
+  impactSpeed: number;
+}): LandingProfile {
+  const material = LANDING_MATERIALS[input.material];
+  const weight = clamp((input.impactSpeed - 90) / 960, 0.16, 1);
+  const checkpointScale = input.surface === 'checkpoint' ? 0.82 : 1;
+  return {
+    weight,
+    noiseDuration: 0.035 + weight * 0.075,
+    noiseFilterFrequency: material.noiseFilterFrequency,
+    noiseVolume:
+      AUDIO_LEVELS.landNoise *
+      material.noiseScale *
+      (0.42 + weight * 0.58) *
+      checkpointScale,
+    resonanceFrequency: material.resonanceFrequency,
+    resonanceDuration: material.resonanceDuration + weight * 0.045,
+    resonanceVolume:
+      AUDIO_LEVELS.landResonance *
+      material.resonanceScale *
+      (0.38 + weight * 0.62) *
+      checkpointScale,
+  };
+}
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.max(minimum, Math.min(maximum, value));
+}
 
 export function shouldResumeAudioContext(state: string): boolean {
   return state !== 'running' && state !== 'closed';
@@ -99,6 +235,7 @@ export class ProceduralSound {
   private musicStopTimer: number | null = null;
   private musicStartTimer: number | null = null;
   private musicPhraseIndex = 0;
+  private noiseState = 0x6d2b79f5;
 
   constructor(private options: SoundOptions) {}
 
@@ -125,7 +262,7 @@ export class ProceduralSound {
   previewGameplay() {
     if (this.options.gameplayMuted) return;
     this.unlock();
-    this.ping(523.25, 0.14, AUDIO_LEVELS.checkpointPrimary);
+    this.ping(523.25, 0.14, AUDIO_LEVELS.checkpointBell);
   }
 
   getDiagnostics(): AudioDiagnostics {
@@ -259,18 +396,20 @@ export class ProceduralSound {
     }
   }
 
-  play(id: SoundId, zoneId?: ZoneId) {
+  play(id: SoundId, detail: SoundPlaybackDetail = {}) {
     if (this.options.gameplayMuted) return;
     this.unlock();
     if (!this.context) return;
     if (id === 'charge-start') return this.startCharge();
-    if (id === 'launch') return this.launch();
-    if (id === 'land') return this.land(zoneId);
+    if (id === 'launch') return this.launch(detail.chargePercent);
+    if (id === 'land') return this.land(detail);
+    if (id === 'wall-bonk') return this.wallBonk(detail);
+    if (id === 'artifact-collapse') return this.artifactCollapse(detail);
     if (id === 'fall') return this.fall();
-    if (id === 'mutation')
-      return this.ping(369.99, 0.16, AUDIO_LEVELS.mutation);
+    if (id === 'mutation') return this.mutationStamp();
     if (id === 'checkpoint') return this.checkpoint();
-    return this.noise(0.035, 900, 0.05);
+    if (id === 'summit') return this.summit();
+    return this.noise(0.026, 1_600, 0.038, 'bandpass', 1.4);
   }
 
   stopCharge() {
@@ -441,41 +580,145 @@ export class ProceduralSound {
     this.chargeOsc.start(now);
   }
 
-  private launch() {
+  private launch(chargePercent = 42) {
     this.stopCharge();
-    this.ping(220, 0.1, AUDIO_LEVELS.launchPrimary);
+    const strength = clamp(chargePercent / 100, 0.42, 1);
+    this.noise(
+      0.035 + strength * 0.025,
+      1_450 + strength * 1_050,
+      AUDIO_LEVELS.launchSnap * (0.72 + strength * 0.28),
+      'bandpass',
+      1.8
+    );
+    this.tone(
+      92 + strength * 72,
+      0.075 + strength * 0.04,
+      AUDIO_LEVELS.launchBody * (0.78 + strength * 0.22),
+      'triangle',
+      0.002
+    );
     this.scheduleGameplay(
-      () => this.ping(293.66, 0.09, AUDIO_LEVELS.launchSecondary),
-      34
+      () =>
+        this.noise(
+          0.028,
+          780 + strength * 260,
+          AUDIO_LEVELS.launchSnap * 0.34,
+          'lowpass'
+        ),
+      28
     );
   }
 
-  private land(zoneId?: ZoneId) {
-    const zoneIndex = zoneId ? ZONE_IDS.indexOf(zoneId) : 0;
-    if (zoneIndex >= ZONE_IDS.length * 0.66)
-      return this.ping(440, 0.15, AUDIO_LEVELS.land);
-    if (zoneIndex >= ZONE_IDS.length * 0.33)
-      return this.ping(329.63, 0.12, AUDIO_LEVELS.land);
-    return this.ping(164.81, 0.08, AUDIO_LEVELS.land);
+  private land(detail: SoundPlaybackDetail) {
+    const profile = landingProfile({
+      material: detail.material ?? 'stone',
+      surface: detail.surface ?? 'route',
+      impactSpeed: detail.impactSpeed ?? 420,
+    });
+    this.noise(
+      profile.noiseDuration,
+      profile.noiseFilterFrequency,
+      profile.noiseVolume,
+      detail.material === 'ghost' ? 'highpass' : 'lowpass',
+      detail.material === 'metal' ? 2.4 : 0.8
+    );
+    this.tone(
+      profile.resonanceFrequency,
+      profile.resonanceDuration,
+      profile.resonanceVolume,
+      detail.material === 'metal' || detail.material === 'mercy'
+        ? 'triangle'
+        : 'sine',
+      0.002
+    );
+  }
+
+  private wallBonk(detail: SoundPlaybackDetail) {
+    const impact = clamp((detail.impactSpeed ?? 210) / 500, 0.3, 1);
+    this.noise(
+      0.04 + impact * 0.025,
+      1_750,
+      AUDIO_LEVELS.wallBonkNoise * (0.68 + impact * 0.32),
+      'bandpass',
+      3.2
+    );
+    this.tone(
+      detail.side === 'left' ? 468 : 514,
+      0.07 + impact * 0.035,
+      AUDIO_LEVELS.wallBonkRing * (0.75 + impact * 0.25),
+      'triangle',
+      0.001
+    );
+  }
+
+  private artifactCollapse(detail: SoundPlaybackDetail) {
+    if (detail.artifactType === 'ghost_platform') {
+      this.noise(0.14, 2_800, 0.05, 'highpass', 0.7);
+      this.tone(392, 0.18, 0.035, 'sine', 0.008);
+      return;
+    }
+    this.noise(0.11, 1_450, 0.09, 'bandpass', 2.2);
+    this.tone(126, 0.12, 0.06, 'triangle', 0.001);
+    this.scheduleGameplay(
+      () => this.noise(0.045, 2_100, 0.05, 'bandpass', 2.8),
+      54
+    );
   }
 
   private fall() {
-    this.noise(0.12, 260, AUDIO_LEVELS.fallNoise);
+    this.noise(0.18, 760, AUDIO_LEVELS.fallNoise, 'bandpass', 0.65);
     this.scheduleGameplay(
-      () => this.ping(146.83, 0.2, AUDIO_LEVELS.fallTone),
-      90
+      () => this.tone(86, 0.19, AUDIO_LEVELS.fallTone, 'triangle', 0.004),
+      105
+    );
+  }
+
+  private mutationStamp() {
+    this.noise(0.045, 620, AUDIO_LEVELS.mutationStamp, 'lowpass', 0.9);
+    this.tone(104, 0.085, 0.06, 'triangle', 0.001);
+    this.scheduleGameplay(
+      () => this.noise(0.024, 1_900, 0.03, 'bandpass', 2.4),
+      72
     );
   }
 
   private checkpoint() {
-    this.ping(293.66, 0.18, AUDIO_LEVELS.checkpointPrimary);
+    this.noise(0.055, 920, AUDIO_LEVELS.checkpointLatch, 'bandpass', 2.6);
+    this.tone(246.94, 0.22, AUDIO_LEVELS.checkpointBell, 'triangle', 0.006);
     this.scheduleGameplay(
-      () => this.ping(440, 0.24, AUDIO_LEVELS.checkpointSecondary),
-      110
+      () => this.tone(369.99, 0.28, 0.045, 'sine', 0.008),
+      135
     );
   }
 
+  private summit() {
+    this.noise(0.09, 2_600, 0.04, 'highpass', 0.8);
+    for (const [index, frequency] of [220, 329.63, 493.88].entries()) {
+      this.scheduleGameplay(
+        () =>
+          this.tone(
+            frequency,
+            0.48 - index * 0.06,
+            AUDIO_LEVELS.summitBell * (1 - index * 0.12),
+            index === 0 ? 'triangle' : 'sine',
+            0.012
+          ),
+        index * 145
+      );
+    }
+  }
+
   private ping(frequency: number, duration: number, volume: number) {
+    this.tone(frequency, duration, volume, 'sine', 0.001);
+  }
+
+  private tone(
+    frequency: number,
+    duration: number,
+    volume: number,
+    type: OscillatorType,
+    attack: number
+  ) {
     if (
       !this.context ||
       this.context.state === 'closed' ||
@@ -485,16 +728,34 @@ export class ProceduralSound {
     const now = this.context.currentTime;
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();
-    osc.type = 'sine';
+    osc.type = type;
     osc.frequency.setValueAtTime(frequency, now);
-    gain.gain.setValueAtTime(volume, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(
+      Math.max(0.0002, volume),
+      now + Math.max(0.001, attack)
+    );
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     osc.connect(gain).connect(this.gameplayOutput());
     osc.start(now);
     osc.stop(now + duration + 0.02);
+    osc.addEventListener(
+      'ended',
+      () => {
+        osc.disconnect();
+        gain.disconnect();
+      },
+      { once: true }
+    );
   }
 
-  private noise(duration: number, filterFrequency: number, volume: number) {
+  private noise(
+    duration: number,
+    filterFrequency: number,
+    volume: number,
+    filterType: BiquadFilterType = 'lowpass',
+    filterQ = 0.7
+  ) {
     if (
       !this.context ||
       this.context.state === 'closed' ||
@@ -509,16 +770,38 @@ export class ProceduralSound {
     );
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i += 1)
-      data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      data[i] = this.nextNoiseSample() * (1 - i / data.length);
     const source = this.context.createBufferSource();
     const filter = this.context.createBiquadFilter();
     const gain = this.context.createGain();
-    filter.type = 'lowpass';
+    filter.type = filterType;
     filter.frequency.value = filterFrequency;
-    gain.gain.value = volume;
+    filter.Q.value = filterQ;
+    gain.gain.setValueAtTime(
+      Math.max(0.0002, volume),
+      this.context.currentTime
+    );
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      this.context.currentTime + duration
+    );
     source.buffer = buffer;
     source.connect(filter).connect(gain).connect(this.gameplayOutput());
     source.start();
+    source.addEventListener(
+      'ended',
+      () => {
+        source.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+      },
+      { once: true }
+    );
+  }
+
+  private nextNoiseSample() {
+    this.noiseState = (this.noiseState * 1_664_525 + 1_013_904_223) >>> 0;
+    return (this.noiseState / 0xffffffff) * 2 - 1;
   }
 
   private ensureOutputBuses() {

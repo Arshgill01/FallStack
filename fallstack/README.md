@@ -65,7 +65,9 @@ Additional browser harnesses expect the built `dist/client` directory to be serv
 npm run qa:runtime
 npm run qa:shared
 npm run qa:audio
+npm run qa:audio-events
 npm run qa:audio-lifecycle
+npm run qa:audio-palette
 npm run qa:world-bounds
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
 ```
