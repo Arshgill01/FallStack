@@ -111,11 +111,14 @@ try {
     .filter((platform) => platform.kind !== 'obstacle')
     .sort((a, b) => b.y - a.y);
   const routeIndex = new Map(route.map((platform, index) => [platform.id, index]));
-  let targetIndex = Math.max(1, (routeIndex.get(initial.lastPlatformId) ?? 0) + 1);
-  let lastRecordedPlatform = initial.lastPlatformId;
-  let attemptsAtTarget = 0;
+  const initialSupport = currentSupport(allPlatforms, platformById, initial);
+  let targetIndex = Math.max(
+    1,
+    (routeIndex.get(initialSupport?.id ?? initial.lastPlatformId) ?? 0) + 1
+  );
   const targetAttempts = new Map();
   const approachAttempts = new Map();
+  const successfulApproaches = new Map();
   let totalJumps = 0;
   let lastZone = initial.currentZone;
 
@@ -129,15 +132,11 @@ try {
       break;
     }
 
-    const landedIndex = routeIndex.get(state.lastPlatformId);
-    if (landedIndex !== undefined && landedIndex + 1 > targetIndex) {
+    const current = currentSupport(allPlatforms, platformById, state);
+    const landedIndex = routeIndex.get(current?.id);
+    if (landedIndex !== undefined && landedIndex + 1 !== targetIndex) {
       targetIndex = landedIndex + 1;
-      attemptsAtTarget = 0;
-    } else if (landedIndex !== undefined && state.lastPlatformId !== lastRecordedPlatform) {
-      targetIndex = Math.max(targetIndex, landedIndex + 1);
-      attemptsAtTarget = 0;
     }
-    lastRecordedPlatform = state.lastPlatformId;
 
     if (state.currentZone !== lastZone) {
       lastZone = state.currentZone;
@@ -146,13 +145,13 @@ try {
 
     const target = route[targetIndex];
     if (!target) break;
-    const current = currentSupport(allPlatforms, platformById, state);
-    attemptsAtTarget = (targetAttempts.get(target.id) ?? 0) + 1;
-    targetAttempts.set(target.id, attemptsAtTarget);
-    const attemptAtTarget = attemptsAtTarget;
+    const attemptAtTarget = (targetAttempts.get(target.id) ?? 0) + 1;
+    targetAttempts.set(target.id, attemptAtTarget);
     const approachKey = `${current?.id ?? state.lastPlatformId}->${target.id}`;
-    const approachAttempt = (approachAttempts.get(approachKey) ?? 0) + 1;
-    approachAttempts.set(approachKey, approachAttempt);
+    const approachTrial = (approachAttempts.get(approachKey) ?? 0) + 1;
+    approachAttempts.set(approachKey, approachTrial);
+    const approachAttempt =
+      successfulApproaches.get(approachKey) ?? approachTrial;
     totalJumps += 1;
 
     const blockers = blockingObstacles(allPlatforms, current, target);
@@ -164,7 +163,8 @@ try {
       blockers
     );
     const after = await readScene(page, false);
-    const afterIndex = routeIndex.get(after.lastPlatformId);
+    const afterSupport = currentSupport(allPlatforms, platformById, after);
+    const afterIndex = routeIndex.get(afterSupport?.id);
     const advanced = afterIndex !== undefined && afterIndex >= targetIndex;
 
     landings.push({
@@ -179,6 +179,7 @@ try {
       approachAttempt,
       result,
       after: compactState(after),
+      afterSupportId: afterSupport?.id ?? null,
       advanced,
     });
 
@@ -197,9 +198,9 @@ try {
       );
     }
     if (advanced) {
+      successfulApproaches.set(approachKey, approachAttempt);
       targetAttempts.delete(target.id);
       targetIndex = afterIndex + 1;
-      attemptsAtTarget = 0;
     } else if (result.outcome === 'fall') {
       failures.push({
         jump: totalJumps,
@@ -208,16 +209,14 @@ try {
         attemptAtTarget,
         state: compactState(after),
       });
-      const recoveredIndex = routeIndex.get(after.lastPlatformId);
+      const recoveredIndex = routeIndex.get(afterSupport?.id);
       targetIndex = Math.max(1, (recoveredIndex ?? checkpointRouteIndex(route, after.y)) + 1);
-      attemptsAtTarget = 0;
     } else if (
       afterIndex !== undefined &&
       afterIndex < targetIndex &&
       afterIndex + 1 !== targetIndex
     ) {
       targetIndex = afterIndex + 1;
-      attemptsAtTarget = 0;
     }
   }
 
@@ -287,9 +286,13 @@ try {
 
 async function performJump(page, current, target, attempt, blockers) {
   const before = await readScene(page, false);
-  const directDirection = target.x + target.width / 2 >= (current?.x ?? before.x) + (current?.width ?? 0) / 2 ? 1 : -1;
-  const direction = chooseLaunchDirection(before, current, target, attempt);
-  const wallBounce = direction !== directDirection;
+  const directDirection =
+    target.x + target.width / 2 >=
+    (current?.x ?? before.x) + (current?.width ?? 0) / 2
+      ? 1
+      : -1;
+  const direction = directDirection;
+  const wallBounce = false;
   const desiredLaunchX = direction > 0
     ? target.x - 88 - Math.min(18, attempt * 3)
     : target.x + target.width + 88 + Math.min(18, attempt * 3);
@@ -479,22 +482,17 @@ function flightCorrection(state, target, launchDirection) {
       ? target.x + target.width - 25
       : targetCenter;
   const stillBelowTop = state.y + 15 > target.y;
-  // Stay a full player-width plus margin outside a solid platform until the
-  // climber is above its top. A four-pixel edge allowance made otherwise
-  // valid checkpoint jumps timing-dependent on VM frame scheduling.
-  const approachX = launchDirection > 0
-    ? target.x - 28
-    : target.x + target.width + 28;
-  const landingX = stillBelowTop
-    ? approachX
-    : clamp(safeLandingX, target.x + 17, target.x + target.width - 17);
+  const landingX = clamp(
+    safeLandingX,
+    target.x + 17,
+    target.x + target.width - 17
+  );
   const g = 1850;
   const deltaY = target.y - state.y;
   const discriminant = state.vy * state.vy + 2 * g * deltaY;
+  // Brake against the descending intersection, when the player can land.
   const timeToHeight = discriminant >= 0
-    ? stillBelowTop && state.vy < 0
-      ? (-state.vy - Math.sqrt(discriminant)) / g
-      : (-state.vy + Math.sqrt(discriminant)) / g
+    ? (-state.vy + Math.sqrt(discriminant)) / g
     : 0.18;
   const horizon = clamp(timeToHeight, 0.08, 0.9);
   const requiredVx = clamp((landingX - state.x) / horizon, -430, 430);
@@ -506,16 +504,6 @@ function flightCorrection(state, target, launchDirection) {
   if (velocityError > 24) return 'ArrowRight';
   if (velocityError < -24) return 'ArrowLeft';
   return positionError > 0 ? 'ArrowRight' : 'ArrowLeft';
-}
-
-function chooseLaunchDirection(state, current, target, attempt) {
-  const targetCenter = target.x + target.width / 2;
-  const currentCenter = current ? current.x + current.width / 2 : state.x;
-  if (Math.abs(targetCenter - currentCenter) > 18) {
-    const direct = targetCenter > currentCenter ? 1 : -1;
-    return attempt % 2 === 0 ? -direct : direct;
-  }
-  return attempt % 2 === 0 ? -1 : 1;
 }
 
 function chargeDuration(current, target, attempt, wallBounce) {
@@ -595,7 +583,7 @@ async function readScene(page, includePlatforms) {
 function currentSupport(platforms, platformById, state) {
   const exact = platformById.get(state.lastPlatformId);
   if (exact && Math.abs(exact.y - state.y - 14) <= 4) return exact;
-  return platforms
+  const overlapping = platforms
     .filter(
       (platform) =>
         platform.y >= state.y &&
@@ -608,6 +596,25 @@ function currentSupport(platforms, platformById, state) {
         Math.abs(left.y - state.y - 14) -
         Math.abs(right.y - state.y - 14)
     )[0] ?? null;
+  if (overlapping) return overlapping;
+
+  return platforms
+    .filter(
+      (platform) =>
+        platform.kind !== 'obstacle' &&
+        Math.abs(platform.y - state.y - 14) <= 4 &&
+        horizontalDistance(state.x, platform) <= 80
+    )
+    .sort(
+      (left, right) =>
+        horizontalDistance(state.x, left) - horizontalDistance(state.x, right)
+    )[0] ?? null;
+}
+
+function horizontalDistance(x, platform) {
+  if (x < platform.x) return platform.x - x;
+  if (x > platform.x + platform.width) return x - platform.x - platform.width;
+  return 0;
 }
 
 async function waitForAirborne(page, timeoutMs) {

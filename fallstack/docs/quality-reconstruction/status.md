@@ -14,8 +14,9 @@ Gate 1 — baseline census and verified issue resolution in progress.
 Gate 0 is complete on the current Mac. The project checks,
 Chromium/WebKit runtime lifecycle, mocked two-client reconciliation, signed-in
 Safari host access, independent hosted Music/SFX controls, and a deterministic
-final-master audio recorder are available. The full production-build summit
-remains open after partial checkpointed replay progress.
+final-master audio recorder are available. The production-build mobile replay
+now proves the complete local-practice route from its opening mutation through
+all eleven zone clears to the summit.
 
 ## Checkpoints
 
@@ -32,7 +33,7 @@ remains open after partial checkpointed replay progress.
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
-| Full playthrough | Open | Mobile rerun crossed the opening blocker and checkpointed probes reached Black Hole Chapel; uninterrupted summit still missing |
+| Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
 ## Initial issue ledger
@@ -53,7 +54,7 @@ These are investigation records, not all approved fixes.
 | QR-010 | Medium | Camera | Fixed and regression-tested | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths |
 | QR-011 | Medium | UI | Fixed and browser-regressed | Mobile functional text now meets its role minimum without header or sheet overflow |
 | QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
-| QR-013 | High | QA/playthrough | Replay improved; summit still open | Mobile rerun crossed opening ledge 7; two controller defects were fixed, but a checkpointed replay exhausted 320 jumps in early Black Hole Chapel |
+| QR-013 | High | QA/playthrough | Fixed and production-replayed | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
 
 ## Decisions
 
@@ -90,6 +91,9 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: At 320–374 px, the visual tally contracts to `Falls` so `13 px`
   status and action text fit without collision. The full community wording
   remains in the tally's accessible label and returns visually at 375 px.
+- 2026-07-27: QR-013 is a replay-controller defect, not evidence of a tower
+  geometry defect. Route progress follows physical support, and air correction
+  targets the descending intersection with a safe landing segment.
 
 ## Commands run
 
@@ -152,6 +156,11 @@ npm test
 npm run lint
 node --check scripts/qa/ui-readability.mjs
 git diff --check
+node --check scripts/qa/full-playthrough.mjs
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-galaxy-landing-time --browser=chromium --resume-zone=galaxy_reef --retries=40 --max-jumps=100 --require-summit=false
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-dying-star-landing-time --browser=chromium --resume-zone=dying_star_garden --retries=40 --max-jumps=60 --require-summit=false
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-event-horizon-landing-time --browser=chromium --resume-zone=event_horizon_crown --retries=40 --max-jumps=40 --require-summit=false
+npm run qa:playthrough -- --output docs/quality-reconstruction/evidence/full-playthrough-fixed --browser=chromium --intro-fall --retries=40 --max-jumps=1500
 ```
 
 Results:
@@ -202,9 +211,21 @@ Results:
   the player instead of trusting a stale label.
 - The improved checkpointed probe crossed six later zones and reached
   `black_hole_chapel`, but expired its 320-jump budget while cycling between the
-  previous checkpoint and early chapel ledges. This is not summit approval.
-- The Black Hole Chapel-only probe was manually stopped after repeating the
-  same checkpoint churn without crossing into the next zone.
+  previous checkpoint and early chapel ledges. It exposed two remaining
+  controller errors: speculative reverse wall bounces on unobstructed route
+  jumps, and air correction aimed outside the ledge until the ascending
+  intersection instead of braking for the descending landing.
+- With physical support as route authority, direct launch selection, cached
+  source-target approaches, and descending-time landing correction, the Galaxy,
+  Dying Star, and Event Horizon checkpoint probes reached the summit in 36, 23,
+  and 10 jumps respectively, each with zero non-advancing falls.
+- The final uninterrupted 375×812 production-build replay completed all 155
+  route platforms in 158 controlled jumps over 170 seconds. It recorded the
+  intentional opening fall, 11 clean clears, screenshots for every zone, one
+  summit event, and `summitSent: true`. Five non-advancing fall outcomes were
+  recovered; four additional route falls advanced to a newly earned checkpoint.
+  Page exceptions were empty. The static local-practice `/api` 404 and fallback
+  warning are expected and are not hosted-state evidence.
 - Final mobile-boundary checkpoint checks passed: 150/150 tests, production
   build, world-contact regression, Chromium runtime smoke, and isolated WebKit
   runtime smoke.

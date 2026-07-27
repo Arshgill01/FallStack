@@ -125,6 +125,37 @@ Garden, Pulsar Spine, Neutron Forge, and into Black Hole Chapel. The probe then
 cycled between the previous checkpoint and early Black Hole Chapel until its
 320-jump budget expired.
 
-The uninterrupted summit proof therefore remains open. Current evidence no
-longer implicates the mobile boundary correction, but partial replay progress
-must not be reported as a completed tower.
+The Black Hole and Galaxy probes isolated two final controller defects:
+
+1. It alternated into a reverse wall-bounce launch even when the route jump was
+   unobstructed.
+2. While rising below a target, it steered toward a point outside the platform
+   using the ascending time-to-height root. Compact lateral steps therefore
+   started braking after their safe landing window had passed.
+
+The fixed controller uses physical support as route authority, launches
+directly on the default route, remembers a successful source-target approach,
+and projects horizontal correction to the descending platform-height
+intersection. This moved the Galaxy checkpoint probe to the summit in 36 jumps
+with no non-advancing falls.
+
+The canonical 375×812 production-build replay then completed the uninterrupted
+local-practice route:
+
+- all 155 non-obstacle route platforms;
+- all 11 zone clears and a screenshot for every zone;
+- 158 controlled jumps over 170 seconds;
+- the intentional opening mutation fall;
+- five recovered non-advancing fall outcomes;
+- one summit event and final `summitSent: true`;
+- zero page exceptions.
+
+The report and captures are in
+[`full-playthrough-fixed`](evidence/full-playthrough-fixed/). The expected
+static-server `/api` 404 means this is local-practice mechanical evidence, not
+authenticated shared-state evidence.
+
+QR-013 is closed as a replay-controller defect. The result proves the current
+default route can be completed with the shipped movement model and the
+mobile-only boundary correction; it does not claim a broader difficulty or
+human-feel approval.
