@@ -1,0 +1,229 @@
+{
+  "generatedAt": "2026-07-27T12:15:50.858Z",
+  "generator": "scripts/qa/music-directions.mjs",
+  "sampleRate": 48000,
+  "durationSeconds": 48,
+  "provenance": {
+    "source": "Original deterministic synthesis authored for Fallstack from mathematical oscillators and seeded noise.",
+    "externalAssets": [],
+    "licence": "Repository BSD-3-Clause",
+    "productionStatus": "Concept previews only. None is selected or shipped by this checkpoint."
+  },
+  "reviewOrder": [
+    "a-mended-lantern",
+    "b-crooked-procession",
+    "c-breathing-reliquary"
+  ],
+  "directions": [
+    {
+      "id": "a-mended-lantern",
+      "title": "Mended Lantern",
+      "structure": "Sparse, episodic Dorian plucks over repaired cloth and stone.",
+      "instrumentation": "Low sine drones, thread-brush noise, wooden plucks, and restrained bells.",
+      "tradeoff": "Warmest and least tiring; its biome contrast is intentionally subtle.",
+      "provisionalDesignIntentScore": {
+        "productFit": 5,
+        "coziness": 5,
+        "cursedTactileIdentity": 4,
+        "longSessionFatigue": 5,
+        "gameplayClarity": 5,
+        "biomeCoherence": 4,
+        "runtimeCost": 5
+      },
+      "scoreNotice": "Authoring assessment only; human listening approval remains required.",
+      "artifact": "docs/quality-reconstruction/evidence/music-directions/a-mended-lantern.webm",
+      "spectrum": "docs/quality-reconstruction/evidence/music-directions/a-mended-lantern-spectrum.png",
+      "signalSha256": "1b20a5398738008695c41fdb231826ab8fd02b1df68e9510ef9c77fe3b1adfed",
+      "encodedArtifactSha256": "172f929307d3fc10ddba389a4c26f108c8c2464430e3c0809fe6b249f5cea4ea",
+      "byteLength": 893140,
+      "stream": {
+        "codec": "opus",
+        "sampleRate": 48000,
+        "channels": 2,
+        "durationSeconds": 48.008
+      },
+      "loudness": {
+        "integratedLufs": -22.1,
+        "loudnessRangeLu": 6.5,
+        "truePeakDbfs": -9.7
+      },
+      "pcm": {
+        "peak": 0.327477,
+        "rms": 0.060637,
+        "normalizationScale": 2.248796,
+        "maxAdjacentDelta": 0.039
+      },
+      "timeline": {
+        "lowerRuins": {
+          "startSeconds": 0,
+          "endSeconds": 16
+        },
+        "bellShaft": {
+          "startSeconds": 16,
+          "endSeconds": 32
+        },
+        "moonRoof": {
+          "startSeconds": 32,
+          "endSeconds": 48
+        }
+      },
+      "events": [
+        {
+          "zone": "lower-ruins",
+          "startSeconds": 0,
+          "intent": "thread, stone, and sparse plucks"
+        },
+        {
+          "zone": "bell-shaft",
+          "startSeconds": 16,
+          "intent": "rope knocks and open bell intervals"
+        },
+        {
+          "zone": "moon-roof",
+          "startSeconds": 32,
+          "intent": "open fifths, air, and distant glass"
+        }
+      ]
+    },
+    {
+      "id": "b-crooked-procession",
+      "title": "Crooked Procession",
+      "structure": "A five-beat mechanical procession that sheds weight while climbing.",
+      "instrumentation": "Wood knocks, muted wire plucks, rope pulses, and crooked metal partials.",
+      "tradeoff": "Strongest vertical identity and zone contrast; the pulse has the highest fatigue risk.",
+      "provisionalDesignIntentScore": {
+        "productFit": 5,
+        "coziness": 3,
+        "cursedTactileIdentity": 5,
+        "longSessionFatigue": 3,
+        "gameplayClarity": 4,
+        "biomeCoherence": 5,
+        "runtimeCost": 4
+      },
+      "scoreNotice": "Authoring assessment only; human listening approval remains required.",
+      "artifact": "docs/quality-reconstruction/evidence/music-directions/b-crooked-procession.webm",
+      "spectrum": "docs/quality-reconstruction/evidence/music-directions/b-crooked-procession-spectrum.png",
+      "signalSha256": "dd6cd26a8b5ffdd2caa691d2c32e9155f8162c94c00aa15c61591d2a3a40be22",
+      "encodedArtifactSha256": "f50de26970a1e43b5962194dd0e0109d4cfa165985225573b9a1c88df62e2851",
+      "byteLength": 984565,
+      "stream": {
+        "codec": "opus",
+        "sampleRate": 48000,
+        "channels": 2,
+        "durationSeconds": 48.008
+      },
+      "loudness": {
+        "integratedLufs": -22,
+        "loudnessRangeLu": 5.6,
+        "truePeakDbfs": -9.5
+      },
+      "pcm": {
+        "peak": 0.327477,
+        "rms": 0.061618,
+        "normalizationScale": 2.488952,
+        "maxAdjacentDelta": 0.08859
+      },
+      "timeline": {
+        "lowerRuins": {
+          "startSeconds": 0,
+          "endSeconds": 16
+        },
+        "bellShaft": {
+          "startSeconds": 16,
+          "endSeconds": 32
+        },
+        "moonRoof": {
+          "startSeconds": 32,
+          "endSeconds": 48
+        }
+      },
+      "events": [
+        {
+          "zone": "lower-ruins",
+          "startSeconds": 0,
+          "intent": "five-beat wood and wire procession"
+        },
+        {
+          "zone": "bell-shaft",
+          "startSeconds": 16,
+          "intent": "rope pulse with crooked metal answers"
+        },
+        {
+          "zone": "moon-roof",
+          "startSeconds": 32,
+          "intent": "half-density procession with high roof bells"
+        }
+      ]
+    },
+    {
+      "id": "c-breathing-reliquary",
+      "title": "Breathing Reliquary",
+      "structure": "Pulse-free overlapping breaths and slowly changing harmonic chambers.",
+      "instrumentation": "Air bands, soft organ partials, distant glass, and low architectural resonance.",
+      "tradeoff": "Most spacious under repeated play; least explicit rhythmic climb momentum.",
+      "provisionalDesignIntentScore": {
+        "productFit": 4,
+        "coziness": 5,
+        "cursedTactileIdentity": 5,
+        "longSessionFatigue": 5,
+        "gameplayClarity": 5,
+        "biomeCoherence": 4,
+        "runtimeCost": 4
+      },
+      "scoreNotice": "Authoring assessment only; human listening approval remains required.",
+      "artifact": "docs/quality-reconstruction/evidence/music-directions/c-breathing-reliquary.webm",
+      "spectrum": "docs/quality-reconstruction/evidence/music-directions/c-breathing-reliquary-spectrum.png",
+      "signalSha256": "b2cec9e25b7e91bb64605157b996de1e68db3c27bc600bf7c1b6d3ac71f0129b",
+      "encodedArtifactSha256": "110989af5a42297f4a943b831f84adf35788a10efc9906d1eb6fd33bd9920d8d",
+      "byteLength": 838317,
+      "stream": {
+        "codec": "opus",
+        "sampleRate": 48000,
+        "channels": 2,
+        "durationSeconds": 48.008
+      },
+      "loudness": {
+        "integratedLufs": -22,
+        "loudnessRangeLu": 6.3,
+        "truePeakDbfs": -9.7
+      },
+      "pcm": {
+        "peak": 0.327477,
+        "rms": 0.062931,
+        "normalizationScale": 4.562667,
+        "maxAdjacentDelta": 0.035284
+      },
+      "timeline": {
+        "lowerRuins": {
+          "startSeconds": 0,
+          "endSeconds": 16
+        },
+        "bellShaft": {
+          "startSeconds": 16,
+          "endSeconds": 32
+        },
+        "moonRoof": {
+          "startSeconds": 32,
+          "endSeconds": 48
+        }
+      },
+      "events": [
+        {
+          "zone": "lower-ruins",
+          "startSeconds": 0,
+          "intent": "low stone chamber and cloth breaths"
+        },
+        {
+          "zone": "bell-shaft",
+          "startSeconds": 16,
+          "intent": "darker suspended chamber with distant glass"
+        },
+        {
+          "zone": "moon-roof",
+          "startSeconds": 32,
+          "intent": "open high chamber and wider air"
+        }
+      ]
+    }
+  ]
+}

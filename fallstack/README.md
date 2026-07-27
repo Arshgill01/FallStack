@@ -68,6 +68,7 @@ npm run qa:audio
 npm run qa:audio-events
 npm run qa:audio-lifecycle
 npm run qa:audio-palette
+npm run qa:music-directions
 npm run qa:ui-readability
 npm run qa:world-bounds
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
@@ -78,6 +79,9 @@ query-gated browser seam, verifies that it contains a non-silent audio stream,
 and writes an FFprobe-backed report beside the WebM artifact.
 `qa:audio-lifecycle` checks preference migration, single-context ownership,
 immediate SFX mute, rapid Music toggles, and closed-context recovery.
+`qa:music-directions` renders the three original, unselected music concepts,
+encodes reviewable Opus previews, and records provenance, spectra, and loudness
+metrics without changing the production score.
 
 `npm run dev`, `npm run deploy`, and `npm run launch` interact with Reddit/Devvit. They are intentionally not part of local verification and should only be run by an authenticated maintainer who intends that external change.
 

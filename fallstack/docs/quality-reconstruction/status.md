@@ -32,6 +32,7 @@ all eleven zone clears to the summit.
 | Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
+| Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
@@ -45,7 +46,7 @@ These are investigation records, not all approved fixes.
 | QR-001 | High | Gameplay/world | Fixed and browser-regressed | Mobile inherited an off-frame playable gutter before its readable side boundary; desktop/fullscreen outer edges were already correct |
 | QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
 | QR-003 | High | Audio/design | Implemented; listening gate open | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains |
-| QR-004 | High | Music | Baseline confirmed | Two drones plus an eight-note bell phrase repeat every 17.6 seconds with no biome response |
+| QR-004 | High | Music | Direction gate ready; production unchanged | Three original three-biome previews are technically verified; user listening selection and production integration remain |
 | QR-005 | Medium | Audio/lifecycle | Fixed and browser-regressed | Rapid Music Off/On reopened untracked bell tails and overlapped a new pair |
 | QR-006 | Medium | Audio/preferences | Fixed and browser-regressed | Legacy combined mute key forced SFX off again after reload |
 | QR-007 | Medium | Audio/lifecycle | Fixed and browser-regressed | Queued SFX continued after SFX Off; gameplay bus itself was never muted |
@@ -94,6 +95,9 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: QR-013 is a replay-controller defect, not evidence of a tower
   geometry defect. Route progress follows physical support, and air correction
   targets the descending intersection with a safe landing segment.
+- 2026-07-27: QR-004 pauses before production integration. Three original
+  directions may be compared at matched loudness, but automated metrics and an
+  authoring scorecard do not choose music or approve fatigue.
 
 ## Commands run
 
@@ -161,6 +165,8 @@ npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-galaxy-lan
 npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-dying-star-landing-time --browser=chromium --resume-zone=dying_star_garden --retries=40 --max-jumps=60 --require-summit=false
 npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-event-horizon-landing-time --browser=chromium --resume-zone=event_horizon_crown --retries=40 --max-jumps=40 --require-summit=false
 npm run qa:playthrough -- --output docs/quality-reconstruction/evidence/full-playthrough-fixed --browser=chromium --intro-fall --retries=40 --max-jumps=1500
+npm run qa:music-directions -- docs/quality-reconstruction/evidence/music-directions
+npm run qa:music-directions -- /tmp/fallstack-quality/music-directions-repeat
 ```
 
 Results:
@@ -247,6 +253,14 @@ Results:
   sheet overflow. Chromium and WebKit runtime smokes pass afterward.
 - Current repository checks pass: 151/151 tests, type-check, lint, build, and
   `git diff --check`. The known Phaser chunk warning remains.
+- The three QR-004 direction previews are each 48.008-second stereo Opus at
+  48 kHz. They measure `-22.1…-22.0 LUFS`, `5.6…6.5 LU` LRA, and
+  `-9.7…-9.5 dBFS` true peak. A second render reproduced all three PCM signal
+  hashes exactly; maximum adjacent-sample deltas are `0.035…0.089`.
+- Spectrum inspection distinguishes sparse episodic gaps in Mended Lantern,
+  continuous five-beat transients in Crooked Procession, and longer breath
+  chambers in Breathing Reliquary. This proves compositional contrast, not
+  taste or long-session approval.
 
 ## Worktree safety
 

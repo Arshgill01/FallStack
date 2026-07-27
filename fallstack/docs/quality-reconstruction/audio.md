@@ -235,7 +235,7 @@ signal, event, lifecycle, and browser gates. It is not a human listening
 approval: the two reels still need review on the current Mac output for timbre,
 fatigue, timing clarity, and damaged-reliquary fit.
 
-## Music-design gap
+## Music direction gate
 
 The current bed is too static to satisfy the requested cozy soundtrack:
 
@@ -248,3 +248,30 @@ The current bed is too static to satisfy the requested cozy soundtrack:
 
 The replacement must be original and provenance-recorded. Jump King remains a
 mood/interaction reference, not a source of melodies or assets.
+
+Three original concept directions now provide a controlled selection gate. Each
+preview is 48 seconds long and gives Lower Ruins, Bell Shaft, and Moon Roof
+exactly 16 seconds. They are level-matched closely enough that preference is not
+decided by loudness:
+
+| Direction | Structure | Integrated | LRA | True peak |
+| --- | --- | ---: | ---: | ---: |
+| [A — Mended Lantern](evidence/music-directions/a-mended-lantern.webm) | Sparse Dorian plucks, thread brush, wood, restrained bells | -22.1 LUFS | 6.5 LU | -9.7 dBFS |
+| [B — Crooked Procession](evidence/music-directions/b-crooked-procession.webm) | Five-beat wood/wire procession that sheds weight while climbing | -22.0 LUFS | 5.6 LU | -9.5 dBFS |
+| [C — Breathing Reliquary](evidence/music-directions/c-breathing-reliquary.webm) | Pulse-free breaths, harmonic chambers, and distant glass | -22.0 LUFS | 6.3 LU | -9.7 dBFS |
+
+The [comparison report](evidence/music-directions/music-directions.json)
+records the provisional design-intent scorecard, timeline, signal hashes,
+stream metadata, spectra, and provenance. The source is
+[`scripts/qa/music-directions.mjs`](../../scripts/qa/music-directions.mjs):
+mathematical oscillators and seeded noise written for Fallstack, with no
+external assets. A second render produced identical PCM hashes for all three
+directions. Maximum adjacent-sample deltas are `0.035–0.089`, below the
+discontinuity guard, and every true peak remains below `-9.5 dBFS`.
+
+These are concept previews, not production music. The provisional scores are an
+authoring assessment rather than a listening approval. QR-004 remains at the
+selection gate until the user reviews the three previews on the current Mac and
+chooses a direction. Production integration must then prove adaptive
+transitions, event ducking, mute/resume behavior, source cleanup, a ten-minute
+capture, and in-context fatigue.
