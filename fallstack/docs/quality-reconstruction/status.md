@@ -11,7 +11,9 @@ evidence-based quality gates.
 
 Gate 1 is complete. Gate 2 integration is waiting on the QR-004 music
 selection and the QR-003 current-Mac listening decision; production music
-remains unchanged until that user-owned gate closes.
+remains unchanged until that user-owned gate closes. The extended final-master
+scenario and listening scorecard are ready, so the selected score can enter the
+required ten-minute evidence loop without another instrumentation pass.
 
 Gate 0 is complete on the current Mac. The project checks,
 Chromium/WebKit runtime lifecycle, mocked two-client reconciliation, signed-in
@@ -36,6 +38,7 @@ all eleven zone clears to the summit.
 | Exact Gate 1 baseline | Complete | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
 | Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
+| Extended audio gate | Ready; short dry run passed | 19.86 s non-qualifying final-master capture; 13 tagged actions, three zones, Music/SFX controls, falls, checkpoint, summit, LUFS/LRA/true-peak analysis, and spectrum |
 | Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
 | Dialog input/accessibility | Complete | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified |
 | Temporary HUD overlays | Complete | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point |
@@ -281,6 +284,10 @@ npm run lint
 npm test
 npm run build
 git diff --check
+node --check scripts/qa/audio-endurance.mjs
+npm run qa:audio -- /tmp/fallstack-quality/audio-capture-compat
+npm run qa:audio-endurance -- /tmp/fallstack-quality/audio-endurance-final-dry-run --duration-seconds=20
+npm run qa:audio-endurance -- docs/quality-reconstruction/evidence/audio-endurance-dry-run --duration-seconds=20
 ```
 
 Results:
@@ -439,6 +446,13 @@ Results:
   48/48 checks, mobile readability and all 266 overlay checks pass, and the
   final type-check, lint, 153 tests, build, and diff check pass. The build keeps
   the known expanded Phaser chunk warning.
+- The selection-neutral extended-audio dry run completed all 13 actions in
+  19.86 seconds: three real launches, Lower Ruins/Bell Shaft/Moon Roof scene
+  placement, SFX and Music Off/On UI cycles, production falls, checkpoint, and
+  summit. The final master is stereo Opus at 48 kHz, `-28.6 LUFS`, `1.7 LU`
+  LRA, and `-15.9 dBFS` true peak. It is explicitly marked
+  `enduranceGateEligible: false`; selection, a 600-second capture, and human
+  listening remain open.
 
 ## Worktree safety
 

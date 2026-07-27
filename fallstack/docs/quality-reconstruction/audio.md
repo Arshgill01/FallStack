@@ -275,3 +275,32 @@ selection gate until the user reviews the three previews on the current Mac and
 chooses a direction. Production integration must then prove adaptive
 transitions, event ducking, mute/resume behavior, source cleanup, a ten-minute
 capture, and in-context fatigue.
+
+### Extended final-master gate
+
+The selection-neutral endurance command is now ready:
+
+```sh
+npm run qa:audio-endurance -- <output-dir> --duration-seconds=600
+```
+
+It records the production final master while exercising three real keyboard
+launches, the Music/SFX UI, production fall detection, the checkpoint and
+summit handlers, and QA-positioned Lower Ruins, Bell Shaft, Moon Roof, and
+summit scenes. The report distinguishes real input from QA positioning, probes
+the encoded stream, calculates integrated LUFS, loudness range, and true peak,
+and renders a spectrum image.
+
+The
+[`audio-endurance-dry-run`](evidence/audio-endurance-dry-run/audio-endurance.json)
+report proves the complete scenario and analysis path in a deliberately
+non-qualifying 19.86-second run: 13 tagged actions, three launches, four
+observed falls, one checkpoint, one summit, stereo 48 kHz Opus, `-28.6 LUFS`,
+`1.7 LU` LRA, and `-15.9 dBFS` true peak. Its
+`enduranceGateEligible: false` field prevents this harness check from being
+represented as the required listening artifact.
+
+The final human record is
+[`audio-listening-scorecard.md`](audio-listening-scorecard.md). It remains
+empty by design until a music direction is selected, integrated, captured for
+at least ten minutes, and heard on the current Mac output.

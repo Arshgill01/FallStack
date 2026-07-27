@@ -13,6 +13,7 @@
     "login": "devvit login",
     "prettier": "prettier --write .",
     "qa:audio": "node scripts/qa/audio-capture.mjs",
+    "qa:audio-endurance": "node scripts/qa/audio-endurance.mjs",
     "qa:audio-events": "node scripts/qa/audio-events.mjs",
     "qa:audio-lifecycle": "node scripts/qa/audio-lifecycle.mjs",
     "qa:audio-palette": "node scripts/qa/audio-palette.mjs",

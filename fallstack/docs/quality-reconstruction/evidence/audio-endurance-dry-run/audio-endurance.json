@@ -1,0 +1,504 @@
+{
+  "generatedAt": "2026-07-27T14:10:25.067Z",
+  "source": {
+    "surface": "local production build",
+    "url": "http://127.0.0.1:8080/game.html?qa=audio",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "interaction": "Real keyboard/UI input with tagged QA checkpoint positioning and production event handlers."
+  },
+  "requestedDurationSeconds": 20,
+  "enduranceGateEligible": false,
+  "approvalNotice": "Signal checks do not approve composition, timbre, repetition, fatigue, or mix taste. Human listening remains required.",
+  "artifact": "docs/quality-reconstruction/evidence/audio-endurance-dry-run/final-master.webm",
+  "spectrum": "docs/quality-reconstruction/evidence/audio-endurance-dry-run/final-master-spectrum.png",
+  "byteLength": 320694,
+  "mimeType": "audio/webm;codecs=opus",
+  "stream": {
+    "codec_name": "opus",
+    "codec_type": "audio",
+    "sample_rate": "48000",
+    "channels": 2
+  },
+  "durationSeconds": 19.857,
+  "loudness": {
+    "integratedLufs": -28.6,
+    "loudnessRangeLu": 1.7,
+    "truePeakDbfs": -15.9
+  },
+  "maxOutputPeak": 0.0859,
+  "maxOutputRms": 0.0586,
+  "sampledContextStates": [
+    "running"
+  ],
+  "actions": [
+    {
+      "name": "lower-ruins",
+      "evidenceKind": "QA-positioned production scene",
+      "atMs": 208,
+      "result": {
+        "currentZone": "orbital_scrapyard",
+        "respawnZone": "orbital_scrapyard",
+        "playerY": 17192
+      }
+    },
+    {
+      "name": "lower-ruins-launch",
+      "evidenceKind": "real keyboard input",
+      "atMs": 1141,
+      "result": {
+        "chargeMs": 520
+      }
+    },
+    {
+      "name": "sfx-off-on",
+      "evidenceKind": "real UI input",
+      "atMs": 3191,
+      "result": {
+        "before": "SFX On",
+        "off": "SFX Off",
+        "on": "SFX On",
+        "pauseMs": 350
+      }
+    },
+    {
+      "name": "opening-fall",
+      "evidenceKind": "QA-positioned player, production fall detection",
+      "atMs": 4831,
+      "result": {
+        "attemptId": "attempt_ms3b0ca2_aa5960e3-5572-4b4e-849d-954ae5123663",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 240,
+        "fallY": 21206,
+        "highestY": 17192,
+        "lastPlatformId": "start",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 93,
+        "launchDirection": 0
+      }
+    },
+    {
+      "name": "bell-shaft",
+      "evidenceKind": "QA-positioned production scene",
+      "atMs": 6809,
+      "result": {
+        "currentZone": "ring_citadel",
+        "respawnZone": "ring_citadel",
+        "playerY": 11460
+      }
+    },
+    {
+      "name": "bell-shaft-launch",
+      "evidenceKind": "real keyboard input",
+      "atMs": 7929,
+      "result": {
+        "chargeMs": 520
+      }
+    },
+    {
+      "name": "checkpoint-response",
+      "evidenceKind": "QA-authored detail, production event handler",
+      "atMs": 9209,
+      "result": {
+        "attemptId": "qa-audio-endurance-checkpoint",
+        "zoneId": "ring_citadel",
+        "highestY": 11383
+      }
+    },
+    {
+      "name": "music-off-on",
+      "evidenceKind": "real UI input",
+      "atMs": 11708,
+      "result": {
+        "before": "Music On",
+        "off": "Music Off",
+        "on": "Music On",
+        "pauseMs": 350
+      }
+    },
+    {
+      "name": "moon-roof",
+      "evidenceKind": "QA-positioned production scene",
+      "atMs": 13210,
+      "result": {
+        "currentZone": "black_hole_chapel",
+        "respawnZone": "black_hole_chapel",
+        "playerY": 5700
+      }
+    },
+    {
+      "name": "moon-roof-launch",
+      "evidenceKind": "real keyboard input",
+      "atMs": 14329,
+      "result": {
+        "chargeMs": 520
+      }
+    },
+    {
+      "name": "moon-roof-fall",
+      "evidenceKind": "QA-positioned player, production fall detection",
+      "atMs": 15232,
+      "result": {
+        "attemptId": "attempt_ms3b0m7e_20720c01-6f0c-4a5d-b6ae-4a43e0844ec7",
+        "respawnZoneId": "black_hole_chapel",
+        "fallX": 240,
+        "fallY": 9746,
+        "highestY": 5700,
+        "lastPlatformId": "neutron_forge-checkpoint",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 92,
+        "launchDirection": 0
+      }
+    },
+    {
+      "name": "summit",
+      "evidenceKind": "QA-positioned production scene",
+      "atMs": 17207,
+      "result": {
+        "currentZone": "event_horizon_crown",
+        "respawnZone": "event_horizon_crown",
+        "playerY": 1380
+      }
+    },
+    {
+      "name": "summit-response",
+      "evidenceKind": "QA-authored contact, production summit handler",
+      "atMs": 17636,
+      "result": {
+        "attemptId": "attempt_ms3b0o20_c8ddd150-1b91-436b-b16e-3edc588e7453",
+        "highestY": 1380
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "ready",
+      "at": 416.5,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 1199.5,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1232.7999999523163,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1350.1999999284744,
+      "detail": {
+        "percent": 60
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1449.8999999761581,
+      "detail": {
+        "percent": 70
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1549.3999999761581,
+      "detail": {
+        "percent": 80
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1650.1999999284744,
+      "detail": {
+        "percent": 90
+      }
+    },
+    {
+      "name": "launch",
+      "at": 1731.6999999284744,
+      "detail": {
+        "direction": 1,
+        "chargePercent": 93,
+        "originX": 240,
+        "velocityX": 443.6875,
+        "velocityY": -1023.9
+      }
+    },
+    {
+      "name": "charge",
+      "at": 1734,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "fall",
+      "at": 2516.7999999523163,
+      "detail": {
+        "attemptId": "attempt_ms3b0axr_3b61b401-9bfe-4cc9-87fa-a3a88210bf2d",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 318.35208333333327,
+        "fallY": 17330.291666666668,
+        "highestY": 17042,
+        "lastPlatformId": "ledge-orbital_scrapyard-2",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 93,
+        "launchDirection": 1
+      }
+    },
+    {
+      "name": "fall",
+      "at": 5399.199999928474,
+      "detail": {
+        "attemptId": "attempt_ms3b0ca2_aa5960e3-5572-4b4e-849d-954ae5123663",
+        "respawnZoneId": "orbital_scrapyard",
+        "fallX": 240,
+        "fallY": 21206,
+        "highestY": 17192,
+        "lastPlatformId": "start",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 93,
+        "launchDirection": 0
+      }
+    },
+    {
+      "name": "zone",
+      "at": 7386.5,
+      "detail": {
+        "zoneId": "ring_citadel"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8000.199999928474,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8034.5,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8150.099999904633,
+      "detail": {
+        "percent": 60
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8249.199999928474,
+      "detail": {
+        "percent": 70
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8351.299999952316,
+      "detail": {
+        "percent": 80
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8450.399999976158,
+      "detail": {
+        "percent": 90
+      }
+    },
+    {
+      "name": "launch",
+      "at": 8516.099999904633,
+      "detail": {
+        "direction": 1,
+        "chargePercent": 92,
+        "originX": 240,
+        "velocityX": 439.8691666666666,
+        "velocityY": -1017.7906666666665
+      }
+    },
+    {
+      "name": "charge",
+      "at": 8516.899999976158,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 9032.5,
+      "detail": {
+        "zoneId": "ring_citadel",
+        "material": "metal",
+        "surface": "route",
+        "impactSpeed": 462
+      }
+    },
+    {
+      "name": "clear",
+      "at": 9785.199999928474,
+      "detail": {
+        "attemptId": "qa-audio-endurance-checkpoint",
+        "zoneId": "ring_citadel",
+        "highestY": 11383
+      }
+    },
+    {
+      "name": "zone",
+      "at": 13788,
+      "detail": {
+        "zoneId": "black_hole_chapel"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14399.599999904633,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14431.5,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14548.099999904633,
+      "detail": {
+        "percent": 60
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14648.599999904633,
+      "detail": {
+        "percent": 70
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14750.799999952316,
+      "detail": {
+        "percent": 80
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14848.299999952316,
+      "detail": {
+        "percent": 90
+      }
+    },
+    {
+      "name": "launch",
+      "at": 14916.699999928474,
+      "detail": {
+        "direction": 1,
+        "chargePercent": 92,
+        "originX": 240,
+        "velocityX": 439.8691666666664,
+        "velocityY": -1017.7906666666663
+      }
+    },
+    {
+      "name": "charge",
+      "at": 14917.199999928474,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "zone",
+      "at": 15321,
+      "detail": {
+        "zoneId": "neutron_forge"
+      }
+    },
+    {
+      "name": "fall",
+      "at": 15383.199999928474,
+      "detail": {
+        "attemptId": "attempt_ms3b0kyx_5d940eb9-00fc-413d-8d89-c9018502ac84",
+        "respawnZoneId": "black_hole_chapel",
+        "fallX": 316.9542083333332,
+        "fallY": 5806.013888888889,
+        "highestY": 5676,
+        "lastPlatformId": "ledge-black_hole_chapel-105",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 92,
+        "launchDirection": 1
+      }
+    },
+    {
+      "name": "zone",
+      "at": 15388.799999952316,
+      "detail": {
+        "zoneId": "black_hole_chapel"
+      }
+    },
+    {
+      "name": "zone",
+      "at": 15802.899999976158,
+      "detail": {
+        "zoneId": "dwarf_garden"
+      }
+    },
+    {
+      "name": "fall",
+      "at": 15803,
+      "detail": {
+        "attemptId": "attempt_ms3b0m7e_20720c01-6f0c-4a5d-b6ae-4a43e0844ec7",
+        "respawnZoneId": "black_hole_chapel",
+        "fallX": 240,
+        "fallY": 9746,
+        "highestY": 5700,
+        "lastPlatformId": "neutron_forge-checkpoint",
+        "lastHelperArtifactId": null,
+        "wallBonkPlatformId": null,
+        "launchChargePercent": 92,
+        "launchDirection": 0
+      }
+    },
+    {
+      "name": "zone",
+      "at": 15804.699999928474,
+      "detail": {
+        "zoneId": "black_hole_chapel"
+      }
+    },
+    {
+      "name": "zone",
+      "at": 17786.699999928474,
+      "detail": {
+        "zoneId": "event_horizon_crown"
+      }
+    },
+    {
+      "name": "summit",
+      "at": 18186.799999952316,
+      "detail": {
+        "attemptId": "attempt_ms3b0o20_c8ddd150-1b91-436b-b16e-3edc588e7453",
+        "highestY": 1380
+      }
+    }
+  ]
+}
