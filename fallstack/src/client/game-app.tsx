@@ -101,6 +101,7 @@ import {
 } from './game/localSnapshot';
 import {
   ProceduralSound,
+  resolveGameplayMuted,
   type AudioCaptureApi,
   type AudioDiagnostics,
 } from './game/sound';
@@ -1525,8 +1526,10 @@ export function GameApp() {
   >('idle');
   const [gameplayMuted, setGameplayMuted] = useState(
     () =>
-      localStorage.getItem('fallstack:gameplay-muted') === 'true' ||
-      localStorage.getItem('fallstack:muted') === 'true'
+      resolveGameplayMuted(
+        localStorage.getItem('fallstack:gameplay-muted'),
+        localStorage.getItem('fallstack:muted')
+      )
   );
   const [musicMuted, setMusicMuted] = useState(
     () => localStorage.getItem('fallstack:music-muted') === 'true'
@@ -1817,6 +1820,7 @@ export function GameApp() {
 
   useEffect(() => {
     localStorage.setItem('fallstack:gameplay-muted', String(gameplayMuted));
+    localStorage.removeItem('fallstack:muted');
     soundRef.current?.setGameplayMuted(gameplayMuted);
   }, [gameplayMuted]);
 
@@ -2029,6 +2033,9 @@ export function GameApp() {
           antialias: true,
           pixelArt: false,
           roundPixels: false,
+        },
+        audio: {
+          noAudio: true,
         },
         scene,
       });

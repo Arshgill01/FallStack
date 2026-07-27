@@ -42,11 +42,11 @@ These are investigation records, not all approved fixes.
 | QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
 | QR-003 | High | Audio/design | Baseline confirmed | Current oscillator cues do not provide the requested tactile event vocabulary |
 | QR-004 | High | Music | Baseline confirmed | Two drones plus an eight-note bell phrase repeat every 17.6 seconds with no biome response |
-| QR-005 | Medium | Audio/lifecycle | Source repro established | Rapid Music Off/On can reopen untracked bell tails and overlap a new pair |
-| QR-006 | Medium | Audio/preferences | Source repro established | Legacy combined mute key can force SFX off again after reload |
-| QR-007 | Medium | Audio/lifecycle | Source repro established | Queued SFX continue after SFX Off; gameplay bus itself is never muted |
-| QR-008 | Medium | Audio/lifecycle | Source hypothesis | Closed-context recovery can retain stale charge/timer state |
-| QR-009 | Medium | Audio/ownership | Runtime evidence | Two AudioContexts exist; Phaser audio ownership is not intentionally disabled or attributed |
+| QR-005 | Medium | Audio/lifecycle | Fixed and browser-regressed | Rapid Music Off/On reopened untracked bell tails and overlapped a new pair |
+| QR-006 | Medium | Audio/preferences | Fixed and browser-regressed | Legacy combined mute key forced SFX off again after reload |
+| QR-007 | Medium | Audio/lifecycle | Fixed and browser-regressed | Queued SFX continued after SFX Off; gameplay bus itself was never muted |
+| QR-008 | Medium | Audio/lifecycle | Fixed and browser-regressed | Closed-context recovery retained stale charge/timer state |
+| QR-009 | Medium | Audio/ownership | Fixed and browser-regressed | Phaser created a redundant AudioContext despite owning no Fallstack sound |
 | QR-010 | Medium | Camera | Test gap | Player-centred camera does not prove the next landing remains readable at narrow widths |
 | QR-011 | Medium | UI | Source repro established | Several mobile UI labels remain below the art-bible 13 px body/status target |
 | QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
@@ -68,6 +68,8 @@ These are investigation records, not all approved fixes.
   when `?qa=audio` is present. Normal production URLs expose no recorder.
 - 2026-07-27: Respawn settlement is an administrative reset, not a landing.
   Suppress exactly that transition; preserve the next real airborne landing.
+- 2026-07-27: `ProceduralSound` is the sole audio owner. Phaser audio is
+  disabled because the game loads and plays no Phaser audio assets.
 
 ## Commands run
 
@@ -95,6 +97,12 @@ npm run qa:audio -- docs/quality-reconstruction/evidence/baseline-audio
 ffmpeg -i docs/quality-reconstruction/evidence/baseline-audio/final-master.webm -af ebur128=peak=true -f null -
 npm run qa:runtime -- /tmp/fallstack-quality/audio-events-green --browser=chromium
 npm run qa:audio -- /tmp/fallstack-quality/audio-capture-after-event-fix
+npm run qa:audio-lifecycle -- /tmp/fallstack-quality/audio-lifecycle-red
+npm run type-check
+npm run lint
+npm run build
+npm run qa:audio-lifecycle -- docs/quality-reconstruction/evidence/audio-lifecycle-fix
+npm run qa:audio -- /tmp/fallstack-quality/audio-after-lifecycle
 ```
 
 Results:
@@ -117,6 +125,13 @@ Results:
 - Landing regression: Chromium reports zero opening-settle landings and zero
   post-respawn-reset landings. A second master capture contains no land before
   launch and retains the real landing after flight.
+- Audio lifecycle red run reproduced six failures: legacy mute precedence and
+  persistence, two AudioContexts, one leaked delayed launch oscillator, seven
+  active oscillators after rapid toggles, and three contexts after recovery.
+- Audio lifecycle green run reports SFX On with the legacy key removed, one
+  initial context, one launch oscillator after immediate mute, five active
+  oscillators after twenty toggle cycles, and exactly one replacement context
+  after closure with no page errors.
 
 ## Worktree safety
 

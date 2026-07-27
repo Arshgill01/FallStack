@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   AUDIO_LEVELS,
   MUSIC_START_DELAY_MS,
+  resolveGameplayMuted,
   shouldResumeAudioContext,
   shouldScheduleMusicStart,
 } from './sound.js';
@@ -50,6 +51,13 @@ void test('mobile audio resumes every recoverable non-running context state', ()
   assert.equal(shouldResumeAudioContext('closed'), false);
   assert.equal(shouldResumeAudioContext('suspended'), true);
   assert.equal(shouldResumeAudioContext('interrupted'), true);
+});
+
+void test('the explicit SFX preference supersedes and migrates legacy mute state', () => {
+  assert.equal(resolveGameplayMuted('false', 'true'), false);
+  assert.equal(resolveGameplayMuted('true', 'false'), true);
+  assert.equal(resolveGameplayMuted(null, 'true'), true);
+  assert.equal(resolveGameplayMuted(null, null), false);
 });
 
 void test('music starts promptly at a perceptible output level', () => {

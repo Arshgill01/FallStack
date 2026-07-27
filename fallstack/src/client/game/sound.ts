@@ -51,6 +51,14 @@ export function shouldResumeAudioContext(state: string): boolean {
   return state !== 'running' && state !== 'closed';
 }
 
+export function resolveGameplayMuted(
+  gameplayPreference: string | null,
+  legacyPreference: string | null
+): boolean {
+  if (gameplayPreference !== null) return gameplayPreference === 'true';
+  return legacyPreference === 'true';
+}
+
 export function shouldScheduleMusicStart(input: {
   musicMuted: boolean;
   musicNodeCount: number;
@@ -65,6 +73,12 @@ export function shouldScheduleMusicStart(input: {
 
 const MUSIC_PHRASE = [293.66, 440, 369.99, 329.63, 246.94, 293.66, 220, 246.94] as const;
 
+type MusicBellVoice = {
+  oscillator: OscillatorNode;
+  filter: BiquadFilterNode;
+  gain: GainNode;
+};
+
 export class ProceduralSound {
   private context: AudioContext | null = null;
   private chargeOsc: OscillatorNode | null = null;
@@ -78,7 +92,9 @@ export class ProceduralSound {
   private captureDestination: MediaStreamAudioDestinationNode | null = null;
   private captureRecorder: MediaRecorder | null = null;
   private captureChunks: Blob[] = [];
+  private gameplayTimers = new Set<number>();
   private musicNodes: AudioNode[] = [];
+  private musicBellVoices = new Set<MusicBellVoice>();
   private musicTimers: number[] = [];
   private musicStopTimer: number | null = null;
   private musicStartTimer: number | null = null;
@@ -88,7 +104,11 @@ export class ProceduralSound {
 
   setGameplayMuted(gameplayMuted: boolean) {
     this.options = { ...this.options, gameplayMuted };
-    if (gameplayMuted) this.stopCharge();
+    this.setGameplayBusMuted(gameplayMuted);
+    if (gameplayMuted) {
+      this.clearGameplayTimers();
+      this.stopCharge();
+    }
   }
 
   setMusicMuted(musicMuted: boolean) {
@@ -210,6 +230,7 @@ export class ProceduralSound {
     const AudioContextCtor = window.AudioContext ?? window.webkitAudioContext;
     if (!AudioContextCtor) return;
     if (!this.context || this.context.state === 'closed') {
+      this.resetClosedContextState();
       this.context = new AudioContextCtor();
       this.masterGain = null;
       this.gameplayGain = null;
@@ -218,6 +239,7 @@ export class ProceduralSound {
       this.outputSamples = null;
       this.outputPrimed = false;
       this.musicNodes = [];
+      this.musicBellVoices.clear();
     }
     this.ensureOutputBuses();
     this.primeOutput();
@@ -252,15 +274,22 @@ export class ProceduralSound {
   }
 
   stopCharge() {
-    this.chargeGain?.gain.cancelScheduledValues(0);
-    this.chargeGain?.gain.setTargetAtTime(
-      0.0001,
-      this.context?.currentTime ?? 0,
-      0.015
-    );
-    this.chargeOsc?.stop((this.context?.currentTime ?? 0) + 0.04);
+    const oscillator = this.chargeOsc;
+    const gain = this.chargeGain;
     this.chargeOsc = null;
     this.chargeGain = null;
+    if (!this.context || this.context.state === 'closed') return;
+    gain?.gain.cancelScheduledValues(0);
+    gain?.gain.setTargetAtTime(
+      0.0001,
+      this.context.currentTime,
+      0.015
+    );
+    try {
+      oscillator?.stop(this.context.currentTime + 0.04);
+    } catch {
+      // The source may already have ended during a context interruption.
+    }
   }
 
   private startMusic() {
@@ -335,6 +364,7 @@ export class ProceduralSound {
     const now = this.context.currentTime;
     this.musicGain?.gain.cancelScheduledValues(now);
     this.musicGain?.gain.setTargetAtTime(0.0001, now, 0.12);
+    this.stopMusicBellVoices(now + 0.14);
     for (const timer of this.musicTimers) window.clearInterval(timer);
     this.musicTimers = [];
     this.musicStopTimer = window.setTimeout(() => {
@@ -378,11 +408,14 @@ export class ProceduralSound {
     gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.08);
     gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 2.6);
     osc.connect(filter).connect(gain).connect(this.musicGain);
+    const voice = { oscillator: osc, filter, gain };
+    this.musicBellVoices.add(voice);
     osc.start(startAt);
     osc.stop(startAt + 2.8);
     osc.addEventListener(
       'ended',
       () => {
+        this.musicBellVoices.delete(voice);
         osc.disconnect();
         filter.disconnect();
         gain.disconnect();
@@ -411,7 +444,7 @@ export class ProceduralSound {
   private launch() {
     this.stopCharge();
     this.ping(220, 0.1, AUDIO_LEVELS.launchPrimary);
-    window.setTimeout(
+    this.scheduleGameplay(
       () => this.ping(293.66, 0.09, AUDIO_LEVELS.launchSecondary),
       34
     );
@@ -428,7 +461,7 @@ export class ProceduralSound {
 
   private fall() {
     this.noise(0.12, 260, AUDIO_LEVELS.fallNoise);
-    window.setTimeout(
+    this.scheduleGameplay(
       () => this.ping(146.83, 0.2, AUDIO_LEVELS.fallTone),
       90
     );
@@ -436,14 +469,19 @@ export class ProceduralSound {
 
   private checkpoint() {
     this.ping(293.66, 0.18, AUDIO_LEVELS.checkpointPrimary);
-    window.setTimeout(
+    this.scheduleGameplay(
       () => this.ping(440, 0.24, AUDIO_LEVELS.checkpointSecondary),
       110
     );
   }
 
   private ping(frequency: number, duration: number, volume: number) {
-    if (!this.context) return;
+    if (
+      !this.context ||
+      this.context.state === 'closed' ||
+      this.options.gameplayMuted
+    )
+      return;
     const now = this.context.currentTime;
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();
@@ -457,7 +495,12 @@ export class ProceduralSound {
   }
 
   private noise(duration: number, filterFrequency: number, volume: number) {
-    if (!this.context) return;
+    if (
+      !this.context ||
+      this.context.state === 'closed' ||
+      this.options.gameplayMuted
+    )
+      return;
     const sampleRate = this.context.sampleRate;
     const buffer = this.context.createBuffer(
       1,
@@ -491,7 +534,10 @@ export class ProceduralSound {
     this.masterGain = this.context.createGain();
     this.masterGain.gain.setValueAtTime(AUDIO_LEVELS.master, now);
     this.gameplayGain = this.context.createGain();
-    this.gameplayGain.gain.setValueAtTime(AUDIO_LEVELS.gameplay, now);
+    this.gameplayGain.gain.setValueAtTime(
+      this.options.gameplayMuted ? 0.0001 : AUDIO_LEVELS.gameplay,
+      now
+    );
     this.musicGain = this.context.createGain();
     this.musicGain.gain.setValueAtTime(0.0001, now);
     this.outputAnalyser = this.context.createAnalyser();
@@ -524,5 +570,55 @@ export class ProceduralSound {
   private gameplayOutput() {
     this.ensureOutputBuses();
     return this.gameplayGain ?? this.context!.destination;
+  }
+
+  private scheduleGameplay(callback: () => void, delayMs: number) {
+    const timer = window.setTimeout(() => {
+      this.gameplayTimers.delete(timer);
+      if (!this.options.gameplayMuted) callback();
+    }, delayMs);
+    this.gameplayTimers.add(timer);
+  }
+
+  private clearGameplayTimers() {
+    for (const timer of this.gameplayTimers) window.clearTimeout(timer);
+    this.gameplayTimers.clear();
+  }
+
+  private setGameplayBusMuted(muted: boolean) {
+    if (!this.context || !this.gameplayGain || this.context.state === 'closed')
+      return;
+    const now = this.context.currentTime;
+    this.gameplayGain.gain.cancelScheduledValues(now);
+    this.gameplayGain.gain.setTargetAtTime(
+      muted ? 0.0001 : AUDIO_LEVELS.gameplay,
+      now,
+      0.008
+    );
+  }
+
+  private stopMusicBellVoices(stopAt: number) {
+    for (const voice of this.musicBellVoices) {
+      try {
+        voice.oscillator.stop(stopAt);
+      } catch {
+        // A repeated mute can encounter a source already scheduled to stop.
+      }
+    }
+  }
+
+  private resetClosedContextState() {
+    if (this.musicStartTimer !== null)
+      window.clearTimeout(this.musicStartTimer);
+    if (this.musicStopTimer !== null) window.clearTimeout(this.musicStopTimer);
+    for (const timer of this.musicTimers) window.clearInterval(timer);
+    this.clearGameplayTimers();
+    this.musicStartTimer = null;
+    this.musicStopTimer = null;
+    this.musicTimers = [];
+    this.musicNodes = [];
+    this.musicBellVoices.clear();
+    this.chargeOsc = null;
+    this.chargeGain = null;
   }
 }

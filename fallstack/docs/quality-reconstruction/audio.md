@@ -119,6 +119,12 @@ Required probe: run twenty normal and rapid Off/On cycles while recording
 source IDs, timer IDs, bus gain, and output level. Exactly one music graph may
 remain and output level must not rise by cycle count.
 
+Fix: bell voices are tracked independently from the persistent drone graph and
+are stopped during the Music Off ramp. The browser probe reproduced seven
+active oscillators before the fix; after twenty Off/On cycles it now ends with
+five active oscillators: three persistent modulation/drone sources and the
+current two-note bell pair.
+
 ### QR-006 — legacy mute migration
 
 Initial gameplay mute state ORs `fallstack:gameplay-muted` with the legacy
@@ -127,6 +133,10 @@ SFX on. Returning users with legacy `true` can therefore see SFX turn off again
 on reload.
 
 Required probe: exercise all legacy/new key combinations through two reloads.
+
+Fix: an explicit `fallstack:gameplay-muted` value now wins over the legacy key,
+and the legacy key is removed when the current preference persists. The browser
+probe begins with new `false` plus legacy `true` and now renders `SFX On`.
 
 ### QR-007 — SFX Off is not immediate
 
@@ -138,6 +148,10 @@ Required probe: switch SFX Off between the primary and secondary tone, verify
 the gameplay bus becomes silent immediately, then restore without affecting
 music.
 
+Fix: the gameplay bus ramps silent immediately, queued gameplay timers are
+cancelled, and secondary callbacks recheck mute state. The launch probe now
+starts one oscillator instead of two when SFX is switched off between tones.
+
 ### QR-008 — closed-context stale state
 
 Closed-context recovery resets buses and `musicNodes`, but not every charge
@@ -146,6 +160,11 @@ charge source or start duplicate loops.
 
 Required probe: close/recreate the context during charge and during each music
 timer phase. Verify no stale source/timer survives.
+
+Fix: closed-context replacement clears charge references plus gameplay, music
+start, music stop, and bell-loop timers before building the new graph. The
+browser probe creates exactly one replacement context, starts charge audio
+again, and records no page errors.
 
 ### QR-009 — redundant AudioContext
 
@@ -156,6 +175,13 @@ Fallstack does not intentionally use Phaser audio.
 Required probe: attribute context construction and confirm whether configuring
 Phaser with no audio reduces the runtime to one intentional owner without
 affecting the game.
+
+Fix: Phaser is configured with `audio.noAudio` because Fallstack owns no Phaser
+audio assets or calls. Browser constructor instrumentation now records one
+initial `AudioContext` instead of two.
+
+The consolidated evidence is
+[`audio-lifecycle.json`](evidence/audio-lifecycle-fix/audio-lifecycle.json).
 
 ## Sound-design gap
 

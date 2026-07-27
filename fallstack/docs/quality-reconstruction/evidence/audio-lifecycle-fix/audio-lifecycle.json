@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-07-27T10:27:06.615Z",
+  "legacyAndOwnership": {
+    "sfxLabel": "SFX On",
+    "legacyValue": null,
+    "contextCount": 1
+  },
+  "immediateMute": {
+    "oscillatorsStartedAfterLaunch": 1,
+    "starts": [
+      {
+        "at": 369.90000009536743
+      }
+    ]
+  },
+  "rapidMusicToggle": {
+    "activeOscillators": 5,
+    "totalOscillatorStarts": 7,
+    "diagnostics": {
+      "contextState": "running",
+      "musicActive": true,
+      "musicStartPending": false,
+      "outputPeak": 0.0391,
+      "outputRms": 0.0239
+    }
+  },
+  "closedContextRecovery": {
+    "contextCount": 2,
+    "startsAfterClose": 1,
+    "diagnostics": {
+      "contextState": "running",
+      "musicActive": false,
+      "musicStartPending": false,
+      "outputPeak": 0.0156,
+      "outputRms": 0.009
+    },
+    "pageErrors": []
+  },
+  "failures": []
+}
