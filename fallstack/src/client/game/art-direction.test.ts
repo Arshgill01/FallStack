@@ -10,7 +10,9 @@ import {
   RELIQUARY_ZONE_PALETTES,
   RELIQUARY_ZONE_TREATMENTS,
   motionDecision,
+  PLAYER_CEREMONY_DURATION_MS,
   playerVisualDimensions,
+  playerVisualRotation,
   playerVisualState,
   reliquaryZoneFor,
   reliquaryZoneName,
@@ -135,16 +137,40 @@ void test('player pose is derived from existing simulation state', () => {
   );
   assert.equal(
     playerVisualState({ charging: false, grounded: false, velocityY: -400 }),
-    'airborne'
+    'rising'
+  );
+  assert.equal(
+    playerVisualState({ charging: false, grounded: false, velocityY: 20 }),
+    'apex'
   );
   assert.equal(
     playerVisualState({ charging: false, grounded: false, velocityY: 420 }),
     'fall'
   );
+  assert.equal(
+    playerVisualState({
+      charging: false,
+      grounded: true,
+      velocityY: 0,
+      ceremony: 'respawn',
+    }),
+    'respawn'
+  );
   assert.deepEqual(playerVisualDimensions('grounded'), {
-    width: 30,
-    height: 42,
+    width: 26,
+    height: 39,
   });
-  assert.ok(playerVisualDimensions('airborne').height > 40);
+  assert.ok(playerVisualDimensions('rising').height > 40);
   assert.ok(playerVisualDimensions('fall').width > 30);
+});
+
+void test('player ceremonies are brief and reduced motion removes tilt', () => {
+  assert.deepEqual(PLAYER_CEREMONY_DURATION_MS, {
+    land: 110,
+    respawn: 180,
+    checkpoint: 360,
+    summit: 900,
+  });
+  assert.ok(playerVisualRotation('fall', 1, false) > 0);
+  assert.equal(playerVisualRotation('fall', 1, true), 0);
 });

@@ -38,7 +38,7 @@ all eleven zone clears to the summit.
 | Temporary HUD overlays | Complete | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point |
 | Mobile orientation | Complete | Chromium and WebKit pass grounded, charging, airborne, modal, and desktop-control continuity checks |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
-| Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
+| Character redesign | Complete | Washi Pilgrim integrated across ten states; 320/375, reduced motion, Chromium/WebKit, and unchanged 20×28 body verified |
 
 ## Initial issue ledger
 
@@ -57,7 +57,7 @@ These are investigation records, not all approved fixes.
 | QR-009 | Medium | Audio/ownership | Fixed and browser-regressed | Phaser created a redundant AudioContext despite owning no Fallstack sound |
 | QR-010 | Medium | Camera | Fixed and regression-tested | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths |
 | QR-011 | Medium | UI | Fixed and browser-regressed | Mobile functional text now meets its role minimum without header or sheet overflow |
-| QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
+| QR-012 | Product blocker | Character | Fixed and browser-regressed | Washi Pilgrim replaces the rejected block across ten standard/reduced-motion states without changing physics |
 | QR-013 | High | QA/playthrough | Fixed and production-replayed | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
 | QR-014 | High | UI/input | Fixed and browser-regressed | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower |
 | QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
@@ -90,6 +90,15 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: Character implementation pauses at the direction gate. Bell
   Warden is recommended from three generated state-complete concept boards, but
   the user owns the final selection.
+- 2026-07-27: The user selected A — Washi Pilgrim. Production keeps its angular
+  folded-washi hood, faceless indigo core, single gold seal-eye, asymmetric
+  persimmon prayer strip, ragged cloak, and bound archive pack while rejecting
+  the concept board's rounded-mascot risk. Physics, origin, movement, and event
+  authority remain frozen.
+- 2026-07-27: Washi Pilgrim is implemented procedurally with grounded, low/full
+  charge, rising, apex, falling, hard landing, respawn, checkpoint, and summit
+  states. Actual-scale 320/375 evidence and Chromium/WebKit runtime checks pass;
+  reduced motion preserves state while removing tilt and fade.
 - 2026-07-27: The SFX palette may use deterministic procedural noise and short
   resonances, but collision meaning comes from Phaser's event payload rather
   than biome inference inside the sound layer.
@@ -216,6 +225,15 @@ npm run qa:runtime -- /tmp/fallstack-quality/overlay-runtime-chromium --browser=
 npm run qa:runtime -- /tmp/fallstack-quality/overlay-runtime-webkit --browser=webkit
 node --check scripts/qa/ui-overlays.mjs
 git diff --check
+node --check scripts/qa/character-states.mjs
+npm run qa:character-states -- docs/quality-reconstruction/evidence/character-washi-pilgrim
+npm run qa:runtime -- /tmp/fallstack-quality/character-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/character-runtime-webkit --browser=webkit
+npm run qa:world-bounds -- /tmp/fallstack-quality/character-world-bounds
+npm run type-check
+npm run lint
+npm test
+npm run build
 ```
 
 Results:

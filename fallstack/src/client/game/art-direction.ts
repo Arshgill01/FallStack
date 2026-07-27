@@ -26,17 +26,39 @@ export const RELIQUARY_COLORS = {
 export type PlayerVisualState =
   | 'grounded'
   | 'charge'
-  | 'airborne'
-  | 'fall';
+  | 'rising'
+  | 'apex'
+  | 'fall'
+  | PlayerCeremonyState;
+
+export type PlayerCeremonyState =
+  | 'land'
+  | 'respawn'
+  | 'checkpoint'
+  | 'summit';
+
+export const PLAYER_CEREMONY_DURATION_MS: Record<
+  PlayerCeremonyState,
+  number
+> = {
+  land: 110,
+  respawn: 180,
+  checkpoint: 360,
+  summit: 900,
+};
 
 export function playerVisualDimensions(state: PlayerVisualState): {
   width: number;
   height: number;
 } {
-  if (state === 'charge') return { width: 32, height: 36 };
-  if (state === 'airborne') return { width: 28, height: 44 };
-  if (state === 'fall') return { width: 34, height: 38 };
-  return { width: 30, height: 42 };
+  if (state === 'charge') return { width: 29, height: 35 };
+  if (state === 'rising') return { width: 25, height: 42 };
+  if (state === 'apex') return { width: 28, height: 40 };
+  if (state === 'fall') return { width: 32, height: 38 };
+  if (state === 'land') return { width: 31, height: 32 };
+  if (state === 'checkpoint') return { width: 28, height: 41 };
+  if (state === 'summit') return { width: 27, height: 43 };
+  return { width: 26, height: 39 };
 }
 
 export type ArtifactVisualTier = 'base' | 'remembered' | 'saturated';
@@ -113,10 +135,25 @@ export function playerVisualState(input: {
   charging: boolean;
   grounded: boolean;
   velocityY: number;
+  ceremony?: PlayerCeremonyState | null;
 }): PlayerVisualState {
+  if (input.ceremony) return input.ceremony;
   if (input.charging) return 'charge';
   if (input.grounded) return 'grounded';
-  return input.velocityY > 160 ? 'fall' : 'airborne';
+  if (input.velocityY < -110) return 'rising';
+  return input.velocityY > 160 ? 'fall' : 'apex';
+}
+
+export function playerVisualRotation(
+  state: PlayerVisualState,
+  facing: -1 | 1,
+  reducedMotion: boolean
+): number {
+  if (reducedMotion) return 0;
+  if (state === 'rising') return facing * -0.05;
+  if (state === 'apex') return facing * 0.035;
+  if (state === 'fall') return facing * 0.14;
+  return 0;
 }
 
 export const ARTIFACT_COLLISION_CLASS: Record<

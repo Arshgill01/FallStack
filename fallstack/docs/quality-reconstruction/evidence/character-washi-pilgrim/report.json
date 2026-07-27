@@ -1,0 +1,357 @@
+{
+  "generatedAt": "2026-07-27T13:17:28.677Z",
+  "source": "Option A — Washi Pilgrim",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "physicsBody": {
+    "width": 20,
+    "height": 28
+  },
+  "narrowViewport": {
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "physics": {
+      "width": 20,
+      "height": 28
+    },
+    "cssPerWorldPixel": 1
+  },
+  "ceremonyPriorities": [
+    {
+      "motion": "standard",
+      "respawnWins": "respawn",
+      "summitWins": "summit"
+    },
+    {
+      "motion": "reduced",
+      "respawnWins": "respawn",
+      "summitWins": "summit"
+    }
+  ],
+  "states": [
+    {
+      "motion": "standard",
+      "state": "grounded",
+      "visualContract": {
+        "width": 26,
+        "height": 39
+      },
+      "expectedState": "grounded",
+      "visualKey": "grounded:1:0:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "low-charge",
+      "visualContract": {
+        "width": 29.4,
+        "height": 34.4
+      },
+      "expectedState": "charge",
+      "visualKey": "charge:1:2:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "full-charge",
+      "visualContract": {
+        "width": 31,
+        "height": 32
+      },
+      "expectedState": "charge",
+      "visualKey": "charge:1:8:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "rising",
+      "visualContract": {
+        "width": 25,
+        "height": 42
+      },
+      "expectedState": "rising",
+      "visualKey": "rising:1:0:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": -0.05,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "apex",
+      "visualContract": {
+        "width": 28,
+        "height": 40
+      },
+      "expectedState": "apex",
+      "visualKey": "apex:1:0:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0.035,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "falling",
+      "visualContract": {
+        "width": 32,
+        "height": 38
+      },
+      "expectedState": "fall",
+      "visualKey": "fall:1:0:0:0:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0.14,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "hard-landing",
+      "visualContract": {
+        "width": 31,
+        "height": 32
+      },
+      "expectedState": "land",
+      "visualKey": "land:1:0:0:4:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "respawn",
+      "visualContract": {
+        "width": 26,
+        "height": 39
+      },
+      "expectedState": "respawn",
+      "visualKey": "respawn:1:0:0:4:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 0.42
+    },
+    {
+      "motion": "standard",
+      "state": "checkpoint",
+      "visualContract": {
+        "width": 28,
+        "height": 41
+      },
+      "expectedState": "checkpoint",
+      "visualKey": "checkpoint:1:0:0:4:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "standard",
+      "state": "summit",
+      "visualContract": {
+        "width": 27,
+        "height": 43
+      },
+      "expectedState": "summit",
+      "visualKey": "summit:1:0:0:4:false",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "grounded",
+      "visualContract": {
+        "width": 26,
+        "height": 39
+      },
+      "expectedState": "grounded",
+      "visualKey": "grounded:1:0:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "low-charge",
+      "visualContract": {
+        "width": 29.4,
+        "height": 34.4
+      },
+      "expectedState": "charge",
+      "visualKey": "charge:1:2:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "full-charge",
+      "visualContract": {
+        "width": 31,
+        "height": 32
+      },
+      "expectedState": "charge",
+      "visualKey": "charge:1:8:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "rising",
+      "visualContract": {
+        "width": 25,
+        "height": 42
+      },
+      "expectedState": "rising",
+      "visualKey": "rising:1:0:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "apex",
+      "visualContract": {
+        "width": 28,
+        "height": 40
+      },
+      "expectedState": "apex",
+      "visualKey": "apex:1:0:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "falling",
+      "visualContract": {
+        "width": 32,
+        "height": 38
+      },
+      "expectedState": "fall",
+      "visualKey": "fall:1:0:0:0:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "hard-landing",
+      "visualContract": {
+        "width": 31,
+        "height": 32
+      },
+      "expectedState": "land",
+      "visualKey": "land:1:0:4:4:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "respawn",
+      "visualContract": {
+        "width": 26,
+        "height": 39
+      },
+      "expectedState": "respawn",
+      "visualKey": "respawn:1:0:4:4:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "checkpoint",
+      "visualContract": {
+        "width": 28,
+        "height": 41
+      },
+      "expectedState": "checkpoint",
+      "visualKey": "checkpoint:1:0:4:4:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    },
+    {
+      "motion": "reduced",
+      "state": "summit",
+      "visualContract": {
+        "width": 27,
+        "height": 43
+      },
+      "expectedState": "summit",
+      "visualKey": "summit:1:0:4:4:true",
+      "physics": {
+        "width": 20,
+        "height": 28
+      },
+      "rotationRadians": 0,
+      "alpha": 1
+    }
+  ]
+}

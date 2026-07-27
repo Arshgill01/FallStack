@@ -47,7 +47,81 @@ current physics target while exploring a different primary silhouette:
 | [B — Bell Warden](character-directions/option-b-bell-warden.png) | 5/5 | 5/5 | 5/5 | Low | Strongest compact silhouette. Squash, tilt, inversion, and impact all follow from one material idea and reinforce the bell-shaft world. |
 | [C — Threadbare Effigy](character-directions/option-c-threadbare-effigy.png) | 5/5 | 3/5 | 4/5 | Medium | Most original and cursed, with excellent directional thread motion, but its tall rigid body is hardest to reconcile with the current collision box. |
 
-Recommendation: **B — Bell Warden**. It has the clearest 1× mobile read and the
-most coherent gameplay-state vocabulary without requiring a physics change.
+Recommendation before selection: **B — Bell Warden**. It had the clearest 1×
+mobile read and the most coherent gameplay-state vocabulary without requiring a
+physics change.
 
-The user selection remains the gate for sprite/state implementation.
+## Selected direction
+
+The user explicitly selected **A — Washi Pilgrim** on 2026-07-27. That choice
+supersedes the implementation recommendation above.
+
+The production grammar is frozen as:
+
+- an angular, folded-washi hood over a mostly faceless indigo void;
+- one restrained gold seal-eye and one pale hand/face notch;
+- an asymmetric persimmon prayer strip, never more than one quarter of the
+  silhouette;
+- a dark layered cloak with a ragged paper hem and two readable contact points;
+- a small bound archive pack and cord as the relic-bearer detail;
+- squash, fold, unfurl, stamp, and binding poses for gameplay state changes.
+
+The runtime version must avoid the concept board's mascot risk: no rounded face,
+facial animation, oversized eyes, or soft blob silhouette. The 20×28 physics
+body, player origin, movement tuning, collision authority, and event payloads
+remain unchanged.
+
+Implementation acceptance requires actual-scale evidence for grounded, low and
+full charge, rising, apex, falling, hard landing, respawn, checkpoint, and
+summit states in standard and reduced-motion modes.
+
+## Implementation result
+
+The selected Washi Pilgrim is integrated as a focused procedural Phaser
+renderer. It replaces the rounded rectangle mascot language with:
+
+- a faceted washi hood and angular indigo cloak;
+- a faceless inner void with one gold seal-eye and one pale notch;
+- a front persimmon prayer strip with two coarse ink marks;
+- asymmetric hood tie, gold waist cord, ragged hem, and bound archive pack;
+- distinct rising, apex, falling, impact, stamp-in, binding, and summit
+  silhouettes.
+
+The physics rectangle remains transparent and unchanged at 20×28. The grounded
+visual contract is 26×39 at 375×812, where one world pixel maps to one CSS
+pixel. Charge compresses from 29.4×34.4 to 31×32; rising stretches to 25×42;
+falling opens to 32×38. Short presentation-only ceremonies attach to existing
+land, respawn, checkpoint, and summit hooks. They do not alter movement,
+collision, event payloads, API calls, or persistence.
+
+Reduced motion keeps the same pose swaps and ceremony marks while removing
+ascent/fall tilt and respawn fading.
+
+## Evidence
+
+- [Standard-motion state matrix](evidence/character-washi-pilgrim/standard-contact-sheet.png)
+- [Reduced-motion state matrix](evidence/character-washi-pilgrim/reduced-contact-sheet.png)
+- [375×812 gameplay context](evidence/character-washi-pilgrim/mobile-context.png)
+- [320×568 gameplay context](evidence/character-washi-pilgrim/mobile-context-320.png)
+- [Machine-readable state/body report](evidence/character-washi-pilgrim/report.json)
+
+| Criterion | Result | Evidence |
+| --- | ---: | --- |
+| Silhouette recognition | 4/5 | Angular hood, ragged cloak, prayer strip, and archive pack survive at 1× |
+| Direction and charge legibility | 4/5 | Seal-eye, hood tie, prayer-strip lag, compression, and three charge notches |
+| Product/emotional fit | 4/5 | Sympathetic relic bearer without a face-led mascot treatment |
+| Tactile material identity | 5/5 | Fold lines, washi facets, binding cord, seal, and stamped ceremonies |
+| State coherence | 5/5 | Ten states share one squash/fold/unfurl/binding vocabulary |
+| Originality | 4/5 | Familiar pilgrim role is made specific through Fallstack's reliquary materials |
+| Phaser/runtime cost | 5/5 | Procedural graphics only; no dependency, asset, or texture payload |
+
+Validation:
+
+- `npm run qa:character-states -- docs/quality-reconstruction/evidence/character-washi-pilgrim` — passed.
+- `npm run qa:runtime -- /tmp/fallstack-quality/character-runtime-chromium --browser=chromium` — passed.
+- `npm run qa:runtime -- /tmp/fallstack-quality/character-runtime-webkit --browser=webkit` — passed.
+- `npm run qa:world-bounds -- /tmp/fallstack-quality/character-world-bounds` — passed.
+- `npm run type-check` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 153 tests.
+- `npm run build` — passed with the existing large-chunk warning.

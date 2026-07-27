@@ -16,6 +16,7 @@
     "qa:audio-events": "node scripts/qa/audio-events.mjs",
     "qa:audio-lifecycle": "node scripts/qa/audio-lifecycle.mjs",
     "qa:audio-palette": "node scripts/qa/audio-palette.mjs",
+    "qa:character-states": "node scripts/qa/character-states.mjs",
     "qa:music-directions": "node scripts/qa/music-directions.mjs",
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",

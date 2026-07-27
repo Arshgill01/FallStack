@@ -10,6 +10,13 @@ Full expanded-game migration after the opening-zone quality gate. The Lower Ruin
 
 The complete production execution path is defined in [`EXECPLAN.md`](EXECPLAN.md). It covers the art bible, controlled asset bake-off, Phaser proof, opening-zone quality gate, full three-zone migration, inline splash, responsive/accessibility/performance validation, and final handoff.
 
+Character refinement was reopened within the completed visual system. On
+2026-07-27 the user explicitly selected `A — Washi Pilgrim` from the quality
+reconstruction direction gate. The selected character grammar is angular folded
+washi, a faceless indigo core, one gold seal-eye, an asymmetric persimmon prayer
+strip, a ragged layered cloak, and a bound archive pack. Implementation remains
+procedural and presentation-only over the existing 20×28 physics body.
+
 ## Completed
 
 - Official Figma plugin is installed locally and enabled in `~/.codex/config.toml`.
@@ -36,6 +43,12 @@ The complete production execution path is defined in [`EXECPLAN.md`](EXECPLAN.md
 - Production proof captures show the reliquary cavity/arches, expanded desktop architectural surround, thick platform underfaces, distinct cursed/Mercy silhouettes, and the new player at mobile and desktop sizes. Reduced-motion browser proof is archived at [`phaser-proof-reduced-motion.png`](phaser-proof-reduced-motion.png).
 - Opening-zone vertical slice complete. The production shell now uses the top title/status-seal composition, `Lower Ruins` visual naming, architectural cavity/frame, relic-bearer poses, Cutaway platform/artifact renderers, attached labels, fixed mobile controls, and a bottom persimmon mutation plaque. Twelve persistence/checkpoint segments map deterministically onto the three approved visual zones without changing IDs or stored authority.
 - Real opening interaction evidence is archived at [`opening-first-fall.png`](opening-first-fall.png): browser-driven hold/release input produced a fall, incremented Falls from 37 to 38, showed concrete feedback without obscuring the route, and respawned the player at the start. The exposed noncanonical `Cursed Helper` copy was corrected to the canonical `Cursed Brick` taxonomy.
+- Character refinement complete: the user selected `A — Washi Pilgrim`
+  over the earlier `B — Bell Warden` implementation recommendation. The
+  character contract is frozen in
+  [`../quality-reconstruction/character.md`](../quality-reconstruction/character.md);
+  all ten presentation states are integrated and actual-scale 320/375,
+  reduced-motion, Chromium, and WebKit validation pass without a physics change.
 
 ## Gate 3 scorecard
 
@@ -97,6 +110,7 @@ Direction C wins because the tower reads as a physical object, community mutatio
 | Full expanded-game migration | Complete | Distinct three-zone contracts, checkpoint/summit/platform families, reliquary loading/controls/results, mobile/desktop browser evidence, 49 tests |
 | Inline splash | Complete | Lightweight CSS reliquary, visible seeded foothold promise, preserved expansion action, mobile/desktop browser evidence, no Phaser request |
 | Full validation and cleanup | Complete | 51 tests, screenshot matrix, input/reduced-motion/focus/contrast/reload checks, 96/100 score, legacy renderer removed, hosted Devvit install verified |
+| Washi Pilgrim refinement | Complete | Explicit user selection; ten-state procedural renderer; 320/375 and reduced-motion matrices; Chromium/WebKit runtime proof; unchanged 20×28 body |
 
 ## Validation log
 

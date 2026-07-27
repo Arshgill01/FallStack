@@ -79,10 +79,13 @@ import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
   clampedArtifactLabelCenter,
   inWorldArtifactLabel,
+  PLAYER_CEREMONY_DURATION_MS,
   RELIQUARY_COLORS,
+  playerVisualState,
   reliquaryZoneFor,
   reliquaryZoneName,
   shouldShowArtifactLabels,
+  type PlayerCeremonyState,
 } from './game/art-direction';
 import {
   CAMERA_AIR_LOOKAHEAD,
@@ -201,6 +204,12 @@ class FallstackScene extends Phaser.Scene {
   private dynamicGraphics?: Phaser.GameObjects.Graphics;
   private playerGraphics?: Phaser.GameObjects.Graphics;
   private playerVisualKey = '';
+  private playerCeremony: {
+    state: PlayerCeremonyState;
+    startedAt: number;
+    until: number;
+    strength: number;
+  } | null = null;
   private labels: Phaser.GameObjects.Text[] = [];
   private artifactLabels: Phaser.GameObjects.Text[] = [];
   private artifactLabelDismissedZones = new Set<ZoneId>();
@@ -327,7 +336,7 @@ class FallstackScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
     this.rebuildPlatformBodies();
 
-    // Player — Physics box is transparent. We draw the animated fox spirit on the dynamic layer.
+    // Player physics stays transparent; presentation lives on its own layer.
     this.player = this.add.rectangle(
       this.layoutX(START_POS.x),
       START_POS.y,
@@ -520,13 +529,18 @@ class FallstackScene extends Phaser.Scene {
       this.pendingImpactSpeed = 0;
       this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
+      const impactSpeed = this.pendingImpactSpeed;
+      this.showPlayerCeremony(
+        'land',
+        Phaser.Math.Clamp((impactSpeed - 180) / 620, 0.25, 1)
+      );
       window.dispatchEvent(
         new CustomEvent<LandEventDetail>('fallstack:land', {
           detail: {
             zoneId: this.currentZone,
             material: this.landingMaterial,
             surface: this.landingSurface,
-            impactSpeed: Math.round(this.pendingImpactSpeed),
+            impactSpeed: Math.round(impactSpeed),
           },
         })
       );
@@ -578,6 +592,7 @@ class FallstackScene extends Phaser.Scene {
   setReducedMotion(reducedMotion: boolean) {
     this.reducedMotion = reducedMotion;
     if (reducedMotion) this.particles = [];
+    this.playerVisualKey = '';
   }
 
   restoreCheckpoint(zoneId: ZoneId) {
@@ -766,6 +781,8 @@ class FallstackScene extends Phaser.Scene {
     }
     if (platformId === 'summit' && !this.summitSent) {
       this.summitSent = true;
+      this.showPlayerCeremony('summit');
+      this.drawPlayer();
       window.dispatchEvent(
         new CustomEvent<SummitEventDetail>('fallstack:summit', {
           detail: {
@@ -893,6 +910,7 @@ class FallstackScene extends Phaser.Scene {
   private unlockZone(nextZone: ZoneId, clearedZone: ZoneId) {
     this.respawnZone = nextZone;
     this.checkpointed.add(clearedZone);
+    this.showPlayerCeremony('checkpoint');
     window.dispatchEvent(
       new CustomEvent<ClearEventDetail>('fallstack:clear', {
         detail: {
@@ -961,6 +979,7 @@ class FallstackScene extends Phaser.Scene {
     this.landingSurface = 'route';
     this.lastPlatformId =
       this.respawnZone === BOTTOM_ZONE_ID ? 'start' : null;
+    this.showPlayerCeremony('respawn');
     this.artifactTimers.clear();
     this.expiredArtifactIds.clear();
     this.drawWorld();
@@ -1411,15 +1430,21 @@ class FallstackScene extends Phaser.Scene {
       this.player.body.blocked.down || this.player.body.touching.down;
     const velocityY = this.player.body.velocity.y;
     const chargeRatio = chargePowerForHeldMs(this.chargeTime);
-    const pose = this.charging
-      ? 'charge'
-      : grounded
-        ? 'grounded'
-        : velocityY > 160
-          ? 'fall'
-          : 'airborne';
+    const ceremony = this.activePlayerCeremony();
+    const pose = playerVisualState({
+      charging: this.charging,
+      grounded,
+      velocityY,
+      ceremony: ceremony?.state ?? null,
+    });
     const chargeTier = Math.round(chargeRatio * 8);
-    const visualKey = `${pose}:${this.facing}:${chargeTier}:${this.reducedMotion}`;
+    const ceremonyTier = ceremony
+      ? this.reducedMotion
+        ? 4
+        : Math.round(ceremony.progress * 4)
+      : 0;
+    const strengthTier = ceremony ? Math.round(ceremony.strength * 4) : 0;
+    const visualKey = `${pose}:${this.facing}:${chargeTier}:${ceremonyTier}:${strengthTier}:${this.reducedMotion}`;
     this.playerGraphics.setPosition(this.player.x, this.player.y);
     if (visualKey === this.playerVisualKey) return;
     this.playerVisualKey = visualKey;
@@ -1433,7 +1458,54 @@ class FallstackScene extends Phaser.Scene {
       velocityY,
       chargeRatio,
       reducedMotion: this.reducedMotion,
+      ceremony: ceremony?.state ?? null,
+      ceremonyProgress: ceremonyTier / 4,
+      ceremonyStrength: ceremony?.strength ?? 1,
     });
+  }
+
+  private showPlayerCeremony(
+    state: PlayerCeremonyState,
+    strength = 1
+  ): void {
+    const priority: Record<PlayerCeremonyState, number> = {
+      land: 1,
+      checkpoint: 2,
+      respawn: 3,
+      summit: 4,
+    };
+    const current = this.activePlayerCeremony();
+    if (current && priority[current.state] > priority[state]) return;
+    this.playerCeremony = {
+      state,
+      startedAt: this.time.now,
+      until: this.time.now + PLAYER_CEREMONY_DURATION_MS[state],
+      strength: Phaser.Math.Clamp(strength, 0, 1),
+    };
+    this.playerVisualKey = '';
+  }
+
+  private activePlayerCeremony(): {
+    state: PlayerCeremonyState;
+    progress: number;
+    strength: number;
+  } | null {
+    const ceremony = this.playerCeremony;
+    if (!ceremony) return null;
+    if (this.time.now >= ceremony.until) {
+      this.playerCeremony = null;
+      return null;
+    }
+    return {
+      state: ceremony.state,
+      progress: Phaser.Math.Clamp(
+        (this.time.now - ceremony.startedAt) /
+          Math.max(1, ceremony.until - ceremony.startedAt),
+        0,
+        1
+      ),
+      strength: ceremony.strength,
+    };
   }
 
   private drawCheckpointLanterns(g: Phaser.GameObjects.Graphics) {
