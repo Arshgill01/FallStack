@@ -80,9 +80,12 @@ import {
   shouldShowArtifactLabels,
 } from './game/art-direction';
 import {
+  CAMERA_AIR_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
+  cameraScrollXForPlayer,
   computeGameDimensions,
   gameWorldWidth,
+  physicsBoundsForViewport,
   routeOffsetForGameWidth,
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
@@ -575,8 +578,17 @@ class FallstackScene extends Phaser.Scene {
       keepPlayerX && this.player ? this.player.x - previousOffset : null;
     const worldWidth = this.gameWidth();
     this.currentRouteOffset = routeOffsetForGameWidth(worldWidth);
+    const physicsBounds = physicsBoundsForViewport(
+      this.viewportWidth(),
+      worldWidth
+    );
     this.cameras.main.setBounds(0, 0, worldWidth, WORLD_HEIGHT);
-    this.physics.world.setBounds(0, 0, worldWidth, WORLD_HEIGHT + 220);
+    this.physics.world.setBounds(
+      physicsBounds.left,
+      0,
+      physicsBounds.width,
+      WORLD_HEIGHT + 220
+    );
     if (playerLogicalX !== null && this.player)
       this.player.setX(this.layoutX(playerLogicalX));
   }
@@ -595,12 +607,23 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private cameraTargetX(x: number) {
-    const camW = this.viewportWidth();
-    return Phaser.Math.Clamp(
-      x - camW / 2,
-      0,
-      Math.max(0, this.gameWidth() - camW)
+    return cameraScrollXForPlayer(
+      x,
+      this.viewportWidth(),
+      this.gameWidth(),
+      this.cameraLookaheadX()
     );
+  }
+
+  private cameraLookaheadX() {
+    if (!this.player) return 0;
+    const body = this.player.body;
+    const grounded = body.blocked.down || body.touching.down;
+    if (this.charging)
+      return this.chargeDirection * CAMERA_AIR_LOOKAHEAD;
+    if (!grounded && this.lastLaunchDirection !== 0)
+      return this.lastLaunchDirection * CAMERA_AIR_LOOKAHEAD;
+    return Phaser.Math.Clamp(body.velocity.x * 0.12, -40, 40);
   }
 
   private snapCameraToPlayer() {

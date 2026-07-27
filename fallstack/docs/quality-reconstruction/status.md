@@ -14,8 +14,8 @@ Gate 1 — baseline census and reproduction.
 Gate 0 is complete on the current Mac. The project checks,
 Chromium/WebKit runtime lifecycle, mocked two-client reconciliation, signed-in
 Safari host access, independent hosted Music/SFX controls, and a deterministic
-final-master audio recorder are available. The full production-build summit is
-still running.
+final-master audio recorder are available. The full production-build summit
+remains open after partial checkpointed replay progress.
 
 ## Checkpoints
 
@@ -24,13 +24,14 @@ still running.
 | Pull current `master` | Complete | Fast-forwarded `7875568 → 7c4e06f` |
 | Define root goal | Complete | Commit `0aaf5b8` |
 | Mac toolchain | Complete | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7 |
-| Project checks | Complete | Type-check, lint, 146 tests, build passed |
+| Project checks | Complete | Type-check, lint, 150 tests, build passed |
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
 | Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
-| Full playthrough | Running | Chromium production build with intentional opening fall |
+| Full playthrough | Open | Mobile rerun crossed the opening blocker and checkpointed probes reached Black Hole Chapel; uninterrupted summit still missing |
+| Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
 ## Initial issue ledger
 
@@ -38,7 +39,7 @@ These are investigation records, not all approved fixes.
 
 | ID | Severity | Workstream | State | Summary |
 | --- | --- | --- | --- | --- |
-| QR-001 | High | Gameplay/world | Reproduced by source/runtime geometry | Painted reliquary walls and physical world bounds disagree, so the player can move behind architecture |
+| QR-001 | High | Gameplay/world | Fixed and browser-regressed | Mobile inherited an off-frame playable gutter before its readable side boundary; desktop/fullscreen outer edges were already correct |
 | QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
 | QR-003 | High | Audio/design | Baseline confirmed | Current oscillator cues do not provide the requested tactile event vocabulary |
 | QR-004 | High | Music | Baseline confirmed | Two drones plus an eight-note bell phrase repeat every 17.6 seconds with no biome response |
@@ -47,15 +48,15 @@ These are investigation records, not all approved fixes.
 | QR-007 | Medium | Audio/lifecycle | Fixed and browser-regressed | Queued SFX continued after SFX Off; gameplay bus itself was never muted |
 | QR-008 | Medium | Audio/lifecycle | Fixed and browser-regressed | Closed-context recovery retained stale charge/timer state |
 | QR-009 | Medium | Audio/ownership | Fixed and browser-regressed | Phaser created a redundant AudioContext despite owning no Fallstack sound |
-| QR-010 | Medium | Camera | Test gap | Player-centred camera does not prove the next landing remains readable at narrow widths |
+| QR-010 | Medium | Camera | Fixed and regression-tested | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths |
 | QR-011 | Medium | UI | Source repro established | Several mobile UI labels remain below the art-bible 13 px body/status target |
 | QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
-| QR-013 | Medium | QA/playthrough | Investigating | Current Chromium summit harness is still active after 13 minutes and has emitted only the opening artifact |
+| QR-013 | High | QA/playthrough | Replay improved; summit still open | Mobile rerun crossed opening ledge 7; two controller defects were fixed, but a checkpointed replay exhausted 320 jumps in early Black Hole Chapel |
 
 ## Decisions
 
-- 2026-07-27: Work continues on the current Mac only; all VM-specific handoffs
-  were removed from the goal.
+- 2026-07-27: Work continues on the current Mac only; remote-environment
+  handoffs were removed from the goal.
 - 2026-07-27: Latest pulled fixes are treated as baseline evidence, not assumed
   resolution of the user's current reports.
 - 2026-07-27: Automated oscillator counts and analyser values may approve
@@ -70,6 +71,14 @@ These are investigation records, not all approved fixes.
   Suppress exactly that transition; preserve the next real airborne landing.
 - 2026-07-27: `ProceduralSound` is the sole audio owner. Phaser audio is
   disabled because the game loads and plays no Phaser audio assets.
+- 2026-07-27: The reliquary's inner wall edge is the mobile physical route
+  boundary. Keep the full 480 px logical route for generation and preserve the
+  existing desktop/fullscreen outer edge.
+- 2026-07-27: A committed charge/flight may use 64 px horizontal camera
+  lookahead. Grounded idle remains velocity-based and capped at 40 px.
+- 2026-07-27: Character implementation pauses at the direction gate. Bell
+  Warden is recommended from three generated state-complete concept boards, but
+  the user owns the final selection.
 
 ## Commands run
 
@@ -81,10 +90,6 @@ npm run type-check
 npm run lint
 npm test
 npm run build
-npm run qa:runtime -- /tmp/fallstack-vm-readiness/chromium --browser=chromium
-npm run qa:runtime -- /tmp/fallstack-vm-readiness/webkit --browser=webkit
-npm run qa:runtime -- /tmp/fallstack-vm-readiness/webkit-retry --browser=webkit
-npm run qa:shared -- /tmp/fallstack-vm-readiness/shared
 npm exec -- devvit whoami
 npm exec -- devvit list installs fallstack_dev
 node --input-type=module -e '<initial ready/land event probe>'
@@ -103,6 +108,21 @@ npm run lint
 npm run build
 npm run qa:audio-lifecycle -- docs/quality-reconstruction/evidence/audio-lifecycle-fix
 npm run qa:audio -- /tmp/fallstack-quality/audio-after-lifecycle
+npm run qa:world-bounds -- /tmp/fallstack-quality/world-bounds-red
+npm run type-check
+npm run lint
+npm run build
+npm run qa:world-bounds -- docs/quality-reconstruction/evidence/world-bounds-fix
+npm test
+npm run qa:playthrough -- --output docs/quality-reconstruction/evidence/full-playthrough --browser=chromium --intro-fall --retries=40 --max-jumps=1500
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-comet-probe --browser=chromium --resume-zone=comet_reef --retries=12 --max-jumps=320
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-nebula-probe --browser=chromium --resume-zone=nebula_vault --retries=12 --max-jumps=320
+npm run qa:playthrough -- --output /tmp/fallstack-quality/playthrough-black-hole-probe --browser=chromium --resume-zone=black_hole_chapel --retries=40 --max-jumps=800
+npm test
+npm run build
+npm run qa:world-bounds -- docs/quality-reconstruction/evidence/world-bounds-fix
+npm run qa:runtime -- /tmp/fallstack-quality/world-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/world-runtime-webkit --browser=webkit
 ```
 
 Results:
@@ -132,6 +152,33 @@ Results:
   initial context, one launch oscillator after immediate mute, five active
   oscillators after twenty toggle cycles, and exactly one replacement context
   after closure with no page errors.
+- World-bound red run failed mobile wall-contact containment. The revised green
+  contract contains 320, 375, and 480 px mobile views while preserving the
+  original 758 px desktop outer edge.
+- Camera regression samples 160 seeds at 320 and 375 px. Before lookahead one
+  summit connector exposed 0 px at takeoff; committed 64 px lookahead exposes
+  at least 40 px of every next landing in the sample.
+- The baseline full playthrough started before the landing/world fixes. It
+  exhausted 1,200 jumps after 26 minutes: 627 advancing landings, 400 falls,
+  and repeated inability to clear opening ledge 7. The report also exposed a
+  harness retry counter that resets after falls and therefore never fails fast.
+- A 100-jump post-fix probe cleared the previously blocking ledge and reached
+  `crater_foundry`. The first full rerun was intentionally stopped after the
+  user clarified that desktop/fullscreen bounds must remain unchanged.
+- The mobile-only canonical rerun then crossed the opening blocker and reached
+  `comet_reef`, where it exposed a controller approach-counter defect at ledge
+  36. A source-target approach counter cleared it.
+- The checkpointed replay exposed and fixed two more false-control states: it
+  now waits for a real airborne frame and validates the physical support under
+  the player instead of trusting a stale label.
+- The improved checkpointed probe crossed six later zones and reached
+  `black_hole_chapel`, but expired its 320-jump budget while cycling between the
+  previous checkpoint and early chapel ledges. This is not summit approval.
+- The Black Hole Chapel-only probe was manually stopped after repeating the
+  same checkpoint churn without crossing into the next zone.
+- Final mobile-boundary checkpoint checks passed: 150/150 tests, production
+  build, world-contact regression, Chromium runtime smoke, and isolated WebKit
+  runtime smoke.
 
 ## Worktree safety
 

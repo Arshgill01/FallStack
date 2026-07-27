@@ -66,6 +66,7 @@ npm run qa:runtime
 npm run qa:shared
 npm run qa:audio
 npm run qa:audio-lifecycle
+npm run qa:world-bounds
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
 ```
 

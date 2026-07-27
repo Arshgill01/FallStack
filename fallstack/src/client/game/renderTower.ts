@@ -6,6 +6,7 @@ import {
   reliquaryZoneFor,
   type ReliquaryZone,
 } from './art-direction.js';
+import { ROUTE_PLAYABLE_INSET } from './layout.js';
 
 export function renderReliquaryBackdrop(
   graphics: Phaser.GameObjects.Graphics,
@@ -21,6 +22,8 @@ export function renderReliquaryBackdrop(
   const p = RELIQUARY_ZONE_PALETTES[input.zone];
   const routeLeft = input.routeOffset;
   const routeRight = routeLeft + 480;
+  const playableLeft = routeLeft + ROUTE_PLAYABLE_INSET;
+  const playableRight = routeRight - ROUTE_PLAYABLE_INSET;
   const height = input.zoneBottom - input.zoneTop;
   graphics.fillStyle(p.outer, 1).fillRect(0, input.zoneTop, input.gameWidth, height);
   graphics
@@ -29,7 +32,7 @@ export function renderReliquaryBackdrop(
 
   // Nested wall planes give the moving camera a persistent sense of depth.
   graphics.fillStyle(c.ink, 0.28);
-  graphics.fillRect(routeLeft + 34, input.zoneTop, 24, height);
+  graphics.fillRect(playableLeft, input.zoneTop, 24, height);
   graphics.fillRect(routeRight - 58, input.zoneTop, 24, height);
   graphics.fillStyle(p.wallLit, 0.18);
   graphics.fillRect(routeLeft + 58, input.zoneTop, 9, height);
@@ -42,8 +45,8 @@ export function renderReliquaryBackdrop(
   graphics.fillRect(routeLeft + 13, input.zoneTop, 20, height);
   graphics.fillRect(routeRight - 33, input.zoneTop, 20, height);
   graphics.fillStyle(p.trim, 0.8);
-  graphics.fillRect(routeLeft + 31, input.zoneTop, 3, height);
-  graphics.fillRect(routeRight - 34, input.zoneTop, 3, height);
+  graphics.fillRect(playableLeft - 3, input.zoneTop, 3, height);
+  graphics.fillRect(playableRight, input.zoneTop, 3, height);
 
   const archSpacing =
     input.zone === 'lower_ruins' ? 520 : input.zone === 'bell_shaft' ? 460 : 620;

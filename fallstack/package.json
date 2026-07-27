@@ -17,6 +17,7 @@
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",
     "qa:shared": "node scripts/qa/shared-session.mjs",
+    "qa:world-bounds": "node scripts/qa/world-bounds.mjs",
     "test": "npm run type-check && node --test 'dist/types/shared/**/*.test.js' 'dist/types/client/**/*.test.js' 'dist/types/server/**/*.test.js'",
     "type-check": "tsc --build"
   },

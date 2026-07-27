@@ -6,26 +6,27 @@
 - On narrow viewports, the camera follows horizontally across the 480 px route.
 - On wider viewports, `gameWorldWidth()` expands the physics world to the full
   canvas and centres the 480 px route with `currentRouteOffset`.
-- The player collides with the expanded physics world bounds.
+- Desktop/fullscreen intentionally collides with the expanded outer edge.
+- Mobile uses the reliquary's inner route edge so the player cannot leave the
+  narrow moving frame before reaching a readable boundary.
 - The reliquary backdrop paints a 480 px route cavity and wall planes, but those
   painted wall planes do not have continuous collision bodies.
 
 ## QR-001 — physical and visual walls disagree
 
-Runtime inspection at 1280×800 measured a 760 px game world with the 480 px route
-centred at approximately x=140–620. Physics bounds remained x=0–760. The painted
-reliquary wall is therefore not the actual movement boundary; a player can move
-behind the architecture before reaching the world edge. Narrow mobile keeps a
-smaller version of the same semantic mismatch between the inner painted wall and
-the x=0/480 physics boundary.
+Runtime inspection originally found the same visual/physics distinction at
+mobile and desktop widths. The user then clarified the report is mobile-only:
+desktop and fullscreen already expose an intentional outer edge. The defect is
+therefore the narrow moving-camera path, where the player can leave the visible
+frame before a readable side boundary appears.
 
 This directly matches the user's report more closely than out-of-bounds tower
 generation.
 
 Ranked hypotheses:
 
-1. The visual cavity was introduced as presentation only while the responsive
-   world continued to use canvas bounds, creating an unintended playable gutter.
+1. Mobile inherited the full 480 px route bounds even though its camera shows
+   only 320–480 px at once, creating an off-frame playable gutter.
 2. The narrow horizontally following camera made the full logical route
    accessible but did not establish a shared safe route boundary.
 3. Generated ledges near the older opening margin make the mismatch easier to
@@ -36,13 +37,29 @@ Required feedback loop:
 - expose player x, camera scroll, physical world bounds, and painted route bounds;
 - drive deliberate left/right wall contact at 320×568, 375×812, 480 px, and
   1280×800;
-- assert the player never crosses the selected shared route boundary and remains
-  visible with a safe margin;
+- assert mobile never crosses its selected route boundary and remains visible;
+- assert desktop/fullscreen retains the original outer canvas edge;
 - preserve a complete summit playthrough.
 
 Do not choose between physical wall bodies, player clamping, or different
 responsive bounds until the browser loop identifies the smallest fix compatible
 with wall-bounce behavior.
+
+Observed red/green result:
+
+- The red browser probe drove wall contact at 320×568, 375×812, 480×800, and
+  1280×800. Mobile could enter the off-frame gutter.
+- The smallest compatible correction keeps the generated 480 px coordinate
+  system and applies the reliquary's 34 px inner wall edge only below the
+  existing 600 px mobile breakpoint.
+- Narrow runtimes use x=`34…446`.
+- The 758 px desktop runtime deliberately remains x=`0…758`, preserving the
+  outer edge the user confirmed already works.
+- The green probe reaches both mode-specific collision edges without crossing
+  them and keeps contacts inside the camera at all four viewports.
+
+Evidence:
+[`world-bounds.json`](evidence/world-bounds-fix/world-bounds.json).
 
 ## Tower ledge status
 
@@ -65,3 +82,49 @@ Required loop: calculate and browser-check takeoff, apex, and landing visibility
 over representative seeds using actual movement constants. Score the usable
 landing segment rather than platform centre alone.
 
+Observed result:
+
+- A no-lookahead calculation over 160 seeds found a 320 px summit-connector
+  jump with 0 px of usable target visible at takeoff.
+- Committed charge and airborne movement now apply 64 px of lookahead in the
+  launch direction; grounded velocity lookahead is capped at 40 px.
+- The regression scores the target segment after a 10 px player-half-width
+  inset. Every consecutive route jump across 160 seeds exposes at least 40 px
+  at both 320 and 375 px.
+
+## QR-013 — complete-playthrough failure
+
+The baseline production-build run began before the mobile wall and camera changes and
+finished after 1,579,427 ms without a summit:
+
+- 1,200 total jumps;
+- 627 advancing landings;
+- 400 falls;
+- final support: `ledge-orbital_scrapyard-4`;
+- 105 failed attempts to advance from opening ledge 6 to ledge 7.
+
+This is not yet proof that the route is impossible. The same report shows the
+mechanical harness resetting its local retry counter after every run-ending
+fall, preventing the requested eight/forty-attempt fail-fast limit. More
+importantly, ledge 7 sits beside the right wall, so the corrected mobile edge
+changes the available bounce timing. A bounded post-fix run cleared that ledge
+and reached `crater_foundry` within 100 jumps.
+
+After restoring the desktop outer edge, the canonical mobile rerun crossed that
+opening route and reached `comet_reef`. It stopped at ledge 36 because the
+replay controller reused one target-wide attempt number for several different
+approaches, forcing the same overshooting direct jump every time the player
+returned to ledge 35. A source-target approach counter cleared that blocker.
+
+A second replay defect then surfaced: the controller could judge a landing
+before the released jump input had produced an airborne frame, and it could
+trust a stale `lastPlatformId` while the player was visibly standing on a
+nearby obstacle. Waiting for a real airborne transition and resolving support
+from player geometry moved checkpointed probes through Ring Citadel, Dwarf
+Garden, Pulsar Spine, Neutron Forge, and into Black Hole Chapel. The probe then
+cycled between the previous checkpoint and early Black Hole Chapel until its
+320-jump budget expired.
+
+The uninterrupted summit proof therefore remains open. Current evidence no
+longer implicates the mobile boundary correction, but partial replay progress
+must not be reported as a completed tower.

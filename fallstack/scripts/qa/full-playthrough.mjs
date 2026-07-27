@@ -115,6 +115,7 @@ try {
   let lastRecordedPlatform = initial.lastPlatformId;
   let attemptsAtTarget = 0;
   const targetAttempts = new Map();
+  const approachAttempts = new Map();
   let totalJumps = 0;
   let lastZone = initial.currentZone;
 
@@ -148,10 +149,20 @@ try {
     const current = currentSupport(allPlatforms, platformById, state);
     attemptsAtTarget = (targetAttempts.get(target.id) ?? 0) + 1;
     targetAttempts.set(target.id, attemptsAtTarget);
+    const attemptAtTarget = attemptsAtTarget;
+    const approachKey = `${current?.id ?? state.lastPlatformId}->${target.id}`;
+    const approachAttempt = (approachAttempts.get(approachKey) ?? 0) + 1;
+    approachAttempts.set(approachKey, approachAttempt);
     totalJumps += 1;
 
     const blockers = blockingObstacles(allPlatforms, current, target);
-    const result = await performJump(page, current, target, attemptsAtTarget, blockers);
+    const result = await performJump(
+      page,
+      current,
+      target,
+      approachAttempt,
+      blockers
+    );
     const after = await readScene(page, false);
     const afterIndex = routeIndex.get(after.lastPlatformId);
     const advanced = afterIndex !== undefined && afterIndex >= targetIndex;
@@ -164,7 +175,8 @@ try {
       targetGeometry: pickGeometry(target),
       fromId: current?.id ?? state.lastPlatformId,
       fromGeometry: current ? pickGeometry(current) : null,
-      attemptAtTarget: attemptsAtTarget,
+      attemptAtTarget,
+      approachAttempt,
       result,
       after: compactState(after),
       advanced,
@@ -173,6 +185,16 @@ try {
     if (after.summitSent) {
       completed = true;
       break;
+    }
+    if (!advanced && attemptAtTarget >= options.retries) {
+      await capture(
+        page,
+        outputDir,
+        `blocked-${String(targetIndex).padStart(3, '0')}`
+      );
+      throw new Error(
+        `Could not clear ${target.id} after ${attemptAtTarget} attempts`
+      );
     }
     if (advanced) {
       targetAttempts.delete(target.id);
@@ -183,7 +205,7 @@ try {
         jump: totalJumps,
         targetIndex,
         targetId: target.id,
-        attemptAtTarget: attemptsAtTarget,
+        attemptAtTarget,
         state: compactState(after),
       });
       const recoveredIndex = routeIndex.get(after.lastPlatformId);
@@ -196,11 +218,6 @@ try {
     ) {
       targetIndex = afterIndex + 1;
       attemptsAtTarget = 0;
-    }
-
-    if (attemptsAtTarget >= options.retries) {
-      await capture(page, outputDir, `blocked-${String(targetIndex).padStart(3, '0')}`);
-      throw new Error(`Could not clear ${target.id} after ${attemptsAtTarget} attempts`);
     }
   }
 
@@ -287,7 +304,7 @@ async function performJump(page, current, target, attempt, blockers) {
   await page.keyboard.up(launchArrow);
   await page.waitForTimeout(Math.max(0, heldMs - 20));
   await page.keyboard.up('Space');
-  const launchState = await readScene(page, false);
+  const launchState = await waitForAirborne(page, 750);
 
   let outcome = 'airborne';
   let peakY = before.y;
@@ -577,10 +594,31 @@ async function readScene(page, includePlatforms) {
 
 function currentSupport(platforms, platformById, state) {
   const exact = platformById.get(state.lastPlatformId);
-  if (exact) return exact;
+  if (exact && Math.abs(exact.y - state.y - 14) <= 4) return exact;
   return platforms
-    .filter((platform) => platform.y >= state.y && platform.y - state.y < 90)
-    .sort((a, b) => a.y - b.y)[0] ?? null;
+    .filter(
+      (platform) =>
+        platform.y >= state.y &&
+        platform.y - state.y < 90 &&
+        state.x >= platform.x - 12 &&
+        state.x <= platform.x + platform.width + 12
+    )
+    .sort(
+      (left, right) =>
+        Math.abs(left.y - state.y - 14) -
+        Math.abs(right.y - state.y - 14)
+    )[0] ?? null;
+}
+
+async function waitForAirborne(page, timeoutMs) {
+  const deadline = performance.now() + timeoutMs;
+  let state = await readScene(page, false);
+  while (performance.now() < deadline) {
+    state = await readScene(page, false);
+    if (!state.grounded) return state;
+    await page.waitForTimeout(16);
+  }
+  throw new Error(`Launch input did not produce an airborne state within ${timeoutMs}ms`);
 }
 
 function checkpointRouteIndex(route, playerY) {

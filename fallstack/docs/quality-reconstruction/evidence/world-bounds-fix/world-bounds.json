@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-07-27T11:05:38.411Z",
+  "routeWidth": 480,
+  "playableInset": 34,
+  "mobileBreakpoint": 600,
+  "results": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "mobile": true,
+      "gameWidth": 480,
+      "viewportWidth": 320,
+      "routeOffset": 0,
+      "expectedLeft": 34,
+      "expectedRight": 446,
+      "physicsLeft": 34,
+      "physicsRight": 446,
+      "physicsWidth": 412,
+      "playerHalfWidth": 10,
+      "leftContact": {
+        "minPlayerLeft": 34,
+        "maxPlayerRight": 54,
+        "minScreenLeft": 34,
+        "maxScreenRight": 54
+      },
+      "rightContact": {
+        "minPlayerLeft": 415,
+        "maxPlayerRight": 446,
+        "minScreenLeft": 255,
+        "maxScreenRight": 286
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "mobile": true,
+      "gameWidth": 480,
+      "viewportWidth": 375,
+      "routeOffset": 0,
+      "expectedLeft": 34,
+      "expectedRight": 446,
+      "physicsLeft": 34,
+      "physicsRight": 446,
+      "physicsWidth": 412,
+      "playerHalfWidth": 10,
+      "leftContact": {
+        "minPlayerLeft": 34,
+        "maxPlayerRight": 54,
+        "minScreenLeft": 34,
+        "maxScreenRight": 54
+      },
+      "rightContact": {
+        "minPlayerLeft": 384.3333333333333,
+        "maxPlayerRight": 446,
+        "minScreenLeft": 279.3333333333333,
+        "maxScreenRight": 341
+      }
+    },
+    {
+      "viewport": {
+        "width": 480,
+        "height": 800
+      },
+      "mobile": true,
+      "gameWidth": 480,
+      "viewportWidth": 480,
+      "routeOffset": 0,
+      "expectedLeft": 34,
+      "expectedRight": 446,
+      "physicsLeft": 34,
+      "physicsRight": 446,
+      "physicsWidth": 412,
+      "playerHalfWidth": 10,
+      "leftContact": {
+        "minPlayerLeft": 34,
+        "maxPlayerRight": 54,
+        "minScreenLeft": 34,
+        "maxScreenRight": 54
+      },
+      "rightContact": {
+        "minPlayerLeft": 384.3333333333333,
+        "maxPlayerRight": 446,
+        "minScreenLeft": 384.3333333333333,
+        "maxScreenRight": 446
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "mobile": false,
+      "gameWidth": 758,
+      "viewportWidth": 758,
+      "routeOffset": 139,
+      "expectedLeft": 0,
+      "expectedRight": 758,
+      "physicsLeft": 0,
+      "physicsRight": 758,
+      "physicsWidth": 758,
+      "playerHalfWidth": 10,
+      "leftContact": {
+        "minPlayerLeft": 0,
+        "maxPlayerRight": 20,
+        "minScreenLeft": 0,
+        "maxScreenRight": 20
+      },
+      "rightContact": {
+        "minPlayerLeft": 696.3333333333334,
+        "maxPlayerRight": 758,
+        "minScreenLeft": 696.3333333333334,
+        "maxScreenRight": 758
+      }
+    }
+  ],
+  "failures": []
+}

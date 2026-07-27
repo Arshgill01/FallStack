@@ -15,6 +15,15 @@ export type GameDimensions = {
 
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
+export const ROUTE_PLAYABLE_INSET = 34;
+export const CAMERA_AIR_LOOKAHEAD = 64;
+export const MOBILE_GAME_BREAKPOINT = 600;
+
+export type HorizontalBounds = {
+  left: number;
+  right: number;
+  width: number;
+};
 
 export function computeGameDimensions(
   bounds: ContainerBounds,
@@ -46,6 +55,53 @@ export function gameWorldWidth(viewportWidth: number): number {
 
 export function routeOffsetForGameWidth(gameWidth: number): number {
   return Math.max(0, (gameWorldWidth(gameWidth) - WORLD_WIDTH) / 2);
+}
+
+export function playableRouteBoundsForGameWidth(
+  gameWidth: number
+): HorizontalBounds {
+  const left = routeOffsetForGameWidth(gameWidth) + ROUTE_PLAYABLE_INSET;
+  const right =
+    routeOffsetForGameWidth(gameWidth) + WORLD_WIDTH - ROUTE_PLAYABLE_INSET;
+  return { left, right, width: right - left };
+}
+
+export function physicsBoundsForViewport(
+  viewportWidth: number,
+  gameWidth: number
+): HorizontalBounds {
+  if (viewportWidth < MOBILE_GAME_BREAKPOINT)
+    return playableRouteBoundsForGameWidth(gameWidth);
+  const width = gameWorldWidth(gameWidth);
+  return { left: 0, right: width, width };
+}
+
+export function cameraScrollXForPlayer(
+  playerX: number,
+  viewportWidth: number,
+  gameWidth: number,
+  lookaheadX = 0
+): number {
+  return Math.max(
+    0,
+    Math.min(
+      playerX + lookaheadX - viewportWidth / 2,
+      Math.max(0, gameWorldWidth(gameWidth) - viewportWidth)
+    )
+  );
+}
+
+export function visibleHorizontalSpan(
+  left: number,
+  right: number,
+  cameraScrollX: number,
+  viewportWidth: number
+): number {
+  return Math.max(
+    0,
+    Math.min(right, cameraScrollX + viewportWidth) -
+      Math.max(left, cameraScrollX)
+  );
 }
 
 export function cameraBottomPaddingForGameWidth(gameWidth: number): number {

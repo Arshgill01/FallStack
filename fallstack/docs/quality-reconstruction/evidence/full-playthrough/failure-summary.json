@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-07-27T10:46:43.848Z",
+  "error": "Could not clear ledge-comet_reef-36 after 40 attempts",
+  "elapsedMs": 469881,
+  "eventCounts": {
+    "ready": 1,
+    "charge": 1112,
+    "launch": 357,
+    "land": 442,
+    "fall": 32,
+    "zone": 46,
+    "clear": 2
+  },
+  "totalJumps": 366,
+  "advancingLandings": 210,
+  "recordedFalls": 31,
+  "maxTargetIndex": 36,
+  "blocked": {
+    "targetId": "ledge-comet_reef-36",
+    "targetZone": "comet_reef",
+    "attemptAtTarget": 40,
+    "fromId": "obstacle-comet_reef-32",
+    "recoveredPlatformId": "ledge-comet_reef-34",
+    "summitSent": false
+  },
+  "consoleEntryCount": 3,
+  "pageErrorCount": 0
+}
