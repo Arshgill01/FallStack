@@ -22,10 +22,12 @@
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",
     "qa:shared": "node scripts/qa/shared-session.mjs",
+    "qa:tower-corpus": "node scripts/qa/tower-corpus.mjs",
     "qa:ui-accessibility": "node scripts/qa/ui-accessibility.mjs",
     "qa:ui-overlays": "node scripts/qa/ui-overlays.mjs",
     "qa:ui-readability": "node scripts/qa/ui-readability.mjs",
     "qa:ui-resize": "node scripts/qa/ui-resize.mjs",
+    "qa:ui-states": "node scripts/qa/ui-states.mjs",
     "qa:world-bounds": "node scripts/qa/world-bounds.mjs",
     "test": "npm run type-check && node --test 'dist/types/shared/**/*.test.js' 'dist/types/client/**/*.test.js' 'dist/types/server/**/*.test.js'",
     "type-check": "tsc --build"

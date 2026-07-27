@@ -101,8 +101,26 @@ through grounded, charging, airborne, dialog, and fine-pointer desktop states.
 Horizontal desktop/fullscreen physics edges are unchanged. Details are in
 [`ISSUE-017`](issues/ISSUE-017.md).
 
-## Remaining UI gate
+## QR-018 — broader states and interaction contrast
 
-QR-011 and QR-014–017 are closed. Workstream G is not: exhaustive contrast
-sampling beyond the audited primary/receipt actions and live server-backed
-error/capped/stale states still require a complete interaction audit.
+The final state audit exercised loading, local fallback, counted, capped,
+stale, and unavailable outcomes through the production React/API-response path
+at 320×568, 375×812, and 1280×800. Those states were already contained,
+truthful, and readable, but the same run found a 2.38:1 orange focus indicator
+on washi surfaces and a 2.51:1 cream-on-orange inline splash action.
+
+The shared focus treatment now uses complementary washi and ink rings so it
+works on both light sheets and the dark fixed-control bar. The splash action
+uses ink text. The
+[`ui-states.json`](evidence/ui-state-matrix-fix/ui-states.json) report passes
+146 checks: representative game, Guide, Tower Memory, receipt, fallback, and
+splash text pairs meet 4.5:1; the measured focus pairs meet 3:1; all twelve
+server-response presentations name counted/unchanged state and remain inside
+the tower viewport. Details are in [`ISSUE-018`](issues/ISSUE-018.md).
+
+## Workstream result
+
+QR-011 and QR-014–018 are closed. Targeted UI behavior, accessibility,
+responsive layout, long recovery overlays, server-backed outcome states,
+representative contrast, and mobile/desktop captures now satisfy Workstream G.
+Final Gate 4 still repeats these checks after music integration.

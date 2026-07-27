@@ -1,0 +1,3559 @@
+{
+  "generatedAt": "2026-07-27T13:49:08.582Z",
+  "source": {
+    "commit": "working-tree",
+    "url": "http://127.0.0.1:8080",
+    "environment": "current Mac",
+    "browser": "Chromium",
+    "session": "mocked shared server plus explicit local fallback"
+  },
+  "viewports": [
+    {
+      "width": 320,
+      "height": 568,
+      "mobile": true
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "mobile": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "mobile": false
+    }
+  ],
+  "responseStates": [
+    "accepted",
+    "capped",
+    "stale",
+    "unavailable"
+  ],
+  "observations": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "loading",
+      "loading": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "contrast": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      }
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "fallback",
+      "banner": {
+        "text": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+        "classes": "hud-overlay mutation-banner visible",
+        "receipt": false,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": null,
+        "stampContrast": null,
+        "revisionContrast": null,
+        "siteContrast": null,
+        "bucketContrast": null,
+        "counterContrast": null,
+        "messageContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "contrast-and-focus",
+      "gameContrasts": [
+        {
+          "name": "brand",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "community tally",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(217, 180, 92)",
+          "ratio": 9.583106228718028
+        },
+        {
+          "name": "top action",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone name",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone badge",
+          "foreground": "rgb(255, 214, 208)",
+          "background": "rgb(56, 18, 28)",
+          "ratio": 12.41224560403346
+        },
+        {
+          "name": "direction control",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "jump control",
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        }
+      ],
+      "topFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "touchFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(217, 180, 92)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      },
+      "guideContrasts": [
+        {
+          "name": "Guide kicker",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Guide title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Guide body",
+          "foreground": "rgb(41, 36, 63)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide key",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Guide sound toggle",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide primary action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        }
+      ],
+      "guideFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "memoryContrasts": [
+        {
+          "name": "Memory scope",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Memory title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Memory intro",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Memory summit",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory zone title",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Memory zone state",
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "name": "Memory site",
+          "foreground": "rgb(189, 229, 217)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 10.838500203865946
+        },
+        {
+          "name": "Memory body",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        },
+        {
+          "name": "Memory unavailable action status",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "accepted",
+      "banner": {
+        "text": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "capped",
+      "banner": {
+        "text": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "stale",
+      "banner": {
+        "text": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568,
+        "mobile": true
+      },
+      "state": "unavailable",
+      "banner": {
+        "text": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "loading",
+      "loading": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "contrast": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "fallback",
+      "banner": {
+        "text": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+        "classes": "hud-overlay mutation-banner visible",
+        "receipt": false,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": null,
+        "stampContrast": null,
+        "revisionContrast": null,
+        "siteContrast": null,
+        "bucketContrast": null,
+        "counterContrast": null,
+        "messageContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "contrast-and-focus",
+      "gameContrasts": [
+        {
+          "name": "brand",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "community tally",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(217, 180, 92)",
+          "ratio": 9.583106228718028
+        },
+        {
+          "name": "top action",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone name",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone badge",
+          "foreground": "rgb(255, 214, 208)",
+          "background": "rgb(56, 18, 28)",
+          "ratio": 12.41224560403346
+        },
+        {
+          "name": "direction control",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "jump control",
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        }
+      ],
+      "topFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "touchFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(217, 180, 92)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      },
+      "guideContrasts": [
+        {
+          "name": "Guide kicker",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Guide title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Guide body",
+          "foreground": "rgb(41, 36, 63)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide key",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Guide sound toggle",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide primary action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        }
+      ],
+      "guideFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "memoryContrasts": [
+        {
+          "name": "Memory scope",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Memory title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Memory intro",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Memory summit",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory zone title",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Memory zone state",
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "name": "Memory site",
+          "foreground": "rgb(189, 229, 217)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 10.838500203865946
+        },
+        {
+          "name": "Memory body",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        },
+        {
+          "name": "Memory unavailable action status",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "accepted",
+      "banner": {
+        "text": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "capped",
+      "banner": {
+        "text": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "stale",
+      "banner": {
+        "text": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "unavailable",
+      "banner": {
+        "text": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "loading",
+      "loading": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "contrast": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "fallback",
+      "banner": {
+        "text": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+        "classes": "hud-overlay mutation-banner visible",
+        "receipt": false,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": null,
+        "stampContrast": null,
+        "revisionContrast": null,
+        "siteContrast": null,
+        "bucketContrast": null,
+        "counterContrast": null,
+        "messageContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "contrast-and-focus",
+      "gameContrasts": [
+        {
+          "name": "brand",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "community tally",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(217, 180, 92)",
+          "ratio": 9.583106228718028
+        },
+        {
+          "name": "top action",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone name",
+          "foreground": "rgb(18, 6, 8)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 17.333303829908118
+        },
+        {
+          "name": "zone badge",
+          "foreground": "rgb(255, 214, 208)",
+          "background": "rgb(56, 18, 28)",
+          "ratio": 12.41224560403346
+        },
+        {
+          "name": "desktop controls hint",
+          "foreground": "rgba(244, 239, 226, 0.74)",
+          "background": "rgb(8, 5, 10)",
+          "ratio": 9.614656271392958
+        }
+      ],
+      "topFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "touchFocus": null,
+      "guideContrasts": [
+        {
+          "name": "Guide kicker",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Guide title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Guide body",
+          "foreground": "rgb(41, 36, 63)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide key",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Guide sound toggle",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Guide primary action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        }
+      ],
+      "guideFocus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "memoryContrasts": [
+        {
+          "name": "Memory scope",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        },
+        {
+          "name": "Memory title",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "name": "Memory intro",
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "name": "Memory summit",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory zone title",
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "name": "Memory zone state",
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "name": "Memory site",
+          "foreground": "rgb(189, 229, 217)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 10.838500203865946
+        },
+        {
+          "name": "Memory body",
+          "foreground": "rgb(216, 205, 183)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 9.402142260012148
+        },
+        {
+          "name": "Memory action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        },
+        {
+          "name": "Memory unavailable action status",
+          "foreground": "rgb(117, 85, 42)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 5.921057101339173
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "accepted",
+      "banner": {
+        "text": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "capped",
+      "banner": {
+        "text": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "stale",
+      "banner": {
+        "text": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800,
+        "mobile": false
+      },
+      "state": "unavailable",
+      "banner": {
+        "text": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+        "classes": "hud-overlay mutation-banner receipt visible",
+        "receipt": true,
+        "ariaLive": "polite",
+        "insideTower": true,
+        "copyContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "stampContrast": {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        "revisionContrast": {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        "siteContrast": {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        "bucketContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "counterContrast": {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        "messageContrast": null
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "mobile": true
+      },
+      "state": "splash",
+      "contrasts": [
+        {
+          "name": "splash kicker",
+          "foreground": "rgb(233, 95, 69)",
+          "background": "rgb(23, 20, 38)",
+          "ratio": 5.313559729441467
+        },
+        {
+          "name": "splash title",
+          "foreground": "rgb(232, 255, 245)",
+          "background": "rgb(23, 20, 38)",
+          "ratio": 17.221110267917506
+        },
+        {
+          "name": "splash promise",
+          "foreground": "rgb(185, 215, 205)",
+          "background": "rgb(23, 20, 38)",
+          "ratio": 11.73447671489878
+        },
+        {
+          "name": "splash action",
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(255, 111, 95)",
+          "ratio": 6.931362846736988
+        }
+      ],
+      "focus": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(142, 48, 43) 4px 4px 0px 0px",
+          "outlineColor": "rgb(24, 13, 24)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(142, 48, 43) 4px 4px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "320x568 loading state stays visual-only",
+      "pass": true,
+      "actual": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "expected": {
+        "visible": true,
+        "ariaHidden": "true"
+      }
+    },
+    {
+      "name": "320x568 loading text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 failed init enters explicit local practice",
+      "pass": true,
+      "actual": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+      "expected": "practice/opening-scars copy without a receipt"
+    },
+    {
+      "name": "320x568 fallback feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "320x568 fallback feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game brand meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "brand",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game community tally meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "community tally",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(217, 180, 92)",
+        "ratio": 9.583106228718028
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game top action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "top action",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game zone name meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone name",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game zone badge meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone badge",
+        "foreground": "rgb(255, 214, 208)",
+        "background": "rgb(56, 18, 28)",
+        "ratio": 12.41224560403346
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game direction control meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "direction control",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 game jump control meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "jump control",
+        "foreground": "rgb(217, 180, 92)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 7.496694321543623
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 top action has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "320x568 jump control has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(217, 180, 92)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "320x568 Guide Guide kicker meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide kicker",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide Guide title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide Guide body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide body",
+        "foreground": "rgb(41, 36, 63)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide Guide key meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide key",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide Guide sound toggle meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide sound toggle",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide Guide primary action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide primary action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Guide toggle has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "320x568 Tower Memory Memory scope meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory scope",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory intro meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory intro",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory summit meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory summit",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory zone title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone title",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory zone state meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone state",
+        "foreground": "rgb(217, 180, 92)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 7.496694321543623
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory site meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory site",
+        "foreground": "rgb(189, 229, 217)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 10.838500203865946
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory body",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 Tower Memory Memory unavailable action status meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory unavailable action status",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "320x568 accepted response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "320x568 accepted receipt names its board outcome",
+      "pass": true,
+      "actual": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+      "expected": "counted and changed"
+    },
+    {
+      "name": "320x568 accepted feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "320x568 accepted feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "320x568 capped response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "320x568 capped receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "320x568 capped feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "320x568 capped feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "320x568 stale response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "320x568 stale receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "320x568 stale feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "320x568 stale feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "320x568 unavailable response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "320x568 unavailable receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "320x568 unavailable feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "320x568 unavailable feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 loading state stays visual-only",
+      "pass": true,
+      "actual": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "expected": {
+        "visible": true,
+        "ariaHidden": "true"
+      }
+    },
+    {
+      "name": "375x812 loading text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 failed init enters explicit local practice",
+      "pass": true,
+      "actual": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+      "expected": "practice/opening-scars copy without a receipt"
+    },
+    {
+      "name": "375x812 fallback feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "375x812 fallback feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game brand meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "brand",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game community tally meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "community tally",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(217, 180, 92)",
+        "ratio": 9.583106228718028
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game top action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "top action",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game zone name meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone name",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game zone badge meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone badge",
+        "foreground": "rgb(255, 214, 208)",
+        "background": "rgb(56, 18, 28)",
+        "ratio": 12.41224560403346
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game direction control meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "direction control",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 game jump control meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "jump control",
+        "foreground": "rgb(217, 180, 92)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 7.496694321543623
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 top action has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "375x812 jump control has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(217, 180, 92)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 4px 0px 0px, rgb(69, 64, 95) 0px 1px 0px 0px inset",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "375x812 Guide Guide kicker meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide kicker",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide Guide title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide Guide body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide body",
+        "foreground": "rgb(41, 36, 63)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide Guide key meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide key",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide Guide sound toggle meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide sound toggle",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide Guide primary action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide primary action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Guide toggle has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "375x812 Tower Memory Memory scope meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory scope",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory intro meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory intro",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory summit meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory summit",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory zone title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone title",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory zone state meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone state",
+        "foreground": "rgb(217, 180, 92)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 7.496694321543623
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory site meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory site",
+        "foreground": "rgb(189, 229, 217)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 10.838500203865946
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory body",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 Tower Memory Memory unavailable action status meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory unavailable action status",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 accepted response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "375x812 accepted receipt names its board outcome",
+      "pass": true,
+      "actual": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+      "expected": "counted and changed"
+    },
+    {
+      "name": "375x812 accepted feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "375x812 accepted feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 capped response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "375x812 capped receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "375x812 capped feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "375x812 capped feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 stale response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "375x812 stale receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "375x812 stale feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "375x812 stale feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 unavailable response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "375x812 unavailable receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "375x812 unavailable feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "375x812 unavailable feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 loading state stays visual-only",
+      "pass": true,
+      "actual": {
+        "visible": true,
+        "ariaHidden": "true",
+        "text": "Reading the mountain…"
+      },
+      "expected": {
+        "visible": true,
+        "ariaHidden": "true"
+      }
+    },
+    {
+      "name": "1280x800 loading text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 failed init enters explicit local practice",
+      "pass": true,
+      "actual": "Local practice only. 4 opening scars raised First Gap. Nothing here changes the shared tower.",
+      "expected": "practice/opening-scars copy without a receipt"
+    },
+    {
+      "name": "1280x800 fallback feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "1280x800 fallback feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(233, 95, 69)",
+          "ratio": 5.576389085753384
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game brand meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "brand",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game community tally meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "community tally",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(217, 180, 92)",
+        "ratio": 9.583106228718028
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game top action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "top action",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game zone name meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone name",
+        "foreground": "rgb(18, 6, 8)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 17.333303829908118
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game zone badge meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "zone badge",
+        "foreground": "rgb(255, 214, 208)",
+        "background": "rgb(56, 18, 28)",
+        "ratio": 12.41224560403346
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 game desktop controls hint meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "desktop controls hint",
+        "foreground": "rgba(244, 239, 226, 0.74)",
+        "background": "rgb(8, 5, 10)",
+        "ratio": 9.614656271392958
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 top action has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(18, 6, 8)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "1280x800 Guide Guide kicker meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide kicker",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide Guide title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide Guide body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide body",
+        "foreground": "rgb(41, 36, 63)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide Guide key meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide key",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide Guide sound toggle meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide sound toggle",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide Guide primary action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Guide primary action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Guide toggle has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(117, 85, 42) 0px 3px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(24, 13, 24) 0px 0px 0px 8px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(244, 239, 226)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 1
+          },
+          {
+            "source": "focus box shadow",
+            "foreground": "rgb(24, 13, 24)",
+            "background": "rgb(244, 239, 226)",
+            "ratio": 16.48473724866001
+          }
+        ],
+        "bestRatio": 16.48473724866001
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "1280x800 Tower Memory Memory scope meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory scope",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory title",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 16.48473724866001
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory intro meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory intro",
+        "foreground": "rgb(89, 35, 55)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 10.632386375941755
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory summit meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory summit",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory zone title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone title",
+        "foreground": "rgb(244, 239, 226)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 12.895718066218297
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory zone state meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory zone state",
+        "foreground": "rgb(217, 180, 92)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 7.496694321543623
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory site meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory site",
+        "foreground": "rgb(189, 229, 217)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 10.838500203865946
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory body meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory body",
+        "foreground": "rgb(216, 205, 183)",
+        "background": "rgb(41, 36, 63)",
+        "ratio": 9.402142260012148
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 Tower Memory Memory unavailable action status meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "Memory unavailable action status",
+        "foreground": "rgb(117, 85, 42)",
+        "background": "rgb(244, 239, 226)",
+        "ratio": 5.921057101339173
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 accepted response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "1280x800 accepted receipt names its board outcome",
+      "pass": true,
+      "actual": "MUTATION COUNTEDBOARD r37 → r38First GapSHORT JUMPS4 → 5Your fall changed First Gap: 4 → 5. 1 more short jump changes it.",
+      "expected": "counted and changed"
+    },
+    {
+      "name": "1280x800 accepted feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "1280x800 accepted feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 capped response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "1280x800 capped receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · CAPPEDBOARD r37 · UNCHANGEDFirst GapSHORT JUMPS4 · UNCHANGEDFirst Gap has heard enough from you today. Shared state stayed at 4.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "1280x800 capped feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "1280x800 capped feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 stale response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "1280x800 stale receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · STALEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDA new daily tower replaced this board.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "1280x800 stale feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "1280x800 stale feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "1280x800 unavailable response uses the structured receipt",
+      "pass": true,
+      "actual": "hud-overlay mutation-banner receipt visible",
+      "expected": "includes receipt"
+    },
+    {
+      "name": "1280x800 unavailable receipt names its board outcome",
+      "pass": true,
+      "actual": "NOT COUNTED · UNAVAILABLEBOARD r37 · UNCHANGEDShared towerSHARED MARKUNCHANGEDThe shared board did not change. Your climb can continue.",
+      "expected": "not counted and unchanged"
+    },
+    {
+      "name": "1280x800 unavailable feedback is polite and contained",
+      "pass": true,
+      "actual": {
+        "ariaLive": "polite",
+        "insideTower": true
+      },
+      "expected": {
+        "ariaLive": "polite",
+        "insideTower": true
+      }
+    },
+    {
+      "name": "1280x800 unavailable feedback text meets 4.5:1 contrast",
+      "pass": true,
+      "actual": [
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(244, 239, 226)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 12.895718066218297
+        },
+        {
+          "foreground": "rgb(217, 180, 92)",
+          "background": "rgb(41, 36, 63)",
+          "ratio": 7.496694321543623
+        },
+        {
+          "foreground": "rgb(24, 13, 24)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 16.48473724866001
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        },
+        {
+          "foreground": "rgb(89, 35, 55)",
+          "background": "rgb(244, 239, 226)",
+          "ratio": 10.632386375941755
+        }
+      ],
+      "expected": "every ratio >= 4.5"
+    },
+    {
+      "name": "375x812 splash splash kicker meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "splash kicker",
+        "foreground": "rgb(233, 95, 69)",
+        "background": "rgb(23, 20, 38)",
+        "ratio": 5.313559729441467
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 splash splash title meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "splash title",
+        "foreground": "rgb(232, 255, 245)",
+        "background": "rgb(23, 20, 38)",
+        "ratio": 17.221110267917506
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 splash splash promise meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "splash promise",
+        "foreground": "rgb(185, 215, 205)",
+        "background": "rgb(23, 20, 38)",
+        "ratio": 11.73447671489878
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 splash splash action meets 4.5:1 contrast",
+      "pass": true,
+      "actual": {
+        "name": "splash action",
+        "foreground": "rgb(24, 13, 24)",
+        "background": "rgb(255, 111, 95)",
+        "ratio": 6.931362846736988
+      },
+      "expected": "ratio >= 4.5"
+    },
+    {
+      "name": "375x812 splash action has a visible 3:1 focus indicator",
+      "pass": true,
+      "actual": {
+        "active": true,
+        "normal": {
+          "boxShadow": "rgb(142, 48, 43) 4px 4px 0px 0px",
+          "outlineColor": "rgb(24, 13, 24)",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        "focused": {
+          "boxShadow": "rgb(142, 48, 43) 4px 4px 0px 0px",
+          "outlineColor": "rgb(244, 239, 226)",
+          "outlineStyle": "solid",
+          "outlineWidth": "3px"
+        },
+        "background": "rgb(23, 20, 38)",
+        "candidates": [
+          {
+            "source": "outline",
+            "foreground": "rgb(244, 239, 226)",
+            "background": "rgb(23, 20, 38)",
+            "ratio": 15.707769785771609
+          }
+        ],
+        "bestRatio": 15.707769785771609
+      },
+      "expected": {
+        "active": true,
+        "bestRatio": ">= 3"
+      }
+    },
+    {
+      "name": "state matrix has no page exceptions",
+      "pass": true,
+      "actual": [],
+      "expected": []
+    },
+    {
+      "name": "state matrix has no unexpected console errors",
+      "pass": true,
+      "actual": [],
+      "expected": []
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    {
+      "state": "fallback",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "stale",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "state": "stale",
+      "text": "record-fall failed Wt: A new daily tower replaced this board.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    },
+    {
+      "state": "unavailable",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "unavailable",
+      "text": "record-fall failed Wt: The shared board did not change. Your climb can continue.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    },
+    {
+      "state": "fallback",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "stale",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "state": "stale",
+      "text": "record-fall failed Wt: A new daily tower replaced this board.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    },
+    {
+      "state": "unavailable",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "unavailable",
+      "text": "record-fall failed Wt: The shared board did not change. Your climb can continue.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    },
+    {
+      "state": "fallback",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "stale",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "state": "stale",
+      "text": "record-fall failed Wt: A new daily tower replaced this board.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    },
+    {
+      "state": "unavailable",
+      "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    },
+    {
+      "state": "unavailable",
+      "text": "record-fall failed Wt: The shared board did not change. Your climb can continue.\n    at Jt (http://127.0.0.1:8080/game.js:103:26962)\n    at async http://127.0.0.1:8080/game.js:104:40850"
+    }
+  ],
+  "failures": []
+}

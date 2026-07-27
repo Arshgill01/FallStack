@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-07-27T13:42:42.283Z",
+  "source": {
+    "commit": "e56c97c",
+    "environment": "current Mac"
+  },
+  "scope": {
+    "kind": "deterministic static invariant corpus",
+    "firstDate": "2026-01-01",
+    "lastDate": "2026-12-31",
+    "seeds": 365,
+    "zonesPerSeed": 12,
+    "viewportWidths": [
+      320,
+      375
+    ],
+    "note": "This report measures generator bounds, declared-movement reachability, artifact-free route preservation, and camera-readable landing space. It does not simulate player skill or approve subjective difficulty."
+  },
+  "movementContract": {
+    "worldWidth": 480,
+    "reachableHorizontal": 260,
+    "reachableVertical": 165,
+    "cameraLookahead": 64,
+    "minimumReadableLanding": 40
+  },
+  "totals": {
+    "routeTransitions": 56220,
+    "impactSites": 13140,
+    "hazardLayouts": 365,
+    "chunkArchetypes": {
+      "checkpoint_approach": 730,
+      "chimney": 730,
+      "narrow_shelf": 730,
+      "orbit_gap": 730,
+      "recovery_bowl": 730,
+      "switchback": 730
+    }
+  },
+  "ranges": {
+    "routePlatforms": {
+      "minimum": 153,
+      "maximum": 158
+    },
+    "firstCheckpointJump": {
+      "minimum": 12,
+      "maximum": 13
+    },
+    "minimumRouteWidth": {
+      "minimum": 90,
+      "maximum": 90
+    },
+    "minimumWallMargin": {
+      "minimum": 30,
+      "maximum": 49.5
+    },
+    "maximumHorizontalStep": {
+      "minimum": 144,
+      "maximum": 258
+    },
+    "maximumVerticalStep": {
+      "minimum": 123,
+      "maximum": 165
+    }
+  },
+  "minimumVisibleLandingByViewport": {
+    "320": 42,
+    "375": 69.5
+  },
+  "failures": []
+}

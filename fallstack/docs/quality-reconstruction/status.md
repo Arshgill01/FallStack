@@ -42,6 +42,8 @@ all eleven zone clears to the summit.
 | Mobile orientation | Complete | Chromium and WebKit pass grounded, charging, airborne, modal, and desktop-control continuity checks |
 | Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
 | Character redesign | Complete | Washi Pilgrim integrated across ten states; 320/375, reduced motion, Chromium/WebKit, and unchanged 20×28 body verified |
+| Tower seed corpus | Complete | All 365 daily seeds for 2026 pass 56,220 route transitions, 13,140 impact sites, active-hazard fairness, and 320/375 landing-visibility checks |
+| Complete UI state matrix | Complete | 146 checks cover loading, fallback, counted/capped/stale/unavailable receipts, representative contrast, and focus across 320/375/1280 |
 
 ## Initial issue ledger
 
@@ -66,6 +68,7 @@ These are investigation records, not all approved fixes.
 | QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
 | QR-016 | Medium | UI/feedback | Fixed and browser-regressed | Short-screen receipts and simultaneous remote notices no longer cover the player or next recovery landing |
 | QR-017 | High | UI/input/camera | Fixed and browser-regressed | Coarse-pointer landscape retains touch controls and short-screen camera framing without changing desktop/fullscreen edges |
+| QR-018 | Medium | UI/accessibility | Fixed and browser-regressed | Two-color focus treatment works on light/dark surfaces and the splash action label now meets text contrast |
 
 ## Decisions
 
@@ -135,6 +138,11 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: At 320×568-class layouts, a local receipt takes priority over a
   simultaneous remote beat. The full receipt remains in the live region while
   the visible proof is compact enough to preserve the recovery jump.
+- 2026-07-27: Static tower-corpus results are evidence for bounds, declared
+  reachability, artifact-free fairness, and camera visibility only. They do not
+  stand in for human difficulty, pacing, or landing-feel approval.
+- 2026-07-27: Keyboard focus uses a washi inner ring and ink outer ring so the
+  same treatment remains visible on both sheets and the dark control bar.
 
 ## Commands run
 
@@ -249,6 +257,25 @@ FALLSTACK_QA_BASE_URL=http://127.0.0.1:8082 npm run qa:ui-readability -- docs/qu
 FALLSTACK_QA_SOURCE_COMMIT=776999a npm run qa:baseline -- /tmp/fallstack-quality/baseline-harness-current-green
 npm run qa:world-bounds -- /tmp/fallstack-quality/gate1-current-world-bounds
 npm run qa:ui-readability -- /tmp/fallstack-quality/gate1-current-ui-readability
+npm run type-check
+npm run lint
+npm test
+npm run build
+git diff --check
+node --check scripts/qa/tower-corpus.mjs
+FALLSTACK_QA_SOURCE_COMMIT=e56c97c npm run qa:tower-corpus -- docs/quality-reconstruction/evidence/tower-seed-corpus
+node --check scripts/qa/ui-states.mjs
+FALLSTACK_QA_SOURCE_COMMIT=e56c97c npm run qa:ui-states -- docs/quality-reconstruction/evidence/ui-state-matrix-red
+npm run build
+FALLSTACK_QA_SOURCE_COMMIT=working-tree npm run qa:ui-states -- docs/quality-reconstruction/evidence/ui-state-matrix-fix
+npm run qa:ui-accessibility -- /tmp/fallstack-quality/ui-accessibility-after-state-fix-chromium --browser=chromium
+npm run qa:ui-readability -- /tmp/fallstack-quality/ui-readability-after-state-fix
+npm run qa:ui-overlays -- /tmp/fallstack-quality/ui-overlays-after-state-fix
+npm run qa:ui-accessibility -- /tmp/fallstack-quality/ui-accessibility-after-state-fix-webkit --browser=webkit
+npx prettier --check package.json src/client/index.css scripts/qa/tower-corpus.mjs scripts/qa/ui-states.mjs docs/quality-reconstruction/completion-audit.md docs/quality-reconstruction/status.md docs/quality-reconstruction/tower-quality.md docs/quality-reconstruction/ui-ux.md docs/quality-reconstruction/issues/ISSUE-018.md
+npx prettier --write scripts/qa/tower-corpus.mjs scripts/qa/ui-states.mjs docs/quality-reconstruction/completion-audit.md docs/quality-reconstruction/issues/ISSUE-018.md
+node --check scripts/qa/tower-corpus.mjs
+node --check scripts/qa/ui-states.mjs
 npm run type-check
 npm run lint
 npm test
@@ -397,6 +424,21 @@ Results:
   pre-input and post-respawn false landings, zero page errors, and zero
   unexpected console errors. Current world-bound and readability contracts
   pass, as do type-check, lint, all 153 tests, build, and `git diff --check`.
+- The deterministic tower corpus passes every 2026 date: 365 towers, 56,220
+  transitions, 13,140 impact sites, and 365 every-hazard-active layouts.
+  Minimum intended landing visibility is 42 px at 320 and 69.5 px at 375;
+  there are zero static invariant failures.
+- The broader UI red run found six light-surface focus indicators at 2.38:1
+  and the splash action label at 2.51:1. Its loading, fallback, counted,
+  capped, stale, unavailable, and remaining representative contrast checks
+  passed.
+- The corrected UI state matrix passes 146/146 checks at 320×568, 375×812,
+  and 1280×800. Light and dark focus indicators measure 16.48:1 and 15.71:1;
+  the splash label measures 6.93:1.
+- After the UI-state correction, Chromium and WebKit accessibility each pass
+  48/48 checks, mobile readability and all 266 overlay checks pass, and the
+  final type-check, lint, 153 tests, build, and diff check pass. The build keeps
+  the known expanded Phaser chunk warning.
 
 ## Worktree safety
 
