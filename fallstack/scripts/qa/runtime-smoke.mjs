@@ -38,9 +38,15 @@ try {
   );
   await touchPage.goto('http://127.0.0.1:8080/game.html');
   await waitForReady(touchPage);
+  await touchPage.waitForTimeout(250);
   const pointer = await createPointerDriver(touchContext, touchPage, browserName);
 
   const beforeMove = await readScene(touchPage);
+  assert.equal(
+    beforeMove.events.lands,
+    0,
+    'settling the opening checkpoint does not emit a landing'
+  );
   await holdPointer(
     pointer,
     await centerOf(touchPage, '[aria-label="Move right"]'),
@@ -63,6 +69,7 @@ try {
   assert.equal(afterWarmMove.input.left, false, 'repeated touch releases cleanly');
 
   const fallsBefore = afterWarmMove.events.falls;
+  const landsBeforeFall = afterWarmMove.events.lands;
   await holdPointer(
     pointer,
     await centerOf(touchPage, '[aria-label="Move right"]'),
@@ -82,6 +89,11 @@ try {
   );
   assert.equal(afterRespawn.grounded, true, 'touch-driven respawn settles on its checkpoint');
   assert.equal(afterRespawn.input.right, false, 'falling touch releases before respawn');
+  assert.equal(
+    afterRespawn.events.lands,
+    landsBeforeFall,
+    'resetting to a checkpoint does not emit a landing'
+  );
 
   const beforeRespawnMove = await readScene(touchPage);
   await holdPointer(
@@ -176,6 +188,7 @@ try {
       warmMovedLogicalPixels: round(warmMove),
       postRespawnMovedLogicalPixels: round(respawnMove),
       fallEvents: afterRespawn.events.falls,
+      resetLandingEvents: afterRespawn.events.lands - landsBeforeFall,
       respawnGrounded: afterRespawn.grounded,
       launchVelocityY: round(afterJump.vy),
       launchEvents: afterJump.events.launches,
@@ -204,12 +217,15 @@ try {
 
 async function installSceneProbe(context) {
   await context.addInitScript(() => {
-    window.__fallstackQa = { launches: 0, falls: 0 };
+    window.__fallstackQa = { launches: 0, falls: 0, lands: 0 };
     window.addEventListener('fallstack:launch', () => {
       window.__fallstackQa.launches += 1;
     });
     window.addEventListener('fallstack:fall', () => {
       window.__fallstackQa.falls += 1;
+    });
+    window.addEventListener('fallstack:land', () => {
+      window.__fallstackQa.lands += 1;
     });
     window.__fallstackFindScene = () => {
       const root = document.querySelector('#root');

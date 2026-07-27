@@ -42,6 +42,11 @@ export type AudioDiagnostics = {
   outputRms: number;
 };
 
+export type AudioCaptureApi = {
+  start: () => Promise<void>;
+  stop: () => Promise<Blob>;
+};
+
 export function shouldResumeAudioContext(state: string): boolean {
   return state !== 'running' && state !== 'closed';
 }
@@ -70,6 +75,9 @@ export class ProceduralSound {
   private outputAnalyser: AnalyserNode | null = null;
   private outputSamples: Uint8Array<ArrayBuffer> | null = null;
   private outputPrimed = false;
+  private captureDestination: MediaStreamAudioDestinationNode | null = null;
+  private captureRecorder: MediaRecorder | null = null;
+  private captureChunks: Blob[] = [];
   private musicNodes: AudioNode[] = [];
   private musicTimers: number[] = [];
   private musicStopTimer: number | null = null;
@@ -128,6 +136,74 @@ export class ProceduralSound {
       outputPeak: Number(peak.toFixed(4)),
       outputRms: Number(Math.sqrt(squareSum / samples.length).toFixed(4)),
     };
+  }
+
+  async startCapture(): Promise<void> {
+    if (this.captureRecorder?.state === 'recording')
+      throw new Error('Audio capture is already running.');
+    if (typeof MediaRecorder === 'undefined')
+      throw new Error('MediaRecorder is unavailable in this browser.');
+
+    this.unlock();
+    if (!this.context || !this.outputAnalyser)
+      throw new Error('Web Audio is unavailable in this browser.');
+    if (shouldResumeAudioContext(this.context.state))
+      await this.context.resume();
+    if (this.context.state !== 'running')
+      throw new Error(`AudioContext is ${this.context.state}.`);
+
+    const destination = this.context.createMediaStreamDestination();
+    this.outputAnalyser.connect(destination);
+    const mimeType = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+    ].find((candidate) => MediaRecorder.isTypeSupported(candidate));
+    const recorder = new MediaRecorder(
+      destination.stream,
+      mimeType ? { mimeType } : undefined
+    );
+
+    this.captureDestination = destination;
+    this.captureRecorder = recorder;
+    this.captureChunks = [];
+    recorder.addEventListener('dataavailable', (event) => {
+      if (event.data.size > 0) this.captureChunks.push(event.data);
+    });
+    recorder.start();
+  }
+
+  async stopCapture(): Promise<Blob> {
+    const recorder = this.captureRecorder;
+    const destination = this.captureDestination;
+    if (!recorder || !destination || recorder.state === 'inactive')
+      throw new Error('Audio capture is not running.');
+
+    const stopped = new Promise<void>((resolve, reject) => {
+      recorder.addEventListener('stop', () => resolve(), { once: true });
+      recorder.addEventListener(
+        'error',
+        (event) => reject(new Error(event.error.message)),
+        { once: true }
+      );
+    });
+    recorder.stop();
+    await stopped;
+
+    try {
+      this.outputAnalyser?.disconnect(destination);
+    } catch {
+      // The AudioContext may already have replaced its output graph.
+    }
+    for (const track of destination.stream.getTracks()) track.stop();
+
+    const blob = new Blob(this.captureChunks, {
+      type: recorder.mimeType || this.captureChunks[0]?.type || 'audio/webm',
+    });
+    this.captureDestination = null;
+    this.captureRecorder = null;
+    this.captureChunks = [];
+    return blob;
   }
 
   unlock() {

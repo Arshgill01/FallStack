@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-07-27T10:22:17.813Z",
+  "artifact": "docs/quality-reconstruction/evidence/landing-fix-audio/final-master.webm",
+  "byteLength": 93698,
+  "mimeType": "audio/webm;codecs=opus",
+  "stream": {
+    "codec_name": "opus",
+    "codec_type": "audio",
+    "sample_rate": "48000",
+    "channels": 2
+  },
+  "durationSeconds": 5.819399,
+  "maxOutputPeak": 0.1016,
+  "maxOutputRms": 0.0612,
+  "events": [
+    {
+      "name": "ready",
+      "at": 604.2000000476837,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 720.2000000476837,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "charge",
+      "at": 754.3000000715256,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "charge",
+      "at": 871,
+      "detail": {
+        "percent": 60
+      }
+    },
+    {
+      "name": "launch",
+      "at": 887.6000000238419,
+      "detail": {
+        "direction": 1,
+        "chargePercent": 58,
+        "originX": 240,
+        "velocityX": 355.5275,
+        "velocityY": -882.8439999999999
+      }
+    },
+    {
+      "name": "charge",
+      "at": 887.7000000476837,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 1587.4000000953674,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    }
+  ]
+}

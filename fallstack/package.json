@@ -12,6 +12,7 @@
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "login": "devvit login",
     "prettier": "prettier --write .",
+    "qa:audio": "node scripts/qa/audio-capture.mjs",
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",
     "qa:shared": "node scripts/qa/shared-session.mjs",

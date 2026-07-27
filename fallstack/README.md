@@ -64,8 +64,13 @@ Additional browser harnesses expect the built `dist/client` directory to be serv
 ```sh
 npm run qa:runtime
 npm run qa:shared
+npm run qa:audio
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
 ```
+
+`qa:audio` records the built game's final Web Audio master through a
+query-gated browser seam, verifies that it contains a non-silent audio stream,
+and writes an FFprobe-backed report beside the WebM artifact.
 
 `npm run dev`, `npm run deploy`, and `npm run launch` interact with Reddit/Devvit. They are intentionally not part of local verification and should only be run by an authenticated maintainer who intends that external change.
 

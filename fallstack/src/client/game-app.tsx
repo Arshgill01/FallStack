@@ -99,7 +99,11 @@ import {
   localFallMessage,
   openingMutationMessage,
 } from './game/localSnapshot';
-import { ProceduralSound, type AudioDiagnostics } from './game/sound';
+import {
+  ProceduralSound,
+  type AudioCaptureApi,
+  type AudioDiagnostics,
+} from './game/sound';
 import { mutationReceiptPresentation } from './game/receipt';
 import { fetchChangedBoardSnapshot } from './game/board-sync';
 import {
@@ -119,6 +123,7 @@ declare global {
     fallstackInput: InputState;
     fallstackSnapshot?: GameSnapshot;
     fallstackAudioDiagnostics?: () => AudioDiagnostics;
+    fallstackAudioCapture?: AudioCaptureApi;
   }
 }
 
@@ -184,6 +189,7 @@ class FallstackScene extends Phaser.Scene {
   private space: Phaser.Input.Keyboard.Key | undefined;
   private facing: -1 | 1 = 1;
   private wasGrounded = false;
+  private suppressNextLanding = false;
   private charging = false;
   private chargeStart = 0;
   private chargeDirection: -1 | 1 = 1;
@@ -331,6 +337,7 @@ class FallstackScene extends Phaser.Scene {
         this.drawDynamicElements(deltaMs);
       }
       if (this.stableFrameCount >= 4 && settled) {
+        this.wasGrounded = true;
         this.controlsReady = true;
         window.dispatchEvent(new CustomEvent('fallstack:ready'));
       }
@@ -441,7 +448,9 @@ class FallstackScene extends Phaser.Scene {
     for (const label of this.artifactLabels)
       label.setVisible(showArtifactLabels);
 
-    if (!this.wasGrounded && onFloor) {
+    if (this.suppressNextLanding && onFloor) {
+      this.suppressNextLanding = false;
+    } else if (!this.wasGrounded && onFloor) {
       window.dispatchEvent(
         new CustomEvent<LandEventDetail>('fallstack:land', {
           detail: { zoneId: this.currentZone },
@@ -801,6 +810,8 @@ class FallstackScene extends Phaser.Scene {
     this.player.body.reset(this.layoutX(checkpoint.x), checkpoint.y);
     this.player.body.setAcceleration(0, 0);
     this.player.body.setGravityY(0);
+    this.wasGrounded = false;
+    this.suppressNextLanding = true;
     this.currentZone = this.respawnZone;
     this.rebuildPlatformBodies();
     this.publishZone();
@@ -1854,6 +1865,24 @@ export function GameApp() {
       };
     return () => {
       delete window.fallstackAudioDiagnostics;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('qa') !== 'audio')
+      return;
+    window.fallstackAudioCapture = {
+      start: async () => {
+        await soundRef.current?.startCapture();
+      },
+      stop: async () => {
+        if (!soundRef.current)
+          throw new Error('Fallstack audio is unavailable.');
+        return soundRef.current.stopCapture();
+      },
+    };
+    return () => {
+      delete window.fallstackAudioCapture;
     };
   }, []);
 

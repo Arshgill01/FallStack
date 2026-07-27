@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-07-27T10:18:33.151Z",
+  "artifact": "docs/quality-reconstruction/evidence/baseline-audio/final-master.webm",
+  "byteLength": 93698,
+  "mimeType": "audio/webm;codecs=opus",
+  "stream": {
+    "codec_name": "opus",
+    "codec_type": "audio",
+    "sample_rate": "48000",
+    "channels": 2
+  },
+  "durationSeconds": 5.819389,
+  "maxOutputPeak": 0.0938,
+  "maxOutputRms": 0.057,
+  "events": [
+    {
+      "name": "ready",
+      "at": 593.1000000238419,
+      "detail": null
+    },
+    {
+      "name": "charge",
+      "at": 709.1999999284744,
+      "detail": {
+        "percent": 40
+      }
+    },
+    {
+      "name": "land",
+      "at": 709.3999999761581,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    },
+    {
+      "name": "charge",
+      "at": 742.6999999284744,
+      "detail": {
+        "percent": 50
+      }
+    },
+    {
+      "name": "charge",
+      "at": 859.1999999284744,
+      "detail": {
+        "percent": 60
+      }
+    },
+    {
+      "name": "launch",
+      "at": 892.5,
+      "detail": {
+        "direction": 1,
+        "chargePercent": 60,
+        "originX": 240,
+        "velocityX": 359.2975,
+        "velocityY": -888.876
+      }
+    },
+    {
+      "name": "charge",
+      "at": 892.7999999523163,
+      "detail": {
+        "percent": 0
+      }
+    },
+    {
+      "name": "land",
+      "at": 1592.2999999523163,
+      "detail": {
+        "zoneId": "orbital_scrapyard"
+      }
+    }
+  ]
+}
