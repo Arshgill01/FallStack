@@ -36,3 +36,18 @@ coherence, originality, and Phaser/runtime cost.
 Stop for user selection before implementation because this choice materially
 defines the product character.
 
+## Direction set
+
+The generated boards are concept evidence, not shippable sprites. Each keeps the
+current physics target while exploring a different primary silhouette:
+
+| Direction | Silhouette | State read | Product fit | Runtime cost | Assessment |
+| --- | ---: | ---: | ---: | ---: | --- |
+| [A — Washi Pilgrim](character-directions/option-a-washi-pilgrim.png) | 4/5 | 4/5 | 4/5 | Low | Most sympathetic and closest to the existing bearer, but the rounded hood risks reading as a familiar fantasy mascot. |
+| [B — Bell Warden](character-directions/option-b-bell-warden.png) | 5/5 | 5/5 | 5/5 | Low | Strongest compact silhouette. Squash, tilt, inversion, and impact all follow from one material idea and reinforce the bell-shaft world. |
+| [C — Threadbare Effigy](character-directions/option-c-threadbare-effigy.png) | 5/5 | 3/5 | 4/5 | Medium | Most original and cursed, with excellent directional thread motion, but its tall rigid body is hardest to reconcile with the current collision box. |
+
+Recommendation: **B — Bell Warden**. It has the clearest 1× mobile read and the
+most coherent gameplay-state vocabulary without requiring a physics change.
+
+The user selection remains the gate for sprite/state implementation.
