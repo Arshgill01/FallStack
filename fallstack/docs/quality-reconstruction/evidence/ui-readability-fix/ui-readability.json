@@ -1,0 +1,554 @@
+{
+  "generatedAt": "2026-07-27T11:42:30.628Z",
+  "thresholds": {
+    "bodyFontSize": 13,
+    "touchTarget": 44
+  },
+  "results": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "game": {
+        "topbar": {
+          "selector": ".topbar",
+          "fontSize": 15,
+          "width": 320,
+          "height": 66,
+          "left": 0,
+          "right": 320,
+          "clientWidth": 320,
+          "scrollWidth": 320
+        },
+        "brand": {
+          "selector": ".topbar .eyebrow",
+          "fontSize": 13,
+          "width": 108,
+          "height": 25,
+          "left": 7,
+          "right": 115,
+          "clientWidth": 108,
+          "scrollWidth": 108
+        },
+        "tally": {
+          "selector": ".community-tally",
+          "fontSize": 15,
+          "width": 66,
+          "height": 52,
+          "left": 120,
+          "right": 186,
+          "clientWidth": 62,
+          "scrollWidth": 62
+        },
+        "community": {
+          "selector": ".community-tally span",
+          "fontSize": 13,
+          "width": 39.046875,
+          "height": 13,
+          "left": 133.46875,
+          "right": 172.515625,
+          "clientWidth": 39,
+          "scrollWidth": 39
+        },
+        "actions": {
+          "selector": ".topbar-actions",
+          "fontSize": 15,
+          "width": 122,
+          "height": 52,
+          "left": 191,
+          "right": 313,
+          "clientWidth": 122,
+          "scrollWidth": 122
+        },
+        "guideButton": {
+          "selector": ".action-btn",
+          "fontSize": 13,
+          "width": 59.5,
+          "height": 52,
+          "left": 191,
+          "right": 250.5,
+          "clientWidth": 56,
+          "scrollWidth": 56
+        },
+        "zoneName": {
+          "selector": ".zone-tag",
+          "fontSize": 16,
+          "width": 244.453125,
+          "height": 41,
+          "left": 12,
+          "right": 256.453125,
+          "clientWidth": 240,
+          "scrollWidth": 240
+        },
+        "zoneStatus": {
+          "selector": ".zone-badge",
+          "fontSize": 13,
+          "width": 109.625,
+          "height": 25,
+          "left": 134.828125,
+          "right": 244.453125,
+          "clientWidth": 108,
+          "scrollWidth": 108
+        },
+        "mutationStatus": {
+          "selector": ".mutation-banner",
+          "fontSize": 13,
+          "width": 296,
+          "height": 73.640625,
+          "left": 12,
+          "right": 308,
+          "clientWidth": 292,
+          "scrollWidth": 292
+        },
+        "checkpointStatus": {
+          "selector": ".checkpoint-sub",
+          "fontSize": 13,
+          "width": 256,
+          "height": 19,
+          "left": 32,
+          "right": 288,
+          "clientWidth": 256,
+          "scrollWidth": 256
+        },
+        "jumpButton": {
+          "selector": ".jump-btn",
+          "fontSize": 15,
+          "width": 180,
+          "height": 50,
+          "left": 70,
+          "right": 250,
+          "clientWidth": 176,
+          "scrollWidth": 176
+        }
+      },
+      "guide": {
+        "card": {
+          "selector": ".guide-card",
+          "fontSize": 15,
+          "width": 300,
+          "height": 548,
+          "left": 10,
+          "right": 310,
+          "clientWidth": 294,
+          "scrollWidth": 294
+        },
+        "kicker": {
+          "selector": ".guide-kicker",
+          "fontSize": 10,
+          "width": 262,
+          "height": 15,
+          "left": 29,
+          "right": 291,
+          "clientWidth": 262,
+          "scrollWidth": 262
+        },
+        "stepLabel": {
+          "selector": ".guide-steps b",
+          "fontSize": 13,
+          "width": 48,
+          "height": 19,
+          "left": 59,
+          "right": 107,
+          "clientWidth": 48,
+          "scrollWidth": 48
+        },
+        "stepBody": {
+          "selector": ".guide-steps span",
+          "fontSize": 13,
+          "width": 178,
+          "height": 36.375,
+          "left": 113,
+          "right": 291,
+          "clientWidth": 178,
+          "scrollWidth": 178
+        },
+        "sectionBody": {
+          "selector": ".guide-section p",
+          "fontSize": 13,
+          "width": 262,
+          "height": 90.9375,
+          "left": 29,
+          "right": 291,
+          "clientWidth": 262,
+          "scrollWidth": 262
+        },
+        "keyLabel": {
+          "selector": ".guide-key dt",
+          "fontSize": 10,
+          "width": 94,
+          "height": 36.375,
+          "left": 29,
+          "right": 123,
+          "clientWidth": 94,
+          "scrollWidth": 94
+        },
+        "keyBody": {
+          "selector": ".guide-key dd",
+          "fontSize": 13,
+          "width": 159,
+          "height": 36.375,
+          "left": 132,
+          "right": 291,
+          "clientWidth": 159,
+          "scrollWidth": 159
+        },
+        "toggle": {
+          "selector": ".guide-toggle",
+          "fontSize": 13,
+          "width": 74.640625,
+          "height": 44,
+          "left": 144.75,
+          "right": 219.390625,
+          "clientWidth": 71,
+          "scrollWidth": 71
+        },
+        "close": {
+          "selector": ".guide-close",
+          "fontSize": 13,
+          "width": 262,
+          "height": 49,
+          "left": 29,
+          "right": 291,
+          "clientWidth": 258,
+          "scrollWidth": 258
+        }
+      },
+      "memory": {
+        "card": {
+          "selector": ".tower-memory-card",
+          "fontSize": 15,
+          "width": 300,
+          "height": 548,
+          "left": 10,
+          "right": 310,
+          "clientWidth": 294,
+          "scrollWidth": 294
+        },
+        "intro": {
+          "selector": ".tower-memory-intro",
+          "fontSize": 14,
+          "width": 218.734375,
+          "height": 39.1875,
+          "left": 33,
+          "right": 251.734375,
+          "clientWidth": 219,
+          "scrollWidth": 219
+        },
+        "summit": {
+          "selector": ".tower-memory-summit",
+          "fontSize": 14,
+          "width": 258,
+          "height": 59,
+          "left": 31,
+          "right": 289,
+          "clientWidth": 258,
+          "scrollWidth": 258
+        },
+        "zoneBody": {
+          "selector": ".tower-memory-zone p",
+          "fontSize": 14,
+          "width": 209,
+          "height": 18.890625,
+          "left": 68,
+          "right": 277,
+          "clientWidth": 209,
+          "scrollWidth": 209
+        },
+        "action": {
+          "selector": ".tower-memory-actions button",
+          "fontSize": 13,
+          "width": 66.125,
+          "height": 44,
+          "left": 29,
+          "right": 95.125,
+          "clientWidth": 62,
+          "scrollWidth": 62
+        },
+        "session": {
+          "selector": ".tower-memory-session",
+          "fontSize": 13,
+          "width": 254,
+          "height": 38,
+          "left": 33,
+          "right": 287,
+          "clientWidth": 254,
+          "scrollWidth": 254
+        }
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "game": {
+        "topbar": {
+          "selector": ".topbar",
+          "fontSize": 15,
+          "width": 375,
+          "height": 67,
+          "left": 0,
+          "right": 375,
+          "clientWidth": 375,
+          "scrollWidth": 375
+        },
+        "brand": {
+          "selector": ".topbar .eyebrow",
+          "fontSize": 13,
+          "width": 139,
+          "height": 25,
+          "left": 7,
+          "right": 146,
+          "clientWidth": 139,
+          "scrollWidth": 139
+        },
+        "tally": {
+          "selector": ".community-tally",
+          "fontSize": 15,
+          "width": 84,
+          "height": 53,
+          "left": 151,
+          "right": 235,
+          "clientWidth": 80,
+          "scrollWidth": 80
+        },
+        "community": {
+          "selector": ".community-tally span",
+          "fontSize": 13,
+          "width": 76.96875,
+          "height": 26,
+          "left": 155,
+          "right": 231.96875,
+          "clientWidth": 77,
+          "scrollWidth": 77
+        },
+        "actions": {
+          "selector": ".topbar-actions",
+          "fontSize": 15,
+          "width": 128,
+          "height": 52,
+          "left": 240,
+          "right": 368,
+          "clientWidth": 128,
+          "scrollWidth": 128
+        },
+        "guideButton": {
+          "selector": ".action-btn",
+          "fontSize": 13,
+          "width": 62.5,
+          "height": 52,
+          "left": 240,
+          "right": 302.5,
+          "clientWidth": 59,
+          "scrollWidth": 59
+        },
+        "zoneName": {
+          "selector": ".zone-tag",
+          "fontSize": 16,
+          "width": 244.453125,
+          "height": 41,
+          "left": 12,
+          "right": 256.453125,
+          "clientWidth": 240,
+          "scrollWidth": 240
+        },
+        "zoneStatus": {
+          "selector": ".zone-badge",
+          "fontSize": 13,
+          "width": 109.625,
+          "height": 25,
+          "left": 134.828125,
+          "right": 244.453125,
+          "clientWidth": 108,
+          "scrollWidth": 108
+        },
+        "mutationStatus": {
+          "selector": ".mutation-banner",
+          "fontSize": 13,
+          "width": 351,
+          "height": 56.09375,
+          "left": 12,
+          "right": 363,
+          "clientWidth": 347,
+          "scrollWidth": 347
+        },
+        "checkpointStatus": {
+          "selector": ".checkpoint-sub",
+          "fontSize": 13,
+          "width": 266,
+          "height": 19,
+          "left": 54.5,
+          "right": 320.5,
+          "clientWidth": 266,
+          "scrollWidth": 266
+        },
+        "jumpButton": {
+          "selector": ".jump-btn",
+          "fontSize": 15,
+          "width": 190,
+          "height": 50,
+          "left": 92.5,
+          "right": 282.5,
+          "clientWidth": 186,
+          "scrollWidth": 186
+        }
+      },
+      "guide": {
+        "card": {
+          "selector": ".guide-card",
+          "fontSize": 15,
+          "width": 355,
+          "height": 716.5625,
+          "left": 10,
+          "right": 365,
+          "clientWidth": 349,
+          "scrollWidth": 349
+        },
+        "kicker": {
+          "selector": ".guide-kicker",
+          "fontSize": 10,
+          "width": 317,
+          "height": 15,
+          "left": 29,
+          "right": 346,
+          "clientWidth": 317,
+          "scrollWidth": 317
+        },
+        "stepLabel": {
+          "selector": ".guide-steps b",
+          "fontSize": 13,
+          "width": 48,
+          "height": 19,
+          "left": 59,
+          "right": 107,
+          "clientWidth": 48,
+          "scrollWidth": 48
+        },
+        "stepBody": {
+          "selector": ".guide-steps span",
+          "fontSize": 13,
+          "width": 233,
+          "height": 36.375,
+          "left": 113,
+          "right": 346,
+          "clientWidth": 233,
+          "scrollWidth": 233
+        },
+        "sectionBody": {
+          "selector": ".guide-section p",
+          "fontSize": 13,
+          "width": 317,
+          "height": 72.75,
+          "left": 29,
+          "right": 346,
+          "clientWidth": 317,
+          "scrollWidth": 317
+        },
+        "keyLabel": {
+          "selector": ".guide-key dt",
+          "fontSize": 10,
+          "width": 94,
+          "height": 18.1875,
+          "left": 29,
+          "right": 123,
+          "clientWidth": 94,
+          "scrollWidth": 94
+        },
+        "keyBody": {
+          "selector": ".guide-key dd",
+          "fontSize": 13,
+          "width": 214,
+          "height": 18.1875,
+          "left": 132,
+          "right": 346,
+          "clientWidth": 214,
+          "scrollWidth": 214
+        },
+        "toggle": {
+          "selector": ".guide-toggle",
+          "fontSize": 13,
+          "width": 74.640625,
+          "height": 44,
+          "left": 199.75,
+          "right": 274.390625,
+          "clientWidth": 71,
+          "scrollWidth": 71
+        },
+        "close": {
+          "selector": ".guide-close",
+          "fontSize": 13,
+          "width": 317,
+          "height": 49,
+          "left": 29,
+          "right": 346,
+          "clientWidth": 313,
+          "scrollWidth": 313
+        }
+      },
+      "memory": {
+        "card": {
+          "selector": ".tower-memory-card",
+          "fontSize": 15,
+          "width": 355,
+          "height": 792,
+          "left": 10,
+          "right": 365,
+          "clientWidth": 349,
+          "scrollWidth": 349
+        },
+        "intro": {
+          "selector": ".tower-memory-intro",
+          "fontSize": 14,
+          "width": 218.734375,
+          "height": 39.1875,
+          "left": 33,
+          "right": 251.734375,
+          "clientWidth": 219,
+          "scrollWidth": 219
+        },
+        "summit": {
+          "selector": ".tower-memory-summit",
+          "fontSize": 14,
+          "width": 313,
+          "height": 39,
+          "left": 31,
+          "right": 344,
+          "clientWidth": 313,
+          "scrollWidth": 313
+        },
+        "zoneBody": {
+          "selector": ".tower-memory-zone p",
+          "fontSize": 14,
+          "width": 264,
+          "height": 18.890625,
+          "left": 68,
+          "right": 332,
+          "clientWidth": 264,
+          "scrollWidth": 264
+        },
+        "action": {
+          "selector": ".tower-memory-actions button",
+          "fontSize": 13,
+          "width": 80.796875,
+          "height": 44,
+          "left": 29,
+          "right": 109.796875,
+          "clientWidth": 77,
+          "scrollWidth": 77
+        },
+        "session": {
+          "selector": ".tower-memory-session",
+          "fontSize": 13,
+          "width": 309,
+          "height": 38,
+          "left": 33,
+          "right": 342,
+          "clientWidth": 309,
+          "scrollWidth": 309
+        }
+      }
+    }
+  ],
+  "failures": []
+}

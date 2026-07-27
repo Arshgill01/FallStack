@@ -31,6 +31,7 @@ remains open after partial checkpointed replay progress.
 | Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
+| Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
 | Full playthrough | Open | Mobile rerun crossed the opening blocker and checkpointed probes reached Black Hole Chapel; uninterrupted summit still missing |
 | Character directions | Awaiting selection | Three state-complete reliquary concepts generated; Bell Warden recommended |
 
@@ -50,7 +51,7 @@ These are investigation records, not all approved fixes.
 | QR-008 | Medium | Audio/lifecycle | Fixed and browser-regressed | Closed-context recovery retained stale charge/timer state |
 | QR-009 | Medium | Audio/ownership | Fixed and browser-regressed | Phaser created a redundant AudioContext despite owning no Fallstack sound |
 | QR-010 | Medium | Camera | Fixed and regression-tested | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths |
-| QR-011 | Medium | UI | Source repro established | Several mobile UI labels remain below the art-bible 13 px body/status target |
+| QR-011 | Medium | UI | Fixed and browser-regressed | Mobile functional text now meets its role minimum without header or sheet overflow |
 | QR-012 | Product blocker | Character | Baseline rejected | Procedural hooded block lacks the requested silhouette/state quality |
 | QR-013 | High | QA/playthrough | Replay improved; summit still open | Mobile rerun crossed opening ledge 7; two controller defects were fixed, but a checkpointed replay exhausted 320 jumps in early Black Hole Chapel |
 
@@ -86,6 +87,9 @@ These are investigation records, not all approved fixes.
 - 2026-07-27: QR-003 can reach a verified implementation checkpoint on
   automated and browser evidence, but it cannot close without a current-Mac
   listening decision.
+- 2026-07-27: At 320–374 px, the visual tally contracts to `Falls` so `13 px`
+  status and action text fit without collision. The full community wording
+  remains in the tally's accessible label and returns visually at 375 px.
 
 ## Commands run
 
@@ -139,6 +143,15 @@ npm run qa:runtime -- /tmp/fallstack-quality/sfx-runtime-chromium --browser=chro
 npm run qa:runtime -- /tmp/fallstack-quality/sfx-runtime-webkit --browser=webkit
 ffmpeg -i docs/quality-reconstruction/evidence/sfx-palette-comparison/{baseline,tactile}.webm -af ebur128=peak=true -f null -
 ffmpeg -i docs/quality-reconstruction/evidence/sfx-gameplay-capture/final-master.webm -af ebur128=peak=true -f null -
+npm run qa:ui-readability -- /tmp/fallstack-quality/ui-readability-red
+npm run build
+npm run qa:ui-readability -- docs/quality-reconstruction/evidence/ui-readability-fix
+npm run qa:runtime -- /tmp/fallstack-quality/ui-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/ui-runtime-webkit --browser=webkit
+npm test
+npm run lint
+node --check scripts/qa/ui-readability.mjs
+git diff --check
 ```
 
 Results:
@@ -207,6 +220,10 @@ Results:
 - The revised lifecycle probe tracks oscillator and buffer sources. Immediate
   SFX Off starts zero delayed sources; Chromium and WebKit runtime smokes pass
   after the palette change.
+- The mobile readability red run measured functional text at `7.5–12 px`.
+  The green report passes at 320×568 and 375×812 with `13 px` body/status,
+  `14 px` result body, 66–67 px non-overlapping headers, and no horizontal
+  sheet overflow. Chromium and WebKit runtime smokes pass afterward.
 - Current repository checks pass: 151/151 tests, type-check, lint, build, and
   `git diff --check`. The known Phaser chunk warning remains.
 

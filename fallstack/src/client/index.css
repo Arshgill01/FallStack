@@ -2151,10 +2151,10 @@ button:disabled {
 
 @media (max-width: 599px) {
   .topbar {
-    grid-template-columns: minmax(94px, 1fr) 54px 128px;
+    grid-template-columns: minmax(102px, 1fr) 84px 128px;
     grid-template-areas: 'brand tally actions';
-    min-height: 58px;
-    padding: 6px 7px;
+    min-height: 64px;
+    padding: 5px 7px;
     gap: 5px;
   }
 
@@ -2166,7 +2166,7 @@ button:disabled {
 
   .topbar .eyebrow {
     gap: 5px;
-    font-size: 10px;
+    font-size: 13px;
     letter-spacing: 1px;
   }
 
@@ -2174,7 +2174,7 @@ button:disabled {
     grid-template-columns: 1fr;
     place-items: center;
     gap: 1px;
-    min-height: 44px;
+    min-height: 52px;
     padding: 3px 2px;
     text-align: center;
   }
@@ -2185,8 +2185,9 @@ button:disabled {
 
   .community-tally span {
     max-width: none;
-    font-size: 7.5px;
+    font-size: 13px;
     letter-spacing: 0.2px;
+    line-height: 1;
   }
 
   .topbar-actions {
@@ -2194,8 +2195,18 @@ button:disabled {
   }
 
   .action-btn {
-    min-height: 44px;
-    font-size: 8px;
+    min-height: 52px;
+    padding-inline: 3px;
+    font-size: 13px;
+  }
+
+  .zone-tag {
+    font-size: 16px;
+  }
+
+  .zone-badge,
+  .checkpoint-sub {
+    font-size: 13px;
   }
 
   .mutation-banner {
@@ -2206,7 +2217,7 @@ button:disabled {
     width: auto;
     max-width: none;
     padding: 8px 10px 9px;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.35;
   }
 
@@ -2227,6 +2238,51 @@ button:disabled {
 
   .remote-beat.below-receipt {
     top: 222px;
+  }
+
+  .jump-btn {
+    font-size: 15px;
+  }
+
+  .guide-steps b,
+  .guide-steps span,
+  .guide-section p,
+  .guide-key dd,
+  .guide-toggle {
+    font-size: 13px;
+  }
+
+  .guide-toggle {
+    min-height: 44px;
+  }
+
+  .tower-memory-intro,
+  .tower-memory-summit,
+  .tower-memory-zone p,
+  .tower-memory-beats li,
+  .tower-memory-achievements div {
+    font-size: 14px;
+  }
+
+  .tower-memory-site b,
+  .tower-memory-actions .result-close-btn,
+  .result-secondary-btn,
+  .tower-memory-session {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 374px) {
+  .topbar {
+    grid-template-columns: minmax(108px, 1fr) 66px 122px;
+  }
+
+  .topbar-actions {
+    width: 122px;
+  }
+
+  .community-tally-word {
+    display: none;
   }
 }
 

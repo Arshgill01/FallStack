@@ -68,6 +68,7 @@ npm run qa:audio
 npm run qa:audio-events
 npm run qa:audio-lifecycle
 npm run qa:audio-palette
+npm run qa:ui-readability
 npm run qa:world-bounds
 npm run qa:playthrough -- --retries 40 --max-jumps 1200
 ```

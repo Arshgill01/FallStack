@@ -2546,7 +2546,10 @@ export function GameApp() {
           aria-label={`${stats.falls} community ${stats.falls === 1 ? 'fall' : 'falls'} today`}
         >
           <strong>{stats.falls}</strong>
-          <span>Community falls</span>
+          <span>
+            <span className="community-tally-word">Community </span>
+            falls
+          </span>
         </div>
 
         <div className="topbar-actions" aria-label="Game reference">
