@@ -28,3 +28,45 @@ the fixes that will follow from this reconstruction.
 
 Sensitive session/profile data was not copied into repository evidence.
 
+## 2026-07-28 checkpoint deployment
+
+Source checkpoint:
+
+- Commit `fc5f822`
+- Devvit version `0.0.26`
+- Test community `r/fallstack_dev`
+
+Deployment and read-back:
+
+- The user explicitly authorized uploading and installing the current
+  checkpoint to the Reddit test community.
+- `npm run lint`, `npm test`, and `npm run build` passed before upload. The test
+  run passed all 153 tests; the build retained the known expanded Phaser chunk
+  warning.
+- `npm exec -- devvit upload --version 0.0.26` completed successfully.
+- `npm exec -- devvit install fallstack_dev fallstack@0.0.26` upgraded the
+  community from `0.0.25` to `0.0.26`.
+- `npm exec -- devvit list installs fallstack_dev` read back
+  `fallstack (v0.0.26)`.
+
+Hosted observation:
+
+- The existing signed-in Safari profile opened the 2026-07-28 daily post.
+- The inline splash rendered the current opening-scar summary and expanded
+  successfully.
+- The expanded WebView URL identified version `0.0.26`.
+- The hosted mobile presentation rendered the Washi Pilgrim, Lower Ruins,
+  visible left and right tower edges, Guide, Memory, community tally, charge
+  meter, and fixed Left/Jump/Right controls.
+- The session remained read-only with respect to gameplay: no control was
+  pressed and no fall, clear, or mutation was produced.
+
+Boundary:
+
+This proves that the authorized checkpoint is installed and can load through
+the signed-in Reddit host path. It is a playtest-community install, not a public
+app-directory production publish. It does not replace physical-device testing,
+human gameplay judgment, or the still-open music and SFX listening decisions.
+
+Sensitive signed-request and profile data was not copied into repository
+evidence.

@@ -1,7 +1,8 @@
 # Quality reconstruction completion audit
 
-Audit point: local `master` through the extended audio-gate checkpoint on
-2026-07-27. The user-owned `docs/fixplan.md` remains outside this work.
+Audit point: local `master` through the authorized Reddit `0.0.26` checkpoint
+deployment on 2026-07-28. The user-owned `docs/fixplan.md` remains outside this
+work.
 
 ## Verdict
 
@@ -12,9 +13,11 @@ closed. Gate 2 cannot exit until the user approves the tactile SFX palette,
 selects one music direction, and the selected music is integrated and reviewed
 with the opening fall.
 
-The current installed Reddit playtest is `fallstack v0.0.25`, not the current
-local source. Uploading or installing this source remains intentionally
-unauthorized by the goal's Gate 3 checkpoint.
+The current Reddit playtest is `fallstack v0.0.26`, uploaded and installed from
+commit `fc5f822` after the user explicitly authorized this checkpoint. Signed-in
+Safari expanded the daily post into the matching `0.0.26` WebView and rendered
+the hosted mobile tower without producing a gameplay event. This is a
+test-community install, not a public app-directory production publish.
 
 ## Requirement map
 
@@ -31,8 +34,8 @@ unauthorized by the goal's Gate 3 checkpoint.
 | UI/guidance/feedback     | Proved                                                | [`ui-readability-fix`](evidence/ui-readability-fix/), [`ui-accessibility-fix`](evidence/ui-accessibility-fix/), [`ui-overlays-fix`](evidence/ui-overlays-fix/), [`ui-resize-fix`](evidence/ui-resize-fix/), 146-check [`ui-state-matrix-fix`](evidence/ui-state-matrix-fix/) | Final post-music rerun                                                                                                    |
 | Broader lifecycle sweep  | Proved for current local and mocked paths             | Runtime, shared-session, audio-lifecycle, resize, dialog, overlay, and full-playthrough evidence indexed in [`status.md`](status.md)                                                                                                                                         | Repeat after music integration                                                                                            |
 | Gate 2 integrated slice  | Open                                                  | Character, bounds, SFX, UI, and first-fall pieces independently pass                                                                                                                                                                                                         | Music selection/integration, SFX approval, then one combined opening-zone/first-fall review                               |
-| Gate 3 full tower        | Partially pre-proved                                  | Chromium/WebKit runtime, two-client reconcile, and full local-practice summit already pass                                                                                                                                                                                   | Post-music reruns; latest authenticated Reddit install only if explicitly authorized                                      |
-| Gate 4 closeout          | Open                                                  | Current project checks pass at `e56c97c`                                                                                                                                                                                                                                     | Fresh final matrix, extended audio capture/listening, latest-host result or exact blocker, final diff/asset/bundle review |
+| Gate 3 full tower        | Partially pre-proved                                  | Chromium/WebKit runtime, two-client reconcile, full local-practice summit, and authorized authenticated Reddit `0.0.26` install/load already pass                                                                                                                            | Post-music reruns and final hosted gameplay validation                                                                    |
+| Gate 4 closeout          | Open                                                  | Current project checks pass at `fc5f822`; authenticated Reddit `0.0.26` install and read-only hosted render are recorded                                                                                                                                                    | Fresh final matrix, extended audio capture/listening, final diff/asset/bundle review                                      |
 
 ## Remaining execution order
 
@@ -41,9 +44,7 @@ unauthorized by the goal's Gate 3 checkpoint.
 3. Run and capture Gate 2 as one combined opening-zone and first-fall slice.
 4. Run the final Chromium/WebKit, bounds, shared-session, full-playthrough,
    accessibility, audio, and project checks.
-5. Inspect the latest authenticated Reddit build only after an explicit
-   install/upload authorization; otherwise record the exact version gap.
-6. Record human listening/play scores and close the remaining issue/gate states.
+5. Record human listening/play scores and close the remaining issue/gate states.
 
 ## Explicit limits
 
@@ -51,5 +52,7 @@ unauthorized by the goal's Gate 3 checkpoint.
   feel.
 - Automated audio metrics do not approve timbre, fatigue, coziness, or musical
   identity.
-- The signed-in Safari result proves host access to the installed build only.
+- The signed-in Safari result proves host access, version identity, and the
+  read-only opening mobile render of the installed build. It does not prove a
+  hosted full playthrough or persistence event.
 - No current evidence is represented as a physical-device test.

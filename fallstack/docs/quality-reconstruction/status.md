@@ -33,7 +33,8 @@ all eleven zone clears to the summit.
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
-| Authenticated Safari | Complete | Current daily post opened and expanded; Guide, Memory, Music/SFX exposed |
+| Authenticated Safari | Complete | Current daily post opened and expanded; hosted WebView `0.0.26` rendered the mobile tower read-only |
+| Reddit checkpoint install | Complete | User-authorized `0.0.26` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.26)` |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
 | Exact Gate 1 baseline | Complete | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records |
 | Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
@@ -146,6 +147,10 @@ These are investigation records, not all approved fixes.
   stand in for human difficulty, pacing, or landing-feel approval.
 - 2026-07-27: Keyboard focus uses a washi inner ring and ink outer ring so the
   same treatment remains visible on both sheets and the dark control bar.
+- 2026-07-28: The user authorized uploading and installing the current
+  checkpoint to `r/fallstack_dev`. Version `0.0.26` is the test-community
+  checkpoint; this authorization does not include a public app-directory
+  production publish.
 
 ## Commands run
 
@@ -288,6 +293,12 @@ node --check scripts/qa/audio-endurance.mjs
 npm run qa:audio -- /tmp/fallstack-quality/audio-capture-compat
 npm run qa:audio-endurance -- /tmp/fallstack-quality/audio-endurance-final-dry-run --duration-seconds=20
 npm run qa:audio-endurance -- docs/quality-reconstruction/evidence/audio-endurance-dry-run --duration-seconds=20
+npm run lint
+npm test
+npm run build
+npm exec -- devvit upload --version 0.0.26
+npm exec -- devvit install fallstack_dev fallstack@0.0.26
+npm exec -- devvit list installs fallstack_dev
 ```
 
 Results:
@@ -300,7 +311,8 @@ Results:
 - WebKit runtime: first parallel run timed out at 30 seconds; isolated retry
   passed.
 - Shared session: passed with no errors.
-- Devvit read-back: authenticated CLI; installed app is `fallstack v0.0.25`.
+- Devvit read-back: authenticated CLI; the authorized checkpoint upload and
+  install succeeded, and `r/fallstack_dev` reports `fallstack v0.0.26`.
 - Audio event probes: reproduced one phantom `land` after initial `ready` and a
   second phantom `land` after fall/reset.
 - Audio capture: failed first because the final-master recorder was absent,
@@ -453,6 +465,14 @@ Results:
   LRA, and `-15.9 dBFS` true peak. It is explicitly marked
   `enduranceGateEligible: false`; selection, a 600-second capture, and human
   listening remain open.
+- The pre-deployment lint, 153-test suite, and production build passed at
+  `fc5f822`. Devvit uploaded `0.0.26`, upgraded `r/fallstack_dev` from
+  `0.0.25`, and read the installed version back as `fallstack v0.0.26`.
+- Signed-in Safari expanded the 2026-07-28 daily post into a WebView whose URL
+  identified version `0.0.26`. The hosted mobile tower rendered the Washi
+  Pilgrim, both tower edges, Guide, Memory, community tally, charge meter, and
+  fixed touch controls. No gameplay control was used, so the verification did
+  not add a shared fall, clear, or mutation.
 
 ## Worktree safety
 
