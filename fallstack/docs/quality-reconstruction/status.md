@@ -33,8 +33,8 @@ all eleven zone clears to the summit.
 | Chromium runtime           | Complete                    | Touch, fall/respawn, post-respawn input, jump, reduced motion passed                                                                                                  |
 | WebKit runtime             | Complete with flake note    | Parallel run timed out; isolated retry passed                                                                                                                         |
 | Shared session             | Complete                    | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors                                                                                                       |
-| Authenticated Safari       | Complete                    | Refreshed daily post loaded hosted WebView `0.0.27`; exact hosted mobile frame visibly retains both 12 px rails                                                       |
-| Reddit checkpoint install  | Complete                    | User-authorized `0.0.27` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.27)`                                                           |
+| Authenticated Safari       | Complete                    | Refreshed daily post loaded corrected WebView `0.0.28` in Mobile mode; both rails and touch controls rendered without gameplay input                                  |
+| Reddit checkpoint install  | Complete                    | User-authorized `0.0.28` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.28)`                                                           |
 | Audible-output path        | Complete                    | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS                                                                                                  |
 | Exact Gate 1 baseline      | Complete                    | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records              |
 | Gameplay SFX palette       | Listening gate open         | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete                                                          |
@@ -55,7 +55,7 @@ These are investigation records, not all approved fixes.
 
 | ID     | Severity        | Workstream        | State                                         | Summary                                                                                                                                                                 |
 | ------ | --------------- | ----------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| QR-001 | High            | Gameplay/world    | Fixed, browser-regressed, and hosted-verified | The physical gutter was fixed first, but `0.0.26` still panned both painted walls away; deployed `0.0.27` keeps fixed viewport rails visible on both mobile sides       |
+| QR-001 | High            | Gameplay/world    | Fixed, browser-regressed, and hosted-verified | `0.0.27` fixed the rails but tested only the narrow body; deployed `0.0.28` keeps the complete falling-pose artwork inside both mobile wall planes                      |
 | QR-002 | High            | Audio/events      | Fixed and browser-regressed                   | Initial grounded frame and post-respawn teleport emitted false landing events                                                                                           |
 | QR-003 | High            | Audio/design      | Implemented; listening gate open              | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains                                      |
 | QR-004 | High            | Music             | Direction gate ready; production unchanged    | Three original three-biome previews are technically verified; user listening selection and production integration remain                                                |
@@ -158,6 +158,11 @@ These are investigation records, not all approved fixes.
   `0.0.27` adds two viewport-fixed 12 px mobile rails without changing
   desktop/fullscreen edges; install read-back and hosted 360 px/286 px visual
   checks confirm both sides.
+- 2026-07-28: The `0.0.27` signoff was reopened because it measured the 20 px
+  collision body rather than Option A's wider falling artwork. Mobile physics
+  now adds 12 px of visual clearance inside each painted wall. Devvit `0.0.28`
+  is installed on `r/fallstack_dev`, and authenticated Safari confirmed the
+  matching hosted Mobile WebView without producing a shared gameplay event.
 
 ## Commands run
 
@@ -506,6 +511,18 @@ Results:
   full-height rails and their gold inner lines. The 286 px narrow-frame
   screenshot also retained both sides. No gameplay input or shared event was
   produced.
+- The reopened red pixel probe stopped the 20 px collision body at the x=`34`
+  wall but measured Option A's falling artwork at x=`24…63`, ten visible pixels
+  inside the wall. Mobile physics now reserves 12 px of artwork clearance; the
+  worst left pose measures x=`36…77`, and symmetric rendered-pixel assertions
+  pass at 286, 320, 375, and 480 px. Desktop/fullscreen remains unchanged.
+- Type-check, lint, all 153 tests, build, world-bound pixel regression, WebKit
+  runtime, 16/16 WebKit resize checks, and a complete 375×812 WebKit summit
+  replay pass after the visual-clearance change.
+- Devvit uploaded and installed `0.0.28`; install read-back is
+  `fallstack (v0.0.28)`. Authenticated Safari expanded the July 28 post in
+  Reddit Mobile mode and exposed the matching `0.0.28` hosted WebView with both
+  rails and touch controls. No gameplay input or shared event was produced.
 
 ## Worktree safety
 

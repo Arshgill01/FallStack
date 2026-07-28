@@ -7,7 +7,7 @@
 - Ownership: Pure viewport layout and Phaser physics bounds
 - Baseline: `7c4e06f`
 - Reproducibility: 100% at 286, 320, 375, and 480 px
-- Current state: Fixed and browser-regressed; corrected host verification pending
+- Current state: Fixed, browser-regressed, and corrected host version verified
 
 ## Observation
 
@@ -66,11 +66,18 @@ contains twelve mobile failures; the
 original viewports. Commit `4e11711` is the physical-bound correction; the
 viewport-rail correction is commit `57d6f2f`. WebView `0.0.27` proved that
 both rails rendered, but its body-only signoff did not prove that the complete
-character silhouette stayed inside them.
+character silhouette stayed inside them. Commit `7e990ad` adds the 12 px
+mobile character-art clearance and the rendered-pixel regression. Devvit
+`0.0.28` was uploaded and installed on `r/fallstack_dev`; CLI read-back and an
+authenticated Safari expansion both identified the hosted `0.0.28` WebView.
+The mobile frame loaded both rails and touch controls without gameplay input or
+a shared mutation event.
 
 ## Residual risk
 
 The browser probe validates responsive geometry and Phaser canvas pixels, not a
 physical-device bezel or browser toolbar. Rotation continuity is covered
-separately by ISSUE-017. Corrected authenticated host verification and
-physical-device testing remain separate evidence.
+separately by ISSUE-017. The hosted shared post was not driven into a wall,
+because doing so could create a fall and mutate the community tower; the
+rendered-pixel contact proof therefore remains local and deterministic.
+Physical-device testing remains separate evidence.
