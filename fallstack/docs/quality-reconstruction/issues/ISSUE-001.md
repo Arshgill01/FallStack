@@ -7,7 +7,7 @@
 - Ownership: Pure viewport layout and Phaser physics bounds
 - Baseline: `7c4e06f`
 - Reproducibility: 100% at 286, 320, 375, and 480 px
-- Current state: Reopened from hosted review; fixed locally and browser-regressed
+- Current state: Fixed, browser-regressed, and hosted-verified
 
 ## Observation
 
@@ -51,10 +51,13 @@ uses the full expanded world and receives no added rail. The
 contains twelve mobile failures; the
 [green report](../evidence/world-bounds-fix/world-bounds.json) passes all four
 original viewports. Commit `4e11711` is the physical-bound correction; the
-viewport-rail correction follows the hosted `0.0.26` review.
+viewport-rail correction is commit `57d6f2f`. Deployed WebView `0.0.27` then
+showed both 12 px rails at 360 px and retained both sides in a 286 px
+narrow-frame check.
 
 ## Residual risk
 
 The browser probe validates responsive geometry, not a physical-device bezel or
-browser toolbar. Rotation continuity is covered separately by ISSUE-017. A
-fresh authenticated Reddit observation is still required after installation.
+browser toolbar. Rotation continuity is covered separately by ISSUE-017. The
+authenticated hosted observation is complete, but physical-device testing
+remains separate evidence.

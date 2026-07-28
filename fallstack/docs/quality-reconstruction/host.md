@@ -75,3 +75,40 @@ still-open music and SFX listening decisions.
 
 Sensitive signed-request and profile data was not copied into repository
 evidence.
+
+## 2026-07-28 mobile rail correction
+
+Source checkpoint:
+
+- Commit `57d6f2f`
+- Devvit version `0.0.27`
+- Test community `r/fallstack_dev`
+
+Deployment and read-back:
+
+- `npm exec -- devvit upload --version 0.0.27` completed successfully.
+- `npm exec -- devvit install fallstack_dev fallstack@0.0.27` upgraded the
+  community from `0.0.26` to `0.0.27`.
+- `npm exec -- devvit list installs fallstack_dev` read back
+  `fallstack (v0.0.27)`.
+
+Hosted observation:
+
+- After a full Reddit page refresh, the signed-in Safari session expanded the
+  daily post into the `0.0.27` WebView.
+- The exact hosted `0.0.27` WebView was then inspected at a 360×800 mobile
+  viewport. Its rail layer covered the full tower frame from x=`0…360`, with
+  12 px indigo borders and gold inner lines on both sides.
+- The hosted screenshot visibly shows both rails for the entire playable board.
+  A separate 286 px narrow-frame screenshot also keeps both rails visible.
+- No gameplay control was pressed, so this observation produced no fall, clear,
+  or shared mutation.
+
+Boundary:
+
+This closes the hosted visual check that `0.0.26` failed. It proves version
+identity and two-sided mobile board framing for the deployed WebView; it does
+not replace a physical-device test or a hosted gameplay/persistence run.
+
+Sensitive signed-request and profile data was not copied into repository
+evidence.

@@ -24,55 +24,55 @@ all eleven zone clears to the summit.
 
 ## Checkpoints
 
-| Checkpoint | State | Evidence |
-| --- | --- | --- |
-| Pull current `master` | Complete | Fast-forwarded `7875568 → 7c4e06f` |
-| Define root goal | Complete | Commit `0aaf5b8` |
-| Mac toolchain | Complete | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7 |
-| Project checks | Complete | Type-check, lint, 153 tests, build passed |
-| Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
-| WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
-| Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
-| Authenticated Safari | Complete; rail defect reopened | Hosted WebView `0.0.26` rendered read-only; user review correctly found its left mobile boundary still absent |
-| Reddit checkpoint install | Complete | User-authorized `0.0.26` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.26)` |
-| Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
-| Exact Gate 1 baseline | Complete | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records |
-| Gameplay SFX palette | Listening gate open | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete |
-| Music directions | Awaiting selection | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes |
-| Extended audio gate | Ready; short dry run passed | 19.86 s non-qualifying final-master capture; 13 tagged actions, three zones, Music/SFX controls, falls, checkpoint, summit, LUFS/LRA/true-peak analysis, and spectrum |
-| Mobile UI readability | Complete | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass |
-| Dialog input/accessibility | Complete | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified |
-| Temporary HUD overlays | Complete | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point |
-| Mobile orientation | Complete | Chromium and WebKit pass grounded, charging, airborne, modal, and desktop-control continuity checks |
-| Full playthrough | Complete | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s |
-| Character redesign | Complete | Washi Pilgrim integrated across ten states; 320/375, reduced motion, Chromium/WebKit, and unchanged 20×28 body verified |
-| Tower seed corpus | Complete | All 365 daily seeds for 2026 pass 56,220 route transitions, 13,140 impact sites, active-hazard fairness, and 320/375 landing-visibility checks |
-| Complete UI state matrix | Complete | 146 checks cover loading, fallback, counted/capped/stale/unavailable receipts, representative contrast, and focus across 320/375/1280 |
+| Checkpoint                 | State                       | Evidence                                                                                                                                                              |
+| -------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pull current `master`      | Complete                    | Fast-forwarded `7875568 → 7c4e06f`                                                                                                                                    |
+| Define root goal           | Complete                    | Commit `0aaf5b8`                                                                                                                                                      |
+| Mac toolchain              | Complete                    | Node 22.21.0, npm 10.9.4, Playwright 1.61.1, Devvit 0.13.7                                                                                                            |
+| Project checks             | Complete                    | Type-check, lint, 153 tests, build passed                                                                                                                             |
+| Chromium runtime           | Complete                    | Touch, fall/respawn, post-respawn input, jump, reduced motion passed                                                                                                  |
+| WebKit runtime             | Complete with flake note    | Parallel run timed out; isolated retry passed                                                                                                                         |
+| Shared session             | Complete                    | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors                                                                                                       |
+| Authenticated Safari       | Complete                    | Refreshed daily post loaded hosted WebView `0.0.27`; exact hosted mobile frame visibly retains both 12 px rails                                                       |
+| Reddit checkpoint install  | Complete                    | User-authorized `0.0.27` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.27)`                                                           |
+| Audible-output path        | Complete                    | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS                                                                                                  |
+| Exact Gate 1 baseline      | Complete                    | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records              |
+| Gameplay SFX palette       | Listening gate open         | Semantic events, deterministic 15-cue A/B reel, real-event capture, lifecycle and two-browser proof complete                                                          |
+| Music directions           | Awaiting selection          | Three original, deterministic, level-matched, three-biome previews with provenance, spectra, and signal hashes                                                        |
+| Extended audio gate        | Ready; short dry run passed | 19.86 s non-qualifying final-master capture; 13 tagged actions, three zones, Music/SFX controls, falls, checkpoint, summit, LUFS/LRA/true-peak analysis, and spectrum |
+| Mobile UI readability      | Complete                    | 320×568 and 375×812 functional text, header layout, touch targets, Guide, and Tower Memory pass                                                                       |
+| Dialog input/accessibility | Complete                    | Chromium and WebKit pass 48 checks each at 375×812 and 1280×800; scene pause, zoom, focus, semantics, and contrast verified                                           |
+| Temporary HUD overlays     | Complete                    | Five notice states clear the player and next required landing at every 320×568 and 375×812 recovery point                                                             |
+| Mobile orientation         | Complete                    | Chromium and WebKit pass grounded, charging, airborne, modal, and desktop-control continuity checks                                                                   |
+| Full playthrough           | Complete                    | 375×812 production build: opening fall, all 155 route platforms, 11 clears, and `summitSent`; 158 controlled jumps in 170 s                                           |
+| Character redesign         | Complete                    | Washi Pilgrim integrated across ten states; 320/375, reduced motion, Chromium/WebKit, and unchanged 20×28 body verified                                               |
+| Tower seed corpus          | Complete                    | All 365 daily seeds for 2026 pass 56,220 route transitions, 13,140 impact sites, active-hazard fairness, and 320/375 landing-visibility checks                        |
+| Complete UI state matrix   | Complete                    | 146 checks cover loading, fallback, counted/capped/stale/unavailable receipts, representative contrast, and focus across 320/375/1280                                 |
 
 ## Initial issue ledger
 
 These are investigation records, not all approved fixes.
 
-| ID | Severity | Workstream | State | Summary |
-| --- | --- | --- | --- | --- |
-| QR-001 | High | Gameplay/world | Reopened from host; fixed locally and browser-regressed | The physical gutter was fixed first, but `0.0.26` still panned both painted walls away; fixed viewport rails now remain visible on both mobile sides |
-| QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
-| QR-003 | High | Audio/design | Implemented; listening gate open | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains |
-| QR-004 | High | Music | Direction gate ready; production unchanged | Three original three-biome previews are technically verified; user listening selection and production integration remain |
-| QR-005 | Medium | Audio/lifecycle | Fixed and browser-regressed | Rapid Music Off/On reopened untracked bell tails and overlapped a new pair |
-| QR-006 | Medium | Audio/preferences | Fixed and browser-regressed | Legacy combined mute key forced SFX off again after reload |
-| QR-007 | Medium | Audio/lifecycle | Fixed and browser-regressed | Queued SFX continued after SFX Off; gameplay bus itself was never muted |
-| QR-008 | Medium | Audio/lifecycle | Fixed and browser-regressed | Closed-context recovery retained stale charge/timer state |
-| QR-009 | Medium | Audio/ownership | Fixed and browser-regressed | Phaser created a redundant AudioContext despite owning no Fallstack sound |
-| QR-010 | Medium | Camera | Fixed and regression-tested | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths |
-| QR-011 | Medium | UI | Fixed and browser-regressed | Mobile functional text now meets its role minimum without header or sheet overflow |
-| QR-012 | Product blocker | Character | Fixed and browser-regressed | Washi Pilgrim replaces the rejected block across ten standard/reduced-motion states without changing physics |
-| QR-013 | High | QA/playthrough | Fixed and production-replayed | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
-| QR-014 | High | UI/input | Fixed and browser-regressed | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower |
-| QR-015 | Medium | UI/accessibility | Fixed and browser-regressed | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass |
-| QR-016 | Medium | UI/feedback | Fixed and browser-regressed | Short-screen receipts and simultaneous remote notices no longer cover the player or next recovery landing |
-| QR-017 | High | UI/input/camera | Fixed and browser-regressed | Coarse-pointer landscape retains touch controls and short-screen camera framing without changing desktop/fullscreen edges |
-| QR-018 | Medium | UI/accessibility | Fixed and browser-regressed | Two-color focus treatment works on light/dark surfaces and the splash action label now meets text contrast |
+| ID     | Severity        | Workstream        | State                                         | Summary                                                                                                                                                                 |
+| ------ | --------------- | ----------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QR-001 | High            | Gameplay/world    | Fixed, browser-regressed, and hosted-verified | The physical gutter was fixed first, but `0.0.26` still panned both painted walls away; deployed `0.0.27` keeps fixed viewport rails visible on both mobile sides       |
+| QR-002 | High            | Audio/events      | Fixed and browser-regressed                   | Initial grounded frame and post-respawn teleport emitted false landing events                                                                                           |
+| QR-003 | High            | Audio/design      | Implemented; listening gate open              | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains                                      |
+| QR-004 | High            | Music             | Direction gate ready; production unchanged    | Three original three-biome previews are technically verified; user listening selection and production integration remain                                                |
+| QR-005 | Medium          | Audio/lifecycle   | Fixed and browser-regressed                   | Rapid Music Off/On reopened untracked bell tails and overlapped a new pair                                                                                              |
+| QR-006 | Medium          | Audio/preferences | Fixed and browser-regressed                   | Legacy combined mute key forced SFX off again after reload                                                                                                              |
+| QR-007 | Medium          | Audio/lifecycle   | Fixed and browser-regressed                   | Queued SFX continued after SFX Off; gameplay bus itself was never muted                                                                                                 |
+| QR-008 | Medium          | Audio/lifecycle   | Fixed and browser-regressed                   | Closed-context recovery retained stale charge/timer state                                                                                                               |
+| QR-009 | Medium          | Audio/ownership   | Fixed and browser-regressed                   | Phaser created a redundant AudioContext despite owning no Fallstack sound                                                                                               |
+| QR-010 | Medium          | Camera            | Fixed and regression-tested                   | Player-centred camera hid the next landing on maximum lateral jumps at narrow widths                                                                                    |
+| QR-011 | Medium          | UI                | Fixed and browser-regressed                   | Mobile functional text now meets its role minimum without header or sheet overflow                                                                                      |
+| QR-012 | Product blocker | Character         | Fixed and browser-regressed                   | Washi Pilgrim replaces the rejected block across ten standard/reduced-motion states without changing physics                                                            |
+| QR-013 | High            | QA/playthrough    | Fixed and production-replayed                 | Physical support authority and descending landing prediction replaced stale labels, speculative wall bounces, and ascent-only steering; uninterrupted summit now passes |
+| QR-014 | High            | UI/input          | Fixed and browser-regressed                   | Guide and Tower Memory now pause Phaser, so hidden keyboard input cannot launch, fall, or mutate the tower                                                              |
+| QR-015 | Medium          | UI/accessibility  | Fixed and browser-regressed                   | Browser zoom, two-way focus containment, visible dialog naming, theme metadata, and primary action contrast now pass                                                    |
+| QR-016 | Medium          | UI/feedback       | Fixed and browser-regressed                   | Short-screen receipts and simultaneous remote notices no longer cover the player or next recovery landing                                                               |
+| QR-017 | High            | UI/input/camera   | Fixed and browser-regressed                   | Coarse-pointer landscape retains touch controls and short-screen camera framing without changing desktop/fullscreen edges                                               |
+| QR-018 | Medium          | UI/accessibility  | Fixed and browser-regressed                   | Two-color focus treatment works on light/dark surfaces and the splash action label now meets text contrast                                                              |
 
 ## Decisions
 
@@ -154,6 +154,10 @@ These are investigation records, not all approved fixes.
 - 2026-07-28: Hosted `0.0.26` disproved the earlier boundary conclusion. Mobile
   needs both physical route containment and fixed visual viewport rails because
   a 480 px world-space wall can pan outside a narrow Reddit camera.
+- 2026-07-28: The user authorized the current checkpoint update. Devvit
+  `0.0.27` adds two viewport-fixed 12 px mobile rails without changing
+  desktop/fullscreen edges; install read-back and hosted 360 px/286 px visual
+  checks confirm both sides.
 
 ## Commands run
 
@@ -310,6 +314,9 @@ npm run qa:ui-resize -- /tmp/fallstack-quality/mobile-board-rails-resize-chromiu
 npm run qa:ui-resize -- /tmp/fallstack-quality/mobile-board-rails-resize-webkit --browser=webkit
 npm run qa:runtime -- /tmp/fallstack-quality/mobile-board-rails-runtime-chromium --browser=chromium
 npm run qa:runtime -- /tmp/fallstack-quality/mobile-board-rails-runtime-webkit-retry --browser=webkit
+npm exec -- devvit upload --version 0.0.27
+npm exec -- devvit install fallstack_dev fallstack@0.0.27
+npm exec -- devvit list installs fallstack_dev
 ```
 
 Results:
@@ -354,8 +361,7 @@ Results:
   `crater_foundry`. The first full rerun was intentionally stopped after the
   user clarified that desktop/fullscreen bounds must remain unchanged.
 - The mobile-only canonical rerun then crossed the opening blocker and reached
-  `comet_reef`, where it exposed a controller approach-counter defect at ledge
-  36. A source-target approach counter cleared it.
+  `comet_reef`, where it exposed a controller approach-counter defect at ledge 36. A source-target approach counter cleared it.
 - The checkpointed replay exposed and fixed two more false-control states: it
   now waits for a real airborne frame and validates the physical support under
   the player instead of trusting a stale label.
@@ -493,6 +499,13 @@ Results:
   WebKit runtime repeats its existing synthetic movement-ratio flake
   (`28.5 px` warm versus `48.3 px` post-respawn); its 16 resize/layout checks
   pass, and the rail change does not touch movement.
+- Devvit uploaded and installed `0.0.27`; the authenticated install read-back is
+  `fallstack (v0.0.27)`. After refresh, Safari exposed the matching hosted
+  WebView. The exact deployed frame at 360×800 measured 12 px left and right
+  rails pinned to x=`0` and x=`360`, and screenshot review confirmed both
+  full-height rails and their gold inner lines. The 286 px narrow-frame
+  screenshot also retained both sides. No gameplay input or shared event was
+  produced.
 
 ## Worktree safety
 
