@@ -5,9 +5,13 @@ import test from 'node:test';
 import { generateDailyTower, WORLD_WIDTH } from '../../shared/game/tower.js';
 import {
   CAMERA_AIR_LOOKAHEAD,
+  CAMERA_VERTICAL_AIR_LOOKAHEAD,
+  CAMERA_VERTICAL_CHARGE_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
   cameraBottomPaddingForViewport,
   cameraScrollXForPlayer,
+  cameraVerticalLookahead,
+  chooseHudNoticePlacement,
   computeGameDimensions,
   gameWorldWidth,
   PLAYER_VISUAL_EDGE_CLEARANCE,
@@ -125,6 +129,54 @@ void test('committed-jump lookahead keeps a readable part of the next landing vi
       }
     }
   }
+});
+
+void test('vertical lookahead previews the climb while charging and rising', () => {
+  assert.equal(cameraVerticalLookahead(true, 0, 0), 24);
+  assert.equal(
+    cameraVerticalLookahead(true, 100, 0),
+    CAMERA_VERTICAL_CHARGE_LOOKAHEAD
+  );
+  assert.equal(
+    cameraVerticalLookahead(false, 0, -2_000),
+    CAMERA_VERTICAL_AIR_LOOKAHEAD
+  );
+  assert.equal(cameraVerticalLookahead(false, 0, 240), 0);
+});
+
+void test('mobile notices choose the side away from protected play geometry', () => {
+  const common = {
+    viewportHeight: 500,
+    noticeHeight: 140,
+    topOffset: 54,
+    bottomOffset: 12,
+  };
+  assert.equal(
+    chooseHudNoticePlacement({
+      ...common,
+      protectedSpans: [{ top: 70, bottom: 130, weight: 2 }],
+    }),
+    'bottom'
+  );
+  assert.equal(
+    chooseHudNoticePlacement({
+      ...common,
+      protectedSpans: [
+        { top: 350, bottom: 420, weight: 2 },
+        { top: 220, bottom: 245 },
+      ],
+    }),
+    'top'
+  );
+  assert.equal(
+    chooseHudNoticePlacement({
+      ...common,
+      protectedSpans: [{ top: 225, bottom: 250 }],
+      companionHeight: 60,
+      companionGap: 16,
+    }),
+    'bottom'
+  );
 });
 
 void test('game dimensions clamp empty layout bounds safely', () => {

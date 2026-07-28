@@ -506,10 +506,32 @@ button:disabled {
 
 @media (max-width: 599px) {
   .tower-side-rails {
-    border-inline: 12px solid #29243f;
+    border-inline: 14px solid #29243f;
     box-shadow:
       inset 3px 0 0 #d9b45c,
       inset -3px 0 0 #d9b45c;
+  }
+
+  .tower-side-rails::before,
+  .tower-side-rails::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: #4a2130;
+  }
+
+  .tower-side-rails::before {
+    left: 0;
+    border-right: 3px solid #d9b45c;
+    box-shadow: inset -4px 0 0 rgba(24, 13, 24, 0.38);
+  }
+
+  .tower-side-rails::after {
+    right: 0;
+    border-left: 3px solid #d9b45c;
+    box-shadow: inset 4px 0 0 rgba(24, 13, 24, 0.38);
   }
 }
 
@@ -2257,6 +2279,12 @@ button:disabled {
     left: 12px;
     width: auto;
     max-width: none;
+  }
+
+  .mutation-banner.place-bottom,
+  .mutation-banner.receipt.place-bottom {
+    top: auto;
+    bottom: 12px;
   }
 
   .receipt-copy {

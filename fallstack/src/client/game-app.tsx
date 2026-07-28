@@ -4,7 +4,14 @@ import {
   disconnectRealtime,
   navigateTo,
 } from '@devvit/web/client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type {
   InitGameResponse,
   RecordClearResponse,
@@ -91,10 +98,14 @@ import {
   CAMERA_AIR_LOOKAHEAD,
   cameraBottomPaddingForViewport,
   cameraScrollXForPlayer,
+  cameraVerticalLookahead,
+  chooseHudNoticePlacement,
   computeGameDimensions,
   gameWorldWidth,
+  MOBILE_GAME_BREAKPOINT,
   physicsBoundsForViewport,
   routeOffsetForGameWidth,
+  type HudNoticePlacement,
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
 import { renderReliquaryPlayer } from './game/renderPlayer';
@@ -143,6 +154,10 @@ declare global {
 }
 
 const START_POS = { x: 240, y: WORLD_HEIGHT - 88 };
+const MOBILE_NOTICE_TOP_OFFSET = 54;
+const MOBILE_NOTICE_BOTTOM_OFFSET = 12;
+const NOTICE_PLAY_CLEARANCE = 10;
+const NOTICE_STACK_GAP = 16;
 
 function isBoardSnapshot(
   snapshot: GameSnapshot | null | undefined
@@ -530,6 +545,7 @@ class FallstackScene extends Phaser.Scene {
       this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
       const impactSpeed = this.pendingImpactSpeed;
+      this.settleVerticalCameraForLanding();
       this.showPlayerCeremony(
         'land',
         Phaser.Math.Clamp((impactSpeed - 180) / 620, 0.25, 1)
@@ -611,6 +627,50 @@ class FallstackScene extends Phaser.Scene {
     };
   }
 
+  hudNoticePlacement(
+    noticeHeight: number,
+    companionHeight = 0
+  ): HudNoticePlacement {
+    if (
+      !this.player ||
+      this.viewportWidth() >= MOBILE_GAME_BREAKPOINT
+    )
+      return 'top';
+    const cameraScrollY = this.cameras.main.scrollY;
+    const viewportHeight = this.viewportHeight();
+    const canvasHeight = this.game.canvas.getBoundingClientRect().height;
+    const cssScaleY = viewportHeight > 0 ? canvasHeight / viewportHeight : 1;
+    const playerY = (this.player.y - cameraScrollY) * cssScaleY;
+    const protectedSpans = [
+      {
+        top: playerY - 32 - NOTICE_PLAY_CLEARANCE,
+        bottom: playerY + 32 + NOTICE_PLAY_CLEARANCE,
+        weight: 2,
+      },
+    ];
+    const nextLanding = this.nextRoutePlatform();
+    if (nextLanding) {
+      protectedSpans.push({
+        top:
+          (nextLanding.y - cameraScrollY) * cssScaleY -
+          NOTICE_PLAY_CLEARANCE,
+        bottom:
+          (nextLanding.y + nextLanding.height - cameraScrollY) * cssScaleY +
+          NOTICE_PLAY_CLEARANCE,
+        weight: 1,
+      });
+    }
+    return chooseHudNoticePlacement({
+      viewportHeight: canvasHeight,
+      noticeHeight,
+      topOffset: MOBILE_NOTICE_TOP_OFFSET,
+      bottomOffset: MOBILE_NOTICE_BOTTOM_OFFSET,
+      protectedSpans,
+      companionHeight,
+      companionGap: NOTICE_STACK_GAP,
+    });
+  }
+
   isSafeToReconcile(): boolean {
     if (!this.player) return false;
     const body = this.player.body;
@@ -690,7 +750,9 @@ class FallstackScene extends Phaser.Scene {
   private cameraTargetY(y: number) {
     const camH = this.viewportHeight() || 480;
     return Phaser.Math.Clamp(
-      y - (camH - this.cameraBottomPadding()),
+      y -
+        (camH - this.cameraBottomPadding()) -
+        this.cameraLookaheadY(),
       0,
       WORLD_HEIGHT - camH
     );
@@ -714,6 +776,38 @@ class FallstackScene extends Phaser.Scene {
     if (!grounded && this.lastLaunchDirection !== 0)
       return this.lastLaunchDirection * CAMERA_AIR_LOOKAHEAD;
     return Phaser.Math.Clamp(body.velocity.x * 0.12, -40, 40);
+  }
+
+  private cameraLookaheadY() {
+    if (!this.player) return 0;
+    return cameraVerticalLookahead(
+      this.charging,
+      this.lastChargePercent,
+      this.player.body.velocity.y
+    );
+  }
+
+  private nextRoutePlatform(): Platform | null {
+    if (!this.player) return null;
+    const player = this.player;
+    const route = this.towerPlatforms
+      .filter((platform) => platform.kind !== 'obstacle')
+      .sort((left, right) => right.y - left.y);
+    const supportIndex = route.findIndex(
+      (platform) => platform.id === this.lastPlatformId
+    );
+    if (supportIndex >= 0) return route[supportIndex + 1] ?? null;
+    return (
+      route.find(
+        (platform) =>
+          platform.y < player.y - player.body.halfHeight
+      ) ?? null
+    );
+  }
+
+  private settleVerticalCameraForLanding() {
+    if (!this.player) return;
+    this.cameras.main.scrollY = this.cameraTargetY(this.player.y);
   }
 
   private snapCameraToPlayer() {
@@ -1757,6 +1851,8 @@ export function GameApp() {
     summits: 0,
   });
   const [mutationVisible, setMutationVisible] = useState(false);
+  const [mutationPlacement, setMutationPlacement] =
+    useState<HudNoticePlacement>('top');
   const [checkpointVisible, setCheckpointVisible] = useState(false);
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
   const [remoteBeat, setRemoteBeat] = useState<MutationBeat | null>(null);
@@ -1773,6 +1869,8 @@ export function GameApp() {
   const previousGuideFocusRef = useRef<HTMLElement | null>(null);
   const chargeRef = useRef(0);
   const mutationTimerRef = useRef<number | null>(null);
+  const mutationBannerRef = useRef<HTMLDivElement | null>(null);
+  const remoteBeatRef = useRef<HTMLDivElement | null>(null);
   const checkpointTimerRef = useRef<number | null>(null);
   const remoteBeatTimerRef = useRef<number | null>(null);
   const pendingBoardSnapshotRef = useRef<{
@@ -1822,6 +1920,20 @@ export function GameApp() {
       3_800
     );
   }, []);
+
+  useLayoutEffect(() => {
+    if (!mutationVisible || !mutationBannerRef.current) return;
+    setMutationPlacement(
+      sceneRef.current?.hudNoticePlacement(
+        mutationBannerRef.current.getBoundingClientRect().height,
+        mutationReceipt &&
+          remoteBeatRef.current &&
+          getComputedStyle(remoteBeatRef.current).display !== 'none'
+          ? remoteBeatRef.current.getBoundingClientRect().height
+          : 0
+      ) ?? 'top'
+    );
+  }, [message, mutationReceipt, mutationVisible, remoteBeat]);
 
   const applyBoardSnapshot = useCallback(
     (next: BoardSnapshot, beat: MutationBeat | null = null) => {
@@ -2743,7 +2855,8 @@ export function GameApp() {
 
         {/* Mutation banner */}
         <div
-          className={`hud-overlay mutation-banner${mutationReceipt ? ' receipt' : ''}${mutationVisible ? ' visible' : ''}`}
+          ref={mutationBannerRef}
+          className={`hud-overlay mutation-banner${mutationReceipt ? ' receipt' : ''}${mutationVisible ? ' visible' : ''} place-${mutationPlacement}`}
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -2772,7 +2885,8 @@ export function GameApp() {
 
         {remoteBeat && (
           <div
-            className={`hud-overlay remote-beat${mutationReceipt && mutationVisible ? ' below-receipt' : ''}`}
+            ref={remoteBeatRef}
+            className={`hud-overlay remote-beat${mutationReceipt && mutationVisible && mutationPlacement === 'top' ? ' below-receipt' : ''}`}
             role="status"
             aria-live="polite"
           >

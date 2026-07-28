@@ -40,7 +40,7 @@ try {
     const viewportResult = { viewport, states: {} };
     for (const state of states) {
       await showState(page, state);
-      const geometry = await measureCheckpointGeometry(page);
+      const geometry = await measureRouteGeometry(page);
       viewportResult.states[state] = geometry;
 
       for (const sample of geometry.samples) {
@@ -66,6 +66,15 @@ try {
       check(
         geometry.overlayOverlap === 0,
         `${label(viewport)} ${state} notices do not cover one another`
+      );
+    }
+
+    const landingFraming = await measureLandingFraming(page);
+    viewportResult.landingFraming = landingFraming;
+    for (const sample of landingFraming.samples) {
+      check(
+        sample.nextLandingTop >= landingFraming.safeTop,
+        `${label(viewport)} landing on ${sample.landingId} keeps ${sample.nextLandingId} below the HUD`
       );
     }
 
@@ -236,7 +245,7 @@ async function showState(page, state) {
   await page.waitForTimeout(300);
 }
 
-async function measureCheckpointGeometry(page) {
+async function measureRouteGeometry(page) {
   return page.evaluate(async () => {
     const scene = window.__fallstackFindScene();
     const canvas = document.querySelector('#game-canvas canvas');
@@ -249,23 +258,10 @@ async function measureCheckpointGeometry(page) {
       .sort((left, right) => right.y - left.y);
     const supportIndices = route
       .map((platform, index) => ({ platform, index }))
-      .filter(
-        ({ platform, index }) =>
-          index < route.length - 1 &&
-          (platform.id === 'start' || platform.id.includes('checkpoint'))
-      );
-    const overlayElements = [
-      document.querySelector('.mutation-banner.visible'),
-      document.querySelector('.checkpoint-banner.visible'),
-      document.querySelector('[data-qa-overlay="remote"]'),
-    ].filter(
-      (element) =>
-        element &&
-        getComputedStyle(element).display !== 'none' &&
-        getComputedStyle(element).visibility !== 'hidden'
-    );
-    const overlays = overlayElements.map(rectOf);
+      .filter(({ index }) => index < route.length - 1);
     const samples = [];
+    let overlays = [];
+    let overlayOverlap = 0;
 
     for (const { platform, index } of supportIndices) {
       const support = scene.layoutPlatform(platform);
@@ -274,8 +270,48 @@ async function measureCheckpointGeometry(page) {
         support.x + support.width / 2,
         support.y - scene.player.body.halfHeight - 1
       );
+      scene.lastPlatformId = platform.id;
       scene.snapCameraToPlayer();
       await new Promise((resolve) => requestAnimationFrame(resolve));
+      const mutation = document.querySelector('.mutation-banner.visible');
+      const remote = document.querySelector('[data-qa-overlay="remote"]');
+      const companionHeight =
+        mutation?.classList.contains('receipt') &&
+        remote &&
+        getComputedStyle(remote).display !== 'none'
+          ? remote.getBoundingClientRect().height
+          : 0;
+      const placement = mutation
+        ? scene.hudNoticePlacement(
+            mutation.getBoundingClientRect().height,
+            companionHeight
+          )
+        : 'top';
+      mutation?.classList.toggle('place-bottom', placement === 'bottom');
+      mutation?.classList.toggle('place-top', placement === 'top');
+      remote?.classList.toggle(
+        'below-receipt',
+        Boolean(mutation?.classList.contains('receipt')) && placement === 'top'
+      );
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const overlayElements = [
+        mutation,
+        document.querySelector('.checkpoint-banner.visible'),
+        remote,
+      ].filter(
+        (element) =>
+          element &&
+          getComputedStyle(element).display !== 'none' &&
+          getComputedStyle(element).visibility !== 'hidden'
+      );
+      const sampleOverlays = overlayElements.map(rectOf);
+      overlays = sampleOverlays;
+      if (sampleOverlays.length === 2) {
+        overlayOverlap = Math.max(
+          overlayOverlap,
+          overlapArea(sampleOverlays[0], sampleOverlays[1])
+        );
+      }
       const camera = scene.cameras.main;
       const playerRect = {
         left:
@@ -318,11 +354,12 @@ async function measureCheckpointGeometry(page) {
         targetId: target.id,
         playerRect,
         targetRect,
-        overlayPlayerOverlap: overlays.reduce(
+        placement,
+        overlayPlayerOverlap: sampleOverlays.reduce(
           (total, overlay) => total + overlapArea(overlay, playerRect),
           0
         ),
-        overlayTargetOverlap: overlays.reduce(
+        overlayTargetOverlap: sampleOverlays.reduce(
           (total, overlay) => total + overlapArea(overlay, targetRect),
           0
         ),
@@ -337,8 +374,7 @@ async function measureCheckpointGeometry(page) {
         bottom: tower.bottom,
       },
       overlays,
-      overlayOverlap:
-        overlays.length === 2 ? overlapArea(overlays[0], overlays[1]) : 0,
+      overlayOverlap,
       samples,
     };
 
@@ -371,6 +407,50 @@ async function measureCheckpointGeometry(page) {
   });
 }
 
+async function measureLandingFraming(page) {
+  return page.evaluate(async () => {
+    const scene = window.__fallstackFindScene();
+    const canvas = document.querySelector('#game-canvas canvas');
+    const canvasRect = canvas.getBoundingClientRect();
+    const scaleY = canvasRect.height / scene.scale.height;
+    const zoneTag = document.querySelector('.zone-tag').getBoundingClientRect();
+    const safeTop = zoneTag.bottom + 12;
+    const route = scene.towerPlatforms
+      .filter((platform) => !platform.id.startsWith('obstacle-'))
+      .sort((left, right) => right.y - left.y);
+    const samples = [];
+
+    for (let index = 1; index < route.length - 1; index += 1) {
+      const takeoff = scene.layoutPlatform(route[index - 1]);
+      const landing = scene.layoutPlatform(route[index]);
+      const nextLanding = scene.layoutPlatform(route[index + 1]);
+      scene.player.body.reset(
+        takeoff.x + takeoff.width / 2,
+        takeoff.y - scene.player.body.halfHeight - 1
+      );
+      scene.snapCameraToPlayer();
+      scene.player.body.reset(
+        landing.x + landing.width / 2,
+        landing.y - scene.player.body.halfHeight - 1
+      );
+      scene.lastPlatformId = landing.id;
+      scene.player.body.setVelocity(0, 0);
+      scene.settleVerticalCameraForLanding();
+      scene.updateCamera(16);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      samples.push({
+        landingId: landing.id,
+        nextLandingId: nextLanding.id,
+        nextLandingTop:
+          canvasRect.top +
+          (nextLanding.y - scene.cameras.main.scrollY) * scaleY,
+      });
+    }
+
+    return { safeTop, samples };
+  });
+}
+
 async function placeAtFirstCheckpoint(page) {
   await page.evaluate(() => {
     const scene = window.__fallstackFindScene();
@@ -388,6 +468,14 @@ async function placeAtFirstCheckpoint(page) {
     );
     scene.snapCameraToPlayer();
     scene.drawPlayer();
+    const mutation = document.querySelector('.mutation-banner.visible');
+    if (mutation) {
+      const placement = scene.hudNoticePlacement(
+        mutation.getBoundingClientRect().height
+      );
+      mutation.classList.toggle('place-bottom', placement === 'bottom');
+      mutation.classList.toggle('place-top', placement === 'top');
+    }
   });
 }
 

@@ -19,6 +19,8 @@ const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
 export const ROUTE_PLAYABLE_INSET = 34;
 export const PLAYER_VISUAL_EDGE_CLEARANCE = 12;
 export const CAMERA_AIR_LOOKAHEAD = 64;
+export const CAMERA_VERTICAL_CHARGE_LOOKAHEAD = 64;
+export const CAMERA_VERTICAL_AIR_LOOKAHEAD = 48;
 export const MOBILE_GAME_BREAKPOINT = 600;
 
 export type HorizontalBounds = {
@@ -26,6 +28,14 @@ export type HorizontalBounds = {
   right: number;
   width: number;
 };
+
+export type VerticalSpan = {
+  top: number;
+  bottom: number;
+  weight?: number;
+};
+
+export type HudNoticePlacement = 'top' | 'bottom';
 
 export function computeGameDimensions(
   bounds: ContainerBounds,
@@ -97,6 +107,68 @@ export function cameraScrollXForPlayer(
   );
 }
 
+export function cameraVerticalLookahead(
+  charging: boolean,
+  chargePercent: number,
+  velocityY: number
+): number {
+  if (charging) {
+    const progress = clamp(chargePercent / 100, 0, 1);
+    return 24 + progress * (CAMERA_VERTICAL_CHARGE_LOOKAHEAD - 24);
+  }
+  return velocityY < 0
+    ? Math.min(CAMERA_VERTICAL_AIR_LOOKAHEAD, Math.abs(velocityY) * 0.045)
+    : 0;
+}
+
+export function chooseHudNoticePlacement(input: {
+  viewportHeight: number;
+  noticeHeight: number;
+  topOffset: number;
+  bottomOffset: number;
+  protectedSpans: VerticalSpan[];
+  companionHeight?: number;
+  companionGap?: number;
+}): HudNoticePlacement {
+  const noticeHeight = Math.max(0, input.noticeHeight);
+  const companionHeight = Math.max(0, input.companionHeight ?? 0);
+  const companionGap = companionHeight
+    ? Math.max(0, input.companionGap ?? 0)
+    : 0;
+  const top = {
+    top: input.topOffset,
+    bottom: input.topOffset + noticeHeight,
+  };
+  const bottom = {
+    top: input.viewportHeight - input.bottomOffset - noticeHeight,
+    bottom: input.viewportHeight - input.bottomOffset,
+  };
+  const companion = {
+    top: input.topOffset,
+    bottom: input.topOffset + companionHeight,
+  };
+  const stackedCompanion = {
+    top: top.bottom + companionGap,
+    bottom: top.bottom + companionGap + companionHeight,
+  };
+  const score = (candidates: VerticalSpan[]) =>
+    candidates.reduce(
+      (candidateTotal, candidate) =>
+        candidateTotal +
+        input.protectedSpans.reduce(
+          (spanTotal, span) =>
+            spanTotal +
+            overlapLength(candidate, span) * Math.max(1, span.weight ?? 1),
+          0
+        ),
+      0
+    );
+  return score(companionHeight ? [bottom, companion] : [bottom]) <
+    score(companionHeight ? [top, stackedCompanion] : [top])
+    ? 'bottom'
+    : 'top';
+}
+
 export function visibleHorizontalSpan(
   left: number,
   right: number,
@@ -128,4 +200,15 @@ export function cameraBottomPaddingForViewport(
 
 function cleanPixelSize(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+}
+
+function overlapLength(left: VerticalSpan, right: VerticalSpan): number {
+  return Math.max(
+    0,
+    Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
+  );
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }

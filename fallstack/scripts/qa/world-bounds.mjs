@@ -8,7 +8,7 @@ const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
 const PLAYER_VISUAL_EDGE_CLEARANCE = 12;
 const MOBILE_BREAKPOINT = 600;
-const MIN_VISIBLE_RAIL_WIDTH = 10;
+const MIN_VISIBLE_PILLAR_DEPTH = 24;
 const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/world-bounds'
@@ -56,6 +56,8 @@ try {
         const rail = document.querySelector('.tower-side-rails');
         const railRect = rail?.getBoundingClientRect();
         const railStyle = rail ? getComputedStyle(rail) : null;
+        const railBeforeStyle = rail ? getComputedStyle(rail, '::before') : null;
+        const railAfterStyle = rail ? getComputedStyle(rail, '::after') : null;
         const paintedLeft = mobile
           ? scene.currentRouteOffset + playableInset
           : 0;
@@ -92,6 +94,14 @@ try {
                   borderRightWidth: Number.parseFloat(
                     railStyle.borderRightWidth
                   ),
+                  beforeWidth:
+                    railBeforeStyle?.content !== 'none'
+                      ? Number.parseFloat(railBeforeStyle?.width ?? '0')
+                      : 0,
+                  afterWidth:
+                    railAfterStyle?.content !== 'none'
+                      ? Number.parseFloat(railAfterStyle?.width ?? '0')
+                      : 0,
                 }
               : null,
         };
@@ -158,12 +168,16 @@ try {
         `${viewport.width}px mobile renders fixed left and right board rails`
       );
       check(
-        (geometry.rail?.borderLeftWidth ?? 0) >= MIN_VISIBLE_RAIL_WIDTH,
-        `${viewport.width}px left board rail stays visibly wide`
+        (geometry.rail?.borderLeftWidth ?? 0) +
+          (geometry.rail?.beforeWidth ?? 0) >=
+          MIN_VISIBLE_PILLAR_DEPTH,
+        `${viewport.width}px left board wall reads as a full pillar`
       );
       check(
-        (geometry.rail?.borderRightWidth ?? 0) >= MIN_VISIBLE_RAIL_WIDTH,
-        `${viewport.width}px right board rail stays visibly wide`
+        (geometry.rail?.borderRightWidth ?? 0) +
+          (geometry.rail?.afterWidth ?? 0) >=
+          MIN_VISIBLE_PILLAR_DEPTH,
+        `${viewport.width}px right board wall reads as a full pillar`
       );
       check(
         Math.abs((geometry.rail?.left ?? -1) - 0) <= 0.1 &&
@@ -173,11 +187,14 @@ try {
       );
       check(
         leftContact.minScreenLeft >=
-          (geometry.rail?.borderLeftWidth ?? Number.POSITIVE_INFINITY) &&
+          (geometry.rail?.borderLeftWidth ?? Number.POSITIVE_INFINITY) +
+            (geometry.rail?.beforeWidth ?? 0) &&
           rightContact.maxScreenRight <=
             geometry.viewportWidth -
-              (geometry.rail?.borderRightWidth ?? Number.POSITIVE_INFINITY),
-        `${viewport.width}px player stays fully inside both visible rails`
+              ((geometry.rail?.borderRightWidth ??
+                Number.POSITIVE_INFINITY) +
+                (geometry.rail?.afterWidth ?? 0)),
+        `${viewport.width}px player stays fully inside both visible pillars`
       );
       check(
         (visualContacts?.left.visualLeft ?? Number.NEGATIVE_INFINITY) >=
@@ -205,7 +222,7 @@ try {
     playableInset: PLAYABLE_INSET,
     mobileBreakpoint: MOBILE_BREAKPOINT,
     playerVisualEdgeClearance: PLAYER_VISUAL_EDGE_CLEARANCE,
-    minimumVisibleRailWidth: MIN_VISIBLE_RAIL_WIDTH,
+    minimumVisiblePillarDepth: MIN_VISIBLE_PILLAR_DEPTH,
     results,
     failures,
   };
