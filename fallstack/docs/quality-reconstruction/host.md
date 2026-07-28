@@ -56,17 +56,22 @@ Hosted observation:
   successfully.
 - The expanded WebView URL identified version `0.0.26`.
 - The hosted mobile presentation rendered the Washi Pilgrim, Lower Ruins,
-  visible left and right tower edges, Guide, Memory, community tally, charge
-  meter, and fixed Left/Jump/Right controls.
+  Guide, Memory, community tally, charge meter, and fixed Left/Jump/Right
+  controls.
+- Later user review correctly established that the left visual boundary was
+  still absent. The earlier observation must not be treated as proof of
+  symmetric mobile rails.
 - The session remained read-only with respect to gameplay: no control was
   pressed and no fall, clear, or mutation was produced.
 
 Boundary:
 
 This proves that the authorized checkpoint is installed and can load through
-the signed-in Reddit host path. It is a playtest-community install, not a public
-app-directory production publish. It does not replace physical-device testing,
-human gameplay judgment, or the still-open music and SFX listening decisions.
+the signed-in Reddit host path. It does not prove the requested two-sided mobile
+frame; hosted `0.0.26` failed that visual requirement. It is a
+playtest-community install, not a public app-directory production publish. It
+does not replace physical-device testing, human gameplay judgment, or the
+still-open music and SFX listening decisions.
 
 Sensitive signed-request and profile data was not copied into repository
 evidence.

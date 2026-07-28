@@ -7,8 +7,8 @@ import { chromium } from 'playwright';
 const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
 const MOBILE_BREAKPOINT = 600;
-const baseUrl =
-  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
+const MIN_VISIBLE_RAIL_WIDTH = 10;
+const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/world-bounds'
 );
@@ -19,6 +19,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 });
 const viewports = [
+  { width: 286, height: 650 },
   { width: 320, height: 568 },
   { width: 375, height: 812 },
   { width: 480, height: 800 },
@@ -46,6 +47,9 @@ try {
         const scene = window.__fallstackFindScene();
         const bounds = scene.physics.world.bounds;
         const mobile = scene.viewportWidth() < mobileBreakpoint;
+        const rail = document.querySelector('.tower-side-rails');
+        const railRect = rail?.getBoundingClientRect();
+        const railStyle = rail ? getComputedStyle(rail) : null;
         const expectedLeft = mobile
           ? scene.currentRouteOffset + playableInset
           : 0;
@@ -63,6 +67,19 @@ try {
           physicsRight: bounds.right,
           physicsWidth: bounds.width,
           playerHalfWidth: scene.player.body.halfWidth,
+          rail:
+            railRect && railStyle
+              ? {
+                  left: railRect.left,
+                  right: railRect.right,
+                  top: railRect.top,
+                  bottom: railRect.bottom,
+                  borderLeftWidth: Number.parseFloat(railStyle.borderLeftWidth),
+                  borderRightWidth: Number.parseFloat(
+                    railStyle.borderRightWidth
+                  ),
+                }
+              : null,
         };
       },
       {
@@ -113,6 +130,37 @@ try {
         rightContact.maxScreenRight <= geometry.viewportWidth + 0.1,
       `${viewport.width}px both wall contacts remain camera-visible`
     );
+    if (geometry.mobile) {
+      check(
+        geometry.rail !== null,
+        `${viewport.width}px mobile renders fixed left and right board rails`
+      );
+      check(
+        (geometry.rail?.borderLeftWidth ?? 0) >= MIN_VISIBLE_RAIL_WIDTH,
+        `${viewport.width}px left board rail stays visibly wide`
+      );
+      check(
+        (geometry.rail?.borderRightWidth ?? 0) >= MIN_VISIBLE_RAIL_WIDTH,
+        `${viewport.width}px right board rail stays visibly wide`
+      );
+      check(
+        Math.abs((geometry.rail?.left ?? -1) - 0) <= 0.1 &&
+          Math.abs((geometry.rail?.right ?? -1) - geometry.viewportWidth) <=
+            0.1,
+        `${viewport.width}px board rails stay pinned to both viewport edges`
+      );
+      check(
+        leftContact.minScreenLeft >=
+          (geometry.rail?.borderLeftWidth ?? Number.POSITIVE_INFINITY) &&
+          rightContact.maxScreenRight <=
+            geometry.viewportWidth -
+              (geometry.rail?.borderRightWidth ?? Number.POSITIVE_INFINITY),
+        `${viewport.width}px player stays fully inside both visible rails`
+      );
+    }
+    await page.screenshot({
+      path: path.join(outputDir, `world-bounds-${viewport.width}.png`),
+    });
     await context.close();
   }
 
@@ -121,6 +169,7 @@ try {
     routeWidth: ROUTE_WIDTH,
     playableInset: PLAYABLE_INSET,
     mobileBreakpoint: MOBILE_BREAKPOINT,
+    minimumVisibleRailWidth: MIN_VISIBLE_RAIL_WIDTH,
     results,
     failures,
   };

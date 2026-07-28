@@ -496,6 +496,23 @@ button:disabled {
   image-rendering: auto;
 }
 
+.tower-side-rails {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-inline: 0 solid transparent;
+  pointer-events: none;
+}
+
+@media (max-width: 599px) {
+  .tower-side-rails {
+    border-inline: 12px solid #29243f;
+    box-shadow:
+      inset 3px 0 0 #d9b45c,
+      inset -3px 0 0 #d9b45c;
+  }
+}
+
 /* =============================================
    IN-VIEWPORT HUD OVERLAYS
    ============================================= */

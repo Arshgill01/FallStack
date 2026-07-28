@@ -9,6 +9,8 @@
 - Desktop/fullscreen intentionally collides with the expanded outer edge.
 - Mobile uses the reliquary's inner route edge so the player cannot leave the
   narrow moving frame before reaching a readable boundary.
+- Mobile also paints two fixed 12 px cutaway rails at the viewport edges. The
+  world-space walls can pan off camera; the fixed rails cannot.
 - The reliquary backdrop paints a 480 px route cavity and wall planes, but those
   painted wall planes do not have continuous collision bodies.
 
@@ -35,9 +37,11 @@ Ranked hypotheses:
 Required feedback loop:
 
 - expose player x, camera scroll, physical world bounds, and painted route bounds;
-- drive deliberate left/right wall contact at 320×568, 375×812, 480 px, and
-  1280×800;
+- drive deliberate left/right wall contact at 286×650, 320×568, 375×812,
+  480 px, and 1280×800;
 - assert mobile never crosses its selected route boundary and remains visible;
+- assert both visual rails remain pinned to the mobile viewport and the player
+  stays fully inside them;
 - assert desktop/fullscreen retains the original outer canvas edge;
 - preserve a complete summit playthrough.
 
@@ -55,8 +59,16 @@ Observed red/green result:
 - Narrow runtimes use x=`34…446`.
 - The 758 px desktop runtime deliberately remains x=`0…758`, preserving the
   outer edge the user confirmed already works.
-- The green probe reaches both mode-specific collision edges without crossing
-  them and keeps contacts inside the camera at all four viewports.
+- The first green probe reached both mode-specific collision edges without
+  crossing them and kept contacts inside the camera at all four viewports.
+- Hosted `0.0.26` review then exposed the missing visual contract: at a 286 px
+  camera width the visible world span was x=`97…383`, so both painted
+  world-space walls were outside the frame.
+- The revised probe adds 286×650 and requires two viewport-fixed rails at every
+  mobile width. Both rails measure 12 px, stay pinned to the screen edges, and
+  leave the player fully visible at both physical contacts.
+- Desktop/fullscreen receives no added viewport rail and retains its existing
+  outer edge.
 - The later orientation regression preserves those same horizontal bounds:
   coarse-pointer landscape keeps touch input, short-screen camera padding keeps
   an airborne player visible, and the 758 px desktop edge remains unchanged.

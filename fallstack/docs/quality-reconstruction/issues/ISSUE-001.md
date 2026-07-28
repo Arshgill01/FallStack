@@ -6,8 +6,8 @@
 - Workstream: Gameplay and world bounds
 - Ownership: Pure viewport layout and Phaser physics bounds
 - Baseline: `7c4e06f`
-- Reproducibility: 100% at 320, 375, and 480 px
-- Current state: Fixed and browser-regressed
+- Reproducibility: 100% at 286, 320, 375, and 480 px
+- Current state: Reopened from hosted review; fixed locally and browser-regressed
 
 ## Observation
 
@@ -16,6 +16,12 @@ readable inner wall planes were x=`34…446`. The moving camera could therefore
 let the climber leave the frame before a physical edge became legible. Desktop
 and fullscreen were not defective: their expanded x=`0…758` edge was already
 intentional.
+
+The first correction fixed that physical gutter but not the user's complete
+visual report. Hosted `0.0.26` still centred a narrow mobile camera inside the
+480 px world. At 286 px the camera showed x=`97…383`, while the painted left
+and right walls remained near x=`5…34` and x=`447…475`. Neither true wall was
+visible; an internal right-side line only resembled one.
 
 ## Ranked hypotheses and probes
 
@@ -28,21 +34,27 @@ intentional.
 
 ## Regression seam
 
-`npm run qa:world-bounds` drives both walls at 320×568, 375×812, 480×800, and
-1280×800. It asserts physical bounds, player contact, camera visibility, and
-the unchanged desktop edge.
+`npm run qa:world-bounds` drives both walls at 286×650, 320×568, 375×812,
+480×800, and 1280×800. It now asserts physical bounds, player contact, camera
+visibility, fixed mobile rails on both viewport edges, player clearance inside
+those rails, and the unchanged desktop edge.
 
 ## Fix and result
 
 Below the existing 600 px mobile breakpoint, physics uses the reliquary's
 34 px inset while tower generation keeps its 480 px coordinate system.
-Desktop/fullscreen still uses the full expanded world. The
+The reopened visual defect is fixed separately with two 12 px viewport-fixed
+reliquary rails. They remain visible while the world camera pans; the player
+stays fully inside them at both physical contacts. Desktop/fullscreen still
+uses the full expanded world and receives no added rail. The
 [red report](../evidence/gate-1-baseline/world-bounds-red/world-bounds.json)
 contains twelve mobile failures; the
 [green report](../evidence/world-bounds-fix/world-bounds.json) passes all four
-viewports. Commit: `4e11711`.
+original viewports. Commit `4e11711` is the physical-bound correction; the
+viewport-rail correction follows the hosted `0.0.26` review.
 
 ## Residual risk
 
 The browser probe validates responsive geometry, not a physical-device bezel or
-browser toolbar. Rotation continuity is covered separately by ISSUE-017.
+browser toolbar. Rotation continuity is covered separately by ISSUE-017. A
+fresh authenticated Reddit observation is still required after installation.

@@ -33,7 +33,7 @@ all eleven zone clears to the summit.
 | Chromium runtime | Complete | Touch, fall/respawn, post-respawn input, jump, reduced motion passed |
 | WebKit runtime | Complete with flake note | Parallel run timed out; isolated retry passed |
 | Shared session | Complete | Revision `37 → 39`, deferred reconcile, Mercy Nail, zero errors |
-| Authenticated Safari | Complete | Current daily post opened and expanded; hosted WebView `0.0.26` rendered the mobile tower read-only |
+| Authenticated Safari | Complete; rail defect reopened | Hosted WebView `0.0.26` rendered read-only; user review correctly found its left mobile boundary still absent |
 | Reddit checkpoint install | Complete | User-authorized `0.0.26` upload and `r/fallstack_dev` install; CLI read-back returned `fallstack (v0.0.26)` |
 | Audible-output path | Complete | 5.82 s final-master WebM; stereo Opus at 48 kHz; non-silent peak/RMS |
 | Exact Gate 1 baseline | Complete | Detached `7c4e06f` production build; 20-state local matrix, red bounds/readability contracts, visual score, mocked/host references, and 17 issue records |
@@ -55,7 +55,7 @@ These are investigation records, not all approved fixes.
 
 | ID | Severity | Workstream | State | Summary |
 | --- | --- | --- | --- | --- |
-| QR-001 | High | Gameplay/world | Fixed and browser-regressed | Mobile inherited an off-frame playable gutter before its readable side boundary; desktop/fullscreen outer edges were already correct |
+| QR-001 | High | Gameplay/world | Reopened from host; fixed locally and browser-regressed | The physical gutter was fixed first, but `0.0.26` still panned both painted walls away; fixed viewport rails now remain visible on both mobile sides |
 | QR-002 | High | Audio/events | Fixed and browser-regressed | Initial grounded frame and post-respawn teleport emitted false landing events |
 | QR-003 | High | Audio/design | Implemented; listening gate open | Material/impact landing, wall, collapse, mutation, checkpoint, and summit cues are semantically distinct; A/B human review remains |
 | QR-004 | High | Music | Direction gate ready; production unchanged | Three original three-biome previews are technically verified; user listening selection and production integration remain |
@@ -151,6 +151,9 @@ These are investigation records, not all approved fixes.
   checkpoint to `r/fallstack_dev`. Version `0.0.26` is the test-community
   checkpoint; this authorization does not include a public app-directory
   production publish.
+- 2026-07-28: Hosted `0.0.26` disproved the earlier boundary conclusion. Mobile
+  needs both physical route containment and fixed visual viewport rails because
+  a 480 px world-space wall can pan outside a narrow Reddit camera.
 
 ## Commands run
 
@@ -299,6 +302,14 @@ npm run build
 npm exec -- devvit upload --version 0.0.26
 npm exec -- devvit install fallstack_dev fallstack@0.0.26
 npm exec -- devvit list installs fallstack_dev
+npm run qa:world-bounds -- /tmp/fallstack-quality/mobile-board-rails-red
+npm run qa:world-bounds -- /tmp/fallstack-quality/mobile-board-rails-final-formatted
+npm run qa:ui-readability -- /tmp/fallstack-quality/mobile-board-rails-readability
+npm run qa:ui-overlays -- /tmp/fallstack-quality/mobile-board-rails-overlays
+npm run qa:ui-resize -- /tmp/fallstack-quality/mobile-board-rails-resize-chromium --browser=chromium
+npm run qa:ui-resize -- /tmp/fallstack-quality/mobile-board-rails-resize-webkit --browser=webkit
+npm run qa:runtime -- /tmp/fallstack-quality/mobile-board-rails-runtime-chromium --browser=chromium
+npm run qa:runtime -- /tmp/fallstack-quality/mobile-board-rails-runtime-webkit-retry --browser=webkit
 ```
 
 Results:
@@ -469,10 +480,19 @@ Results:
   `fc5f822`. Devvit uploaded `0.0.26`, upgraded `r/fallstack_dev` from
   `0.0.25`, and read the installed version back as `fallstack v0.0.26`.
 - Signed-in Safari expanded the 2026-07-28 daily post into a WebView whose URL
-  identified version `0.0.26`. The hosted mobile tower rendered the Washi
-  Pilgrim, both tower edges, Guide, Memory, community tally, charge meter, and
-  fixed touch controls. No gameplay control was used, so the verification did
-  not add a shared fall, clear, or mutation.
+  identified version `0.0.26`. It rendered the Washi Pilgrim, Guide, Memory,
+  community tally, charge meter, and fixed touch controls without adding a
+  shared event. The later user review is authoritative for the missed visual
+  defect: the left mobile boundary was still absent, so that observation did
+  not prove symmetric rails.
+- The revised boundary red run reproduced missing fixed rails at 286, 320, 375,
+  and 480 px. The green run passes with 12 px rails pinned to both viewport
+  edges, full player clearance at both contacts, and no added desktop rail.
+- Mobile readability, all 266 overlay checks, Chromium/WebKit resize checks,
+  Chromium runtime, lint, 153 tests, type-check, and build pass. The isolated
+  WebKit runtime repeats its existing synthetic movement-ratio flake
+  (`28.5 px` warm versus `48.3 px` post-respawn); its 16 resize/layout checks
+  pass, and the rail change does not touch movement.
 
 ## Worktree safety
 

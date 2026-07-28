@@ -2722,6 +2722,7 @@ export function GameApp() {
       {/* ── GAME VIEWPORT ── */}
       <section className="tower-wrap" aria-label="Fallstack tower">
         <div id="game-canvas" />
+        <div className="tower-side-rails" aria-hidden="true" />
 
         {/* Zone tag — top left overlay */}
         <div
