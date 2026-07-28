@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 
 const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
+const PLAYER_VISUAL_EDGE_CLEARANCE = 12;
 const MOBILE_BREAKPOINT = 600;
 const MIN_VISIBLE_RAIL_WIDTH = 10;
 const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
@@ -43,24 +44,37 @@ try {
     );
 
     const geometry = await page.evaluate(
-      ({ routeWidth, playableInset, mobileBreakpoint }) => {
+      ({
+        routeWidth,
+        playableInset,
+        mobileBreakpoint,
+        playerVisualEdgeClearance,
+      }) => {
         const scene = window.__fallstackFindScene();
         const bounds = scene.physics.world.bounds;
         const mobile = scene.viewportWidth() < mobileBreakpoint;
         const rail = document.querySelector('.tower-side-rails');
         const railRect = rail?.getBoundingClientRect();
         const railStyle = rail ? getComputedStyle(rail) : null;
-        const expectedLeft = mobile
+        const paintedLeft = mobile
           ? scene.currentRouteOffset + playableInset
           : 0;
-        const expectedRight = mobile
+        const paintedRight = mobile
           ? scene.currentRouteOffset + routeWidth - playableInset
           : scene.gameWidth();
+        const expectedLeft = mobile
+          ? paintedLeft + playerVisualEdgeClearance
+          : paintedLeft;
+        const expectedRight = mobile
+          ? paintedRight - playerVisualEdgeClearance
+          : paintedRight;
         return {
           mobile,
           gameWidth: scene.gameWidth(),
           viewportWidth: scene.viewportWidth(),
           routeOffset: scene.currentRouteOffset,
+          paintedLeft,
+          paintedRight,
           expectedLeft,
           expectedRight,
           physicsLeft: bounds.left,
@@ -86,6 +100,7 @@ try {
         routeWidth: ROUTE_WIDTH,
         playableInset: PLAYABLE_INSET,
         mobileBreakpoint: MOBILE_BREAKPOINT,
+        playerVisualEdgeClearance: PLAYER_VISUAL_EDGE_CLEARANCE,
       }
     );
 
@@ -99,31 +114,38 @@ try {
       geometry.expectedRight - geometry.playerHalfWidth - 1,
       900
     );
+    const visualContacts = geometry.mobile
+      ? {
+          left: await measureVisualContact(page, 'left'),
+          right: await measureVisualContact(page, 'right'),
+        }
+      : null;
 
     const result = {
       viewport,
       ...geometry,
       leftContact,
       rightContact,
+      visualContacts,
     };
     results.push(result);
     check(
       geometry.physicsLeft === geometry.expectedLeft,
-      `${viewport.width}px physics left matches the painted cavity`
+      `${viewport.width}px physics left preserves the character artwork inside the painted cavity`
     );
     check(
       geometry.physicsRight === geometry.expectedRight,
-      `${viewport.width}px physics right matches the painted cavity`
+      `${viewport.width}px physics right preserves the character artwork inside the painted cavity`
     );
     check(
       leftContact.minPlayerLeft >= geometry.expectedLeft - 0.1 &&
         leftContact.minPlayerLeft <= geometry.expectedLeft + 0.1,
-      `${viewport.width}px player cannot enter the left wall plane`
+      `${viewport.width}px player body keeps visual clearance from the left wall plane`
     );
     check(
       rightContact.maxPlayerRight <= geometry.expectedRight + 0.1 &&
         rightContact.maxPlayerRight >= geometry.expectedRight - 0.1,
-      `${viewport.width}px player cannot enter the right wall plane`
+      `${viewport.width}px player body keeps visual clearance from the right wall plane`
     );
     check(
       leftContact.minScreenLeft >= -0.1 &&
@@ -157,6 +179,19 @@ try {
               (geometry.rail?.borderRightWidth ?? Number.POSITIVE_INFINITY),
         `${viewport.width}px player stays fully inside both visible rails`
       );
+      check(
+        (visualContacts?.left.visualLeft ?? Number.NEGATIVE_INFINITY) >=
+          (visualContacts?.left.paintedLeftScreen ?? Number.POSITIVE_INFINITY) -
+            0.1,
+        `${viewport.width}px full falling artwork stays inside the left painted wall`
+      );
+      check(
+        (visualContacts?.right.visualRight ?? Number.POSITIVE_INFINITY) <=
+          (visualContacts?.right.paintedRightScreen ??
+            Number.NEGATIVE_INFINITY) +
+            0.1,
+        `${viewport.width}px full falling artwork stays inside the right painted wall`
+      );
     }
     await page.screenshot({
       path: path.join(outputDir, `world-bounds-${viewport.width}.png`),
@@ -169,6 +204,7 @@ try {
     routeWidth: ROUTE_WIDTH,
     playableInset: PLAYABLE_INSET,
     mobileBreakpoint: MOBILE_BREAKPOINT,
+    playerVisualEdgeClearance: PLAYER_VISUAL_EDGE_CLEARANCE,
     minimumVisibleRailWidth: MIN_VISIBLE_RAIL_WIDTH,
     results,
     failures,
@@ -223,6 +259,85 @@ async function driveContact(page, x, velocityX) {
         requestAnimationFrame(sample);
       }),
     { x, velocityX }
+  );
+}
+
+async function measureVisualContact(page, side) {
+  return page.evaluate(
+    async ({ side, playableInset, routeWidth }) => {
+      const scene = window.__fallstackFindScene();
+      const player = scene.player;
+      const body = player.body;
+      const bounds = scene.physics.world.bounds;
+      const canvas = document.querySelector('#game-canvas canvas');
+      const x =
+        side === 'left'
+          ? bounds.left + body.halfWidth
+          : bounds.right - body.halfWidth;
+
+      scene.playerCeremony = null;
+      scene.charging = false;
+      scene.chargeTime = 0;
+      scene.facing = side === 'left' ? -1 : 1;
+      player.body.reset(x, player.y);
+      player.body.setVelocity(0, 400);
+      scene.playerVisualKey = '';
+      scene.playerGraphics.setVisible(true);
+      scene.drawPlayer();
+      scene.snapCameraToPlayer();
+      scene.scene.pause();
+
+      const nextFrame = () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve))
+        );
+      const capturePixels = () => {
+        const copy = document.createElement('canvas');
+        copy.width = canvas.width;
+        copy.height = canvas.height;
+        const context = copy.getContext('2d', { willReadFrequently: true });
+        context.drawImage(canvas, 0, 0);
+        return context.getImageData(0, 0, copy.width, copy.height).data;
+      };
+
+      await nextFrame();
+      const visible = capturePixels();
+      scene.playerGraphics.setVisible(false);
+      await nextFrame();
+      const hidden = capturePixels();
+      scene.playerGraphics.setVisible(true);
+
+      let left = canvas.width;
+      let right = -1;
+      let changedPixels = 0;
+      for (let y = 0; y < canvas.height; y += 1) {
+        for (let x = 0; x < canvas.width; x += 1) {
+          const index = (y * canvas.width + x) * 4;
+          const difference =
+            Math.abs(visible[index] - hidden[index]) +
+            Math.abs(visible[index + 1] - hidden[index + 1]) +
+            Math.abs(visible[index + 2] - hidden[index + 2]) +
+            Math.abs(visible[index + 3] - hidden[index + 3]);
+          if (difference <= 8) continue;
+          left = Math.min(left, x);
+          right = Math.max(right, x);
+          changedPixels += 1;
+        }
+      }
+
+      const pixelToViewport = scene.viewportWidth() / canvas.width;
+      const cameraScrollX = scene.cameras.main.scrollX;
+      return {
+        changedPixels,
+        visualLeft: left * pixelToViewport,
+        visualRight: (right + 1) * pixelToViewport,
+        paintedLeftScreen:
+          scene.currentRouteOffset + playableInset - cameraScrollX,
+        paintedRightScreen:
+          scene.currentRouteOffset + routeWidth - playableInset - cameraScrollX,
+      };
+    },
+    { side, playableInset: PLAYABLE_INSET, routeWidth: ROUTE_WIDTH }
   );
 }
 

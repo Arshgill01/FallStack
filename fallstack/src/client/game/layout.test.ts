@@ -2,10 +2,7 @@
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  generateDailyTower,
-  WORLD_WIDTH,
-} from '../../shared/game/tower.js';
+import { generateDailyTower, WORLD_WIDTH } from '../../shared/game/tower.js';
 import {
   CAMERA_AIR_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
@@ -13,6 +10,7 @@ import {
   cameraScrollXForPlayer,
   computeGameDimensions,
   gameWorldWidth,
+  PLAYER_VISUAL_EDGE_CLEARANCE,
   physicsBoundsForViewport,
   playableRouteBoundsForGameWidth,
   renderScaleForDevicePixelRatio,
@@ -76,14 +74,14 @@ void test('physical route bounds follow the reliquary wall planes', () => {
 
 void test('mobile gets contained route walls while desktop keeps its outer edge', () => {
   assert.deepEqual(physicsBoundsForViewport(375, WORLD_WIDTH), {
-    left: 34,
-    right: 446,
-    width: 412,
+    left: 34 + PLAYER_VISUAL_EDGE_CLEARANCE,
+    right: 446 - PLAYER_VISUAL_EDGE_CLEARANCE,
+    width: 412 - PLAYER_VISUAL_EDGE_CLEARANCE * 2,
   });
   assert.deepEqual(physicsBoundsForViewport(480, WORLD_WIDTH), {
-    left: 34,
-    right: 446,
-    width: 412,
+    left: 34 + PLAYER_VISUAL_EDGE_CLEARANCE,
+    right: 446 - PLAYER_VISUAL_EDGE_CLEARANCE,
+    width: 412 - PLAYER_VISUAL_EDGE_CLEARANCE * 2,
   });
   assert.deepEqual(physicsBoundsForViewport(758, 758), {
     left: 0,

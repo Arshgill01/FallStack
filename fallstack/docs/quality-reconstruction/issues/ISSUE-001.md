@@ -7,7 +7,7 @@
 - Ownership: Pure viewport layout and Phaser physics bounds
 - Baseline: `7c4e06f`
 - Reproducibility: 100% at 286, 320, 375, and 480 px
-- Current state: Fixed, browser-regressed, and hosted-verified
+- Current state: Fixed and browser-regressed; corrected host verification pending
 
 ## Observation
 
@@ -23,41 +23,54 @@ visual report. Hosted `0.0.26` still centred a narrow mobile camera inside the
 and right walls remained near x=`5…34` and x=`447…475`. Neither true wall was
 visible; an internal right-side line only resembled one.
 
+The second correction in `0.0.27` added fixed rails and verified only the
+player's 20 px transparent collision body. Option A's rendered Washi Pilgrim
+is wider: the falling pose occupied x=`24…63` when its body stopped at the
+left x=`34` wall plane. Ten pixels of visible character therefore entered the
+painted wall even though the body-only assertion passed. Safari's Reddit
+Mobile modal was using the narrow mobile layout; Retina-scaled screenshot
+dimensions had initially obscured that fact.
+
 ## Ranked hypotheses and probes
 
-1. Mobile inherited the full logical route bounds. Compare world bounds with
-   the painted cavity.
-2. Camera following exposed an off-frame gutter. Drive both contacts while
-   sampling player and screen coordinates.
-3. Opening ledges near the wall caused the report. Verify generated platform
-   bounds separately before changing route geometry.
+1. The Reddit modal bypassed the mobile breakpoint. Safari reproduction ruled
+   this out: the modal used the narrow layout and rendered both fixed rails.
+2. The test measured the collision body instead of the wider character art.
+   A visible-versus-hidden canvas pixel diff reproduced ten pixels inside the
+   left wall in the falling pose.
+3. Camera following or opening ledges caused the report. Existing contact and
+   route probes remained correct once the visual envelope was measured.
 
 ## Regression seam
 
 `npm run qa:world-bounds` drives both walls at 286×650, 320×568, 375×812,
 480×800, and 1280×800. It now asserts physical bounds, player contact, camera
 visibility, fixed mobile rails on both viewport edges, player clearance inside
-those rails, and the unchanged desktop edge.
+those rails, the actual falling-pose canvas pixels at both painted wall planes,
+and the unchanged desktop edge.
 
 ## Fix and result
 
-Below the existing 600 px mobile breakpoint, physics uses the reliquary's
-34 px inset while tower generation keeps its 480 px coordinate system.
+Below the existing 600 px mobile breakpoint, physics now uses the reliquary's
+34 px inset plus 12 px of character-art clearance while tower generation keeps
+its 480 px coordinate system.
 The reopened visual defect is fixed separately with two 12 px viewport-fixed
 reliquary rails. They remain visible while the world camera pans; the player
-stays fully inside them at both physical contacts. Desktop/fullscreen still
+stays fully inside them at both physical contacts. The worst falling pose now
+occupies x=`36…77` beside the x=`34` left wall, and the symmetric right-side
+pixel assertion passes at 286, 320, 375, and 480 px. Desktop/fullscreen still
 uses the full expanded world and receives no added rail. The
 [red report](../evidence/gate-1-baseline/world-bounds-red/world-bounds.json)
 contains twelve mobile failures; the
 [green report](../evidence/world-bounds-fix/world-bounds.json) passes all four
 original viewports. Commit `4e11711` is the physical-bound correction; the
-viewport-rail correction is commit `57d6f2f`. Deployed WebView `0.0.27` then
-showed both 12 px rails at 360 px and retained both sides in a 286 px
-narrow-frame check.
+viewport-rail correction is commit `57d6f2f`. WebView `0.0.27` proved that
+both rails rendered, but its body-only signoff did not prove that the complete
+character silhouette stayed inside them.
 
 ## Residual risk
 
-The browser probe validates responsive geometry, not a physical-device bezel or
-browser toolbar. Rotation continuity is covered separately by ISSUE-017. The
-authenticated hosted observation is complete, but physical-device testing
-remains separate evidence.
+The browser probe validates responsive geometry and Phaser canvas pixels, not a
+physical-device bezel or browser toolbar. Rotation continuity is covered
+separately by ISSUE-017. Corrected authenticated host verification and
+physical-device testing remain separate evidence.

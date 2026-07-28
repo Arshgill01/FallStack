@@ -17,6 +17,7 @@ const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
 const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
 export const ROUTE_PLAYABLE_INSET = 34;
+export const PLAYER_VISUAL_EDGE_CLEARANCE = 12;
 export const CAMERA_AIR_LOOKAHEAD = 64;
 export const MOBILE_GAME_BREAKPOINT = 600;
 
@@ -71,8 +72,12 @@ export function physicsBoundsForViewport(
   viewportWidth: number,
   gameWidth: number
 ): HorizontalBounds {
-  if (viewportWidth < MOBILE_GAME_BREAKPOINT)
-    return playableRouteBoundsForGameWidth(gameWidth);
+  if (viewportWidth < MOBILE_GAME_BREAKPOINT) {
+    const routeBounds = playableRouteBoundsForGameWidth(gameWidth);
+    const left = routeBounds.left + PLAYER_VISUAL_EDGE_CLEARANCE;
+    const right = routeBounds.right - PLAYER_VISUAL_EDGE_CLEARANCE;
+    return { left, right, width: right - left };
+  }
   const width = gameWorldWidth(gameWidth);
   return { left: 0, right: width, width };
 }
