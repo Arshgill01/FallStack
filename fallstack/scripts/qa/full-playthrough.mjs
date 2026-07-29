@@ -69,6 +69,7 @@ await page.addInitScript(() => {
 const startedAt = Date.now();
 const landings = [];
 const failures = [];
+const framingFailures = [];
 let completed = false;
 
 try {
@@ -166,6 +167,19 @@ try {
     const afterSupport = currentSupport(allPlatforms, platformById, after);
     const afterIndex = routeIndex.get(afterSupport?.id);
     const advanced = afterIndex !== undefined && afterIndex >= targetIndex;
+    const nextPlatform =
+      advanced && afterIndex !== undefined ? route[afterIndex + 1] : null;
+    const framing = nextPlatform
+      ? await readLandingFraming(page, nextPlatform)
+      : null;
+    if (framing && framing.nextPlatformTop < framing.safeTop) {
+      framingFailures.push({
+        jump: totalJumps,
+        landedOn: afterSupport?.id ?? null,
+        nextPlatform: nextPlatform.id,
+        ...framing,
+      });
+    }
 
     landings.push({
       jump: totalJumps,
@@ -181,6 +195,7 @@ try {
       after: compactState(after),
       afterSupportId: afterSupport?.id ?? null,
       advanced,
+      framing,
     });
 
     if (after.summitSent) {
@@ -240,11 +255,13 @@ try {
     totalJumps,
     landingCount: landings.filter((landing) => landing.advanced).length,
     failureCount: failures.length,
+    framingFailureCount: framingFailures.length,
     finalState: compactState(finalState),
     introFall,
     resumeCheck,
     events,
     failures,
+    framingFailures,
     landings,
     consoleEntries,
     pageErrors,
@@ -256,12 +273,17 @@ try {
     totalJumps,
     landingCount: report.landingCount,
     failureCount: failures.length,
+    framingFailureCount: framingFailures.length,
     finalPlatform: finalState.lastPlatformId,
     currentZone: finalState.currentZone,
     elapsedMs: report.elapsedMs,
   }, null, 2)}\n`);
 
-  if (!completed && options.requireSummit) process.exitCode = 1;
+  if (
+    (!completed && options.requireSummit) ||
+    framingFailures.length > 0
+  )
+    process.exitCode = 1;
 } catch (error) {
   const events = await page.evaluate(() => window.__fallstackQaEvents ?? []).catch(() => []);
   await writeFile(
@@ -272,6 +294,7 @@ try {
       elapsedMs: Date.now() - startedAt,
       events,
       failures,
+      framingFailures,
       landings,
       consoleEntries,
       pageErrors,
@@ -578,6 +601,53 @@ async function readScene(page, includePlatforms) {
       ...(withPlatforms ? { platforms: scene.towerPlatforms } : {}),
     };
   }, includePlatforms);
+}
+
+async function readLandingFraming(page, nextPlatform) {
+  return page.evaluate((platform) => {
+    function findGame() {
+      const root = document.querySelector('#root');
+      if (!root) return null;
+      const containerKey = Object.keys(root).find((key) =>
+        key.startsWith('__reactContainer$')
+      );
+      const container = containerKey ? root[containerKey] : null;
+      const stack = [container?.current ?? container].filter(Boolean);
+      const seen = new Set();
+      while (stack.length) {
+        const fiber = stack.pop();
+        if (!fiber || seen.has(fiber)) continue;
+        seen.add(fiber);
+        let hook = fiber.memoizedState;
+        while (hook) {
+          const candidate = hook.memoizedState?.current;
+          if (candidate?.scene?.keys?.FallstackScene) return candidate;
+          hook = hook.next;
+        }
+        if (fiber.child) stack.push(fiber.child);
+        if (fiber.sibling) stack.push(fiber.sibling);
+      }
+      return null;
+    }
+
+    const game = findGame();
+    const scene = game?.scene?.keys?.FallstackScene;
+    const canvas = document.querySelector('#game-canvas canvas');
+    const zoneTag = document.querySelector('.zone-tag');
+    if (!scene || !canvas || !zoneTag)
+      throw new Error('Landing framing geometry was unavailable');
+    const canvasRect = canvas.getBoundingClientRect();
+    const zoneTagRect = zoneTag.getBoundingClientRect();
+    const scaleY = canvasRect.height / scene.scale.height;
+    const layout = scene.layoutPlatform(platform);
+    return {
+      safeTop: zoneTagRect.bottom + 12,
+      nextPlatformTop:
+        canvasRect.top +
+        (layout.y - scene.cameras.main.scrollY) * scaleY,
+      cameraScrollY: scene.cameras.main.scrollY,
+    };
+  }, nextPlatform);
 }
 
 function currentSupport(platforms, platformById, state) {

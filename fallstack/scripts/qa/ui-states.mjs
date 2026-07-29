@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import {
   createBoardIdentity,
   createBoardSnapshot,
@@ -22,6 +22,12 @@ import {
 } from '../../dist/types/shared/game/mutation-receipts.js';
 
 const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
+const browserName =
+  process.env.FALLSTACK_QA_BROWSER === 'webkit' ? 'webkit' : 'chromium';
+const qaScope =
+  process.env.FALLSTACK_QA_SCOPE === 'late-receipt'
+    ? 'late-receipt'
+    : 'full';
 const sourceCommit = process.env.FALLSTACK_QA_SOURCE_COMMIT ?? 'unknown';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/quality-reconstruction/evidence/ui-state-matrix'
@@ -98,22 +104,29 @@ const receipts = {
 };
 
 await mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({
+const browser = await (browserName === 'webkit' ? webkit : chromium).launch({
   headless: true,
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 });
 
 try {
-  for (const viewport of viewports) {
-    await inspectLoading(viewport);
-    await inspectFallback(viewport);
-    await inspectContrastsAndFocus(viewport);
-    for (const state of responseStates) {
-      await inspectResponseState(viewport, state);
+  if (qaScope === 'late-receipt') {
+    for (const viewport of viewports.filter((entry) => entry.mobile))
+      await inspectLateReceiptSuppression(viewport);
+  } else {
+    for (const viewport of viewports) {
+      await inspectLoading(viewport);
+      await inspectFallback(viewport);
+      await inspectContrastsAndFocus(viewport);
+      for (const state of responseStates) {
+        await inspectResponseState(viewport, state);
+      }
+      if (!viewport.mobile) continue;
+      await inspectReceiptPlacement(viewport);
+      await inspectLateReceiptSuppression(viewport);
     }
+    await inspectSplash();
   }
-
-  await inspectSplash();
 
   const failures = checks.filter((entry) => !entry.pass);
   const unexpectedConsoleErrors = consoleErrors.filter(
@@ -144,7 +157,8 @@ try {
       commit: sourceCommit,
       url: baseUrl,
       environment: 'current Mac',
-      browser: 'Chromium',
+      browser: browserName,
+      scope: qaScope,
       session: 'mocked shared server plus explicit local fallback',
     },
     viewports,
@@ -285,6 +299,223 @@ async function inspectResponseState(viewport, state) {
   await context.close();
 }
 
+async function inspectReceiptPlacement(viewport) {
+  const { page, context } = await openPage(viewport, 'capped');
+  await waitForReady(page);
+  const zoneIds = await page.evaluate(() => {
+    const scene = window.__fallstackFindScene();
+    return Array.from(
+      new Set([
+        'orbital_scrapyard',
+        ...scene.towerPlatforms
+          .filter((platform) => platform.id.includes('checkpoint'))
+          .map((platform) => platform.zoneId),
+      ])
+    );
+  });
+  const samples = [];
+
+  for (const [index, zoneId] of zoneIds.entries()) {
+    await page.evaluate((nextZoneId) => {
+      window.__fallstackFindScene().restoreCheckpoint(nextZoneId);
+    }, zoneId);
+    await page.waitForTimeout(100);
+    await page.evaluate(
+      ({ attemptIndex, respawnZoneId }) => {
+        const scene = window.__fallstackFindScene();
+        window.dispatchEvent(
+          new CustomEvent('fallstack:fall', {
+            detail: {
+              attemptId: `qa-placement-${attemptIndex}`,
+              respawnZoneId,
+              fallX: scene.player.x,
+              fallY: scene.player.y + 500,
+              highestY: scene.player.y,
+              lastPlatformId: scene.lastPlatformId,
+              lastHelperArtifactId: null,
+              wallBonkPlatformId: null,
+              launchChargePercent: 35,
+              launchDirection: 1,
+            },
+          })
+        );
+      },
+      { attemptIndex: index, respawnZoneId: zoneId }
+    );
+    await page.waitForFunction(() => {
+      const banner = document.querySelector('.mutation-banner');
+      return (
+        banner?.classList.contains('visible') &&
+        banner.classList.contains('receipt') &&
+        banner.textContent?.toLowerCase().includes('capped')
+      );
+    });
+    const sample = await page.evaluate((currentZoneId) => {
+      const scene = window.__fallstackFindScene();
+      const canvas = document.querySelector('#game-canvas canvas');
+      const banner = document.querySelector('.mutation-banner.visible');
+      if (!canvas || !banner)
+        throw new Error('Receipt placement geometry was unavailable');
+      const canvasRect = canvas.getBoundingClientRect();
+      const bannerRect = banner.getBoundingClientRect();
+      const scaleX = canvasRect.width / scene.scale.width;
+      const scaleY = canvasRect.height / scene.scale.height;
+      const route = scene.towerPlatforms
+        .filter((platform) => platform.kind !== 'obstacle')
+        .sort((left, right) => right.y - left.y);
+      const nextPlatform = route.find(
+        (platform) =>
+          platform.y < scene.player.y - scene.player.body.halfHeight
+      );
+      const target = nextPlatform
+        ? scene.layoutPlatform(nextPlatform)
+        : null;
+      const playerRect = {
+        left:
+          canvasRect.left +
+          (scene.player.x -
+            scene.player.body.halfWidth -
+            scene.cameras.main.scrollX) *
+            scaleX,
+        right:
+          canvasRect.left +
+          (scene.player.x +
+            scene.player.body.halfWidth -
+            scene.cameras.main.scrollX) *
+            scaleX,
+        top:
+          canvasRect.top +
+          (scene.player.y -
+            scene.player.body.halfHeight -
+            scene.cameras.main.scrollY) *
+            scaleY,
+        bottom:
+          canvasRect.top +
+          (scene.player.y +
+            scene.player.body.halfHeight -
+            scene.cameras.main.scrollY) *
+            scaleY,
+      };
+      const targetRect = target
+        ? {
+            left:
+              canvasRect.left +
+              (target.x - scene.cameras.main.scrollX) * scaleX,
+            right:
+              canvasRect.left +
+              (target.x + target.width - scene.cameras.main.scrollX) * scaleX,
+            top:
+              canvasRect.top +
+              (target.y - scene.cameras.main.scrollY) * scaleY,
+            bottom:
+              canvasRect.top +
+              (target.y + target.height - scene.cameras.main.scrollY) * scaleY,
+          }
+        : null;
+      const overlaps = (left, right) =>
+        Math.max(
+          0,
+          Math.min(left.right, right.right) -
+            Math.max(left.left, right.left)
+        ) *
+        Math.max(
+          0,
+          Math.min(left.bottom, right.bottom) -
+            Math.max(left.top, right.top)
+        );
+      return {
+        zoneId: currentZoneId,
+        placement: banner.classList.contains('place-bottom')
+          ? 'bottom'
+          : 'top',
+        playerOverlap: overlaps(bannerRect, playerRect),
+        targetOverlap: targetRect ? overlaps(bannerRect, targetRect) : 0,
+        banner: rectOf(bannerRect),
+        player: playerRect,
+        target: targetRect,
+      };
+
+      function rectOf(rect) {
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+        };
+      }
+    }, zoneId);
+    samples.push(sample);
+    check(
+      sample.playerOverlap === 0,
+      `${label(viewport)} production receipt avoids the player at ${zoneId}`,
+      sample,
+      'zero overlap'
+    );
+    check(
+      sample.targetOverlap === 0,
+      `${label(viewport)} production receipt avoids the next platform at ${zoneId}`,
+      sample,
+      'zero overlap'
+    );
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent('fallstack:charge', { detail: { percent: 1 } })
+      );
+    });
+    await page.waitForFunction(
+      () =>
+        !document
+          .querySelector('.mutation-banner')
+          ?.classList.contains('visible')
+    );
+  }
+
+  observations.push({ viewport, state: 'receipt-placement', samples });
+  await context.close();
+}
+
+async function inspectLateReceiptSuppression(viewport) {
+  const { page, context } = await openPage(viewport, 'capped', null, 400);
+  await waitForReady(page);
+  await page.evaluate(() => {
+    const scene = window.__fallstackFindScene();
+    window.dispatchEvent(
+      new CustomEvent('fallstack:fall', {
+        detail: {
+          attemptId: 'qa-late-receipt',
+          respawnZoneId: 'orbital_scrapyard',
+          fallX: scene.player.x,
+          fallY: scene.player.y + 500,
+          highestY: scene.player.y,
+          lastPlatformId: scene.lastPlatformId,
+          lastHelperArtifactId: null,
+          wallBonkPlatformId: null,
+          launchChargePercent: 35,
+          launchDirection: 1,
+        },
+      })
+    );
+  });
+  await page.waitForTimeout(80);
+  await page.getByRole('button', { name: 'Move right' }).click();
+  await page.waitForTimeout(450);
+  const receiptVisible = await page
+    .locator('.mutation-banner.receipt.visible')
+    .count();
+  check(
+    receiptVisible === 0,
+    `${label(viewport)} late fall receipt does not re-cover resumed gameplay`,
+    receiptVisible,
+    0
+  );
+  observations.push({
+    viewport,
+    state: 'late-receipt',
+    receiptVisible: receiptVisible > 0,
+  });
+  await context.close();
+}
+
 async function inspectContrastsAndFocus(viewport) {
   const { page, context } = await openPage(viewport, 'contrast');
   await waitForReady(page);
@@ -316,6 +547,7 @@ async function inspectContrastsAndFocus(viewport) {
 
   await page.getByRole('button', { name: 'Guide' }).click();
   await page.waitForSelector('.guide-card');
+  await page.waitForTimeout(100);
   const guideContrasts = await contrastPairs(page, [
     ['Guide kicker', '.guide-kicker', '.guide-card'],
     ['Guide title', '.guide-card h2', '.guide-card'],
@@ -410,13 +642,19 @@ async function inspectSplash() {
   await context.close();
 }
 
-async function openPage(viewport, state, initGate = null) {
+async function openPage(
+  viewport,
+  state,
+  initGate = null,
+  recordFallDelayMs = 0
+) {
   const context = await browser.newContext({
     viewport,
     hasTouch: viewport.mobile,
     isMobile: viewport.mobile,
   });
   await installContrastProbe(context);
+  await installSceneProbe(context);
   await context.route('**/api/**', async (route) => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
@@ -450,6 +688,10 @@ async function openPage(viewport, state, initGate = null) {
       });
     }
     if (pathname === '/api/record-fall') {
+      if (recordFallDelayMs > 0)
+        await new Promise((resolve) =>
+          setTimeout(resolve, recordFallDelayMs)
+        );
       const receipt = receipts[state];
       assert.ok(receipt);
       if (state === 'accepted' || state === 'capped') {
@@ -776,6 +1018,36 @@ async function installContrastProbe(context) {
           (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
           (Math.min(foregroundLuminance, backgroundLuminance) + 0.05),
       };
+    };
+  });
+}
+
+async function installSceneProbe(context) {
+  await context.addInitScript(() => {
+    window.__fallstackFindScene = () => {
+      const root = document.querySelector('#root');
+      if (!root) return null;
+      const containerKey = Object.keys(root).find((key) =>
+        key.startsWith('__reactContainer$')
+      );
+      const container = containerKey ? root[containerKey] : null;
+      const stack = [container?.current ?? container].filter(Boolean);
+      const seen = new Set();
+      while (stack.length) {
+        const fiber = stack.pop();
+        if (!fiber || seen.has(fiber)) continue;
+        seen.add(fiber);
+        let hook = fiber.memoizedState;
+        while (hook) {
+          const candidate = hook.memoizedState?.current;
+          const scene = candidate?.scene?.keys?.FallstackScene;
+          if (scene) return scene;
+          hook = hook.next;
+        }
+        if (fiber.child) stack.push(fiber.child);
+        if (fiber.sibling) stack.push(fiber.sibling);
+      }
+      return null;
     };
   });
 }

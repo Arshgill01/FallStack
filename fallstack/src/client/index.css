@@ -518,20 +518,25 @@ button:disabled {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 10px;
-    background: #4a2130;
+    width: 20px;
   }
 
   .tower-side-rails::before {
     left: 0;
+    background: linear-gradient(90deg, #321724 0 38%, #4a2130 38% 100%);
     border-right: 3px solid #d9b45c;
-    box-shadow: inset -4px 0 0 rgba(24, 13, 24, 0.38);
+    box-shadow:
+      inset 4px 0 0 rgba(106, 49, 61, 0.34),
+      inset -4px 0 0 rgba(24, 13, 24, 0.38);
   }
 
   .tower-side-rails::after {
     right: 0;
+    background: linear-gradient(270deg, #321724 0 38%, #4a2130 38% 100%);
     border-left: 3px solid #d9b45c;
-    box-shadow: inset 4px 0 0 rgba(24, 13, 24, 0.38);
+    box-shadow:
+      inset -4px 0 0 rgba(106, 49, 61, 0.34),
+      inset 4px 0 0 rgba(24, 13, 24, 0.38);
   }
 }
 

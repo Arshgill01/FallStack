@@ -8,7 +8,7 @@ const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
 const PLAYER_VISUAL_EDGE_CLEARANCE = 12;
 const MOBILE_BREAKPOINT = 600;
-const MIN_VISIBLE_PILLAR_DEPTH = 24;
+const MIN_VISIBLE_PILLAR_DEPTH = 34;
 const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/world-bounds'
@@ -208,6 +208,20 @@ try {
             Number.NEGATIVE_INFINITY) +
             0.1,
         `${viewport.width}px full falling artwork stays inside the right painted wall`
+      );
+      check(
+        (visualContacts?.left.visualLeft ?? Number.NEGATIVE_INFINITY) >=
+          (geometry.rail?.borderLeftWidth ?? Number.POSITIVE_INFINITY) +
+            (geometry.rail?.beforeWidth ?? 0),
+        `${viewport.width}px full falling artwork stays clear of the visible left pillar`
+      );
+      check(
+        (visualContacts?.right.visualRight ?? Number.POSITIVE_INFINITY) <=
+          geometry.viewportWidth -
+            ((geometry.rail?.borderRightWidth ??
+              Number.NEGATIVE_INFINITY) +
+              (geometry.rail?.afterWidth ?? 0)),
+        `${viewport.width}px full falling artwork stays clear of the visible right pillar`
       );
     }
     await page.screenshot({

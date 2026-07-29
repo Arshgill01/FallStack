@@ -1868,6 +1868,7 @@ export function GameApp() {
   const guideDialogRef = useRef<HTMLDivElement | null>(null);
   const previousGuideFocusRef = useRef<HTMLElement | null>(null);
   const chargeRef = useRef(0);
+  const activeFallFeedbackAttemptRef = useRef<string | null>(null);
   const mutationTimerRef = useRef<number | null>(null);
   const mutationBannerRef = useRef<HTMLDivElement | null>(null);
   const remoteBeatRef = useRef<HTMLDivElement | null>(null);
@@ -2577,10 +2578,19 @@ export function GameApp() {
         const data = await parseApiResponse<RecordFallResponse>(res);
         applyBoardSnapshot(data.snapshot);
         sceneRef.current?.showMutationReceipt(data.receipt, data.snapshot);
-        showMutation(data.message, data.receipt);
+        if (activeFallFeedbackAttemptRef.current === detail.attemptId)
+          showMutation(data.message, data.receipt);
         if (data.counted) soundRef.current?.play('mutation');
       } catch (error) {
         console.error('record-fall failed', error);
+        if (activeFallFeedbackAttemptRef.current !== detail.attemptId) {
+          if (
+            error instanceof ApiRequestError &&
+            error.data.snapshot
+          )
+            applyBoardSnapshot(error.data.snapshot);
+          return;
+        }
         if (showApiErrorReceipt(error)) return;
         showMutation('Your fall was noticed. The tower did not answer.');
       }
@@ -2708,9 +2718,13 @@ export function GameApp() {
   );
 
   useEffect(() => {
+    const dismissFallFeedback = () => {
+      activeFallFeedbackAttemptRef.current = null;
+      setMutationVisible(false);
+    };
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
-      if (detail.percent > 0) setMutationVisible(false);
+      if (detail.percent > 0) dismissFallFeedback();
       if (detail.percent <= 0) soundRef.current?.stopCharge();
       if (chargeRef.current === 0 && detail.percent > 0)
         soundRef.current?.play('charge-start');
@@ -2735,6 +2749,7 @@ export function GameApp() {
     };
     const onLaunch = (event: Event) => {
       const detail = (event as CustomEvent<LaunchEventDetail>).detail;
+      dismissFallFeedback();
       soundRef.current?.play('launch', {
         chargePercent: detail.chargePercent,
       });
@@ -2742,6 +2757,7 @@ export function GameApp() {
     const onFall = (event: Event) => {
       const detail = (event as CustomEvent<FallEventDetail>).detail;
       resetSharedInput();
+      activeFallFeedbackAttemptRef.current = detail.attemptId;
       void postFall(detail);
     };
     const onClear = (event: Event) => {
@@ -2756,6 +2772,17 @@ export function GameApp() {
       const detail = (event as CustomEvent<ZoneEventDetail>).detail;
       setCurrentZoneId(detail.zoneId);
     };
+    const onGameplayPointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.touch-controls')
+      )
+        dismissFallFeedback();
+    };
+    const onGameplayKeyDown = (event: KeyboardEvent) => {
+      if (['ArrowLeft', 'ArrowRight', 'Space'].includes(event.code))
+        dismissFallFeedback();
+    };
     window.addEventListener('fallstack:charge', onCharge);
     window.addEventListener('fallstack:land', onLand);
     window.addEventListener('fallstack:wall-bonk', onWallBonk);
@@ -2765,6 +2792,8 @@ export function GameApp() {
     window.addEventListener('fallstack:clear', onClear);
     window.addEventListener('fallstack:summit', onSummit);
     window.addEventListener('fallstack:zone', onZone);
+    window.addEventListener('pointerdown', onGameplayPointerDown);
+    window.addEventListener('keydown', onGameplayKeyDown);
     return () => {
       window.removeEventListener('fallstack:charge', onCharge);
       window.removeEventListener('fallstack:land', onLand);
@@ -2778,6 +2807,8 @@ export function GameApp() {
       window.removeEventListener('fallstack:clear', onClear);
       window.removeEventListener('fallstack:summit', onSummit);
       window.removeEventListener('fallstack:zone', onZone);
+      window.removeEventListener('pointerdown', onGameplayPointerDown);
+      window.removeEventListener('keydown', onGameplayKeyDown);
     };
   }, [postClear, postFall, postSummit]);
 
