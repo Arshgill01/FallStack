@@ -2257,6 +2257,8 @@ button:disabled {
   }
 
   .zone-tag {
+    left: 34px;
+    max-width: calc(100% - 68px);
     font-size: 16px;
   }
 
