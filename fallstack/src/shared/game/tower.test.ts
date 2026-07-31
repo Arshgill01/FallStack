@@ -8,6 +8,7 @@ import {
   jumpArcForHeldMs,
   launchVelocityForChargeRatio,
   MOVEMENT_TUNING,
+  PLAYER_COLLISION_SIZE,
 } from './movement.js';
 import {
   BOTTOM_ZONE_ID,
@@ -25,6 +26,7 @@ import {
   ZONES,
   generateDailyTower,
   isRoutePlatform,
+  minimumDirectCenterOffset,
   nextZoneId,
   validateTower,
   zoneForY,
@@ -76,6 +78,7 @@ void test('movement tuning supports generated tower reachability', () => {
   assert.ok(
     MOVEMENT_TUNING.wallBounceVelocityX > MOVEMENT_TUNING.wallBounceMinVelocityX
   );
+  assert.deepEqual(PLAYER_COLLISION_SIZE, { width: 20, height: 28 });
   assert.equal(chargePowerForHeldMs(0), 0);
   assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs), 1);
   assert.equal(chargePowerForHeldMs(MOVEMENT_TUNING.chargeMs * 2), 1);
@@ -167,11 +170,64 @@ void test('daily tower generation avoids near-vertical ledge traps', () => {
       if (from.id.includes('checkpoint') || to.id.includes('checkpoint'))
         continue;
       assert.ok(
-        horizontalGap(from, to) >= MOVEMENT_TUNING.generatedMinHorizontalStep,
-        `${tower.seed}: ${from.id} to ${to.id}`
+        horizontalGap(from, to) >= minimumDirectCenterOffset(from, to),
+        `${tower.seed}: ${from.id} to ${to.id} cannot absorb a tap jump`
       );
     }
   }
+});
+
+void test('the July 31 route does not repeat the short-jump overshoot trap', () => {
+  const oldMinimumOffset = minimumDirectCenterOffset(
+    { width: 99, y: 12_628 },
+    { width: 107, y: 12_526 }
+  );
+  assert.ok(
+    oldMinimumOffset > 71,
+    'the validator must reject the exact hosted v0.0.32 ledge spacing'
+  );
+
+  const tower = generateDailyTower('fallstack-2026-07-31');
+  const from = tower.platforms.find(
+    (platform) => platform.id === 'ledge-nebula_vault-42'
+  );
+  const to = tower.platforms.find(
+    (platform) => platform.id === 'ledge-nebula_vault-43'
+  );
+
+  assert.ok(from);
+  assert.ok(to);
+  assert.ok(
+    horizontalGap(from, to) >= minimumDirectCenterOffset(from, to),
+    `${from.id} to ${to.id} still forces a minimum-charge overshoot`
+  );
+  assert.equal(validateTower(tower), true);
+});
+
+void test('the July 31 route reaches its first checkpoint without a forced boundary fall', () => {
+  const tower = generateDailyTower('fallstack-2026-07-31');
+  const route = tower.platforms
+    .filter(isRoutePlatform)
+    .sort((a, b) => b.y - a.y);
+  const checkpointIndex = route.findIndex(
+    (platform) => platform.id === `${BOTTOM_ZONE_ID}-checkpoint`
+  );
+  const checkpoint = route[checkpointIndex];
+  const approach = route[checkpointIndex - 1];
+
+  assert.ok(checkpoint);
+  assert.ok(approach);
+  assert.equal(approach.id, 'ledge-orbital_scrapyard-11');
+  assert.equal(approach.y - checkpoint.y, 181);
+  assert.equal(
+    tower.platforms.some(
+      (platform) =>
+        platform.id === 'ledge-orbital_scrapyard-12' &&
+        platform.y === checkpoint.y + 96
+    ),
+    false
+  );
+  assert.equal(validateTower(tower), true);
 });
 
 void test('current first checkpoint does not respawn over empty air', () => {

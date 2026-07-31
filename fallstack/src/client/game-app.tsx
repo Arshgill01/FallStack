@@ -31,6 +31,7 @@ import {
   chargeRatioForHeldMs,
   launchVelocityForChargeRatio,
   MOVEMENT_TUNING,
+  PLAYER_COLLISION_SIZE,
 } from '../shared/game/movement.js';
 import {
   fallZoneForRespawn,
@@ -370,8 +371,8 @@ class FallstackScene extends Phaser.Scene {
     this.player = this.add.rectangle(
       this.layoutX(START_POS.x),
       START_POS.y,
-      20,
-      28,
+      PLAYER_COLLISION_SIZE.width,
+      PLAYER_COLLISION_SIZE.height,
       0xffffff,
       0
     ) as Phaser.GameObjects.Rectangle & {
@@ -379,7 +380,10 @@ class FallstackScene extends Phaser.Scene {
     };
     this.player.setDepth(4);
     this.physics.add.existing(this.player);
-    this.player.body.setSize(20, 28);
+    this.player.body.setSize(
+      PLAYER_COLLISION_SIZE.width,
+      PLAYER_COLLISION_SIZE.height
+    );
     this.player.body.setCollideWorldBounds(true);
     this.player.body.setDragX(MOVEMENT_TUNING.groundDragX);
     this.player.body.setMaxVelocity(
@@ -1022,6 +1026,7 @@ class FallstackScene extends Phaser.Scene {
         typeof platformId === 'string' && platformId.includes('checkpoint'),
       playerVelocityY: player.body.velocity.y,
       playerBottom: player.body.bottom,
+      playerPreviousBottom: player.body.prev.y + player.body.height,
       platformTop: platform.body.top,
     });
   }

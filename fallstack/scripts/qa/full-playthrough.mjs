@@ -855,12 +855,32 @@ function chargeDuration(current, target, attempt, wallBounce) {
           (target.x + target.width / 2)
       )
     : 110;
-  const base = verticalGap > 118 ? 90 : verticalGap > 108 ? 62 : 42;
   const retryBoost =
     verticalGap > 100 || horizontalGap > 110
       ? Math.min(90, Math.max(0, attempt - 1) * 18)
       : 0;
-  const adaptive = base + retryBoost;
+  const gravity = 1850;
+  const minimumVelocityY = 650;
+  const maximumVelocityY = 1050;
+  const minimumChargeRatio = 0.42;
+  const chargeMs = 600;
+  const requiredVelocityY = Math.sqrt(
+    2 * gravity * Math.max(0, verticalGap + 4)
+  );
+  const requiredRatio = clamp(
+    (requiredVelocityY - minimumVelocityY) /
+      (maximumVelocityY - minimumVelocityY),
+    minimumChargeRatio,
+    1
+  );
+  const verticalCharge =
+    ((requiredRatio - minimumChargeRatio) / (1 - minimumChargeRatio)) *
+    chargeMs;
+  // A key/touch release near a Phaser frame boundary can be observed one
+  // simulation tick earlier than wall-clock time. Leave one frame of headroom
+  // whenever the target is above the minimum-charge apex.
+  const simulationFrameMargin = verticalCharge > 0 ? 24 : 0;
+  const adaptive = verticalCharge + simulationFrameMargin + retryBoost;
   return wallBounce ? Math.max(120, adaptive) : adaptive;
 }
 
@@ -1260,6 +1280,8 @@ function parseArgs(args) {
   const input = values.get('input') ?? (mobile ? 'touch' : 'keyboard');
   if (!['keyboard', 'touch'].includes(input))
     throw new Error(`Unsupported input mode: ${input}`);
+  if (values.get('intro-fall') === 'true' && !mobile)
+    throw new Error('--intro-fall requires --mobile true');
   return {
     url: values.get('url') ?? 'http://127.0.0.1:8080/game.html',
     output: values.get('output') ?? 'docs/qa/final-pass/full-playthrough',

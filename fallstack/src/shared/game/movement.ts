@@ -24,6 +24,11 @@ export const MOVEMENT_TUNING = {
   topConnectorY: 360,
 } as const;
 
+export const PLAYER_COLLISION_SIZE = {
+  width: 20,
+  height: 28,
+} as const;
+
 export function chargePowerForHeldMs(heldMs: number): number {
   return clamp(heldMs / MOVEMENT_TUNING.chargeMs, 0, 1);
 }
