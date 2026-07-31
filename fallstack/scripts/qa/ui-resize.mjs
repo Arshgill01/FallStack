@@ -27,6 +27,7 @@ const browser = await browserType.launch({
 try {
   const context = await browser.newContext({
     viewport: { width: 375, height: 812 },
+    deviceScaleFactor: 3,
     hasTouch: true,
     isMobile: true,
   });
@@ -36,13 +37,48 @@ try {
     waitUntil: 'domcontentloaded',
   });
   await waitForReady(page);
+  await installResizeProbe(page);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.waitForTimeout(300);
+  const sameSizeResizeProbe = await readResizeProbe(page);
+  observations.sameSizeResizeProbe = sameSizeResizeProbe;
+  check(
+    sameSizeResizeProbe.scaleResizes === 0 &&
+      sameSizeResizeProbe.platformRebuilds === 0 &&
+      sameSizeResizeProbe.cameraSnaps === 0,
+    'repeated same-size resize signals do no game layout work',
+    sameSizeResizeProbe,
+    {
+      scaleResizes: 0,
+      platformRebuilds: 0,
+      cameraSnaps: 0,
+    }
+  );
 
   const portrait = await readLayout(page);
+  await resetResizeProbe(page);
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
   const landscape = await readLayout(page);
+  const orientationResizeProbe = await readResizeProbe(page);
   observations.portrait = portrait;
   observations.landscape = landscape;
+  observations.orientationResizeProbe = orientationResizeProbe;
+  check(
+    orientationResizeProbe.scaleResizes === 1 &&
+      orientationResizeProbe.platformRebuilds === 1 &&
+      orientationResizeProbe.cameraSnaps === 1,
+    'one orientation change performs one scale, route, and camera layout pass',
+    orientationResizeProbe,
+    {
+      scaleResizes: 1,
+      platformRebuilds: 1,
+      cameraSnaps: 1,
+    }
+  );
   check(
     landscape.coarsePointer && landscape.touchControls.display === 'flex',
     'coarse-pointer landscape keeps fixed touch controls',
@@ -292,21 +328,21 @@ async function readLayout(page) {
     const camera = scene.cameras.main;
     const canvas = document.querySelector('#game-canvas canvas');
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleX = canvasRect.width / scene.scale.width;
-    const scaleY = canvasRect.height / scene.scale.height;
+    const scaleX = canvasRect.width / camera.worldView.width;
+    const scaleY = canvasRect.height / camera.worldView.height;
     const playerRect = {
       left:
         canvasRect.left +
-        (player.x - player.body.halfWidth - camera.scrollX) * scaleX,
+        (player.x - player.body.halfWidth - camera.worldView.x) * scaleX,
       right:
         canvasRect.left +
-        (player.x + player.body.halfWidth - camera.scrollX) * scaleX,
+        (player.x + player.body.halfWidth - camera.worldView.x) * scaleX,
       top:
         canvasRect.top +
-        (player.y - player.body.halfHeight - camera.scrollY) * scaleY,
+        (player.y - player.body.halfHeight - camera.worldView.y) * scaleY,
       bottom:
         canvasRect.top +
-        (player.y + player.body.halfHeight - camera.scrollY) * scaleY,
+        (player.y + player.body.halfHeight - camera.worldView.y) * scaleY,
     };
     const controls = document.querySelector('.touch-controls');
     return {
@@ -398,8 +434,21 @@ async function moveWithVisibleTouchControl(context, page, name) {
   if (name === 'webkit') {
     await page.mouse.move(point.x, point.y);
     await page.mouse.down();
-    await page.waitForTimeout(360);
-    await page.mouse.up();
+    try {
+      await page.waitForFunction(
+        (beforeX) => {
+          const scene = window.__fallstackFindScene?.();
+          return (
+            scene &&
+            scene.player.x - scene.currentRouteOffset - beforeX > 10
+          );
+        },
+        before.scene.logicalX,
+        { timeout: 3_000 }
+      );
+    } finally {
+      await page.mouse.up();
+    }
   } else {
     const cdp = await context.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent', {
@@ -434,18 +483,69 @@ async function waitForReady(page) {
   await page.waitForTimeout(250);
 }
 
+async function installResizeProbe(page) {
+  await page.evaluate(() => {
+    const scene = window.__fallstackFindScene();
+    const probe = {
+      scaleResizes: 0,
+      platformRebuilds: 0,
+      cameraSnaps: 0,
+      cameraSnapSources: [],
+    };
+    const scaleResize = scene.scale.resize.bind(scene.scale);
+    const rebuildPlatformBodies =
+      scene.rebuildPlatformBodies.bind(scene);
+    const snapCameraToPlayer = scene.snapCameraToPlayer.bind(scene);
+    scene.scale.resize = (...args) => {
+      probe.scaleResizes += 1;
+      return scaleResize(...args);
+    };
+    scene.rebuildPlatformBodies = (...args) => {
+      probe.platformRebuilds += 1;
+      return rebuildPlatformBodies(...args);
+    };
+    scene.snapCameraToPlayer = (...args) => {
+      probe.cameraSnaps += 1;
+      probe.cameraSnapSources.push(
+        new Error().stack?.split('\n').slice(2, 5) ?? []
+      );
+      return snapCameraToPlayer(...args);
+    };
+    window.__fallstackResizeProbe = probe;
+  });
+}
+
+async function resetResizeProbe(page) {
+  await page.evaluate(() => {
+    window.__fallstackResizeProbe.scaleResizes = 0;
+    window.__fallstackResizeProbe.platformRebuilds = 0;
+    window.__fallstackResizeProbe.cameraSnaps = 0;
+    window.__fallstackResizeProbe.cameraSnapSources = [];
+  });
+}
+
+async function readResizeProbe(page) {
+  return page.evaluate(() => ({ ...window.__fallstackResizeProbe }));
+}
+
 async function waitForResize(page, width, height) {
   await page.waitForFunction(
     ({ width, height }) => {
       const scene = window.__fallstackFindScene?.();
+      const canvas = document.querySelector('#game-canvas canvas');
+      const canvasRect = canvas?.getBoundingClientRect();
       return (
         innerWidth === width &&
         innerHeight === height &&
         scene?.scale.width > 0 &&
-        scene?.scale.height > 0
+        scene?.scale.height > 0 &&
+        canvasRect &&
+        Math.abs(scene.viewportWidth() - canvasRect.width) <= 1 &&
+        Math.abs(scene.viewportHeight() - canvasRect.height) <= 1
       );
     },
-    { width, height }
+    { width, height },
+    { timeout: 10_000 }
   );
   await page.waitForTimeout(300);
 }

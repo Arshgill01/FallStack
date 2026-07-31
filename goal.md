@@ -1,5 +1,182 @@
 # Fallstack Quality Reconstruction Goal
 
+## Active stabilization mission — 2026-07-30
+
+This section supersedes the historical environment and release assumptions
+below for the current pass. The broader reconstruction record remains useful
+design history.
+
+### Objective
+
+Starting from the latest remote `master` (`9856a71`, fast-forwarded on the
+Linux VM), make the version installed in `r/fallstack_dev` match the behavior
+that is verified locally and remove the defects still visible to the user:
+
+- on mobile, the climber can travel or land off the visible left side while the
+  right side behaves like a solid readable boundary;
+- resize, camera, or render work visibly shifts the scene and produces a
+  skipped-frame/wobble impression;
+- fall, mutation, power-up, checkpoint, and related notices occupy the same
+  upper-center route area and obscure the climber or intended landing;
+- commits and local QA report fixes that are not perceptible in the installed
+  Reddit build, creating a stale-version or wrong-artifact failure;
+- avoidable layout/render work makes startup and play less smooth than the
+  current implementation should be.
+
+### Anti-false-positive rules
+
+- A scene probe, teleport, paused simulation, mocked overlay, or direct mutation
+  of Phaser internals is diagnostic evidence only. It cannot sign off a player
+  flow by itself.
+- A scripted summit route does not prove mobile controls, camera continuity,
+  real-time visibility, host sizing, or notice readability unless it uses the
+  same input and timing path a player uses.
+- Browser emulation is run both as a bare game page and through the actual
+  Reddit/Devvit host. Passing the bare page does not imply the hosted iframe or
+  expanded modal passes.
+- CSS/geometry assertions support screenshots and recorded interaction; they do
+  not overrule a visible defect.
+- The installed Devvit version, hosted WebView version, local Git SHA, and a
+  visible build marker must be matched before claiming the tested code is live.
+- A release is not ready for the user's iPhone until the exact installed
+  revision is refreshed and re-tested after installation.
+
+### Target matrix
+
+| Surface | Viewport or mode | Required input |
+| --- | --- | --- |
+| Local production build | 320×568 touch | real pointer/touch hold and release |
+| Local production build | 375×812 touch | real pointer/touch hold and release |
+| Local production build | 390×844 iPhone-like touch | real pointer/touch hold and release |
+| Local production build | 1280×800 desktop | keyboard |
+| Local production build | 1920×1080 fullscreen | keyboard |
+| Reddit playtest host | desktop browser in Mobile mode | actual expanded Devvit WebView |
+| Reddit playtest host | desktop and fullscreen | actual expanded Devvit WebView |
+| Installed Reddit version | narrowest observed hosted game frame | actual controls and live camera |
+
+Chromium is required for fast iteration. WebKit is required for the final
+mobile regression because it is the closest browser engine available on this
+VM to iPhone Safari. The user's physical iPhone remains the final hardware
+confirmation.
+
+### Execution loop
+
+1. **Identify the exact artifact.** Record Git SHA, built asset hashes, Devvit
+   upload/install version, hosted WebView version, viewport, browser, and cache
+   state.
+2. **Observe with real input.** Reproduce each report at normal gameplay timing
+   without pausing or teleporting the scene. Capture trace/video, screenshots,
+   console/page errors, frame timing, player/camera coordinates, and visible
+   bounds.
+3. **Challenge the existing QA.** Run the prior regression, list every mocked or
+   bypassed production seam, and demonstrate whether it can pass while the
+   reported symptom remains.
+4. **Minimize and lock.** Add the narrowest failing regression at the actual
+   seam. Keep diagnostic scene access separate from release-signoff paths.
+5. **Patch the root cause.** Preserve desktop behavior and Fallstack's compact
+   reliquary grammar. Avoid unrelated redesign or speculative abstraction.
+6. **Re-run real play.** Exercise left/right extremes, multiple real jumps and
+   falls, respawn, notice states, checkpoint, resize/orientation, background
+   return, and at least one extended climb at every affected viewport.
+7. **Measure smoothness.** Compare layout/resize counts, Phaser scale/camera
+   changes, long frames, remounts, timers/listeners, and asset/bundle cost.
+8. **Validate broadly.** Run targeted QA, type-check, lint, tests, production
+   build, Chromium/WebKit runtime checks, and a complete production climb.
+9. **Commit a verified checkpoint.** Record evidence and exact commands. Never
+   mix generated throwaway evidence or unrelated user work.
+10. **Install and prove freshness.** Upload a new immutable Devvit version,
+    install it in `r/fallstack_dev`, read the installed version back, open the
+    authenticated Reddit surface, verify the hosted asset/version marker, and
+    repeat the affected real-input tests.
+11. **Notify.** Send the user a phone alert only after the installed build is
+    ready for a physical iPhone test.
+
+If a pass produces new evidence, repeat from step 2. Stop only for a genuine
+credential/platform blocker or after every release criterion below is met.
+
+### Checklist
+
+- [x] Fast-forward the clean VM worktree to current `origin/master`.
+- [x] Preserve the historical reconstruction evidence and create this current
+      VM-specific execution contract.
+- [x] Audit commits `4e11711` through `9856a71` and the existing bounds,
+      overlay, resize, playthrough, and host QA for bypassed production seams.
+- [x] Match the baseline local SHA against the currently installed Devvit
+      version (`9856a71` locally; app `0.0.31` in `r/fallstack_dev`) and add a
+      runtime build marker so the next installation is exact rather than
+      inferred.
+- [x] Reproduce the left-side offscreen behavior with normal touch input in the
+      hosted-equivalent mobile frame.
+- [x] Reproduce and characterize the render/camera wobble with frame and resize
+      evidence.
+- [x] Reproduce obstructive fall feedback from a real fall and retain the
+      injected state matrix only as secondary geometry coverage.
+- [x] Add regressions that fail on the confirmed root causes, including DPR
+      projection, redundant resize work, live notice overlap, and solid helper
+      corridor clearance.
+- [x] Fix the mobile boundary/camera/layout behavior without regressing desktop
+      or fullscreen.
+- [x] Fix notice placement/lifetime/stacking so the current jump remains
+      readable.
+- [x] Remove only measured avoidable render/layout work and verify smoother
+      frame behavior.
+- [x] Pass targeted Chromium and WebKit real-input checks at 320×568, 375×812,
+      390×844, 1280×800, and 1920×1080.
+- [x] Pass fall → respawn → post-respawn input → checkpoint → summit on the
+      production build.
+- [x] Pass `npm run type-check`, `npm run lint`, `npm test`, `npm run build`,
+      and `git diff --check`.
+- [ ] Commit and push focused verified changes.
+- [ ] Upload/install a new immutable Devvit version and verify the exact hosted
+      build in authenticated Reddit mobile, desktop, and fullscreen modes.
+- [ ] Send the ready-for-iPhone notification with the installed version.
+
+### Verified local evidence
+
+- Chromium genuine-touch summit passes at 320×568, 375×812, and 390×844 with
+  DPR 3. The driver records trusted `pointerType: touch` events and never writes
+  movement state directly.
+- Chromium keyboard summit passes at 1280×800 and 1920×1080. WebKit completes
+  the same DPR-3 mobile route with real keyboard events; isolated WebKit
+  trusted-touch, fall/respawn, resize, and reduced-motion probes also pass.
+- Across those runs, the complete climber never leaves the real camera
+  `worldView`; required landings remain framed; live fall/checkpoint notices do
+  not overlap the climber, next landing, or touch buttons; and no unexplained
+  camera jump occurs.
+- The overlay matrix passes 2,792 checks, state/receipt matrices pass 192 checks
+  per engine, resize/orientation passes 18 checks per engine, accessibility
+  passes 48 checks per engine, and all tested world-bound widths pass.
+- Chromium frame timing is median/p95 16.7/16.7 ms with zero frames over 34 ms.
+  Software WebKit is median/p95 17/21 ms, with no normal-motion frame over
+  34 ms.
+- The current helper placement survives a 5,000-seed/180,000-site corpus, and
+  all 158 project tests pass.
+- Authenticated Reddit interaction in a desktop browser remains environment
+  blocked: the VM's saved Reddit web session is expired and Reddit returns its
+  network-security login page. Devvit CLI authentication remains valid, so
+  immutable upload/install/readback and hosted asset identity are still
+  required before the phone handoff. The user's signed-in physical iPhone is
+  the final hosted interaction check.
+
+### Release criteria
+
+The installed build is ready only when all of the following are true:
+
+- the full rendered climber stays visibly inside two intentional readable
+  boundaries throughout real left/right movement, charge, flight, landing,
+  fall, respawn, resize, and every biome on mobile;
+- no reachable landing can carry the player into invisible playable space;
+- normal gameplay and host resize do not remount the scene, reset the camera,
+  or create a visible one-frame layout jump;
+- temporary feedback never obscures the climber, the next required landing, or
+  fixed touch controls, and repeated events do not form a blocking stack;
+- local and hosted tests identify the same Git/build marker and installed
+  Devvit version;
+- the broad project checks and real-input browser matrix pass with reviewed
+  visual evidence;
+- remaining hardware-only uncertainty is limited to the user's final physical
+  iPhone confirmation and is stated explicitly.
+
 ## Goal
 
 Turn the current Fallstack build into a visibly, audibly, and mechanically

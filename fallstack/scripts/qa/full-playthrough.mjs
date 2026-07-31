@@ -17,6 +17,7 @@ const browser = await browserType.launch({
           '--no-sandbox',
           '--disable-dev-shm-usage',
           '--disable-web-security',
+          '--mute-audio',
           ...(options.canvas ? ['--disable-webgl'] : []),
         ],
       }
@@ -24,12 +25,19 @@ const browser = await browserType.launch({
 });
 const context = await browser.newContext({
   viewport: { width: options.width, height: options.height },
+  deviceScaleFactor: options.deviceScaleFactor,
+  isMobile: options.mobile,
+  hasTouch: options.mobile,
   reducedMotion: options.reducedMotion ? 'reduce' : 'no-preference',
   recordVideo: options.video
     ? { dir: path.join(outputDir, 'videos'), size: { width: options.width, height: options.height } }
     : undefined,
 });
 const page = await context.newPage();
+const pointerDriver =
+  options.input === 'touch'
+    ? await createPointerDriver(context, page, options.browser)
+    : null;
 const consoleEntries = [];
 const pageErrors = [];
 page.on('console', (message) => {
@@ -45,7 +53,22 @@ if (options.resumeZone) {
 }
 
 await page.addInitScript(() => {
+  localStorage.setItem('fallstack:gameplay-muted', 'true');
+  localStorage.setItem('fallstack:music-muted', 'true');
   window.__fallstackQaEvents = [];
+  window.__fallstackQaPointerTypes = [];
+  window.addEventListener('pointerdown', (event) => {
+    window.__fallstackQaPointerTypes.push(event.pointerType);
+  });
+  window.__fallstackQaVisibility = {
+    samples: 0,
+    failures: [],
+    cameraJumps: [],
+    noticeSamples: 0,
+    noticeFailures: [],
+    slowFrames: 0,
+    maxFrameMs: 0,
+  };
   for (const name of [
     'ready',
     'charge',
@@ -64,6 +87,200 @@ await page.addInitScript(() => {
       });
     });
   }
+
+  let lastFrameAt = performance.now();
+  let lastCamera = null;
+  const findScene = () => {
+    const cached = window.__fallstackQaScene;
+    if (cached?.sys && !cached.sys.isDestroyed?.()) return cached;
+    const root = document.querySelector('#root');
+    if (!root) return null;
+    const containerKey = Object.keys(root).find((key) =>
+      key.startsWith('__reactContainer$')
+    );
+    const container = containerKey ? root[containerKey] : null;
+    const stack = [container?.current ?? container].filter(Boolean);
+    const seen = new Set();
+    while (stack.length) {
+      const fiber = stack.pop();
+      if (!fiber || seen.has(fiber)) continue;
+      seen.add(fiber);
+      let hook = fiber.memoizedState;
+      while (hook) {
+        const candidate = hook.memoizedState?.current;
+        const scene = candidate?.scene?.keys?.FallstackScene;
+        if (scene) {
+          window.__fallstackQaScene = scene;
+          return scene;
+        }
+        hook = hook.next;
+      }
+      if (fiber.child) stack.push(fiber.child);
+      if (fiber.sibling) stack.push(fiber.sibling);
+    }
+    return null;
+  };
+  const sample = (now) => {
+    const metrics = window.__fallstackQaVisibility;
+    const frameMs = now - lastFrameAt;
+    lastFrameAt = now;
+    metrics.samples += 1;
+    metrics.maxFrameMs = Math.max(metrics.maxFrameMs, frameMs);
+    if (frameMs > 34) metrics.slowFrames += 1;
+
+    const scene = findScene();
+    const player = scene?.player;
+    const camera = scene?.cameras?.main;
+    if (scene?.controlsReady && player?.body && camera?.worldView) {
+      const worldView = camera.worldView;
+      const visualHalfWidth = player.body.halfWidth + 12;
+      const left = player.x - visualHalfWidth;
+      const right = player.x + visualHalfWidth;
+      if (
+        left < worldView.x - 0.5 ||
+        right > worldView.right + 0.5
+      ) {
+        if (metrics.failures.length < 100) {
+          metrics.failures.push({
+            at: now,
+            attemptId: scene.currentAttemptId,
+            playerX: player.x,
+            playerVisual: [left, right],
+            worldView: [worldView.x, worldView.right],
+            cameraScrollX: camera.scrollX,
+            renderScale: scene.renderScale,
+          });
+        }
+      }
+
+      const notices = Array.from(
+        document.querySelectorAll(
+          '.mutation-banner.visible, .checkpoint-banner.visible, .remote-beat'
+        )
+      ).filter((element) => {
+        const style = getComputedStyle(element);
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity) > 0
+        );
+      });
+      if (notices.length > 0) {
+        const canvas = document.querySelector('#game-canvas canvas');
+        const canvasRect = canvas?.getBoundingClientRect();
+        if (canvasRect && worldView.width > 0 && worldView.height > 0) {
+          metrics.noticeSamples += 1;
+          const scaleX = canvasRect.width / worldView.width;
+          const scaleY = canvasRect.height / worldView.height;
+          const playerRect = {
+            left:
+              canvasRect.left +
+              (player.x - player.body.halfWidth - worldView.x) *
+                scaleX,
+            right:
+              canvasRect.left +
+              (player.x + player.body.halfWidth - worldView.x) *
+                scaleX,
+            top:
+              canvasRect.top +
+              (player.y - player.body.halfHeight - worldView.y) *
+                scaleY,
+            bottom:
+              canvasRect.top +
+              (player.y + player.body.halfHeight - worldView.y) *
+                scaleY,
+          };
+          const nextLanding = scene.nextRoutePlatform?.();
+          const layoutLanding = nextLanding
+            ? scene.layoutPlatform(nextLanding)
+            : null;
+          const targetRect = layoutLanding
+            ? {
+                left:
+                  canvasRect.left +
+                  (layoutLanding.x - worldView.x) * scaleX,
+                right:
+                  canvasRect.left +
+                  (layoutLanding.x +
+                    layoutLanding.width -
+                    worldView.x) *
+                    scaleX,
+                top:
+                  canvasRect.top +
+                  (layoutLanding.y - worldView.y) * scaleY,
+                bottom:
+                  canvasRect.top +
+                  (layoutLanding.y +
+                    layoutLanding.height -
+                    worldView.y) *
+                    scaleY,
+              }
+            : null;
+          const controls = Array.from(
+            document.querySelectorAll('.touch-controls button')
+          ).map((element) => rectOf(element.getBoundingClientRect()));
+
+          for (const notice of notices) {
+            const noticeRect = rectOf(notice.getBoundingClientRect());
+            const playerOverlap = overlapArea(noticeRect, playerRect);
+            const targetOverlap = targetRect
+              ? overlapArea(noticeRect, targetRect)
+              : 0;
+            const controlOverlap = controls.reduce(
+              (total, control) =>
+                total + overlapArea(noticeRect, control),
+              0
+            );
+            if (
+              (playerOverlap > 0 ||
+                targetOverlap > 0 ||
+                controlOverlap > 0) &&
+              metrics.noticeFailures.length < 100
+            ) {
+              metrics.noticeFailures.push({
+                at: now,
+                attemptId: scene.currentAttemptId,
+                className: notice.className,
+                text: notice.textContent?.trim().slice(0, 160) ?? '',
+                playerOverlap,
+                targetOverlap,
+                controlOverlap,
+                noticeRect,
+                playerRect,
+                targetRect,
+              });
+            }
+          }
+        }
+      }
+
+      if (lastCamera && frameMs < 80) {
+        const jumpX = Math.abs(worldView.x - lastCamera.x);
+        const jumpY = Math.abs(worldView.y - lastCamera.y);
+        if ((jumpX > 72 || jumpY > 72) && metrics.cameraJumps.length < 100) {
+          metrics.cameraJumps.push({
+            at: now,
+            delta: [jumpX, jumpY],
+            from: [lastCamera.x, lastCamera.y],
+            to: [worldView.x, worldView.y],
+            player: [player.x, player.y],
+          });
+        }
+      }
+      lastCamera = { x: worldView.x, y: worldView.y };
+    }
+    requestAnimationFrame(sample);
+  };
+  const rectOf = (rect) => ({
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    bottom: rect.bottom,
+  });
+  const overlapArea = (left, right) =>
+    Math.max(0, Math.min(left.right, right.right) - Math.max(left.left, right.left)) *
+    Math.max(0, Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top));
+  requestAnimationFrame(sample);
 });
 
 const startedAt = Date.now();
@@ -134,7 +351,7 @@ try {
     }
 
     const current = currentSupport(allPlatforms, platformById, state);
-    const landedIndex = routeIndex.get(current?.id);
+    const landedIndex = routeProgressIndex(route, routeIndex, current);
     if (landedIndex !== undefined && landedIndex + 1 !== targetIndex) {
       targetIndex = landedIndex + 1;
     }
@@ -163,9 +380,12 @@ try {
       approachAttempt,
       blockers
     );
-    const after = await readScene(page, false);
+    const after =
+      result.outcome === 'fall'
+        ? await waitForGrounded(page, 8_000)
+        : await readScene(page, false);
     const afterSupport = currentSupport(allPlatforms, platformById, after);
-    const afterIndex = routeIndex.get(afterSupport?.id);
+    const afterIndex = routeProgressIndex(route, routeIndex, afterSupport);
     const advanced = afterIndex !== undefined && afterIndex >= targetIndex;
     const nextPlatform =
       advanced && afterIndex !== undefined ? route[afterIndex + 1] : null;
@@ -224,7 +444,11 @@ try {
         attemptAtTarget,
         state: compactState(after),
       });
-      const recoveredIndex = routeIndex.get(afterSupport?.id);
+      const recoveredIndex = routeProgressIndex(
+        route,
+        routeIndex,
+        afterSupport
+      );
       targetIndex = Math.max(1, (recoveredIndex ?? checkpointRouteIndex(route, after.y)) + 1);
     } else if (
       afterIndex !== undefined &&
@@ -241,12 +465,42 @@ try {
   await capture(page, outputDir, completed ? '99-summit' : '99-incomplete');
 
   const events = await page.evaluate(() => window.__fallstackQaEvents ?? []);
+  const pointerTypes = await page.evaluate(
+    () => window.__fallstackQaPointerTypes ?? []
+  );
+  const renderer = await page.evaluate(() => {
+    const canvas = document.querySelector('#game-canvas canvas');
+    if (!(canvas instanceof HTMLCanvasElement)) return 'unavailable';
+    if (canvas.getContext('2d')) return 'canvas2d';
+    if (canvas.getContext('webgl2')) return 'webgl2';
+    if (canvas.getContext('webgl')) return 'webgl';
+    return 'unknown';
+  });
+  const visibility = await page.evaluate(
+    () => window.__fallstackQaVisibility ?? null
+  );
+  const fallEvents = events.filter((event) => event.name === 'fall');
+  const routeFallEventCount = Math.max(
+    0,
+    fallEvents.length - (introFall ? 1 : 0)
+  );
+  const unexpectedCameraJumps = (visibility?.cameraJumps ?? []).filter(
+    (jump) =>
+      !fallEvents.some(
+        (event) => jump.at >= event.at && jump.at - event.at <= 250
+      )
+  );
   const report = {
     generatedAt: new Date().toISOString(),
+    buildId: await page.evaluate(() => window.fallstackBuildId ?? null),
     url: options.url,
     browser: options.browser,
     viewport: { width: options.width, height: options.height },
-    renderer: options.canvas ? 'canvas-for-mechanical-replay' : 'default',
+    deviceScaleFactor: options.deviceScaleFactor,
+    mobile: options.mobile,
+    input: options.input,
+    renderer,
+    webglDisabledAtLaunch: options.canvas,
     reducedMotion: options.reducedMotion,
     requestedResumeZone: options.resumeZone,
     elapsedMs: Date.now() - startedAt,
@@ -255,11 +509,18 @@ try {
     totalJumps,
     landingCount: landings.filter((landing) => landing.advanced).length,
     failureCount: failures.length,
+    fallEventCount: fallEvents.length,
+    routeFallEventCount,
     framingFailureCount: framingFailures.length,
+    unexpectedCameraJumpCount: unexpectedCameraJumps.length,
     finalState: compactState(finalState),
     introFall,
     resumeCheck,
     events,
+    pointerTypes: [...new Set(pointerTypes)],
+    pointerDownCount: pointerTypes.length,
+    visibility,
+    unexpectedCameraJumps,
     failures,
     framingFailures,
     landings,
@@ -273,7 +534,11 @@ try {
     totalJumps,
     landingCount: report.landingCount,
     failureCount: failures.length,
+    routeFallEventCount,
     framingFailureCount: framingFailures.length,
+    visibilityFailureCount: visibility?.failures?.length ?? 0,
+    noticeFailureCount: visibility?.noticeFailures?.length ?? 0,
+    unexpectedCameraJumpCount: unexpectedCameraJumps.length,
     finalPlatform: finalState.lastPlatformId,
     currentZone: finalState.currentZone,
     elapsedMs: report.elapsedMs,
@@ -281,7 +546,10 @@ try {
 
   if (
     (!completed && options.requireSummit) ||
-    framingFailures.length > 0
+    framingFailures.length > 0 ||
+    (visibility?.failures?.length ?? 0) > 0 ||
+    (visibility?.noticeFailures?.length ?? 0) > 0 ||
+    unexpectedCameraJumps.length > 0
   )
     process.exitCode = 1;
 } catch (error) {
@@ -324,23 +592,44 @@ async function performJump(page, current, target, attempt, blockers) {
 
   const launchArrow = direction > 0 ? 'ArrowRight' : 'ArrowLeft';
   const heldMs = chargeDuration(current, target, attempt, wallBounce);
-  await page.keyboard.down(launchArrow);
-  await page.keyboard.down('Space');
-  await page.waitForTimeout(Math.min(20, heldMs));
-  await page.keyboard.up(launchArrow);
-  await page.waitForTimeout(Math.max(0, heldMs - 20));
-  await page.keyboard.up('Space');
-  const launchState = await waitForAirborne(page, 750);
+  const launchCount = await eventCount(page, 'launch');
+  const landCount = await eventCount(page, 'land');
+  const chargeCount = await eventCount(page, 'charge');
+  if (options.input === 'touch') {
+    await faceControl(page, launchArrow);
+    const chargePressedAt = performance.now();
+    await controlDown(page, 'Space');
+    await waitForEventCount(page, 'charge', chargeCount + 1, 1_500);
+    await page.waitForTimeout(
+      Math.max(0, heldMs - (performance.now() - chargePressedAt))
+    );
+    await controlUp(page, 'Space');
+  } else {
+    const chargePressedAt = performance.now();
+    await controlDown(page, launchArrow);
+    await controlDown(page, 'Space');
+    await waitForEventCount(page, 'charge', chargeCount + 1, 1_500);
+    await controlUp(page, launchArrow);
+    await page.waitForTimeout(
+      Math.max(0, heldMs - (performance.now() - chargePressedAt))
+    );
+    await controlUp(page, 'Space');
+  }
+  await waitForEventCount(page, 'launch', launchCount + 1, 2_000);
+  const launchState = await readScene(page, false);
 
   let outcome = 'airborne';
   let peakY = before.y;
   let frames = 0;
   let activeArrow = null;
   let bounced = false;
+  let observedAirborne = !launchState.grounded;
+  const trace = [];
   const started = performance.now();
 
-  while (performance.now() - started < 4_000) {
+  while (performance.now() - started < 6_000) {
     const state = await readScene(page, false);
+    if (!state.grounded) observedAirborne = true;
     peakY = Math.min(peakY, state.y);
     if (state.summitSent) {
       outcome = 'summit';
@@ -350,7 +639,11 @@ async function performJump(page, current, target, attempt, blockers) {
       outcome = 'fall';
       break;
     }
-    if (frames > 2 && state.grounded) {
+    const landedAfterLaunch = state.landCount > landCount;
+    if (
+      (observedAirborne && state.grounded) ||
+      landedAfterLaunch
+    ) {
       outcome = state.lastPlatformId === target.id ? 'target' : 'landed';
       break;
     }
@@ -359,15 +652,31 @@ async function performJump(page, current, target, attempt, blockers) {
     const requestedArrow = wallBounce && !bounced
       ? launchArrow
       : flightCorrection(state, target, direction);
-    if (requestedArrow !== activeArrow) {
-      if (activeArrow) await page.keyboard.up(activeArrow);
-      if (requestedArrow) await page.keyboard.down(requestedArrow);
-      activeArrow = requestedArrow;
+    if (trace.length < 80) {
+      trace.push({
+        x: round(state.x),
+        y: round(state.y),
+        vx: round(state.vx),
+        vy: round(state.vy),
+        grounded: state.grounded,
+        requestedArrow,
+      });
+    }
+    if (options.input === 'touch' && options.browser === 'webkit') {
+      if (requestedArrow)
+        await pulseControlForFrame(page, requestedArrow);
+      else await page.waitForTimeout(20);
+    } else {
+      if (requestedArrow !== activeArrow) {
+        if (activeArrow) await controlUp(page, activeArrow);
+        if (requestedArrow) await controlDown(page, requestedArrow);
+        activeArrow = requestedArrow;
+      }
+      await page.waitForTimeout(16);
     }
     frames += 1;
-    await page.waitForTimeout(16);
   }
-  if (activeArrow) await page.keyboard.up(activeArrow);
+  if (activeArrow) await controlUp(page, activeArrow);
   await releaseControls(page);
   if (outcome === 'airborne') outcome = 'timeout';
   return {
@@ -380,50 +689,52 @@ async function performJump(page, current, target, attempt, blockers) {
     blockerIds: blockers.map((blocker) => blocker.id),
     setupState: compactState(setupState),
     launchState: compactState(launchState),
+    trace,
   };
 }
 
 async function performIntroFall(page) {
   const before = await readScene(page, false);
-  await page.keyboard.down('ArrowRight');
-  await page.keyboard.down('Space');
-  await page.waitForTimeout(46);
-  await page.keyboard.up('Space');
-  await page.waitForTimeout(620);
-  await page.keyboard.up('ArrowRight');
-
+  const initial = await readScene(page, true);
+  const start = initial.platforms.find((platform) => platform.id === 'start');
+  if (!start) throw new Error('Opening platform was unavailable');
+  await positionOnSupport(page, start, start.x + 16);
+  await controlDown(page, 'ArrowLeft');
   const fell = await page
     .waitForFunction(
-      (attemptId) => {
-        const events = window.__fallstackQaEvents ?? [];
-        return events.some(
-          (event) =>
-            event.name === 'fall' && event.detail?.attemptId === attemptId
-        );
-      },
-      before.attemptId,
-      { timeout: 5_500 }
-    )
-    .then(() => true)
-    .catch(() => false);
-
-  if (!fell) {
-    await page.keyboard.down('ArrowRight');
-    await page.waitForTimeout(1_300);
-    await page.keyboard.up('ArrowRight');
-    await page.waitForFunction(
       (attemptId) =>
         (window.__fallstackQaEvents ?? []).some(
           (event) =>
             event.name === 'fall' && event.detail?.attemptId === attemptId
         ),
       before.attemptId,
-      { timeout: 5_500 }
+      { timeout: 7_000 }
+    )
+    .then(() => true)
+    .catch(() => false);
+  await controlUp(page, 'ArrowLeft');
+  if (!fell)
+    throw new Error(
+      'Walking off the opening ledge did not produce the expected fall'
     );
-  }
 
   const settled = await waitForGrounded(page, 8_000);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(300);
+  const noticeBeforeInput = await visibleGameplayNotices(page);
+  await tapControl(page, 'ArrowRight', 24);
+  const noticesDismissed = await page
+    .waitForFunction(
+      () =>
+        !document.querySelector(
+          '.mutation-banner.visible, .checkpoint-banner.visible, .remote-beat'
+        ),
+      null,
+      { timeout: 750 }
+    )
+    .then(() => true)
+    .catch(() => false);
+  if (noticeBeforeInput.length > 0 && !noticesDismissed)
+    throw new Error('Fall feedback remained over gameplay after input resumed');
   const after = await readScene(page, false);
   const fallEvents = await page.evaluate(
     (initialAttemptId) =>
@@ -444,6 +755,8 @@ async function performIntroFall(page) {
     respawnAttemptId: after.attemptId,
     settled: compactState(settled),
     after: compactState(after),
+    noticeBeforeInput,
+    noticesDismissed,
   };
 }
 
@@ -479,16 +792,20 @@ async function positionOnSupport(page, support, desiredX) {
   let activeArrow = null;
   while (performance.now() < deadline) {
     const state = await readScene(page, false);
-    if (!state.grounded || Math.abs(state.x - targetX) <= 5) break;
+    if (Math.abs(state.x - targetX) <= 5) break;
     const nextArrow = state.x < targetX ? 'ArrowRight' : 'ArrowLeft';
-    if (nextArrow !== activeArrow) {
-      if (activeArrow) await page.keyboard.up(activeArrow);
-      await page.keyboard.down(nextArrow);
-      activeArrow = nextArrow;
+    if (options.browser === 'webkit') {
+      await pulseControlForFrame(page, nextArrow);
+    } else {
+      if (nextArrow !== activeArrow) {
+        if (activeArrow) await controlUp(page, activeArrow);
+        await controlDown(page, nextArrow);
+        activeArrow = nextArrow;
+      }
+      await page.waitForTimeout(16);
     }
-    await page.waitForTimeout(16);
   }
-  if (activeArrow) await page.keyboard.up(activeArrow);
+  if (activeArrow) await controlUp(page, activeArrow);
   const settleDeadline = performance.now() + 260;
   while (performance.now() < settleDeadline) {
     const state = await readScene(page, false);
@@ -531,8 +848,19 @@ function flightCorrection(state, target, launchDirection) {
 
 function chargeDuration(current, target, attempt, wallBounce) {
   const verticalGap = current ? current.y - target.y : 110;
+  const horizontalGap = current
+    ? Math.abs(
+        current.x +
+          current.width / 2 -
+          (target.x + target.width / 2)
+      )
+    : 110;
   const base = verticalGap > 118 ? 90 : verticalGap > 108 ? 62 : 42;
-  const adaptive = base + Math.min(90, Math.max(0, attempt - 1) * 18);
+  const retryBoost =
+    verticalGap > 100 || horizontalGap > 110
+      ? Math.min(90, Math.max(0, attempt - 1) * 18)
+      : 0;
+  const adaptive = base + retryBoost;
   return wallBounce ? Math.max(120, adaptive) : adaptive;
 }
 
@@ -558,7 +886,9 @@ async function waitForGrounded(page, timeoutMs) {
 
 async function readScene(page, includePlatforms) {
   return page.evaluate((withPlatforms) => {
-    function findGame() {
+    function findScene() {
+      const cached = window.__fallstackQaScene;
+      if (cached?.player?.body) return cached;
       const root = document.querySelector('#root');
       if (!root) return null;
       const containerKey = Object.keys(root).find((key) => key.startsWith('__reactContainer$'));
@@ -572,7 +902,11 @@ async function readScene(page, includePlatforms) {
         let hook = fiber.memoizedState;
         while (hook) {
           const candidate = hook.memoizedState?.current;
-          if (candidate?.scene?.keys?.FallstackScene) return candidate;
+          const scene = candidate?.scene?.keys?.FallstackScene;
+          if (scene) {
+            window.__fallstackQaScene = scene;
+            return scene;
+          }
           hook = hook.next;
         }
         if (fiber.child) stack.push(fiber.child);
@@ -581,16 +915,30 @@ async function readScene(page, includePlatforms) {
       return null;
     }
 
-    const game = findGame();
-    const scene = game?.scene?.keys?.FallstackScene;
+    const scene = findScene();
     const player = scene?.player;
     if (!scene || !player?.body) throw new Error('Fallstack scene was not discoverable');
+    const logicalX = player.x - scene.currentRouteOffset;
+    const supportArtifact = (window.fallstackSnapshot?.zones ?? [])
+      .flatMap((zone) => zone.artifacts ?? [])
+      .filter((artifact) => artifact.solid !== false)
+      .find(
+        (artifact) =>
+          Math.abs(artifact.y - player.y - player.body.halfHeight) <= 4 &&
+          logicalX >= artifact.x - player.body.halfWidth &&
+          logicalX <=
+            artifact.x + artifact.width + player.body.halfWidth
+      );
     return {
-      x: player.x - scene.currentRouteOffset,
+      x: logicalX,
       y: player.y,
       vx: player.body.velocity.x,
       vy: player.body.velocity.y,
       grounded: Boolean(player.body.blocked.down || player.body.touching.down),
+      facing: scene.facing,
+      landCount: (window.__fallstackQaEvents ?? []).filter(
+        (event) => event.name === 'land'
+      ).length,
       lastPlatformId: scene.lastPlatformId,
       currentZone: scene.currentZone,
       respawnZone: scene.respawnZone,
@@ -598,12 +946,27 @@ async function readScene(page, includePlatforms) {
       highestY: scene.highestY,
       summitSent: scene.summitSent,
       controlsReady: scene.controlsReady,
+      support: supportArtifact
+        ? {
+            id: `artifact:${supportArtifact.id}`,
+            artifactId: supportArtifact.id,
+            artifactType: supportArtifact.type,
+            x: supportArtifact.x,
+            y: supportArtifact.y,
+            width: supportArtifact.width,
+            height: supportArtifact.height,
+            kind: 'artifact',
+          }
+        : null,
       ...(withPlatforms ? { platforms: scene.towerPlatforms } : {}),
     };
   }, includePlatforms);
 }
 
 async function readLandingFraming(page, nextPlatform) {
+  // Let the production camera ease toward its landing target. The old test
+  // called a private snap method and could not reveal a visible landing jolt.
+  await page.waitForTimeout(180);
   return page.evaluate((platform) => {
     function findGame() {
       const root = document.querySelector('#root');
@@ -638,19 +1001,22 @@ async function readLandingFraming(page, nextPlatform) {
       throw new Error('Landing framing geometry was unavailable');
     const canvasRect = canvas.getBoundingClientRect();
     const zoneTagRect = zoneTag.getBoundingClientRect();
-    const scaleY = canvasRect.height / scene.scale.height;
+    const worldView = scene.cameras.main.worldView;
+    const scaleY = canvasRect.height / worldView.height;
     const layout = scene.layoutPlatform(platform);
     return {
       safeTop: zoneTagRect.bottom + 12,
       nextPlatformTop:
         canvasRect.top +
-        (layout.y - scene.cameras.main.scrollY) * scaleY,
+        (layout.y - worldView.y) * scaleY,
       cameraScrollY: scene.cameras.main.scrollY,
+      cameraWorldViewY: worldView.y,
     };
   }, nextPlatform);
 }
 
 function currentSupport(platforms, platformById, state) {
+  if (state.support) return state.support;
   const exact = platformById.get(state.lastPlatformId);
   if (exact && Math.abs(exact.y - state.y - 14) <= 4) return exact;
   const overlapping = platforms
@@ -687,15 +1053,17 @@ function horizontalDistance(x, platform) {
   return 0;
 }
 
-async function waitForAirborne(page, timeoutMs) {
-  const deadline = performance.now() + timeoutMs;
-  let state = await readScene(page, false);
-  while (performance.now() < deadline) {
-    state = await readScene(page, false);
-    if (!state.grounded) return state;
-    await page.waitForTimeout(16);
+function routeProgressIndex(route, routeIndex, support) {
+  if (!support) return undefined;
+  const exact = routeIndex.get(support.id);
+  if (exact !== undefined) return exact;
+  if (support.kind !== 'artifact') return undefined;
+  let progress = -1;
+  for (let index = 0; index < route.length; index += 1) {
+    if (route[index].y >= support.y) progress = index;
+    else break;
   }
-  throw new Error(`Launch input did not produce an airborne state within ${timeoutMs}ms`);
+  return progress >= 0 ? progress : undefined;
 }
 
 function checkpointRouteIndex(route, playerY) {
@@ -712,9 +1080,138 @@ function checkpointRouteIndex(route, playerY) {
 }
 
 async function releaseControls(page) {
+  if (options.input === 'touch') {
+    await pointerDriver?.up().catch(() => {});
+    return;
+  }
   for (const key of ['ArrowLeft', 'ArrowRight', 'Space']) {
     await page.keyboard.up(key).catch(() => {});
   }
+}
+
+async function controlDown(page, key) {
+  if (options.input !== 'touch') {
+    await page.keyboard.down(key);
+    return;
+  }
+  const locator = page.locator(controlSelector(key));
+  await locator.waitFor({ state: 'visible' });
+  const box = await locator.boundingBox();
+  if (!box) throw new Error(`Touch control ${key} had no hit target`);
+  await pointerDriver?.down({
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+  });
+}
+
+async function controlUp(page, key) {
+  if (options.input !== 'touch') {
+    await page.keyboard.up(key);
+    return;
+  }
+  await pointerDriver?.up();
+}
+
+async function tapControl(page, key, heldMs = 16) {
+  await controlDown(page, key);
+  await page.waitForTimeout(heldMs);
+  await controlUp(page, key);
+}
+
+async function pulseControlForFrame(page, key) {
+  await controlDown(page, key);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => resolve());
+      })
+  );
+  await controlUp(page, key);
+}
+
+async function faceControl(page, key) {
+  const expectedFacing = key === 'ArrowLeft' ? -1 : 1;
+  const deadline = performance.now() + 600;
+  let state = await readScene(page, false);
+  while (state.facing !== expectedFacing && performance.now() < deadline) {
+    await pulseControlForFrame(page, key);
+    state = await readScene(page, false);
+  }
+  if (state.facing !== expectedFacing)
+    throw new Error(`Touch control ${key} did not change player facing`);
+}
+
+function controlSelector(key) {
+  if (key === 'ArrowLeft') return 'button[aria-label="Move left"]';
+  if (key === 'ArrowRight') return 'button[aria-label="Move right"]';
+  if (key === 'Space')
+    return 'button[aria-label="Hold to charge; release to leap"]';
+  throw new Error(`Unsupported gameplay control: ${key}`);
+}
+
+async function createPointerDriver(context, page, browserName) {
+  if (browserName === 'webkit') {
+    return {
+      async down(point) {
+        await page.mouse.move(point.x, point.y);
+        await page.mouse.down();
+      },
+      async up() {
+        await page.mouse.up();
+      },
+    };
+  }
+  const cdp = await context.newCDPSession(page);
+  return {
+    async down(point) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [
+          { ...point, radiusX: 1, radiusY: 1, force: 1 },
+        ],
+      });
+    },
+    async up() {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      });
+    },
+  };
+}
+
+async function eventCount(page, name) {
+  return page.evaluate(
+    (eventName) =>
+      (window.__fallstackQaEvents ?? []).filter(
+        (event) => event.name === eventName
+      ).length,
+    name
+  );
+}
+
+async function waitForEventCount(page, name, expectedCount, timeoutMs) {
+  await page.waitForFunction(
+    ({ eventName, count }) =>
+      (window.__fallstackQaEvents ?? []).filter(
+        (event) => event.name === eventName
+      ).length >= count,
+    { eventName: name, count: expectedCount },
+    { timeout: timeoutMs }
+  );
+}
+
+async function visibleGameplayNotices(page) {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll(
+        '.mutation-banner.visible, .checkpoint-banner.visible, .remote-beat'
+      )
+    ).map((element) => ({
+      className: element.className,
+      text: element.textContent?.trim() ?? '',
+    }))
+  );
 }
 
 async function capture(page, outputDir, name) {
@@ -736,6 +1233,7 @@ function compactState(state) {
     respawnZone: state.respawnZone,
     highestY: round(state.highestY),
     summitSent: state.summitSent,
+    supportId: state.support?.id ?? null,
   };
 }
 
@@ -758,12 +1256,19 @@ function parseArgs(args) {
     else if (args[index + 1] && !args[index + 1].startsWith('--')) values.set(key, args[++index]);
     else values.set(key, 'true');
   }
+  const mobile = values.get('mobile') === 'true';
+  const input = values.get('input') ?? (mobile ? 'touch' : 'keyboard');
+  if (!['keyboard', 'touch'].includes(input))
+    throw new Error(`Unsupported input mode: ${input}`);
   return {
     url: values.get('url') ?? 'http://127.0.0.1:8080/game.html',
     output: values.get('output') ?? 'docs/qa/final-pass/full-playthrough',
     browser: values.get('browser') ?? 'chromium',
     width: numberOption(values, 'width', 375),
     height: numberOption(values, 'height', 812),
+    deviceScaleFactor: numberOption(values, 'device-scale-factor', 1),
+    mobile,
+    input,
     maxJumps: numberOption(values, 'max-jumps', 1_500),
     retries: numberOption(values, 'retries', 8),
     canvas: values.get('canvas') !== 'false',

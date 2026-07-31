@@ -106,7 +106,9 @@ const receipts = {
 await mkdir(outputDir, { recursive: true });
 const browser = await (browserName === 'webkit' ? webkit : chromium).launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  ...(browserName === 'chromium'
+    ? { args: ['--no-sandbox', '--disable-dev-shm-usage'] }
+    : {}),
 });
 
 try {
@@ -358,8 +360,9 @@ async function inspectReceiptPlacement(viewport) {
         throw new Error('Receipt placement geometry was unavailable');
       const canvasRect = canvas.getBoundingClientRect();
       const bannerRect = banner.getBoundingClientRect();
-      const scaleX = canvasRect.width / scene.scale.width;
-      const scaleY = canvasRect.height / scene.scale.height;
+      const worldView = scene.cameras.main.worldView;
+      const scaleX = canvasRect.width / worldView.width;
+      const scaleY = canvasRect.height / worldView.height;
       const route = scene.towerPlatforms
         .filter((platform) => platform.kind !== 'obstacle')
         .sort((left, right) => right.y - left.y);
@@ -375,41 +378,41 @@ async function inspectReceiptPlacement(viewport) {
           canvasRect.left +
           (scene.player.x -
             scene.player.body.halfWidth -
-            scene.cameras.main.scrollX) *
+            worldView.x) *
             scaleX,
         right:
           canvasRect.left +
           (scene.player.x +
             scene.player.body.halfWidth -
-            scene.cameras.main.scrollX) *
+            worldView.x) *
             scaleX,
         top:
           canvasRect.top +
           (scene.player.y -
             scene.player.body.halfHeight -
-            scene.cameras.main.scrollY) *
+            worldView.y) *
             scaleY,
         bottom:
           canvasRect.top +
           (scene.player.y +
             scene.player.body.halfHeight -
-            scene.cameras.main.scrollY) *
+            worldView.y) *
             scaleY,
       };
       const targetRect = target
         ? {
             left:
               canvasRect.left +
-              (target.x - scene.cameras.main.scrollX) * scaleX,
+              (target.x - worldView.x) * scaleX,
             right:
               canvasRect.left +
-              (target.x + target.width - scene.cameras.main.scrollX) * scaleX,
+              (target.x + target.width - worldView.x) * scaleX,
             top:
               canvasRect.top +
-              (target.y - scene.cameras.main.scrollY) * scaleY,
+              (target.y - worldView.y) * scaleY,
             bottom:
               canvasRect.top +
-              (target.y + target.height - scene.cameras.main.scrollY) * scaleY,
+              (target.y + target.height - worldView.y) * scaleY,
           }
         : null;
       const overlaps = (left, right) =>

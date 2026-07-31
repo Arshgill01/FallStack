@@ -31,7 +31,10 @@ const failures = [];
 
 try {
   for (const viewport of viewports) {
-    const context = await browser.newContext({ viewport });
+    const context = await browser.newContext({
+      viewport,
+      deviceScaleFactor: viewport.width < MOBILE_BREAKPOINT ? 3 : 1,
+    });
     await installSceneProbe(context);
     const page = await context.newPage();
     await page.goto(`${baseUrl}/game.html`, {
@@ -267,8 +270,8 @@ async function driveContact(page, x, velocityX) {
           samples.push({
             playerLeft: player.x - halfWidth,
             playerRight: player.x + halfWidth,
-            screenLeft: player.x - halfWidth - camera.scrollX,
-            screenRight: player.x + halfWidth - camera.scrollX,
+            screenLeft: player.x - halfWidth - camera.worldView.x,
+            screenRight: player.x + halfWidth - camera.worldView.x,
           });
           if (performance.now() - startedAt < 180)
             return requestAnimationFrame(sample);
@@ -357,15 +360,15 @@ async function measureVisualContact(page, side) {
       }
 
       const pixelToViewport = scene.viewportWidth() / canvas.width;
-      const cameraScrollX = scene.cameras.main.scrollX;
+      const cameraWorldViewX = scene.cameras.main.worldView.x;
       return {
         changedPixels,
         visualLeft: left * pixelToViewport,
         visualRight: (right + 1) * pixelToViewport,
         paintedLeftScreen:
-          scene.currentRouteOffset + playableInset - cameraScrollX,
+          scene.currentRouteOffset + playableInset - cameraWorldViewX,
         paintedRightScreen:
-          scene.currentRouteOffset + routeWidth - playableInset - cameraScrollX,
+          scene.currentRouteOffset + routeWidth - playableInset - cameraWorldViewX,
       };
     },
     { side, playableInset: PLAYABLE_INSET, routeWidth: ROUTE_WIDTH }
