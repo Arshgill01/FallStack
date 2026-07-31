@@ -1515,10 +1515,6 @@ button:disabled {
   z-index: 98;
 }
 
-.remote-beat.below-receipt {
-  top: 170px;
-}
-
 .remote-beat span {
   display: block;
   margin-bottom: 3px;
@@ -1559,6 +1555,16 @@ button:disabled {
   border-radius: 50%;
   background: #e95f45;
   transform: translateY(-50%);
+}
+
+.checkpoint-banner.place-bottom {
+  top: auto;
+  bottom: 14px;
+}
+
+.remote-beat.place-bottom {
+  top: auto;
+  bottom: 14px;
 }
 
 .checkpoint-title {
@@ -2269,23 +2275,23 @@ button:disabled {
 
   .mutation-banner {
     top: 54px;
-    right: 12px;
+    right: 36px;
     bottom: auto;
-    left: 12px;
-    width: auto;
-    max-width: none;
-    padding: 8px 10px 9px;
+    left: auto;
+    width: min(224px, calc(100% - 72px));
+    max-width: 224px;
+    padding: 7px 9px 8px;
     font-size: 13px;
-    line-height: 1.35;
+    line-height: 1.25;
   }
 
   .mutation-banner.receipt {
     top: 54px;
-    right: 12px;
+    right: 36px;
     bottom: auto;
-    left: 12px;
-    width: auto;
-    max-width: none;
+    left: auto;
+    width: min(224px, calc(100% - 72px));
+    max-width: 224px;
   }
 
   .mutation-banner.place-bottom,
@@ -2294,18 +2300,77 @@ button:disabled {
     bottom: 12px;
   }
 
+  .receipt-stamp {
+    min-height: 20px;
+    padding: 3px 6px;
+    font-size: 7px;
+  }
+
+  .receipt-proof {
+    gap: 7px;
+    padding: 5px 7px;
+  }
+
+  .receipt-site {
+    font-size: 12px;
+  }
+
+  .receipt-site small {
+    margin-top: 2px;
+    font-size: 7px;
+  }
+
+  .receipt-proof strong {
+    font-size: 16px;
+  }
+
   .receipt-copy {
-    font-size: 13px;
+    display: -webkit-box;
+    overflow: hidden;
+    padding: 4px 7px 5px;
+    font-size: 11px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .remote-beat {
     top: 54px;
-    right: 12px;
-    width: min(250px, calc(100% - 24px));
+    right: 36px;
+    width: min(196px, calc(100% - 72px));
   }
 
-  .remote-beat.below-receipt {
-    top: 222px;
+  .remote-beat.place-bottom {
+    top: auto;
+    bottom: 12px;
+  }
+
+  .checkpoint-banner {
+    top: 54px;
+    right: 36px;
+    left: auto;
+    width: min(188px, calc(100% - 72px));
+    max-width: 188px;
+    padding: 7px 11px 8px;
+    text-align: left;
+    transform: translateY(-8px);
+  }
+
+  .checkpoint-banner.visible {
+    transform: translateY(0);
+  }
+
+  .checkpoint-banner.place-bottom {
+    top: auto;
+    bottom: 12px;
+  }
+
+  .mutation-banner.side-left,
+  .mutation-banner.receipt.side-left,
+  .remote-beat.side-left,
+  .checkpoint-banner.side-left {
+    right: auto;
+    left: 36px;
   }
 
   .jump-btn {
@@ -2347,6 +2412,10 @@ button:disabled {
 
   .topbar-actions {
     width: 122px;
+  }
+
+  .topbar .eyebrow {
+    letter-spacing: 0.75px;
   }
 
   .community-tally-word {
@@ -2396,9 +2465,6 @@ button:disabled {
     -webkit-line-clamp: 2;
   }
 
-  .remote-beat.below-receipt {
-    display: none;
-  }
 }
 
 /* =============================================

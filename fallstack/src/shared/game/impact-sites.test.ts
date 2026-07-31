@@ -96,6 +96,32 @@ void test('impact slots never cover the baseline route', () => {
   }
 });
 
+void test('solid helper slots stay outside the baseline jump corridor', () => {
+  for (let index = 0; index < 120; index += 1) {
+    const tower = generateDailyTower(`fallstack-helper-clearance-${index}`);
+    const platformsById = new Map(
+      tower.platforms.map((platform) => [platform.id, platform])
+    );
+
+    for (const site of deriveImpactSites(tower)) {
+      const approach = platformsById.get(site.approachPlatformId);
+      const landing = platformsById.get(site.anchorPlatformId);
+      assert.ok(approach, `${tower.seed}: ${site.id}`);
+      assert.ok(landing, `${tower.seed}: ${site.id}`);
+      assert.equal(
+        horizontalOverlap(site.helperSlot, landing),
+        0,
+        `${tower.seed}: ${site.id} creates a landing head-bonk pocket`
+      );
+      assert.equal(
+        horizontalOverlap(site.helperSlot, approach),
+        0,
+        `${tower.seed}: ${site.id} creates a launch ceiling`
+      );
+    }
+  }
+});
+
 void test('baseline route stays valid with no helpers and every hazard active', () => {
   for (let index = 0; index < 120; index += 1) {
     const tower = generateDailyTower(`fallstack-impact-fairness-${index}`);
@@ -127,5 +153,16 @@ function overlaps(
     left.x + left.width > right.x &&
     left.y < right.y + right.height &&
     left.y + left.height > right.y
+  );
+}
+
+function horizontalOverlap(
+  left: { x: number; width: number },
+  right: { x: number; width: number }
+): number {
+  return Math.max(
+    0,
+    Math.min(left.x + left.width, right.x + right.width) -
+      Math.max(left.x, right.x)
   );
 }

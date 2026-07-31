@@ -9,9 +9,11 @@ import {
   CAMERA_VERTICAL_CHARGE_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
   cameraBottomPaddingForViewport,
+  cameraScrollForWorldViewStart,
   cameraScrollXForPlayer,
   cameraVerticalLookahead,
   chooseHudNoticePlacement,
+  chooseHudNoticeSide,
   computeGameDimensions,
   gameWorldWidth,
   PLAYER_VISUAL_EDGE_CLEARANCE,
@@ -21,6 +23,7 @@ import {
   ROUTE_PLAYABLE_INSET,
   routeOffsetForGameWidth,
   visibleHorizontalSpan,
+  worldViewStartForCameraScroll,
 } from './layout.js';
 
 void test('game dimensions use the viewport size without squeezing the tower', () => {
@@ -131,6 +134,31 @@ void test('committed-jump lookahead keeps a readable part of the next landing vi
   }
 });
 
+void test('DPR-scaled cameras preserve the requested visible world edge', () => {
+  for (const viewportSize of [320, 375, 393, 526, 844]) {
+    for (const renderScale of [1, 1.5, 2]) {
+      for (const worldViewStart of [0, 43.5, 87, 412, 16_754]) {
+        const cameraScroll = cameraScrollForWorldViewStart(
+          worldViewStart,
+          viewportSize,
+          renderScale
+        );
+        assert.equal(
+          worldViewStartForCameraScroll(
+            cameraScroll,
+            viewportSize,
+            renderScale
+          ),
+          worldViewStart
+        );
+      }
+    }
+  }
+
+  assert.equal(cameraScrollForWorldViewStart(0, 393, 2), -196.5);
+  assert.equal(cameraScrollForWorldViewStart(87, 393, 2), -109.5);
+});
+
 void test('vertical lookahead previews the climb while charging and rising', () => {
   assert.equal(cameraVerticalLookahead(true, 0, 0), 24);
   assert.equal(
@@ -144,7 +172,7 @@ void test('vertical lookahead previews the climb while charging and rising', () 
   assert.equal(cameraVerticalLookahead(false, 0, 240), 0);
 });
 
-void test('mobile notices choose the side away from protected play geometry', () => {
+void test('mobile notices choose the vertical edge away from play geometry', () => {
   const common = {
     viewportHeight: 500,
     noticeHeight: 140,
@@ -176,6 +204,39 @@ void test('mobile notices choose the side away from protected play geometry', ()
       companionGap: 16,
     }),
     'bottom'
+  );
+});
+
+void test('mobile notices choose the horizontal edge away from play geometry', () => {
+  const common = {
+    viewportWidth: 320,
+    noticeWidth: 188,
+    leftOffset: 36,
+    rightOffset: 36,
+  };
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [{ left: -53, right: 95 }],
+    }),
+    'right'
+  );
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [{ left: 225, right: 373 }],
+    }),
+    'left'
+  );
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [
+        { left: 150, right: 175, weight: 2 },
+        { left: 40, right: 80 },
+      ],
+    }),
+    'right'
   );
 });
 

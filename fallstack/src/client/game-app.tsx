@@ -97,15 +97,18 @@ import {
 import {
   CAMERA_AIR_LOOKAHEAD,
   cameraBottomPaddingForViewport,
+  cameraScrollForWorldViewStart,
   cameraScrollXForPlayer,
   cameraVerticalLookahead,
   chooseHudNoticePlacement,
+  chooseHudNoticeSide,
   computeGameDimensions,
   gameWorldWidth,
   MOBILE_GAME_BREAKPOINT,
   physicsBoundsForViewport,
   routeOffsetForGameWidth,
   type HudNoticePlacement,
+  type HudNoticeSide,
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
 import { renderReliquaryPlayer } from './game/renderPlayer';
@@ -146,6 +149,7 @@ declare global {
   interface Window {
     fallstackInput: InputState;
     fallstackSnapshot?: GameSnapshot;
+    fallstackBuildId: string;
     fallstackAudioDiagnostics?: () => AudioDiagnostics;
     fallstackAudioCapture?: AudioCaptureApi;
     fallstackAudioPreview?: (id: SoundId, detail?: SoundPlaybackDetail) => void;
@@ -154,10 +158,12 @@ declare global {
 }
 
 const START_POS = { x: 240, y: WORLD_HEIGHT - 88 };
+const BUILD_ID = import.meta.env.FALLSTACK_BUILD_ID;
+window.fallstackBuildId = BUILD_ID;
 const MOBILE_NOTICE_TOP_OFFSET = 54;
 const MOBILE_NOTICE_BOTTOM_OFFSET = 12;
+const MOBILE_NOTICE_SIDE_OFFSET = 36;
 const NOTICE_PLAY_CLEARANCE = 10;
-const NOTICE_STACK_GAP = 16;
 
 function isBoardSnapshot(
   snapshot: GameSnapshot | null | undefined
@@ -209,6 +215,11 @@ async function copyText(text: string): Promise<boolean> {
    ====================================================== */
 class FallstackScene extends Phaser.Scene {
   private renderScale = 1;
+  private currentWorldWidth = WORLD_WIDTH;
+  private currentViewportWidth = 0;
+  private currentViewportHeight = 0;
+  private currentLayoutRenderScale = 0;
+  private viewportLayoutPending = false;
   private player?: Phaser.GameObjects.Rectangle & {
     body: Phaser.Physics.Arcade.Body;
   };
@@ -284,7 +295,11 @@ class FallstackScene extends Phaser.Scene {
   >();
 
   setRenderScale(renderScale: number) {
+    if (this.renderScale === renderScale) return;
     this.renderScale = renderScale;
+    if (!this.sceneBooted) return;
+    this.cameras.main.setZoom(renderScale);
+    this.viewportLayoutPending = true;
   }
 
   setInputPaused(inputPaused: boolean) {
@@ -394,11 +409,9 @@ class FallstackScene extends Phaser.Scene {
     );
 
     this.scale.on('resize', () => {
-      this.applyViewportLayout(true);
-      this.rebuildPlatformBodies();
-      this.drawWorld();
-      this.rebuildArtifactBodies();
-      this.snapCameraToPlayer();
+      // Phaser updates camera dimensions after emitting this event. Reconcile
+      // layout on the next game frame so projection uses the new viewport.
+      this.viewportLayoutPending = true;
     });
 
     this.refreshSnapshot(window.fallstackSnapshot);
@@ -409,6 +422,7 @@ class FallstackScene extends Phaser.Scene {
 
   override update(_time: number, deltaMs: number) {
     if (!this.player) return;
+    this.applyPendingViewportLayout();
     if (!this.controlsReady) {
       this.stableFrameCount = deltaMs <= 34 ? this.stableFrameCount + 1 : 0;
       const settled =
@@ -545,7 +559,6 @@ class FallstackScene extends Phaser.Scene {
       this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
       const impactSpeed = this.pendingImpactSpeed;
-      this.settleVerticalCameraForLanding();
       this.showPlayerCeremony(
         'land',
         Phaser.Math.Clamp((impactSpeed - 180) / 620, 0.25, 1)
@@ -627,20 +640,17 @@ class FallstackScene extends Phaser.Scene {
     };
   }
 
-  hudNoticePlacement(
-    noticeHeight: number,
-    companionHeight = 0
-  ): HudNoticePlacement {
+  hudNoticePlacement(noticeHeight: number): HudNoticePlacement {
     if (
       !this.player ||
       this.viewportWidth() >= MOBILE_GAME_BREAKPOINT
     )
       return 'top';
-    const cameraScrollY = this.cameras.main.scrollY;
+    const cameraWorldViewY = this.cameras.main.worldView.y;
     const viewportHeight = this.viewportHeight();
     const canvasHeight = this.game.canvas.getBoundingClientRect().height;
     const cssScaleY = viewportHeight > 0 ? canvasHeight / viewportHeight : 1;
-    const playerY = (this.player.y - cameraScrollY) * cssScaleY;
+    const playerY = (this.player.y - cameraWorldViewY) * cssScaleY;
     const protectedSpans = [
       {
         top: playerY - 32 - NOTICE_PLAY_CLEARANCE,
@@ -652,10 +662,10 @@ class FallstackScene extends Phaser.Scene {
     if (nextLanding) {
       protectedSpans.push({
         top:
-          (nextLanding.y - cameraScrollY) * cssScaleY -
+          (nextLanding.y - cameraWorldViewY) * cssScaleY -
           NOTICE_PLAY_CLEARANCE,
         bottom:
-          (nextLanding.y + nextLanding.height - cameraScrollY) * cssScaleY +
+          (nextLanding.y + nextLanding.height - cameraWorldViewY) * cssScaleY +
           NOTICE_PLAY_CLEARANCE,
         weight: 1,
       });
@@ -666,8 +676,49 @@ class FallstackScene extends Phaser.Scene {
       topOffset: MOBILE_NOTICE_TOP_OFFSET,
       bottomOffset: MOBILE_NOTICE_BOTTOM_OFFSET,
       protectedSpans,
-      companionHeight,
-      companionGap: NOTICE_STACK_GAP,
+    });
+  }
+
+  hudNoticeSide(noticeWidth: number): HudNoticeSide {
+    if (!this.player || this.viewportWidth() >= MOBILE_GAME_BREAKPOINT)
+      return 'right';
+    const cameraWorldViewX = this.cameras.main.worldView.x;
+    const canvasWidth = this.game.canvas.getBoundingClientRect().width;
+    const viewportWidth = this.viewportWidth();
+    const cssScaleX = viewportWidth > 0 ? canvasWidth / viewportWidth : 1;
+    const playerX = (this.player.x - cameraWorldViewX) * cssScaleX;
+    const protectedSpans = [
+      {
+        left:
+          playerX -
+          this.player.body.halfWidth * cssScaleX -
+          NOTICE_PLAY_CLEARANCE,
+        right:
+          playerX +
+          this.player.body.halfWidth * cssScaleX +
+          NOTICE_PLAY_CLEARANCE,
+        weight: 2,
+      },
+    ];
+    const nextLanding = this.nextRoutePlatform();
+    if (nextLanding) {
+      const layout = this.layoutPlatform(nextLanding);
+      protectedSpans.push({
+        left:
+          (layout.x - cameraWorldViewX) * cssScaleX -
+          NOTICE_PLAY_CLEARANCE,
+        right:
+          (layout.x + layout.width - cameraWorldViewX) * cssScaleX +
+          NOTICE_PLAY_CLEARANCE,
+        weight: 1,
+      });
+    }
+    return chooseHudNoticeSide({
+      viewportWidth: canvasWidth,
+      noticeWidth,
+      leftOffset: MOBILE_NOTICE_SIDE_OFFSET,
+      rightOffset: MOBILE_NOTICE_SIDE_OFFSET,
+      protectedSpans,
     });
   }
 
@@ -719,14 +770,27 @@ class FallstackScene extends Phaser.Scene {
     };
   }
 
-  private applyViewportLayout(keepPlayerX: boolean) {
+  private applyViewportLayout(keepPlayerX: boolean): {
+    routeGeometryChanged: boolean;
+    cameraLayoutChanged: boolean;
+  } {
     const previousOffset = this.currentRouteOffset;
+    const previousWorldWidth = this.currentWorldWidth;
+    const previousViewportWidth = this.currentViewportWidth;
+    const previousViewportHeight = this.currentViewportHeight;
+    const previousRenderScale = this.currentLayoutRenderScale;
     const playerLogicalX =
       keepPlayerX && this.player ? this.player.x - previousOffset : null;
+    const viewportWidth = this.viewportWidth();
+    const viewportHeight = this.viewportHeight();
     const worldWidth = this.gameWidth();
+    this.currentWorldWidth = worldWidth;
+    this.currentViewportWidth = viewportWidth;
+    this.currentViewportHeight = viewportHeight;
+    this.currentLayoutRenderScale = this.renderScale;
     this.currentRouteOffset = routeOffsetForGameWidth(worldWidth);
     const physicsBounds = physicsBoundsForViewport(
-      this.viewportWidth(),
+      viewportWidth,
       worldWidth
     );
     this.cameras.main.setBounds(0, 0, worldWidth, WORLD_HEIGHT);
@@ -738,6 +802,28 @@ class FallstackScene extends Phaser.Scene {
     );
     if (playerLogicalX !== null && this.player)
       this.player.setX(this.layoutX(playerLogicalX));
+    return {
+      routeGeometryChanged:
+        previousWorldWidth !== worldWidth ||
+        previousOffset !== this.currentRouteOffset,
+      cameraLayoutChanged:
+        previousViewportWidth !== viewportWidth ||
+        previousViewportHeight !== viewportHeight ||
+        previousRenderScale !== this.renderScale,
+    };
+  }
+
+  private applyPendingViewportLayout() {
+    if (!this.viewportLayoutPending || !this.player) return;
+    this.viewportLayoutPending = false;
+    const { routeGeometryChanged, cameraLayoutChanged } =
+      this.applyViewportLayout(true);
+    if (routeGeometryChanged) {
+      this.rebuildPlatformBodies();
+      this.drawWorld();
+      this.rebuildArtifactBodies();
+    }
+    if (cameraLayoutChanged) this.snapCameraToPlayer();
   }
 
   private cameraBottomPadding() {
@@ -749,21 +835,32 @@ class FallstackScene extends Phaser.Scene {
 
   private cameraTargetY(y: number) {
     const camH = this.viewportHeight() || 480;
-    return Phaser.Math.Clamp(
+    const worldViewY = Phaser.Math.Clamp(
       y -
         (camH - this.cameraBottomPadding()) -
         this.cameraLookaheadY(),
       0,
       WORLD_HEIGHT - camH
     );
+    return cameraScrollForWorldViewStart(
+      worldViewY,
+      camH,
+      this.renderScale
+    );
   }
 
   private cameraTargetX(x: number) {
-    return cameraScrollXForPlayer(
+    const viewportWidth = this.viewportWidth();
+    const worldViewX = cameraScrollXForPlayer(
       x,
-      this.viewportWidth(),
+      viewportWidth,
       this.gameWidth(),
       this.cameraLookaheadX()
+    );
+    return cameraScrollForWorldViewStart(
+      worldViewX,
+      viewportWidth,
+      this.renderScale
     );
   }
 
@@ -803,11 +900,6 @@ class FallstackScene extends Phaser.Scene {
           platform.y < player.y - player.body.halfHeight
       ) ?? null
     );
-  }
-
-  private settleVerticalCameraForLanding() {
-    if (!this.player) return;
-    this.cameras.main.scrollY = this.cameraTargetY(this.player.y);
   }
 
   private snapCameraToPlayer() {
@@ -863,16 +955,17 @@ class FallstackScene extends Phaser.Scene {
     const object = platformObject as Phaser.GameObjects.GameObject;
     const platformId = object.getData('platformId');
     const platformKind = object.getData('kind') as Platform['kind'];
+    const standing =
+      player.body.blocked.down || player.body.touching.down;
+    if (!standing) return;
     if (typeof platformId === 'string') this.lastPlatformId = platformId;
-    if (player.body.blocked.down || player.body.touching.down) {
-      this.landingMaterial = platformKind;
-      this.landingSurface =
-        platformId === 'summit'
-          ? 'summit'
-          : typeof platformId === 'string' && platformId.includes('checkpoint')
-            ? 'checkpoint'
-            : 'route';
-    }
+    this.landingMaterial = platformKind;
+    this.landingSurface =
+      platformId === 'summit'
+        ? 'summit'
+        : typeof platformId === 'string' && platformId.includes('checkpoint')
+          ? 'checkpoint'
+          : 'route';
     if (platformId === 'summit' && !this.summitSent) {
       this.summitSent = true;
       this.showPlayerCeremony('summit');
@@ -1345,8 +1438,10 @@ class FallstackScene extends Phaser.Scene {
     if (!this.reducedMotion && zone && zone.id !== BOTTOM_ZONE_ID) {
       if (Math.random() < 0.05) {
         const cam = this.cameras.main;
-        const px = cam.scrollX + Math.random() * this.gameWidth();
-        const py = cam.scrollY + cam.height - Math.random() * 160;
+        const px =
+          cam.worldView.x + Math.random() * cam.worldView.width;
+        const py =
+          cam.worldView.y + cam.worldView.height - Math.random() * 160;
         const zoneIndex = ZONES.findIndex(
           (candidate) => candidate.id === zone.id
         );
@@ -1734,10 +1829,10 @@ class FallstackScene extends Phaser.Scene {
   }
 
   private isCameraVisibleY(y: number, margin: number): boolean {
-    const camera = this.cameras.main;
+    const worldView = this.cameras.main.worldView;
     return (
-      y >= camera.scrollY - margin &&
-      y <= camera.scrollY + this.viewportHeight() + margin
+      y >= worldView.y - margin &&
+      y <= worldView.bottom + margin
     );
   }
 
@@ -1853,7 +1948,16 @@ export function GameApp() {
   const [mutationVisible, setMutationVisible] = useState(false);
   const [mutationPlacement, setMutationPlacement] =
     useState<HudNoticePlacement>('top');
+  const [mutationSide, setMutationSide] = useState<HudNoticeSide>('right');
   const [checkpointVisible, setCheckpointVisible] = useState(false);
+  const [checkpointPlacement, setCheckpointPlacement] =
+    useState<HudNoticePlacement>('top');
+  const [checkpointSide, setCheckpointSide] =
+    useState<HudNoticeSide>('right');
+  const [remoteBeatPlacement, setRemoteBeatPlacement] =
+    useState<HudNoticePlacement>('top');
+  const [remoteBeatSide, setRemoteBeatSide] =
+    useState<HudNoticeSide>('right');
   const [checkpointText, setCheckpointText] = useState({ title: '', sub: '' });
   const [remoteBeat, setRemoteBeat] = useState<MutationBeat | null>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -1872,6 +1976,7 @@ export function GameApp() {
   const mutationTimerRef = useRef<number | null>(null);
   const mutationBannerRef = useRef<HTMLDivElement | null>(null);
   const remoteBeatRef = useRef<HTMLDivElement | null>(null);
+  const checkpointBannerRef = useRef<HTMLDivElement | null>(null);
   const checkpointTimerRef = useRef<number | null>(null);
   const remoteBeatTimerRef = useRef<number | null>(null);
   const pendingBoardSnapshotRef = useRef<{
@@ -1898,6 +2003,12 @@ export function GameApp() {
 
   const showMutation = useCallback(
     (text: string, receipt: MutationReceipt | null = null) => {
+      if (checkpointTimerRef.current)
+        window.clearTimeout(checkpointTimerRef.current);
+      if (remoteBeatTimerRef.current)
+        window.clearTimeout(remoteBeatTimerRef.current);
+      setCheckpointVisible(false);
+      setRemoteBeat(null);
       setMessage(text);
       setMutationReceipt(receipt);
       setMutationVisible(true);
@@ -1905,7 +2016,7 @@ export function GameApp() {
         window.clearTimeout(mutationTimerRef.current);
       mutationTimerRef.current = window.setTimeout(
         () => setMutationVisible(false),
-        receipt ? 5_200 : 3_800
+        receipt ? 3_200 : 2_600
       );
     },
     []
@@ -1918,23 +2029,68 @@ export function GameApp() {
       window.clearTimeout(remoteBeatTimerRef.current);
     remoteBeatTimerRef.current = window.setTimeout(
       () => setRemoteBeat(null),
-      3_800
+      2_800
     );
+  }, []);
+
+  const dismissGameplayNotices = useCallback(() => {
+    activeFallFeedbackAttemptRef.current = null;
+    if (mutationTimerRef.current)
+      window.clearTimeout(mutationTimerRef.current);
+    if (checkpointTimerRef.current)
+      window.clearTimeout(checkpointTimerRef.current);
+    if (remoteBeatTimerRef.current)
+      window.clearTimeout(remoteBeatTimerRef.current);
+    mutationTimerRef.current = null;
+    checkpointTimerRef.current = null;
+    remoteBeatTimerRef.current = null;
+    setMutationVisible(false);
+    setCheckpointVisible(false);
+    setRemoteBeat(null);
   }, []);
 
   useLayoutEffect(() => {
     if (!mutationVisible || !mutationBannerRef.current) return;
+    const bounds = mutationBannerRef.current.getBoundingClientRect();
     setMutationPlacement(
+      sceneRef.current?.hudNoticePlacement(bounds.height) ?? 'top'
+    );
+    setMutationSide(
+      sceneRef.current?.hudNoticeSide(bounds.width) ?? 'right'
+    );
+  }, [message, mutationReceipt, mutationVisible]);
+
+  useLayoutEffect(() => {
+    if (!checkpointVisible || !checkpointBannerRef.current) return;
+    const bounds = checkpointBannerRef.current.getBoundingClientRect();
+    setCheckpointPlacement(
       sceneRef.current?.hudNoticePlacement(
-        mutationBannerRef.current.getBoundingClientRect().height,
-        mutationReceipt &&
-          remoteBeatRef.current &&
-          getComputedStyle(remoteBeatRef.current).display !== 'none'
-          ? remoteBeatRef.current.getBoundingClientRect().height
-          : 0
+        bounds.height
       ) ?? 'top'
     );
-  }, [message, mutationReceipt, mutationVisible, remoteBeat]);
+    setCheckpointSide(
+      sceneRef.current?.hudNoticeSide(bounds.width) ?? 'right'
+    );
+  }, [checkpointText, checkpointVisible]);
+
+  useLayoutEffect(() => {
+    if (
+      !remoteBeat ||
+      mutationVisible ||
+      checkpointVisible ||
+      !remoteBeatRef.current
+    )
+      return;
+    const bounds = remoteBeatRef.current.getBoundingClientRect();
+    setRemoteBeatPlacement(
+      sceneRef.current?.hudNoticePlacement(
+        bounds.height
+      ) ?? 'top'
+    );
+    setRemoteBeatSide(
+      sceneRef.current?.hudNoticeSide(bounds.width) ?? 'right'
+    );
+  }, [checkpointVisible, mutationVisible, remoteBeat]);
 
   const applyBoardSnapshot = useCallback(
     (next: BoardSnapshot, beat: MutationBeat | null = null) => {
@@ -2023,13 +2179,19 @@ export function GameApp() {
   }, [showRemoteBeat]);
 
   const showCheckpoint = useCallback((title: string, sub: string) => {
+    if (mutationTimerRef.current)
+      window.clearTimeout(mutationTimerRef.current);
+    if (remoteBeatTimerRef.current)
+      window.clearTimeout(remoteBeatTimerRef.current);
+    setMutationVisible(false);
+    setRemoteBeat(null);
     setCheckpointText({ title, sub });
     setCheckpointVisible(true);
     if (checkpointTimerRef.current)
       window.clearTimeout(checkpointTimerRef.current);
     checkpointTimerRef.current = window.setTimeout(
       () => setCheckpointVisible(false),
-      3400
+      2_600
     );
   }, []);
 
@@ -2350,15 +2512,34 @@ export function GameApp() {
     if (gameRef.current) return;
     let frameId: number | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let appliedGameW = 0;
+    let appliedGameH = 0;
+    let appliedRenderScale = 0;
 
     const resizeGame = () => {
       const container = document.getElementById('game-canvas');
       if (!container || !gameRef.current) return;
-      const { containerW, containerH, gameW, gameH } = computeGameDimensions(
+      const {
+        containerW,
+        containerH,
+        gameW,
+        gameH,
+        renderScale,
+      } = computeGameDimensions(
         container.getBoundingClientRect(),
         window.devicePixelRatio
       );
       if (containerW === 0 || containerH === 0) return;
+      if (
+        gameW === appliedGameW &&
+        gameH === appliedGameH &&
+        renderScale === appliedRenderScale
+      )
+        return;
+      appliedGameW = gameW;
+      appliedGameH = gameH;
+      appliedRenderScale = renderScale;
+      sceneRef.current?.setRenderScale(renderScale);
       gameRef.current.scale.resize(gameW, gameH);
     };
 
@@ -2381,6 +2562,9 @@ export function GameApp() {
       scene.setRenderScale(renderScale);
       scene.setInputPaused(inputPausedRef.current);
       sceneRef.current = scene;
+      appliedGameW = gameW;
+      appliedGameH = gameH;
+      appliedRenderScale = renderScale;
       const game = new Phaser.Game({
         type: Phaser.CANVAS,
         parent: 'game-canvas',
@@ -2718,13 +2902,9 @@ export function GameApp() {
   );
 
   useEffect(() => {
-    const dismissFallFeedback = () => {
-      activeFallFeedbackAttemptRef.current = null;
-      setMutationVisible(false);
-    };
     const onCharge = (event: Event) => {
       const detail = (event as CustomEvent<{ percent: number }>).detail;
-      if (detail.percent > 0) dismissFallFeedback();
+      if (detail.percent > 0) dismissGameplayNotices();
       if (detail.percent <= 0) soundRef.current?.stopCharge();
       if (chargeRef.current === 0 && detail.percent > 0)
         soundRef.current?.play('charge-start');
@@ -2749,7 +2929,7 @@ export function GameApp() {
     };
     const onLaunch = (event: Event) => {
       const detail = (event as CustomEvent<LaunchEventDetail>).detail;
-      dismissFallFeedback();
+      dismissGameplayNotices();
       soundRef.current?.play('launch', {
         chargePercent: detail.chargePercent,
       });
@@ -2777,11 +2957,11 @@ export function GameApp() {
         event.target instanceof Element &&
         event.target.closest('.touch-controls')
       )
-        dismissFallFeedback();
+        dismissGameplayNotices();
     };
     const onGameplayKeyDown = (event: KeyboardEvent) => {
       if (['ArrowLeft', 'ArrowRight', 'Space'].includes(event.code))
-        dismissFallFeedback();
+        dismissGameplayNotices();
     };
     window.addEventListener('fallstack:charge', onCharge);
     window.addEventListener('fallstack:land', onLand);
@@ -2810,10 +2990,10 @@ export function GameApp() {
       window.removeEventListener('pointerdown', onGameplayPointerDown);
       window.removeEventListener('keydown', onGameplayKeyDown);
     };
-  }, [postClear, postFall, postSummit]);
+  }, [dismissGameplayNotices, postClear, postFall, postSummit]);
 
   return (
-    <main className="game-shell">
+    <main className="game-shell" data-build-id={BUILD_ID}>
       {/* ── TOP BAR ── */}
       <header className="topbar">
         {/* Hanko stamp + wordmark */}
@@ -2887,7 +3067,7 @@ export function GameApp() {
         {/* Mutation banner */}
         <div
           ref={mutationBannerRef}
-          className={`hud-overlay mutation-banner${mutationReceipt ? ' receipt' : ''}${mutationVisible ? ' visible' : ''} place-${mutationPlacement}`}
+          className={`hud-overlay mutation-banner${mutationReceipt ? ' receipt' : ''}${mutationVisible ? ' visible' : ''} place-${mutationPlacement} side-${mutationSide}`}
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -2914,10 +3094,10 @@ export function GameApp() {
           )}
         </div>
 
-        {remoteBeat && (
+        {remoteBeat && !mutationVisible && !checkpointVisible && (
           <div
             ref={remoteBeatRef}
-            className={`hud-overlay remote-beat${mutationReceipt && mutationVisible && mutationPlacement === 'top' ? ' below-receipt' : ''}`}
+            className={`hud-overlay remote-beat place-${remoteBeatPlacement} side-${remoteBeatSide}`}
             role="status"
             aria-live="polite"
           >
@@ -2928,7 +3108,8 @@ export function GameApp() {
 
         {/* Checkpoint banner */}
         <div
-          className={`hud-overlay checkpoint-banner${checkpointVisible ? ' visible' : ''}`}
+          ref={checkpointBannerRef}
+          className={`hud-overlay checkpoint-banner${checkpointVisible ? ' visible' : ''} place-${checkpointPlacement} side-${checkpointSide}`}
           role="status"
           aria-live="polite"
         >

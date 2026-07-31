@@ -35,7 +35,14 @@ export type VerticalSpan = {
   weight?: number;
 };
 
+export type HorizontalSpan = {
+  left: number;
+  right: number;
+  weight?: number;
+};
+
 export type HudNoticePlacement = 'top' | 'bottom';
+export type HudNoticeSide = 'left' | 'right';
 
 export function computeGameDimensions(
   bounds: ContainerBounds,
@@ -107,6 +114,42 @@ export function cameraScrollXForPlayer(
   );
 }
 
+/**
+ * Phaser zooms around the camera centre. When its backing canvas is larger
+ * than the CSS viewport, `camera.scrollX/Y` is therefore not the visible
+ * world's left/top edge. Convert a desired world-view edge into the scroll
+ * value Phaser expects.
+ */
+export function cameraScrollForWorldViewStart(
+  worldViewStart: number,
+  viewportSize: number,
+  renderScale: number
+): number {
+  const safeViewportSize = Math.max(0, viewportSize);
+  const safeRenderScale = Number.isFinite(renderScale)
+    ? Math.max(1, renderScale)
+    : 1;
+  return (
+    worldViewStart -
+    (safeViewportSize * (safeRenderScale - 1)) / 2
+  );
+}
+
+export function worldViewStartForCameraScroll(
+  cameraScroll: number,
+  viewportSize: number,
+  renderScale: number
+): number {
+  const safeViewportSize = Math.max(0, viewportSize);
+  const safeRenderScale = Number.isFinite(renderScale)
+    ? Math.max(1, renderScale)
+    : 1;
+  return (
+    cameraScroll +
+    (safeViewportSize * (safeRenderScale - 1)) / 2
+  );
+}
+
 export function cameraVerticalLookahead(
   charging: boolean,
   chargePercent: number,
@@ -169,6 +212,33 @@ export function chooseHudNoticePlacement(input: {
     : 'top';
 }
 
+export function chooseHudNoticeSide(input: {
+  viewportWidth: number;
+  noticeWidth: number;
+  leftOffset: number;
+  rightOffset: number;
+  protectedSpans: HorizontalSpan[];
+}): HudNoticeSide {
+  const noticeWidth = Math.max(0, input.noticeWidth);
+  const left = {
+    left: input.leftOffset,
+    right: input.leftOffset + noticeWidth,
+  };
+  const right = {
+    left: input.viewportWidth - input.rightOffset - noticeWidth,
+    right: input.viewportWidth - input.rightOffset,
+  };
+  const score = (candidate: HorizontalSpan) =>
+    input.protectedSpans.reduce(
+      (total, span) =>
+        total +
+        horizontalOverlapLength(candidate, span) *
+          Math.max(1, span.weight ?? 1),
+      0
+    );
+  return score(left) < score(right) ? 'left' : 'right';
+}
+
 export function visibleHorizontalSpan(
   left: number,
   right: number,
@@ -206,6 +276,16 @@ function overlapLength(left: VerticalSpan, right: VerticalSpan): number {
   return Math.max(
     0,
     Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
+  );
+}
+
+function horizontalOverlapLength(
+  left: HorizontalSpan,
+  right: HorizontalSpan
+): number {
+  return Math.max(
+    0,
+    Math.min(left.right, right.right) - Math.max(left.left, right.left)
   );
 }
 

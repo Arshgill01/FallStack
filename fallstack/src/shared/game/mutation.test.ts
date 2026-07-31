@@ -265,7 +265,18 @@ void test('the opening helper sits on the first jump line', () => {
 
   assert.ok(helper);
   assert.equal(helper.type, 'corpse_stack');
-  assert.ok(helper.x >= 260);
+  const openingSite = deriveImpactSites(
+    generateDailyTower('fallstack-2026-07-12')
+  )[0];
+  assert.deepEqual(
+    {
+      x: helper.x,
+      y: helper.y,
+      width: helper.width,
+      height: helper.height,
+    },
+    openingSite?.helperSlot
+  );
   assert.ok(helper.y > WORLD_HEIGHT - 180 && helper.y < WORLD_HEIGHT - 60);
 });
 
