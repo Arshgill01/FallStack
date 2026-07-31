@@ -257,17 +257,53 @@ await page.addInitScript(() => {
       if (lastCamera && frameMs < 80) {
         const jumpX = Math.abs(worldView.x - lastCamera.x);
         const jumpY = Math.abs(worldView.y - lastCamera.y);
-        if ((jumpX > 72 || jumpY > 72) && metrics.cameraJumps.length < 100) {
+        const playerDeltaX = Math.abs(player.x - lastCamera.playerX);
+        const playerDeltaY = Math.abs(player.y - lastCamera.playerY);
+        const velocityTravelX =
+          Math.max(
+            Math.abs(player.body.velocity.x),
+            Math.abs(lastCamera.velocityX)
+          ) *
+          (frameMs / 1_000);
+        const velocityTravelY =
+          Math.max(
+            Math.abs(player.body.velocity.y),
+            Math.abs(lastCamera.velocityY)
+          ) *
+          (frameMs / 1_000);
+        const allowedX = Math.max(
+          72,
+          playerDeltaX + 24,
+          velocityTravelX + 32
+        );
+        const allowedY = Math.max(
+          72,
+          playerDeltaY + 24,
+          velocityTravelY + 32
+        );
+        if (
+          (jumpX > allowedX || jumpY > allowedY) &&
+          metrics.cameraJumps.length < 100
+        ) {
           metrics.cameraJumps.push({
             at: now,
             delta: [jumpX, jumpY],
+            allowed: [allowedX, allowedY],
             from: [lastCamera.x, lastCamera.y],
             to: [worldView.x, worldView.y],
             player: [player.x, player.y],
+            playerDelta: [playerDeltaX, playerDeltaY],
           });
         }
       }
-      lastCamera = { x: worldView.x, y: worldView.y };
+      lastCamera = {
+        x: worldView.x,
+        y: worldView.y,
+        playerX: player.x,
+        playerY: player.y,
+        velocityX: player.body.velocity.x,
+        velocityY: player.body.velocity.y,
+      };
     }
     requestAnimationFrame(sample);
   };

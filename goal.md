@@ -126,10 +126,23 @@ credential/platform blocker or after every release criterion below is met.
       production build.
 - [x] Pass `npm run type-check`, `npm run lint`, `npm test`, `npm run build`,
       and `git diff --check`.
-- [ ] Commit and push focused verified changes.
-- [ ] Upload/install a new immutable Devvit version and verify the exact hosted
-      build in authenticated Reddit mobile, desktop, and fullscreen modes.
-- [ ] Send the ready-for-iPhone notification with the installed version.
+- [x] Commit and push focused verified changes.
+- [x] Upload/install a new immutable Devvit version, read the installation
+      back, match the hosted asset to the release SHA, and complete hosted
+      mobile and fullscreen traversals.
+- [x] Send the ready-for-iPhone notification with the installed version.
+- [ ] Confirm signed-in Reddit-shell behavior on the user's physical iPhone;
+      Reddit's network-security block prevents this VM from opening the shell.
+
+### Closeout
+
+- Release code commit: `b299716ea95dd477f4227070803dbb0e7e4947e9`.
+- Installed Devvit version: `fallstack@0.0.33` in `r/fallstack_dev`.
+- Hosted build marker: `b299716ea95d`.
+- Hosted mobile trusted-touch and fullscreen routes reached the summit.
+- The requested phone notification was sent after install readback and hosted
+  traversal.
+- Remaining external check: the user's signed-in iPhone inside Reddit's host.
 
 ### Verified local evidence
 
@@ -149,14 +162,23 @@ credential/platform blocker or after every release criterion below is met.
 - Chromium frame timing is median/p95 16.7/16.7 ms with zero frames over 34 ms.
   Software WebKit is median/p95 17/21 ms, with no normal-motion frame over
   34 ms.
-- The current helper placement survives a 5,000-seed/180,000-site corpus, and
-  all 158 project tests pass.
+- The current helper placement survives a 5,000-seed/180,000-site corpus. The
+  route contract additionally passes 5,000 seeds and 760,958 transitions with
+  no baseline, hazard, or minimum-jump invalidity. All 161 project tests pass.
+- Exact release traversals at 375×812 DPR 3 trusted touch, 1280×800 desktop,
+  and 1920×1080 fullscreen landed every route jump and reached the summit with
+  no route fall or visibility, notice, framing, or camera failure. WebKit at
+  375×812 DPR 3 also reached the summit with no invariant failure.
+- `fallstack@0.0.33` is installed in `r/fallstack_dev`; its hosted `game.js`
+  contains exact release marker `b299716ea95d`. The hosted trusted-touch mobile
+  route completed 153/153 landings with no non-intro fall, and the hosted
+  fullscreen route reached the summit.
 - Authenticated Reddit interaction in a desktop browser remains environment
-  blocked: the VM's saved Reddit web session is expired and Reddit returns its
-  network-security login page. Devvit CLI authentication remains valid, so
-  immutable upload/install/readback and hosted asset identity are still
-  required before the phone handoff. The user's signed-in physical iPhone is
-  the final hosted interaction check.
+  blocked: both an isolated browser and the VM's saved Chrome profile return
+  Reddit's network-security page. Devvit CLI authentication, immutable
+  upload/install/readback, and direct hosted-asset identity and traversal all
+  pass. The user's signed-in physical iPhone is the final hosted interaction
+  check.
 
 ### Release criteria
 
