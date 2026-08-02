@@ -57,6 +57,7 @@ await page.addInitScript(() => {
   localStorage.setItem('fallstack:music-muted', 'true');
   window.__fallstackQaEvents = [];
   window.__fallstackQaPointerTypes = [];
+  window.__fallstackQaGameplayStarted = false;
   window.addEventListener('pointerdown', (event) => {
     window.__fallstackQaPointerTypes.push(event.pointerType);
   });
@@ -254,7 +255,7 @@ await page.addInitScript(() => {
         }
       }
 
-      if (lastCamera && frameMs < 80) {
+      if (window.__fallstackQaGameplayStarted && lastCamera && frameMs < 80) {
         const jumpX = Math.abs(worldView.x - lastCamera.x);
         const jumpY = Math.abs(worldView.y - lastCamera.y);
         const playerDeltaX = Math.abs(player.x - lastCamera.playerX);
@@ -377,6 +378,9 @@ try {
   let lastZone = initial.currentZone;
 
   await capture(page, outputDir, '00-opening');
+  await page.evaluate(() => {
+    window.__fallstackQaGameplayStarted = true;
+  });
   const introFall = options.introFall ? await performIntroFall(page) : null;
 
   while (targetIndex < route.length && totalJumps < options.maxJumps) {
@@ -620,9 +624,11 @@ async function performJump(page, current, target, attempt, blockers) {
       : -1;
   const direction = directDirection;
   const wallBounce = false;
+  const retryApproach =
+    attempt === 1 ? -3 : Math.min(30, (attempt - 1) * 6);
   const desiredLaunchX = direction > 0
-    ? target.x - 88 - Math.min(18, attempt * 3)
-    : target.x + target.width + 88 + Math.min(18, attempt * 3);
+    ? target.x - 88 + retryApproach
+    : target.x + target.width + 88 - retryApproach;
   await positionOnSupport(page, current, desiredLaunchX);
   const setupState = await readScene(page, false);
 
@@ -687,7 +693,7 @@ async function performJump(page, current, target, attempt, blockers) {
     if (wallBounce && state.vx * direction < -100) bounced = true;
     const requestedArrow = wallBounce && !bounced
       ? launchArrow
-      : flightCorrection(state, target, direction);
+      : flightCorrection(state, target, direction, attempt);
     if (trace.length < 80) {
       trace.push({
         x: round(state.x),
@@ -850,7 +856,7 @@ async function positionOnSupport(page, support, desiredX) {
   }
 }
 
-function flightCorrection(state, target, launchDirection) {
+function flightCorrection(state, target, launchDirection, attempt) {
   const targetCenter = target.x + target.width / 2;
   const safeLandingX = target.x + target.width > 430
     ? target.x + 25
@@ -875,6 +881,17 @@ function flightCorrection(state, target, launchDirection) {
   const velocityError = requiredVx - state.vx;
   const positionError = landingX - state.x;
   const tolerance = stillBelowTop ? 10 : state.vy > 0 ? 18 : 28;
+
+  // A player keeps committing toward an elevated ledge until their feet clear
+  // its top. Braking toward the predicted landing point before that moment can
+  // drive a low-frame-rate run into the ledge wall instead of over its lip.
+  if (
+    attempt > 1 &&
+    stillBelowTop &&
+    state.vy < 0 &&
+    positionError * launchDirection > tolerance
+  )
+    return launchDirection > 0 ? 'ArrowRight' : 'ArrowLeft';
 
   if (Math.abs(positionError) <= tolerance && Math.abs(velocityError) < 55) return null;
   if (velocityError > 24) return 'ArrowRight';

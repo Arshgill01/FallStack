@@ -1,5 +1,112 @@
 # Fallstack Quality Reconstruction Goal
 
+## Active Safari frame-pacing mission — 2026-08-02
+
+### Objective
+
+Remove the desktop Safari/WebKit rendering regression without weakening the
+intentional launch impulse, camera heave, landing response, mobile clarity, or
+Fallstack's Cutaway Reliquary presentation. Promote desktop Safari from an
+untested assumption to a measured, browser-specific release gate.
+
+### Confirmed baseline
+
+- The release client forces Phaser Canvas 2D.
+- At a 1280×800 browser viewport with DPR 2, the visible 758×742 board becomes
+  a 1516×1484 backing canvas (2,249,744 pixels).
+- Isolated Chromium holds 59.4 FPS during real jumps (16.7 ms median,
+  16.8 ms p95).
+- Isolated WebKit reaches only 12.5 FPS during the same jumps (80 ms median,
+  92 ms p95), and is already slow while idle.
+- WebKit at DPR 1 improves to 35.8 FPS but does not reach the smoothness gate.
+- Linux Playwright WebKit software-composites the final DPR-2 browser surface:
+  even a DPR-1 game canvas remains near 23 FPS there. It is a valid same-engine
+  A/B regression runner, but not an absolute performance oracle for a
+  hardware-accelerated Mac Safari compositor.
+- The previous WebKit runtime smoke used a small DPR-1 mobile canvas, so it
+  could pass while desktop Retina rendering remained broken.
+- `b299716..2296613` changes only QA and this goal record; the production
+  client source is identical to installed `fallstack@0.0.33`.
+
+### Protected behavior
+
+- Keep the current movement constants, charge curve, camera lookahead/easing,
+  collision geometry, artifacts, visual hierarchy, and sound timing unless a
+  failing regression proves a change is required.
+- A browser-specific resolution fallback is acceptable only if it materially
+  improves the affected Safari path, retains the same CSS dimensions and
+  logical projection, passes side-by-side readability review, and does not
+  alter mobile or other desktop browsers.
+- A synthetic frame counter alone cannot sign off the fix. Real input,
+  landing/camera invariants, resize behavior, and full traversal must pass.
+
+### Execution loop
+
+1. Measure one candidate at a time against identical viewport, DPR, input, and
+   scene state.
+2. Reject candidates that lower fidelity without a measured frame-time win or
+   that disable the tactile jump response.
+3. Lock the smallest successful renderer/workload change with a high-DPR
+   desktop WebKit regression.
+4. Re-run focused frame pacing and visual comparisons in Chromium and WebKit.
+5. Re-run mobile, resize, overlay, camera, fall/respawn, checkpoint, and summit
+   flows with production code and real input.
+6. Run type-check, lint, all tests, production build, and diff review.
+7. Commit only the verified fix and its durable evidence. Mark the goal
+   complete only after every acceptance item passes.
+
+### Acceptance checklist
+
+- [x] At 1280×800 DPR 2, the desktop Safari profile uses one quarter of the
+      original backing pixels and, in paired WebKit runs, lowers active median
+      frame time by at least 28% while raising effective FPS by at least 35%.
+- [x] The software-WebKit safety ceiling remains at or below 52 ms median and
+      95 ms p95 with no frame above 120 ms; this relative VM gate is not
+      mislabeled as physical Mac performance proof.
+- [x] Desktop Chromium at the same viewport/DPR remains within 10% of its
+      60 FPS baseline.
+- [x] Side-by-side DPR-2 screenshots retain geometry, silhouettes, labels, and
+      correctly projected output; mobile WebKit/Chromium retain their existing
+      high-DPR profile.
+- [x] Real jumps preserve launch velocity, camera continuity, landing framing,
+      notices, collision, and player visibility.
+- [x] Resize/orientation, reduced motion, fall/respawn, checkpoint restore, and
+      full tower traversals pass in both browser engines where supported.
+- [x] A permanent regression fails on the original Canvas/Retina condition and
+      passes on the fix.
+- [x] `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and
+      `git diff --check` pass.
+- [x] The focused fix is committed with no unrelated or generated artifacts.
+
+### Verified result
+
+- Product and regression commit: `7b4b58b`.
+- Two final paired WebKit runs used 562,436 backing pixels instead of
+  2,249,744. The Safari profile measured 43–44 ms active median and
+  21.2–22.1 effective FPS versus 76–78 ms and 12.1–12.8 FPS for the unchanged
+  Retina control. Candidate p95 was 63–65 ms with no active frame above 120 ms.
+- Two Chromium DPR-2 runs held 60 FPS with 16.7 ms median/p95 and no frame over
+  34 ms.
+- Desktop production climbs reached all 151 route platforms and the summit in
+  Chromium and WebKit. WebKit recovered one route fall without a framing,
+  visibility, notice, camera-continuity, or page failure.
+- A 390×844 DPR-3 Chromium touch climb performed an opening fall/respawn,
+  recovered four later falls, and reached the summit after 178 real
+  hold/release jumps with zero framing, visibility, notice, or camera failures.
+  DPR-3 WebKit retained the default high-resolution mobile profile and passed
+  focused runtime, resize, accessibility, and restored-checkpoint checks.
+- The full repository gate passed 163 tests. The production build retains only
+  the pre-existing Phaser chunk-size advisory.
+- Linux Playwright WebKit remains a software-rendered comparative runner.
+  Physical Mac Safari feel is intentionally left for the user's hardware smoke
+  after release; it is not claimed by these VM measurements.
+
+### Release closeout requirement
+
+Push the verified commits, build from the resulting clean Git SHA, upload and
+publish immutable Devvit version `0.0.36`, install it in `r/fallstack_dev`, and
+read the installed version back before marking this goal complete.
+
 ## Active stabilization mission — 2026-07-30
 
 This section supersedes the historical environment and release assumptions
