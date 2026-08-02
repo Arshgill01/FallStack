@@ -82,9 +82,10 @@ untested assumption to a measured, browser-specific release gate.
 
 - Product and regression commit: `7b4b58b`.
 - Two final paired WebKit runs used 562,436 backing pixels instead of
-  2,249,744. The Safari profile measured 43–44 ms active median and
-  21.2–22.1 effective FPS versus 76–78 ms and 12.1–12.8 FPS for the unchanged
-  Retina control. Candidate p95 was 63–65 ms with no active frame above 120 ms.
+  2,249,744. Across the release-candidate and clean-SHA repetitions, the Safari
+  profile measured 43–44 ms active median and 20.9–22.1 effective FPS versus
+  76–80 ms and 10.9–12.8 FPS for the unchanged Retina control. Candidate p95
+  was 63–75 ms with no active frame above 120 ms.
 - Two Chromium DPR-2 runs held 60 FPS with 16.7 ms median/p95 and no frame over
   34 ms.
 - Desktop production climbs reached all 151 route platforms and the summit in
