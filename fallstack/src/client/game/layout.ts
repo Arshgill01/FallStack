@@ -13,6 +13,11 @@ export type GameDimensions = {
   renderScale: number;
 };
 
+export type BrowserRenderingEnvironment = {
+  userAgent: string;
+  coarsePointer: boolean;
+};
+
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
 const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
@@ -46,11 +51,15 @@ export type HudNoticeSide = 'left' | 'right';
 
 export function computeGameDimensions(
   bounds: ContainerBounds,
-  devicePixelRatio = 1
+  devicePixelRatio = 1,
+  maxRenderScale = 2
 ): GameDimensions {
   const containerW = cleanPixelSize(bounds.width);
   const containerH = cleanPixelSize(bounds.height);
-  const renderScale = renderScaleForDevicePixelRatio(devicePixelRatio);
+  const renderScale = renderScaleForDevicePixelRatio(
+    devicePixelRatio,
+    maxRenderScale
+  );
   return {
     containerW,
     containerH,
@@ -61,11 +70,25 @@ export function computeGameDimensions(
 }
 
 export function renderScaleForDevicePixelRatio(
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  maxRenderScale = 2
 ): number {
+  const safeMaxRenderScale = Number.isFinite(maxRenderScale)
+    ? Math.min(2, Math.max(1, maxRenderScale))
+    : 2;
   return Number.isFinite(devicePixelRatio)
-    ? Math.min(2, Math.max(1, devicePixelRatio))
+    ? Math.min(safeMaxRenderScale, Math.max(1, devicePixelRatio))
     : 1;
+}
+
+export function shouldUseDesktopSafariCanvasProfile(
+  environment: BrowserRenderingEnvironment
+): boolean {
+  const userAgent = environment.userAgent;
+  const isSafari = /Safari\//.test(userAgent);
+  const isSafariCompatibleBrowser =
+    /(Chrome|Chromium|CriOS|Edg|EdgiOS|OPR|FxiOS)\//.test(userAgent);
+  return isSafari && !isSafariCompatibleBrowser && !environment.coarsePointer;
 }
 
 export function gameWorldWidth(viewportWidth: number): number {

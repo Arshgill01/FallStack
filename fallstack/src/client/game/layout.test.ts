@@ -22,6 +22,7 @@ import {
   renderScaleForDevicePixelRatio,
   ROUTE_PLAYABLE_INSET,
   routeOffsetForGameWidth,
+  shouldUseDesktopSafariCanvasProfile,
   visibleHorizontalSpan,
   worldViewStartForCameraScroll,
 } from './layout.js';
@@ -44,6 +45,16 @@ void test('game dimensions use the viewport size without squeezing the tower', (
       renderScale: 2,
     }
   );
+  assert.deepEqual(
+    computeGameDimensions({ width: 390.4, height: 635.6 }, 2.5, 1),
+    {
+      containerW: 390,
+      containerH: 636,
+      gameW: 390,
+      gameH: 636,
+      renderScale: 1,
+    }
+  );
 });
 
 void test('render scale is finite and capped to control canvas memory', () => {
@@ -51,6 +62,59 @@ void test('render scale is finite and capped to control canvas memory', () => {
   assert.equal(renderScaleForDevicePixelRatio(0.8), 1);
   assert.equal(renderScaleForDevicePixelRatio(1.5), 1.5);
   assert.equal(renderScaleForDevicePixelRatio(3), 2);
+  assert.equal(renderScaleForDevicePixelRatio(2, 1), 1);
+  assert.equal(renderScaleForDevicePixelRatio(2, 1.5), 1.5);
+  assert.equal(renderScaleForDevicePixelRatio(2, Number.NaN), 2);
+});
+
+void test('desktop Safari uses the constrained Canvas rendering profile', () => {
+  const safari =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15';
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: safari,
+      coarsePointer: false,
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: safari,
+      coarsePointer: true,
+    }),
+    false
+  );
+});
+
+void test('Safari-compatible browsers and mobile Safari keep the default profile', () => {
+  const chrome =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+  const iosSafari =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) ' +
+    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: chrome,
+      coarsePointer: false,
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: iosSafari,
+      coarsePointer: true,
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: 'Mozilla/5.0 Firefox/141.0',
+      coarsePointer: false,
+    }),
+    false
+  );
 });
 
 void test('logical game world still preserves the full tower route', () => {

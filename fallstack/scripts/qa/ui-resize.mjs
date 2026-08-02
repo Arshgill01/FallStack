@@ -59,6 +59,14 @@ try {
   );
 
   const portrait = await readLayout(page);
+  check(
+    portrait.rendering.profile === 'default' &&
+      portrait.rendering.renderScale === 2 &&
+      Math.abs(portrait.rendering.backingScale - 2) <= 0.01,
+    'mobile keeps the default high-DPR rendering profile',
+    portrait.rendering,
+    { profile: 'default', renderScale: 2, backingScale: 2 }
+  );
   await resetResizeProbe(page);
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
@@ -327,6 +335,7 @@ async function readLayout(page) {
     const player = scene.player;
     const camera = scene.cameras.main;
     const canvas = document.querySelector('#game-canvas canvas');
+    const canvasContainer = document.querySelector('#game-canvas');
     const canvasRect = canvas.getBoundingClientRect();
     const scaleX = canvasRect.width / camera.worldView.width;
     const scaleY = canvasRect.height / camera.worldView.height;
@@ -351,6 +360,13 @@ async function readLayout(page) {
         height: innerHeight,
       },
       coarsePointer: matchMedia('(pointer: coarse)').matches,
+      rendering: {
+        profile: canvasContainer.dataset.renderProfile,
+        renderScale: Number(canvasContainer.dataset.renderScale),
+        backingScale: canvas.width / canvasRect.width,
+        backingWidth: canvas.width,
+        backingHeight: canvas.height,
+      },
       controlsHintDisplay: getComputedStyle(
         document.querySelector('.controls-hint')
       ).display,

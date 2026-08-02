@@ -108,6 +108,7 @@ import {
   MOBILE_GAME_BREAKPOINT,
   physicsBoundsForViewport,
   routeOffsetForGameWidth,
+  shouldUseDesktopSafariCanvasProfile,
   type HudNoticePlacement,
   type HudNoticeSide,
 } from './game/layout';
@@ -2515,6 +2516,15 @@ export function GameApp() {
   // Boot Phaser once, then keep it pinned to the real container size.
   useEffect(() => {
     if (gameRef.current) return;
+    // The Retina Canvas introduced for sharper rendering misses its frame
+    // budget in desktop Safari. Keep gameplay coordinates unchanged while
+    // limiting only that browser's backing surface to one pixel per CSS pixel.
+    const desktopSafariCanvasProfile =
+      shouldUseDesktopSafariCanvasProfile({
+        userAgent: navigator.userAgent,
+        coarsePointer: window.matchMedia('(pointer: coarse)').matches,
+      });
+    const maxRenderScale = desktopSafariCanvasProfile ? 1 : 2;
     let frameId: number | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let appliedGameW = 0;
@@ -2532,7 +2542,8 @@ export function GameApp() {
         renderScale,
       } = computeGameDimensions(
         container.getBoundingClientRect(),
-        window.devicePixelRatio
+        window.devicePixelRatio,
+        maxRenderScale
       );
       if (containerW === 0 || containerH === 0) return;
       if (
@@ -2544,6 +2555,10 @@ export function GameApp() {
       appliedGameW = gameW;
       appliedGameH = gameH;
       appliedRenderScale = renderScale;
+      container.dataset.renderProfile = desktopSafariCanvasProfile
+        ? 'desktop-safari-canvas'
+        : 'default';
+      container.dataset.renderScale = String(renderScale);
       sceneRef.current?.setRenderScale(renderScale);
       gameRef.current.scale.resize(gameW, gameH);
     };
@@ -2554,7 +2569,8 @@ export function GameApp() {
       const { containerW, containerH, gameW, gameH, renderScale } =
         computeGameDimensions(
           container.getBoundingClientRect(),
-          window.devicePixelRatio
+          window.devicePixelRatio,
+          maxRenderScale
         );
 
       // Wait until browser layout has completed and container has dimensions
@@ -2570,6 +2586,10 @@ export function GameApp() {
       appliedGameW = gameW;
       appliedGameH = gameH;
       appliedRenderScale = renderScale;
+      container.dataset.renderProfile = desktopSafariCanvasProfile
+        ? 'desktop-safari-canvas'
+        : 'default';
+      container.dataset.renderScale = String(renderScale);
       const game = new Phaser.Game({
         type: Phaser.CANVAS,
         parent: 'game-canvas',
@@ -2633,6 +2653,11 @@ export function GameApp() {
       gameRef.current?.destroy(true);
       gameRef.current = null;
       sceneRef.current = null;
+      const container = document.getElementById('game-canvas');
+      if (container) {
+        delete container.dataset.renderProfile;
+        delete container.dataset.renderScale;
+      }
     };
   }, []);
 
