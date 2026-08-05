@@ -92,9 +92,9 @@ unverified installed artifact.
       higher.
 - [x] Type-check, lint, unit/integration tests, production build, all relevant
       browser E2E suites, and `git diff --check` pass from the final source.
-- [ ] The confidence audit exceeds 95% with no failed high-risk gate and names
+- [x] The confidence audit exceeds 95% with no failed high-risk gate and names
       every remaining hardware-only uncertainty.
-- [ ] Focused commits are pushed; the clean pushed SHA is published and installed
+- [x] Focused commits are pushed; the clean pushed SHA is published and installed
       to the target subreddit; installed version and source identity are read
       back successfully.
 
@@ -147,21 +147,45 @@ unverified installed artifact.
   deterministic post-summit capture crash. The harness now separates optional
   endurance screenshots from its in-page frame/input/camera evidence; targeted
   visual suites retain screenshot coverage.
+- Clean production commit `0af46a42f8e1` was pushed to `origin/master`, built
+  with embedded identity `0af46a42f8e1`, published as immutable Devvit version
+  `0.0.37`, and installed in `r/fallstack_dev`. Independent CLI readback reports
+  `fallstack (v0.0.37)`, successful remote build status, and source object
+  `source/fallstack/0.0.37.zip`.
+- The versioned hosted WebView serves HTTP 200 and its JavaScript contains the
+  exact `0af46a42f8e1` identity with no dirty suffix. A 390x844 DPR-3 CDP-touch
+  run reaches the summit in 152 progressing jumps with one progressing recovery
+  fall; a 1920x1080 DPR-2 keyboard run reaches it in 153 jumps without a fall.
+  Both have zero non-progressing, framing, visibility, notice, or unexpected
+  camera failures.
+- Direct hosted timing passes at 16.7-16.8 ms browser/Phaser p95 in compact,
+  fullscreen, and mobile-touch Chromium. Visible input-to-motion p95 is
+  38.7-44.9 ms; desktop camera-step p99 is 4.9 px and mobile is 11.2 px.
+- A direct versioned WebView intentionally has no signed Reddit bridge context.
+  The hosted QA mode now permits only that exact declared exception and still
+  fails on any unrecognized page exception; positive and negative gate smokes
+  prove both branches. The same direct route reports the expected unauthenticated
+  API response separately rather than treating it as signed-shell evidence.
 
-### Pre-release confidence audit
+### Final release confidence audit
 
-| Dimension                       | Earned | Evidence status                                                                                                    |
-| ------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------ |
-| Input and physics response      |  20/20 | Repeated real keyboard and CDP touch hold/release, fall, respawn, and full traversal pass.                         |
-| Frame delivery and camera feel  |  24/25 | Strict unfiltered timing and camera gates pass; one point remains reserved for physical Mac presentation hardware. |
-| Gameplay correctness            |  20/20 | Three full summit traversals plus bounds, corpus, collision, and persistence evidence pass.                        |
-| UI/UX legibility and state      |  15/15 | Overlay geometry, first-paint resume state, screenshots, accessibility, and responsive controls pass.              |
-| Responsive and host behavior    |   9/10 | Mobile/desktop/fullscreen/resize/reduced-motion pass locally; one point awaits the installed Reddit-host audit.    |
-| Regression and release identity |   5/10 | All source gates pass; five points await immutable publish, install, and readback.                                 |
+| Dimension                       | Earned | Evidence status                                                                                                                   |
+| ------------------------------- | -----: | --------------------------------------------------------------------------------------------------------------------------------- |
+| Input and physics response      |  20/20 | Repeated real keyboard and CDP touch hold/release, fall, respawn, local and hosted full traversal pass.                           |
+| Frame delivery and camera feel  |  24/25 | Strict unfiltered local and hosted timing/camera gates pass; one point remains reserved for physical Mac presentation hardware.   |
+| Gameplay correctness            |  20/20 | Five full summit traversals plus bounds, corpus, collision, and persistence evidence pass.                                        |
+| UI/UX legibility and state      |  15/15 | Overlay geometry, first-paint resume state, screenshots, accessibility, responsive controls, and hosted route visibility pass.    |
+| Responsive and host behavior    |   9/10 | Mobile/desktop/fullscreen/resize/reduced-motion and direct installed-WebView containment pass; signed Reddit shell is VM-blocked. |
+| Regression and release identity |  10/10 | Source gates pass; clean SHA `0af46a42f8e1`, immutable `0.0.37`, install, source object, and hosted marker are read back.         |
 
-Pre-release confidence is **93/100**. The goal intentionally remains active
-until the hosted audit and immutable release identity earn the remaining five
-release points and at least one host point, taking the final score above 95.
+Final evidence-weighted confidence is **98/100** with every high-risk gate
+passing. The two deliberately unearned points are physical Mac compositor/input
+presentation and the signed Reddit iframe shell: both isolated and saved-profile
+VM browsers receive Reddit's network-security 403 before the post can load.
+Those boundaries cannot invalidate the exact installed asset, timing, route,
+responsive, UI, persistence, and identity evidence above, but they are not
+misrepresented as tested. The remaining release smoke is the user's real iPhone
+and Mac session after reopening the post to avoid a cached iframe.
 
 ## Active Safari frame-pacing mission — 2026-08-02
 

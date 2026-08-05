@@ -555,6 +555,17 @@ try {
         (event) => jump.at >= event.at && jump.at - event.at <= 250
       )
   );
+  const expectedPageErrors = pageErrors.filter(
+    (message) =>
+      options.directDevvitAsset &&
+      [
+        'Error: no bridge context',
+        'Uncaught Error: no bridge context',
+      ].includes(message)
+  );
+  const unexpectedPageErrors = pageErrors.filter(
+    (message) => !expectedPageErrors.includes(message)
+  );
   const report = {
     generatedAt: new Date().toISOString(),
     buildId: await page.evaluate(() => window.fallstackBuildId ?? null),
@@ -596,6 +607,8 @@ try {
     landings,
     consoleEntries,
     pageErrors,
+    expectedPageErrors,
+    unexpectedPageErrors,
   };
   await writeFile(
     path.join(outputDir, 'playthrough.json'),
@@ -617,6 +630,7 @@ try {
         visibilityFailureCount: visibility?.failures?.length ?? 0,
         noticeFailureCount: visibility?.noticeFailures?.length ?? 0,
         unexpectedCameraJumpCount: unexpectedCameraJumps.length,
+        unexpectedPageErrorCount: unexpectedPageErrors.length,
         finalPlatform: finalState.lastPlatformId,
         currentZone: finalState.currentZone,
         elapsedMs: report.elapsedMs,
@@ -631,7 +645,8 @@ try {
     framingFailures.length > 0 ||
     (visibility?.failures?.length ?? 0) > 0 ||
     (visibility?.noticeFailures?.length ?? 0) > 0 ||
-    unexpectedCameraJumps.length > 0
+    unexpectedCameraJumps.length > 0 ||
+    unexpectedPageErrors.length > 0
   )
     process.exitCode = 1;
 } catch (error) {
@@ -1411,6 +1426,7 @@ function parseArgs(args) {
     introFall: values.get('intro-fall') === 'true',
     resumeZone: values.get('resume-zone') ?? null,
     requireSummit: values.get('require-summit') !== 'false',
+    directDevvitAsset: values.get('direct-devvit-asset') === 'true',
   };
 }
 

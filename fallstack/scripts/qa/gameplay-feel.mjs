@@ -95,6 +95,7 @@ const report = {
   source: {
     url: args.url,
     commit: process.env.FALLSTACK_QA_SOURCE_COMMIT ?? 'unknown',
+    directDevvitAsset: args.directDevvitAsset,
   },
   repetitions: args.repetitions,
   jumpsPerRun: args.jumps,
@@ -218,6 +219,14 @@ async function runScenario(scenario, repetition) {
     }
     const surface = await readSurface(page);
     const metrics = summarizeRun(raw);
+    const expectedPageErrors = pageErrors.filter(
+      (message) =>
+        args.directDevvitAsset &&
+        [
+          'Error: no bridge context',
+          'Uncaught Error: no bridge context',
+        ].includes(message)
+    );
     return {
       id,
       scenario: scenario.name,
@@ -239,6 +248,10 @@ async function runScenario(scenario, repetition) {
       longTasks: metrics.longTasks,
       layoutShifts: metrics.layoutShifts,
       pageErrors,
+      expectedPageErrors,
+      unexpectedPageErrors: pageErrors.filter(
+        (message) => !expectedPageErrors.includes(message)
+      ),
       consoleErrors,
       unexpectedConsoleErrors: consoleErrors.filter(
         (message) => !message.startsWith('Failed to load resource:')
@@ -800,9 +813,9 @@ function summarizeSigned(values) {
 
 function addRunChecks(run) {
   check(
-    run.pageErrors.length === 0,
+    run.unexpectedPageErrors.length === 0,
     `${run.id} has no page exceptions`,
-    run.pageErrors,
+    run.unexpectedPageErrors,
     []
   );
   check(
@@ -980,6 +993,7 @@ function parseArgs(values) {
     screenshots: options.get('screenshots') !== 'false',
     trace: options.get('trace') === 'true',
     quiet: options.get('quiet') === 'true',
+    directDevvitAsset: options.get('direct-devvit-asset') === 'true',
     scenarios: (options.get('scenario') ?? '')
       .split(',')
       .map((value) => value.trim())
