@@ -1,5 +1,168 @@
 # Fallstack Quality Reconstruction Goal
 
+## Active cross-device gameplay-feel mission — 2026-08-05
+
+### Objective
+
+Make the installed Fallstack build feel consistently smooth, responsive, and
+legible throughout a complete run on iPhone, Android-class touch layouts, and
+desktop Reddit layouts. Diagnose the current desktop jank with real gameplay
+timing rather than browser identity or video appearance, fix every reproduced
+gameplay/UI defect, strengthen the E2E suite so those defects cannot pass
+silently, then commit, push, publish, install, and verify the exact tested
+artifact.
+
+### New evidence that reopens the previous signoff
+
+- The user reports the same janky feel in desktop Safari and Firefox. The
+  Safari-only render-scale mitigation therefore cannot be treated as the root
+  fix for the current desktop problem.
+- The user's iPhone remains much smoother than desktop, but feels slightly
+  worse than the build before the Safari patch. Mobile is a protected baseline,
+  not evidence that the current release is complete.
+- The supplied Mac recording renders regular delivered frames, but recording
+  output cannot measure input-to-motion latency, compositor presentation
+  cadence, or the feel of camera acceleration on the physical display.
+- The old full-playthrough camera gate excludes frames at or above 80 ms and
+  permits large per-frame camera movement. It can therefore discard the worst
+  evidence and pass movement that still looks or feels janky.
+- The previous mission explicitly left physical Mac feel as an external smoke
+  test. That omission is incompatible with the current objective and its
+  completed checklist is historical evidence only.
+
+### Strict 95% confidence contract
+
+Confidence is earned per risk, not inferred from a single green suite. The
+mission may close only when all high-risk gates have direct repeatable evidence,
+all medium-risk gates pass in at least two representative layouts/engines, no
+known reproducible defect remains, and the only residual uncertainty is the
+named difference between VM automation and physical display/input hardware.
+
+| Evidence dimension              | Weight | Required proof                                                                                                                                                |
+| ------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input and physics response      |    20% | Real hold/release input; bounded input-to-launch and launch-to-motion latency; no duplicate, stalled, or divergent updates.                                   |
+| Frame delivery and camera feel  |    25% | Browser and Phaser timing including all slow frames; bounded long-frame rate, camera step, acceleration, and landing/launch discontinuity during real climbs. |
+| Gameplay correctness            |    20% | Bounds, collision, falls, respawns, checkpoints, route completion, and summit with the production movement path.                                              |
+| UI/UX legibility and state      |    15% | Notices avoid the active route/player, zone and run state are current, controls remain usable, and overlays do not obstruct play.                             |
+| Responsive and host behavior    |    10% | Mobile portrait, desktop compact/fullscreen, resize/orientation, DPR, reduced motion, and a Reddit-host-shaped containment check.                             |
+| Regression and release identity |    10% | Regressions fail against reproduced faults; broad validation passes; installed Devvit version and source/build identity are read back.                        |
+
+The numerical total must exceed 95%, but no arithmetic total can compensate for
+a failed high-risk gate, an unexplained user-visible regression, or an
+unverified installed artifact.
+
+### Iteration loop
+
+1. Establish a clean supported toolchain and run the existing suite unchanged.
+2. Reproduce each reported or newly observed issue with instrumented real input.
+3. Prove where the existing workflow missed it, then add a regression that
+   fails for the reproduced condition.
+4. Patch the smallest evidenced root cause without weakening mobile feel,
+   movement physics, visual identity, or tower fairness.
+5. Re-run the focused regression in Chromium and WebKit plus representative
+   mobile and desktop layouts; collect timing traces, screenshots, and video
+   where each is actually probative.
+6. Repeat diagnosis and patching until all acceptance gates pass twice without
+   test-only intervention.
+7. Run the full repository gates, inspect the final diff, commit intentionally,
+   push, build from the clean pushed SHA, publish/install, and read back the
+   immutable version before closing the goal.
+
+### Acceptance checklist
+
+- [x] Existing QA is baselined and every false-negative gap used by the current
+      defect is documented and replaced by a stricter durable gate.
+- [x] Desktop gameplay timing captures browser frames, Phaser updates, real
+      input events, player motion, and camera motion without filtering slow
+      frames; repeated compact and fullscreen runs satisfy the measured budget.
+- [x] Mobile real-touch emulation preserves or improves the pre-patch response,
+      framing, readability, and full-route behavior at representative DPRs.
+- [x] Left/right world bounds and all generated ledges keep the climber both
+      physically valid and visibly recoverable in every supported layout.
+- [x] Launch, ascent, apex, landing, fall, respawn, checkpoint, and summit camera
+      transitions are continuous and never shift the whole layout.
+- [x] Fall, mutation, power-up, checkpoint, and system notices never obscure the
+      climber or the intended landing route, including queued messages.
+- [x] Restored checkpoints and resumed runs publish the correct zone/HUD state
+      on the first visible frame; no event-listener startup race remains.
+- [x] Resize/orientation, reduced motion, tab visibility, focus loss, startup,
+      and Reddit-host-shaped containment have direct passing evidence.
+- [x] Independent visual/runtime review finds no additional unresolved
+      gameplay, UI, accessibility, or performance defect of medium severity or
+      higher.
+- [x] Type-check, lint, unit/integration tests, production build, all relevant
+      browser E2E suites, and `git diff --check` pass from the final source.
+- [ ] The confidence audit exceeds 95% with no failed high-risk gate and names
+      every remaining hardware-only uncertainty.
+- [ ] Focused commits are pushed; the clean pushed SHA is published and installed
+      to the target subreddit; installed version and source identity are read
+      back successfully.
+
+### Working evidence
+
+- Clean remote baseline: `master` and `origin/master` at `078a0aa`.
+- Node 24/npm 11 produced an incomplete dependency extraction while returning a
+  misleading successful install. Reinstalling with the system Node 22.22.1
+  toolchain restored a complete dependency tree and passing TypeScript build.
+- The old frame-pacing workflow did not wait for a launch to resolve before
+  sending the next input, the baseline summit probe fired before the restored
+  player was grounded, and full-playthrough discarded camera samples on frames
+  at or above 80 ms while tolerating a 72 px minimum camera jump. Those gaps are
+  now replaced by outcome-driven waits and gates that retain slow frames.
+- Instrumented compact/fullscreen Chromium, Firefox, Linux WebKit, and mobile
+  touch runs found no jump-time DOM relayout. The reproduced discontinuity was
+  charge anticipation beginning from the previous jump's stored charge instead
+  of the live hold; its fixed 24 px starting offset also made the first charge
+  frame discontinuous.
+- The candidate uses continuous live-charge anticipation and a bounded desktop
+  Canvas pixel budget. Mobile keeps its DPR-2 surface; desktop compact and
+  fullscreen use the same centered 760 x 800 maximum shell rather than scaling
+  rendering work with an arbitrarily tall host viewport.
+- Complete production-path traversal reaches the summit in Chromium desktop,
+  Chromium mobile real-touch, and WebKit desktop. Desktop Chromium completes
+  153 progress jumps without a fall; mobile and WebKit each recover one
+  checkpoint-advancing fall. All three have zero non-progressing attempts,
+  framing failures, player-visibility failures, notice overlaps, or unexpected
+  camera discontinuities.
+- Two final repetitions of the unfiltered gameplay-feel matrix pass all five
+  environments: Chromium compact and fullscreen, Firefox compact, comparative
+  software WebKit, and 390x844 DPR-3 Chromium touch. Chromium/Firefox/mobile
+  browser and Phaser p95 frame times remain about 16.7-17.3 ms; visible player
+  response remains below 46 ms; continuous desktop camera p99 steps remain near
+  5 px, and mobile near 11.2 px. The deliberate charge motion has zero DOM
+  relayout and zero layout-shift score.
+- World-bound coverage passes at 286, 320, 375, 480, and 1280 px. The 365-seed
+  corpus validates 55,551 route transitions and 13,140 impact sites with no
+  invalid route, hidden landing, or hazard blockage.
+- The overlay suite passes 2,774 geometric checks. State and accessibility
+  matrices pass in Chromium and WebKit; a newly reproduced one-frame restored
+  checkpoint mismatch was fixed by applying checkpoint and HUD state before
+  paint, then passed all 198 state checks in both engines.
+- Two real persisted falls in the shared-session E2E advance revision 37 to 39,
+  defer the remote board safely while airborne, reconcile after respawn, show
+  the resulting Mercy Nail and remote beat, and survive a cold page reopen at
+  revision 39 with no errors.
+- Playwright Chromium's software GPU crashes when the endurance runner combines
+  the large Canvas surface with repeated full-page screenshots, including a
+  deterministic post-summit capture crash. The harness now separates optional
+  endurance screenshots from its in-page frame/input/camera evidence; targeted
+  visual suites retain screenshot coverage.
+
+### Pre-release confidence audit
+
+| Dimension                       | Earned | Evidence status                                                                                                    |
+| ------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------ |
+| Input and physics response      |  20/20 | Repeated real keyboard and CDP touch hold/release, fall, respawn, and full traversal pass.                         |
+| Frame delivery and camera feel  |  24/25 | Strict unfiltered timing and camera gates pass; one point remains reserved for physical Mac presentation hardware. |
+| Gameplay correctness            |  20/20 | Three full summit traversals plus bounds, corpus, collision, and persistence evidence pass.                        |
+| UI/UX legibility and state      |  15/15 | Overlay geometry, first-paint resume state, screenshots, accessibility, and responsive controls pass.              |
+| Responsive and host behavior    |   9/10 | Mobile/desktop/fullscreen/resize/reduced-motion pass locally; one point awaits the installed Reddit-host audit.    |
+| Regression and release identity |   5/10 | All source gates pass; five points await immutable publish, install, and readback.                                 |
+
+Pre-release confidence is **93/100**. The goal intentionally remains active
+until the hosted audit and immutable release identity earn the remaining five
+release points and at least one host point, taking the final score above 95.
+
 ## Active Safari frame-pacing mission — 2026-08-02
 
 ### Objective
@@ -151,16 +314,16 @@ that is verified locally and remove the defects still visible to the user:
 
 ### Target matrix
 
-| Surface | Viewport or mode | Required input |
-| --- | --- | --- |
-| Local production build | 320×568 touch | real pointer/touch hold and release |
-| Local production build | 375×812 touch | real pointer/touch hold and release |
-| Local production build | 390×844 iPhone-like touch | real pointer/touch hold and release |
-| Local production build | 1280×800 desktop | keyboard |
-| Local production build | 1920×1080 fullscreen | keyboard |
-| Reddit playtest host | desktop browser in Mobile mode | actual expanded Devvit WebView |
-| Reddit playtest host | desktop and fullscreen | actual expanded Devvit WebView |
-| Installed Reddit version | narrowest observed hosted game frame | actual controls and live camera |
+| Surface                  | Viewport or mode                     | Required input                      |
+| ------------------------ | ------------------------------------ | ----------------------------------- |
+| Local production build   | 320×568 touch                        | real pointer/touch hold and release |
+| Local production build   | 375×812 touch                        | real pointer/touch hold and release |
+| Local production build   | 390×844 iPhone-like touch            | real pointer/touch hold and release |
+| Local production build   | 1280×800 desktop                     | keyboard                            |
+| Local production build   | 1920×1080 fullscreen                 | keyboard                            |
+| Reddit playtest host     | desktop browser in Mobile mode       | actual expanded Devvit WebView      |
+| Reddit playtest host     | desktop and fullscreen               | actual expanded Devvit WebView      |
+| Installed Reddit version | narrowest observed hosted game frame | actual controls and live camera     |
 
 Chromium is required for fast iteration. WebKit is required for the final
 mobile regression because it is the closest browser engine available on this
@@ -407,18 +570,18 @@ survive the broader player path.
 Create `fallstack/docs/quality-reconstruction/` during Gate 0 and keep these
 records separate:
 
-| File | Owns |
-| --- | --- |
-| `status.md` | Gate state, issue index, decisions, commits, commands, blockers |
-| `environment.md` | Mac/tool versions, auth/browser/audio probes, local constraints |
-| `baseline.md` | Current mobile/desktop/host captures and systemic findings |
-| `audio.md` | SFX/music inventory, signal metrics, listening notes, source/licence records |
-| `gameplay-world.md` | Input, physics, camera, horizontal bounds, collisions, respawn |
-| `tower-quality.md` | Seed corpus, platform margins, visibility, reachability, difficulty |
-| `character.md` | Player silhouette directions, selected grammar, state matrix, runtime proof |
-| `ui-ux.md` | Hierarchy, guidance, overlays, controls, copy, accessibility |
-| `host.md` | Local versus Reddit-hosted behavior, shared state, browser-specific evidence |
-| `issues/ISSUE-NNN.md` | One reproducible issue, hypotheses, probes, fix, regression, result |
+| File                  | Owns                                                                         |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `status.md`           | Gate state, issue index, decisions, commits, commands, blockers              |
+| `environment.md`      | Mac/tool versions, auth/browser/audio probes, local constraints              |
+| `baseline.md`         | Current mobile/desktop/host captures and systemic findings                   |
+| `audio.md`            | SFX/music inventory, signal metrics, listening notes, source/licence records |
+| `gameplay-world.md`   | Input, physics, camera, horizontal bounds, collisions, respawn               |
+| `tower-quality.md`    | Seed corpus, platform margins, visibility, reachability, difficulty          |
+| `character.md`        | Player silhouette directions, selected grammar, state matrix, runtime proof  |
+| `ui-ux.md`            | Hierarchy, guidance, overlays, controls, copy, accessibility                 |
+| `host.md`             | Local versus Reddit-hosted behavior, shared state, browser-specific evidence |
+| `issues/ISSUE-NNN.md` | One reproducible issue, hypotheses, probes, fix, regression, result          |
 
 Store generated proof under
 `fallstack/docs/quality-reconstruction/evidence/<gate-or-issue>/`. Do not mix
