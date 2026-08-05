@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-resize'
@@ -197,7 +198,7 @@ try {
     airborneAfterResize.scene.playerRect,
     'inside canvas'
   );
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, 'touch-landscape.png'),
     fullPage: true,
   });
@@ -207,8 +208,8 @@ try {
   await waitForReady(page);
   await page.locator('.action-btn', { hasText: 'Guide' }).click();
   await page.waitForSelector('.guide-card');
-  await page.waitForFunction(
-    () => document.activeElement?.matches('.guide-card')
+  await page.waitForFunction(() =>
+    document.activeElement?.matches('.guide-card')
   );
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
@@ -239,14 +240,13 @@ try {
       }
     );
     check(
-      dialog.touchControlsDisplay === 'flex' &&
-        dialog.touchControlsDisabled,
+      dialog.touchControlsDisplay === 'flex' && dialog.touchControlsDisabled,
       `Guide keeps visible disabled touch controls in ${orientation}`,
       dialog,
       { display: 'flex', disabled: true }
     );
   }
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, 'guide-portrait-after-resize.png'),
     fullPage: true,
   });
@@ -414,10 +414,10 @@ async function readDialogLayout(page) {
       focusInside: Boolean(card?.contains(document.activeElement)),
       insideViewport: Boolean(
         rect &&
-          rect.left >= 0 &&
-          rect.right <= innerWidth &&
-          rect.top >= 0 &&
-          rect.bottom <= innerHeight
+        rect.left >= 0 &&
+        rect.right <= innerWidth &&
+        rect.top >= 0 &&
+        rect.bottom <= innerHeight
       ),
       cardRect: rect
         ? {
@@ -455,8 +455,7 @@ async function moveWithVisibleTouchControl(context, page, name) {
         (beforeX) => {
           const scene = window.__fallstackFindScene?.();
           return (
-            scene &&
-            scene.player.x - scene.currentRouteOffset - beforeX > 10
+            scene && scene.player.x - scene.currentRouteOffset - beforeX > 10
           );
         },
         before.scene.logicalX,
@@ -490,8 +489,8 @@ async function waitForReady(page) {
     () =>
       Boolean(
         window.__fallstackFindScene?.()?.controlsReady &&
-          window.fallstackSnapshot &&
-          !document.querySelector('.loading-overlay')
+        window.fallstackSnapshot &&
+        !document.querySelector('.loading-overlay')
       ),
     null,
     { timeout: 30_000 }
@@ -509,8 +508,7 @@ async function installResizeProbe(page) {
       cameraSnapSources: [],
     };
     const scaleResize = scene.scale.resize.bind(scene.scale);
-    const rebuildPlatformBodies =
-      scene.rebuildPlatformBodies.bind(scene);
+    const rebuildPlatformBodies = scene.rebuildPlatformBodies.bind(scene);
     const snapCameraToPlayer = scene.snapCameraToPlayer.bind(scene);
     scene.scale.resize = (...args) => {
       probe.scaleResizes += 1;

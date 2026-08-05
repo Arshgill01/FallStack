@@ -18,6 +18,7 @@ export type BrowserRenderingEnvironment = {
   coarsePointer: boolean;
 };
 
+export const DESKTOP_CANVAS_PIXEL_BUDGET = 1_600_000;
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
 const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
@@ -91,6 +92,27 @@ export function shouldUseDesktopSafariCanvasProfile(
   return isSafari && !isSafariCompatibleBrowser && !environment.coarsePointer;
 }
 
+export function canvasRenderScaleForEnvironment(
+  bounds: ContainerBounds,
+  devicePixelRatio: number,
+  environment: BrowserRenderingEnvironment
+): number {
+  const browserMaximum = shouldUseDesktopSafariCanvasProfile(environment)
+    ? 1
+    : 2;
+  if (environment.coarsePointer)
+    return renderScaleForDevicePixelRatio(devicePixelRatio, browserMaximum);
+  const cssPixels =
+    cleanPixelSize(bounds.width) * cleanPixelSize(bounds.height);
+  if (cssPixels <= 0)
+    return renderScaleForDevicePixelRatio(devicePixelRatio, browserMaximum);
+  const budgetMaximum = Math.sqrt(DESKTOP_CANVAS_PIXEL_BUDGET / cssPixels);
+  return renderScaleForDevicePixelRatio(
+    devicePixelRatio,
+    Math.min(browserMaximum, budgetMaximum)
+  );
+}
+
 export function gameWorldWidth(viewportWidth: number): number {
   return Math.max(WORLD_WIDTH, cleanPixelSize(viewportWidth));
 }
@@ -152,10 +174,7 @@ export function cameraScrollForWorldViewStart(
   const safeRenderScale = Number.isFinite(renderScale)
     ? Math.max(1, renderScale)
     : 1;
-  return (
-    worldViewStart -
-    (safeViewportSize * (safeRenderScale - 1)) / 2
-  );
+  return worldViewStart - (safeViewportSize * (safeRenderScale - 1)) / 2;
 }
 
 export function worldViewStartForCameraScroll(
@@ -167,10 +186,7 @@ export function worldViewStartForCameraScroll(
   const safeRenderScale = Number.isFinite(renderScale)
     ? Math.max(1, renderScale)
     : 1;
-  return (
-    cameraScroll +
-    (safeViewportSize * (safeRenderScale - 1)) / 2
-  );
+  return cameraScroll + (safeViewportSize * (safeRenderScale - 1)) / 2;
 }
 
 export function cameraVerticalLookahead(
@@ -180,7 +196,7 @@ export function cameraVerticalLookahead(
 ): number {
   if (charging) {
     const progress = clamp(chargePercent / 100, 0, 1);
-    return 24 + progress * (CAMERA_VERTICAL_CHARGE_LOOKAHEAD - 24);
+    return progress * CAMERA_VERTICAL_CHARGE_LOOKAHEAD;
   }
   return velocityY < 0
     ? Math.min(CAMERA_VERTICAL_AIR_LOOKAHEAD, Math.abs(velocityY) * 0.045)

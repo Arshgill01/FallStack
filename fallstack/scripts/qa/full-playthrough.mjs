@@ -2,6 +2,7 @@ import { chromium, webkit } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const options = parseArgs(process.argv.slice(2));
 const outputDir = path.resolve(options.output);
@@ -30,7 +31,10 @@ const context = await browser.newContext({
   hasTouch: options.mobile,
   reducedMotion: options.reducedMotion ? 'reduce' : 'no-preference',
   recordVideo: options.video
-    ? { dir: path.join(outputDir, 'videos'), size: { width: options.width, height: options.height } }
+    ? {
+        dir: path.join(outputDir, 'videos'),
+        size: { width: options.width, height: options.height },
+      }
     : undefined,
 });
 const page = await context.newPage();
@@ -137,10 +141,7 @@ await page.addInitScript(() => {
       const visualHalfWidth = player.body.halfWidth + 12;
       const left = player.x - visualHalfWidth;
       const right = player.x + visualHalfWidth;
-      if (
-        left < worldView.x - 0.5 ||
-        right > worldView.right + 0.5
-      ) {
+      if (left < worldView.x - 0.5 || right > worldView.right + 0.5) {
         if (metrics.failures.length < 100) {
           metrics.failures.push({
             at: now,
@@ -176,20 +177,16 @@ await page.addInitScript(() => {
           const playerRect = {
             left:
               canvasRect.left +
-              (player.x - player.body.halfWidth - worldView.x) *
-                scaleX,
+              (player.x - player.body.halfWidth - worldView.x) * scaleX,
             right:
               canvasRect.left +
-              (player.x + player.body.halfWidth - worldView.x) *
-                scaleX,
+              (player.x + player.body.halfWidth - worldView.x) * scaleX,
             top:
               canvasRect.top +
-              (player.y - player.body.halfHeight - worldView.y) *
-                scaleY,
+              (player.y - player.body.halfHeight - worldView.y) * scaleY,
             bottom:
               canvasRect.top +
-              (player.y + player.body.halfHeight - worldView.y) *
-                scaleY,
+              (player.y + player.body.halfHeight - worldView.y) * scaleY,
           };
           const nextLanding = scene.nextRoutePlatform?.();
           const layoutLanding = nextLanding
@@ -198,22 +195,15 @@ await page.addInitScript(() => {
           const targetRect = layoutLanding
             ? {
                 left:
-                  canvasRect.left +
-                  (layoutLanding.x - worldView.x) * scaleX,
+                  canvasRect.left + (layoutLanding.x - worldView.x) * scaleX,
                 right:
                   canvasRect.left +
-                  (layoutLanding.x +
-                    layoutLanding.width -
-                    worldView.x) *
+                  (layoutLanding.x + layoutLanding.width - worldView.x) *
                     scaleX,
-                top:
-                  canvasRect.top +
-                  (layoutLanding.y - worldView.y) * scaleY,
+                top: canvasRect.top + (layoutLanding.y - worldView.y) * scaleY,
                 bottom:
                   canvasRect.top +
-                  (layoutLanding.y +
-                    layoutLanding.height -
-                    worldView.y) *
+                  (layoutLanding.y + layoutLanding.height - worldView.y) *
                     scaleY,
               }
             : null;
@@ -228,14 +218,11 @@ await page.addInitScript(() => {
               ? overlapArea(noticeRect, targetRect)
               : 0;
             const controlOverlap = controls.reduce(
-              (total, control) =>
-                total + overlapArea(noticeRect, control),
+              (total, control) => total + overlapArea(noticeRect, control),
               0
             );
             if (
-              (playerOverlap > 0 ||
-                targetOverlap > 0 ||
-                controlOverlap > 0) &&
+              (playerOverlap > 0 || targetOverlap > 0 || controlOverlap > 0) &&
               metrics.noticeFailures.length < 100
             ) {
               metrics.noticeFailures.push({
@@ -255,7 +242,11 @@ await page.addInitScript(() => {
         }
       }
 
-      if (window.__fallstackQaGameplayStarted && lastCamera && frameMs < 80) {
+      if (
+        window.__fallstackQaGameplayStarted &&
+        lastCamera &&
+        lastCamera.attemptId === scene.currentAttemptId
+      ) {
         const jumpX = Math.abs(worldView.x - lastCamera.x);
         const jumpY = Math.abs(worldView.y - lastCamera.y);
         const playerDeltaX = Math.abs(player.x - lastCamera.playerX);
@@ -272,22 +263,16 @@ await page.addInitScript(() => {
             Math.abs(lastCamera.velocityY)
           ) *
           (frameMs / 1_000);
-        const allowedX = Math.max(
-          72,
-          playerDeltaX + 24,
-          velocityTravelX + 32
-        );
-        const allowedY = Math.max(
-          72,
-          playerDeltaY + 24,
-          velocityTravelY + 32
-        );
+        const allowedX = Math.max(24, playerDeltaX + 16, velocityTravelX + 16);
+        const allowedY = Math.max(24, playerDeltaY + 16, velocityTravelY + 16);
         if (
           (jumpX > allowedX || jumpY > allowedY) &&
           metrics.cameraJumps.length < 100
         ) {
           metrics.cameraJumps.push({
             at: now,
+            frameMs,
+            attemptId: scene.currentAttemptId,
             delta: [jumpX, jumpY],
             allowed: [allowedX, allowedY],
             from: [lastCamera.x, lastCamera.y],
@@ -304,6 +289,7 @@ await page.addInitScript(() => {
         playerY: player.y,
         velocityX: player.body.velocity.x,
         velocityY: player.body.velocity.y,
+        attemptId: scene.currentAttemptId,
       };
     }
     requestAnimationFrame(sample);
@@ -315,8 +301,14 @@ await page.addInitScript(() => {
     bottom: rect.bottom,
   });
   const overlapArea = (left, right) =>
-    Math.max(0, Math.min(left.right, right.right) - Math.max(left.left, right.left)) *
-    Math.max(0, Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top));
+    Math.max(
+      0,
+      Math.min(left.right, right.right) - Math.max(left.left, right.left)
+    ) *
+    Math.max(
+      0,
+      Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
+    );
   requestAnimationFrame(sample);
 });
 
@@ -351,9 +343,13 @@ try {
       `,
     });
   }
-  await page.waitForFunction(() => window.__fallstackQaEvents?.some((event) => event.name === 'ready'), null, {
-    timeout: 30_000,
-  });
+  await page.waitForFunction(
+    () => window.__fallstackQaEvents?.some((event) => event.name === 'ready'),
+    null,
+    {
+      timeout: 30_000,
+    }
+  );
   await page.waitForTimeout(250);
   const resumeCheck = options.resumeZone
     ? await validateRestoredCheckpoint(page, options.resumeZone)
@@ -361,11 +357,15 @@ try {
 
   const initial = await readScene(page, true);
   const allPlatforms = initial.platforms;
-  const platformById = new Map(allPlatforms.map((platform) => [platform.id, platform]));
+  const platformById = new Map(
+    allPlatforms.map((platform) => [platform.id, platform])
+  );
   const route = allPlatforms
     .filter((platform) => platform.kind !== 'obstacle')
     .sort((a, b) => b.y - a.y);
-  const routeIndex = new Map(route.map((platform, index) => [platform.id, index]));
+  const routeIndex = new Map(
+    route.map((platform, index) => [platform.id, index])
+  );
   const initialSupport = currentSupport(allPlatforms, platformById, initial);
   let targetIndex = Math.max(
     1,
@@ -376,6 +376,11 @@ try {
   const successfulApproaches = new Map();
   let totalJumps = 0;
   let lastZone = initial.currentZone;
+
+  if (options.progress)
+    process.stderr.write(
+      `[playthrough] zone=${lastZone} jumps=0 target=${targetIndex}\n`
+    );
 
   await capture(page, outputDir, '00-opening');
   await page.evaluate(() => {
@@ -398,7 +403,15 @@ try {
 
     if (state.currentZone !== lastZone) {
       lastZone = state.currentZone;
-      await capture(page, outputDir, `zone-${String(targetIndex).padStart(3, '0')}-${slug(lastZone)}`);
+      if (options.progress)
+        process.stderr.write(
+          `[playthrough] zone=${lastZone} jumps=${totalJumps} target=${targetIndex}\n`
+        );
+      await capture(
+        page,
+        outputDir,
+        `zone-${String(targetIndex).padStart(3, '0')}-${slug(lastZone)}`
+      );
     }
 
     const target = route[targetIndex];
@@ -489,7 +502,10 @@ try {
         routeIndex,
         afterSupport
       );
-      targetIndex = Math.max(1, (recoveredIndex ?? checkpointRouteIndex(route, after.y)) + 1);
+      targetIndex = Math.max(
+        1,
+        (recoveredIndex ?? checkpointRouteIndex(route, after.y)) + 1
+      );
     } else if (
       afterIndex !== undefined &&
       afterIndex < targetIndex &&
@@ -501,8 +517,10 @@ try {
 
   const finalState = await readScene(page, false);
   completed ||= finalState.summitSent;
-  await page.waitForTimeout(completed ? 750 : 100);
-  await capture(page, outputDir, completed ? '99-summit' : '99-incomplete');
+  if (options.finalScreenshot) {
+    await page.waitForTimeout(completed ? 750 : 100);
+    await capture(page, outputDir, completed ? '99-summit' : '99-incomplete');
+  }
 
   const events = await page.evaluate(() => window.__fallstackQaEvents ?? []);
   const pointerTypes = await page.evaluate(
@@ -524,6 +542,13 @@ try {
     0,
     fallEvents.length - (introFall ? 1 : 0)
   );
+  const progressCount = landings.filter((landing) => landing.advanced).length;
+  const landingOutcomeCount = landings.filter(
+    (landing) => landing.result.outcome !== 'fall'
+  ).length;
+  const progressingFallCount = landings.filter(
+    (landing) => landing.advanced && landing.result.outcome === 'fall'
+  ).length;
   const unexpectedCameraJumps = (visibility?.cameraJumps ?? []).filter(
     (jump) =>
       !fallEvents.some(
@@ -541,13 +566,18 @@ try {
     input: options.input,
     renderer,
     webglDisabledAtLaunch: options.canvas,
+    screenshotsEnabled: options.screenshots,
+    finalScreenshotRequested: options.finalScreenshot,
     reducedMotion: options.reducedMotion,
     requestedResumeZone: options.resumeZone,
     elapsedMs: Date.now() - startedAt,
     completed,
     routePlatforms: route.length,
     totalJumps,
-    landingCount: landings.filter((landing) => landing.advanced).length,
+    landingCount: landingOutcomeCount,
+    progressCount,
+    progressingFallCount,
+    nonProgressingFallCount: failures.length,
     failureCount: failures.length,
     fallEventCount: fallEvents.length,
     routeFallEventCount,
@@ -567,22 +597,34 @@ try {
     consoleEntries,
     pageErrors,
   };
-  await writeFile(path.join(outputDir, 'playthrough.json'), `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`${JSON.stringify({
-    completed,
-    routePlatforms: route.length,
-    totalJumps,
-    landingCount: report.landingCount,
-    failureCount: failures.length,
-    routeFallEventCount,
-    framingFailureCount: framingFailures.length,
-    visibilityFailureCount: visibility?.failures?.length ?? 0,
-    noticeFailureCount: visibility?.noticeFailures?.length ?? 0,
-    unexpectedCameraJumpCount: unexpectedCameraJumps.length,
-    finalPlatform: finalState.lastPlatformId,
-    currentZone: finalState.currentZone,
-    elapsedMs: report.elapsedMs,
-  }, null, 2)}\n`);
+  await writeFile(
+    path.join(outputDir, 'playthrough.json'),
+    `${JSON.stringify(report, null, 2)}\n`
+  );
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        completed,
+        routePlatforms: route.length,
+        totalJumps,
+        landingCount: landingOutcomeCount,
+        progressCount,
+        progressingFallCount,
+        nonProgressingFallCount: failures.length,
+        failureCount: failures.length,
+        routeFallEventCount,
+        framingFailureCount: framingFailures.length,
+        visibilityFailureCount: visibility?.failures?.length ?? 0,
+        noticeFailureCount: visibility?.noticeFailures?.length ?? 0,
+        unexpectedCameraJumpCount: unexpectedCameraJumps.length,
+        finalPlatform: finalState.lastPlatformId,
+        currentZone: finalState.currentZone,
+        elapsedMs: report.elapsedMs,
+      },
+      null,
+      2
+    )}\n`
+  );
 
   if (
     (!completed && options.requireSummit) ||
@@ -593,20 +635,29 @@ try {
   )
     process.exitCode = 1;
 } catch (error) {
-  const events = await page.evaluate(() => window.__fallstackQaEvents ?? []).catch(() => []);
+  const events = await page
+    .evaluate(() => window.__fallstackQaEvents ?? [])
+    .catch(() => []);
   await writeFile(
     path.join(outputDir, 'failure.json'),
-    `${JSON.stringify({
-      generatedAt: new Date().toISOString(),
-      error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
-      elapsedMs: Date.now() - startedAt,
-      events,
-      failures,
-      framingFailures,
-      landings,
-      consoleEntries,
-      pageErrors,
-    }, null, 2)}\n`
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : String(error),
+        elapsedMs: Date.now() - startedAt,
+        events,
+        failures,
+        framingFailures,
+        landings,
+        consoleEntries,
+        pageErrors,
+      },
+      null,
+      2
+    )}\n`
   );
   await capture(page, outputDir, '99-failure').catch(() => {});
   throw error;
@@ -624,11 +675,11 @@ async function performJump(page, current, target, attempt, blockers) {
       : -1;
   const direction = directDirection;
   const wallBounce = false;
-  const retryApproach =
-    attempt === 1 ? -3 : Math.min(30, (attempt - 1) * 6);
-  const desiredLaunchX = direction > 0
-    ? target.x - 88 + retryApproach
-    : target.x + target.width + 88 - retryApproach;
+  const retryApproach = attempt === 1 ? -3 : Math.min(30, (attempt - 1) * 6);
+  const desiredLaunchX =
+    direction > 0
+      ? target.x - 88 + retryApproach
+      : target.x + target.width + 88 - retryApproach;
   await positionOnSupport(page, current, desiredLaunchX);
   const setupState = await readScene(page, false);
 
@@ -682,18 +733,16 @@ async function performJump(page, current, target, attempt, blockers) {
       break;
     }
     const landedAfterLaunch = state.landCount > landCount;
-    if (
-      (observedAirborne && state.grounded) ||
-      landedAfterLaunch
-    ) {
+    if ((observedAirborne && state.grounded) || landedAfterLaunch) {
       outcome = state.lastPlatformId === target.id ? 'target' : 'landed';
       break;
     }
 
     if (wallBounce && state.vx * direction < -100) bounced = true;
-    const requestedArrow = wallBounce && !bounced
-      ? launchArrow
-      : flightCorrection(state, target, direction, attempt);
+    const requestedArrow =
+      wallBounce && !bounced
+        ? launchArrow
+        : flightCorrection(state, target, direction, attempt);
     if (trace.length < 80) {
       trace.push({
         x: round(state.x),
@@ -705,8 +754,7 @@ async function performJump(page, current, target, attempt, blockers) {
       });
     }
     if (options.input === 'touch' && options.browser === 'webkit') {
-      if (requestedArrow)
-        await pulseControlForFrame(page, requestedArrow);
+      if (requestedArrow) await pulseControlForFrame(page, requestedArrow);
       else await page.waitForTimeout(20);
     } else {
       if (requestedArrow !== activeArrow) {
@@ -782,8 +830,7 @@ async function performIntroFall(page) {
     (initialAttemptId) =>
       (window.__fallstackQaEvents ?? []).filter(
         (event) =>
-          event.name === 'fall' &&
-          event.detail?.attemptId !== initialAttemptId
+          event.name === 'fall' && event.detail?.attemptId !== initialAttemptId
       ),
     before.attemptId
   );
@@ -812,7 +859,10 @@ async function validateRestoredCheckpoint(page, requestedZone) {
       ),
     requestedZone
   );
-  if (state.currentZone !== requestedZone || state.respawnZone !== requestedZone) {
+  if (
+    state.currentZone !== requestedZone ||
+    state.respawnZone !== requestedZone
+  ) {
     throw new Error(
       `Checkpoint restored to ${state.currentZone}/${state.respawnZone}, expected ${requestedZone}`
     );
@@ -858,11 +908,12 @@ async function positionOnSupport(page, support, desiredX) {
 
 function flightCorrection(state, target, launchDirection, attempt) {
   const targetCenter = target.x + target.width / 2;
-  const safeLandingX = target.x + target.width > 430
-    ? target.x + 25
-    : target.x < 50
-      ? target.x + target.width - 25
-      : targetCenter;
+  const safeLandingX =
+    target.x + target.width > 430
+      ? target.x + 25
+      : target.x < 50
+        ? target.x + target.width - 25
+        : targetCenter;
   const stillBelowTop = state.y + 15 > target.y;
   const landingX = clamp(
     safeLandingX,
@@ -873,9 +924,8 @@ function flightCorrection(state, target, launchDirection, attempt) {
   const deltaY = target.y - state.y;
   const discriminant = state.vy * state.vy + 2 * g * deltaY;
   // Brake against the descending intersection, when the player can land.
-  const timeToHeight = discriminant >= 0
-    ? (-state.vy + Math.sqrt(discriminant)) / g
-    : 0.18;
+  const timeToHeight =
+    discriminant >= 0 ? (-state.vy + Math.sqrt(discriminant)) / g : 0.18;
   const horizon = clamp(timeToHeight, 0.08, 0.9);
   const requiredVx = clamp((landingX - state.x) / horizon, -430, 430);
   const velocityError = requiredVx - state.vx;
@@ -893,7 +943,8 @@ function flightCorrection(state, target, launchDirection, attempt) {
   )
     return launchDirection > 0 ? 'ArrowRight' : 'ArrowLeft';
 
-  if (Math.abs(positionError) <= tolerance && Math.abs(velocityError) < 55) return null;
+  if (Math.abs(positionError) <= tolerance && Math.abs(velocityError) < 55)
+    return null;
   if (velocityError > 24) return 'ArrowRight';
   if (velocityError < -24) return 'ArrowLeft';
   return positionError > 0 ? 'ArrowRight' : 'ArrowLeft';
@@ -902,11 +953,7 @@ function flightCorrection(state, target, launchDirection, attempt) {
 function chargeDuration(current, target, attempt, wallBounce) {
   const verticalGap = current ? current.y - target.y : 110;
   const horizontalGap = current
-    ? Math.abs(
-        current.x +
-          current.width / 2 -
-          (target.x + target.width / 2)
-      )
+    ? Math.abs(current.x + current.width / 2 - (target.x + target.width / 2))
     : 110;
   const retryBoost =
     verticalGap > 100 || horizontalGap > 110
@@ -939,11 +986,12 @@ function chargeDuration(current, target, attempt, wallBounce) {
 
 function blockingObstacles(platforms, current, target) {
   if (!current) return [];
-  return platforms.filter((platform) =>
-    platform.kind === 'obstacle' &&
-    platform.y < current.y &&
-    platform.y + platform.height > target.y &&
-    platform.y < target.y + target.height
+  return platforms.filter(
+    (platform) =>
+      platform.kind === 'obstacle' &&
+      platform.y < current.y &&
+      platform.y + platform.height > target.y &&
+      platform.y < target.y + target.height
   );
 }
 
@@ -954,7 +1002,9 @@ async function waitForGrounded(page, timeoutMs) {
     if (state.grounded) return state;
     await page.waitForTimeout(20);
   }
-  throw new Error(`Player did not return to a grounded state within ${timeoutMs}ms`);
+  throw new Error(
+    `Player did not return to a grounded state within ${timeoutMs}ms`
+  );
 }
 
 async function readScene(page, includePlatforms) {
@@ -964,7 +1014,9 @@ async function readScene(page, includePlatforms) {
       if (cached?.player?.body) return cached;
       const root = document.querySelector('#root');
       if (!root) return null;
-      const containerKey = Object.keys(root).find((key) => key.startsWith('__reactContainer$'));
+      const containerKey = Object.keys(root).find((key) =>
+        key.startsWith('__reactContainer$')
+      );
       const container = containerKey ? root[containerKey] : null;
       const stack = [container?.current ?? container].filter(Boolean);
       const seen = new Set();
@@ -990,7 +1042,8 @@ async function readScene(page, includePlatforms) {
 
     const scene = findScene();
     const player = scene?.player;
-    if (!scene || !player?.body) throw new Error('Fallstack scene was not discoverable');
+    if (!scene || !player?.body)
+      throw new Error('Fallstack scene was not discoverable');
     const logicalX = player.x - scene.currentRouteOffset;
     const supportArtifact = (window.fallstackSnapshot?.zones ?? [])
       .flatMap((zone) => zone.artifacts ?? [])
@@ -999,8 +1052,7 @@ async function readScene(page, includePlatforms) {
         (artifact) =>
           Math.abs(artifact.y - player.y - player.body.halfHeight) <= 4 &&
           logicalX >= artifact.x - player.body.halfWidth &&
-          logicalX <=
-            artifact.x + artifact.width + player.body.halfWidth
+          logicalX <= artifact.x + artifact.width + player.body.halfWidth
       );
     return {
       x: logicalX,
@@ -1079,9 +1131,7 @@ async function readLandingFraming(page, nextPlatform) {
     const layout = scene.layoutPlatform(platform);
     return {
       safeTop: zoneTagRect.bottom + 12,
-      nextPlatformTop:
-        canvasRect.top +
-        (layout.y - worldView.y) * scaleY,
+      nextPlatformTop: canvasRect.top + (layout.y - worldView.y) * scaleY,
       cameraScrollY: scene.cameras.main.scrollY,
       cameraWorldViewY: worldView.y,
     };
@@ -1092,32 +1142,34 @@ function currentSupport(platforms, platformById, state) {
   if (state.support) return state.support;
   const exact = platformById.get(state.lastPlatformId);
   if (exact && Math.abs(exact.y - state.y - 14) <= 4) return exact;
-  const overlapping = platforms
-    .filter(
-      (platform) =>
-        platform.y >= state.y &&
-        platform.y - state.y < 90 &&
-        state.x >= platform.x - 12 &&
-        state.x <= platform.x + platform.width + 12
-    )
-    .sort(
-      (left, right) =>
-        Math.abs(left.y - state.y - 14) -
-        Math.abs(right.y - state.y - 14)
-    )[0] ?? null;
+  const overlapping =
+    platforms
+      .filter(
+        (platform) =>
+          platform.y >= state.y &&
+          platform.y - state.y < 90 &&
+          state.x >= platform.x - 12 &&
+          state.x <= platform.x + platform.width + 12
+      )
+      .sort(
+        (left, right) =>
+          Math.abs(left.y - state.y - 14) - Math.abs(right.y - state.y - 14)
+      )[0] ?? null;
   if (overlapping) return overlapping;
 
-  return platforms
-    .filter(
-      (platform) =>
-        platform.kind !== 'obstacle' &&
-        Math.abs(platform.y - state.y - 14) <= 4 &&
-        horizontalDistance(state.x, platform) <= 80
-    )
-    .sort(
-      (left, right) =>
-        horizontalDistance(state.x, left) - horizontalDistance(state.x, right)
-    )[0] ?? null;
+  return (
+    platforms
+      .filter(
+        (platform) =>
+          platform.kind !== 'obstacle' &&
+          Math.abs(platform.y - state.y - 14) <= 4 &&
+          horizontalDistance(state.x, platform) <= 80
+      )
+      .sort(
+        (left, right) =>
+          horizontalDistance(state.x, left) - horizontalDistance(state.x, right)
+      )[0] ?? null
+  );
 }
 
 function horizontalDistance(x, platform) {
@@ -1239,9 +1291,7 @@ async function createPointerDriver(context, page, browserName) {
     async down(point) {
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchStart',
-        touchPoints: [
-          { ...point, radiusX: 1, radiusY: 1, force: 1 },
-        ],
+        touchPoints: [{ ...point, radiusX: 1, radiusY: 1, force: 1 }],
       });
     },
     async up() {
@@ -1288,7 +1338,8 @@ async function visibleGameplayNotices(page) {
 }
 
 async function capture(page, outputDir, name) {
-  await page.screenshot({
+  if (!options.screenshots) return;
+  await captureScreenshot(page, {
     path: path.join(outputDir, 'screenshots', `${name}.png`),
     animations: 'disabled',
   });
@@ -1326,7 +1377,8 @@ function parseArgs(args) {
     if (!value.startsWith('--')) continue;
     const [key, inline] = value.slice(2).split('=', 2);
     if (inline !== undefined) values.set(key, inline);
-    else if (args[index + 1] && !args[index + 1].startsWith('--')) values.set(key, args[++index]);
+    else if (args[index + 1] && !args[index + 1].startsWith('--'))
+      values.set(key, args[++index]);
     else values.set(key, 'true');
   }
   const mobile = values.get('mobile') === 'true';
@@ -1349,6 +1401,12 @@ function parseArgs(args) {
     canvas: values.get('canvas') !== 'false',
     reducedMotion: values.get('reduced-motion') === 'true',
     video: values.get('video') === 'true',
+    screenshots: values.get('screenshots') !== 'false',
+    progress: values.get('progress') !== 'false',
+    // Chromium's software Canvas compositor can crash while capturing the
+    // post-summit modal after a long run. Per-zone captures remain enabled;
+    // request this extra artifact explicitly when debugging the summit UI.
+    finalScreenshot: values.get('final-screenshot') === 'true',
     boardOnly: values.get('board-only') === 'true',
     introFall: values.get('intro-fall') === 'true',
     resumeZone: values.get('resume-zone') ?? null,
@@ -1370,5 +1428,8 @@ function round(value) {
 }
 
 function slug(value) {
-  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }

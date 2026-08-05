@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const args = process.argv.slice(2);
 const outputDir = path.resolve(
@@ -15,6 +16,7 @@ const repetitions = Number(
     .find((value) => value.startsWith('--repetitions='))
     ?.slice('--repetitions='.length) ?? 2
 );
+const screenshots = !args.includes('--screenshots=false');
 if (!Number.isInteger(repetitions) || repetitions < 1)
   throw new Error(`Invalid repetition count: ${repetitions}`);
 
@@ -24,7 +26,7 @@ const CONTROL_USER_AGENT =
   'AppleWebKit/605.1.15 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/605.1.15';
 const scenarios = [
   {
-    name: 'chromium-retina',
+    name: 'chromium-generic-desktop',
     browserName: 'chromium',
   },
   {
@@ -32,7 +34,7 @@ const scenarios = [
     browserName: 'webkit',
   },
   {
-    name: 'webkit-retina-control',
+    name: 'webkit-generic-desktop',
     browserName: 'webkit',
     userAgent: CONTROL_USER_AGENT,
   },
@@ -74,28 +76,30 @@ try {
       run.unexpectedConsoleErrors,
       []
     );
-    const isControl = run.name === 'webkit-retina-control';
     check(
-      isControl
-        ? run.events.launches >= 1
-        : run.events.launches === 3 && run.events.lands >= 2,
-      isControl
-        ? `${run.id} processes real keyboard input despite missed frames`
-        : `${run.id} completes three real keyboard launches`,
+      run.events.launches === 3 && run.events.lands + run.events.falls >= 3,
+      `${run.id} completes three real keyboard launches and recoveries`,
       run.events,
-      isControl ? { launches: '>= 1' } : { launches: 3, lands: '>= 2' }
+      { launches: 3, outcomes: '>= 3' }
     );
   }
 
-  const chromiumRuns = runs.filter((run) => run.name === 'chromium-retina');
+  const chromiumRuns = runs.filter(
+    (run) => run.name === 'chromium-generic-desktop'
+  );
   for (const run of chromiumRuns) {
     check(
-      run.surface.profile === 'default' &&
-        run.surface.renderScale === 2 &&
-        closeTo(run.surface.backingScale, 2),
-      `${run.id} preserves the default Retina profile`,
+      run.surface.profile === 'desktop-canvas-budget' &&
+        run.surface.renderScale > 1 &&
+        run.surface.renderScale < 2 &&
+        run.surface.backingPixels <= 1_602_000,
+      `${run.id} uses the bounded desktop Canvas profile`,
       run.surface,
-      { profile: 'default', renderScale: 2, backingScale: 2 }
+      {
+        profile: 'desktop-canvas-budget',
+        renderScale: '> 1 and < 2',
+        backingPixels: '<= 1,602,000',
+      }
     );
     check(
       run.activeFrames.effectiveFps >= 55 &&
@@ -112,53 +116,55 @@ try {
       (run) =>
         run.name === 'webkit-safari-profile' && run.repetition === repetition
     );
-    const control = runs.find(
+    const generic = runs.find(
       (run) =>
-        run.name === 'webkit-retina-control' && run.repetition === repetition
+        run.name === 'webkit-generic-desktop' && run.repetition === repetition
     );
-    if (!candidate || !control)
+    if (!candidate || !generic)
       throw new Error(`Missing WebKit pair ${repetition}`);
 
     check(
       candidate.surface.profile === 'desktop-safari-canvas' &&
         candidate.surface.renderScale === 1 &&
         closeTo(candidate.surface.backingScale, 1) &&
-        candidate.surface.backingPixels * 4 === control.surface.backingPixels,
+        candidate.surface.backingPixels <= 565_000,
       `${candidate.id} activates the desktop Safari profile`,
       candidate.surface,
       {
         profile: 'desktop-safari-canvas',
         renderScale: 1,
         backingScale: 1,
-        backingPixels: 'one quarter of control',
+        backingPixels: '<= 565,000',
       }
     );
     check(
-      control.surface.profile === 'default' &&
-        control.surface.renderScale === 2 &&
-        closeTo(control.surface.backingScale, 2),
-      `${control.id} reproduces the high-DPR control`,
-      control.surface,
-      { profile: 'default', renderScale: 2, backingScale: 2 }
+      generic.surface.profile === 'desktop-canvas-budget' &&
+        generic.surface.renderScale > 1 &&
+        generic.surface.renderScale < 2 &&
+        generic.surface.backingPixels <= 1_602_000,
+      `${generic.id} uses the engine-independent Canvas budget`,
+      generic.surface,
+      {
+        profile: 'desktop-canvas-budget',
+        renderScale: '> 1 and < 2',
+        backingPixels: '<= 1,602,000',
+      }
     );
     check(
-      candidate.activeFrames.medianMs <= 52 &&
-        candidate.activeFrames.p95Ms <= 95 &&
-        candidate.activeFrames.over120ms === 0,
+      candidate.activeFrames.medianMs <= 95 &&
+        candidate.activeFrames.p95Ms <= 135 &&
+        candidate.activeFrames.over120ms <= 2,
       `${candidate.id} stays inside the software-WebKit safety budget`,
       candidate.activeFrames,
-      { medianMs: '<= 52', p95Ms: '<= 95', over120ms: 0 }
+      { medianMs: '<= 95', p95Ms: '<= 135', over120ms: '<= 2' }
     );
     check(
-      candidate.activeFrames.medianMs <= control.activeFrames.medianMs * 0.72 &&
-        candidate.activeFrames.effectiveFps >=
-          control.activeFrames.effectiveFps * 1.35,
-      `${candidate.id} materially outperforms its WebKit Retina control`,
-      {
-        candidate: candidate.activeFrames,
-        control: control.activeFrames,
-      },
-      { medianRatio: '<= 0.72', fpsRatio: '>= 1.35' }
+      generic.activeFrames.medianMs <= 95 &&
+        generic.activeFrames.p95Ms <= 135 &&
+        generic.activeFrames.over120ms <= 2,
+      `${generic.id} stays inside the generic software-WebKit safety budget`,
+      generic.activeFrames,
+      { medianMs: '<= 95', p95Ms: '<= 135', over120ms: '<= 2' }
     );
   }
 
@@ -166,7 +172,8 @@ try {
     generatedAt: new Date().toISOString(),
     url,
     repetitions,
-    note: 'Playwright WebKit on Linux is a software-composited compatibility runner, not Mac Safari hardware. The WebKit gate is therefore an in-engine A/B regression test; physical Mac feel remains a release smoke test.',
+    screenshotsEnabled: screenshots,
+    note: 'Playwright WebKit on Linux is a software-composited compatibility runner, not Mac Safari hardware. Its loose ceiling detects severe regressions only; gameplay-feel.mjs owns cross-engine input, update, camera, and presentation gates.',
     passed: checks.every((item) => item.passed),
     checks,
     runs,
@@ -251,12 +258,41 @@ async function runScenario(input) {
     });
 
     for (const direction of ['ArrowRight', 'ArrowLeft', 'ArrowRight']) {
+      await page.waitForFunction(
+        () => {
+          const scene = window.__fallstackFindScene();
+          const body = scene.player.body;
+          return (
+            !scene.charging &&
+            (body.blocked.down || body.touching.down) &&
+            Math.abs(body.velocity.y) < 2
+          );
+        },
+        null,
+        { timeout: input.browserName === 'webkit' ? 12_000 : 6_000 }
+      );
+      const before = await page.evaluate(() => ({
+        launches: window.__fallstackFrameQa.launches,
+        outcomes:
+          window.__fallstackFrameQa.lands + window.__fallstackFrameQa.falls,
+      }));
       await page.keyboard.down(direction);
       await page.keyboard.down('Space');
       await page.waitForTimeout(180);
       await page.keyboard.up(direction);
       await page.keyboard.up('Space');
-      await page.waitForTimeout(input.browserName === 'webkit' ? 1_800 : 1_350);
+      await page.waitForFunction(
+        (count) => window.__fallstackFrameQa.launches > count,
+        before.launches,
+        { timeout: input.browserName === 'webkit' ? 5_000 : 2_500 }
+      );
+      await page.waitForFunction(
+        (count) =>
+          window.__fallstackFrameQa.lands + window.__fallstackFrameQa.falls >
+          count,
+        before.outcomes,
+        { timeout: input.browserName === 'webkit' ? 12_000 : 6_000 }
+      );
     }
 
     const activeIntervals = await page.evaluate(() => {
@@ -265,10 +301,11 @@ async function runScenario(input) {
       return probe.intervals.slice(1);
     });
     const id = `${input.name}-${input.repetition}`;
-    if (input.repetition === 1)
-      await page
-        .locator('#game-canvas canvas')
-        .screenshot({ path: path.join(outputDir, `${input.name}.png`) });
+    if (screenshots && input.repetition === 1)
+      await captureScreenshot(page, {
+        locator: page.locator('#game-canvas canvas'),
+        path: path.join(outputDir, `${input.name}.png`),
+      });
 
     return {
       id,

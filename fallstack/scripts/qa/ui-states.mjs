@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 import {
   createBoardIdentity,
   createBoardSnapshot,
@@ -25,9 +26,7 @@ const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const browserName =
   process.env.FALLSTACK_QA_BROWSER === 'webkit' ? 'webkit' : 'chromium';
 const qaScope =
-  process.env.FALLSTACK_QA_SCOPE === 'late-receipt'
-    ? 'late-receipt'
-    : 'full';
+  process.env.FALLSTACK_QA_SCOPE === 'late-receipt' ? 'late-receipt' : 'full';
 const sourceCommit = process.env.FALLSTACK_QA_SOURCE_COMMIT ?? 'unknown';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/quality-reconstruction/evidence/ui-state-matrix'
@@ -127,6 +126,10 @@ try {
       await inspectReceiptPlacement(viewport);
       await inspectLateReceiptSuppression(viewport);
     }
+    for (const viewport of viewports.filter(
+      (entry) => entry.mobile || entry.width === 1280
+    ))
+      await inspectInitialResume(viewport);
     await inspectSplash();
   }
 
@@ -367,49 +370,32 @@ async function inspectReceiptPlacement(viewport) {
         .filter((platform) => platform.kind !== 'obstacle')
         .sort((left, right) => right.y - left.y);
       const nextPlatform = route.find(
-        (platform) =>
-          platform.y < scene.player.y - scene.player.body.halfHeight
+        (platform) => platform.y < scene.player.y - scene.player.body.halfHeight
       );
-      const target = nextPlatform
-        ? scene.layoutPlatform(nextPlatform)
-        : null;
+      const target = nextPlatform ? scene.layoutPlatform(nextPlatform) : null;
       const playerRect = {
         left:
           canvasRect.left +
-          (scene.player.x -
-            scene.player.body.halfWidth -
-            worldView.x) *
-            scaleX,
+          (scene.player.x - scene.player.body.halfWidth - worldView.x) * scaleX,
         right:
           canvasRect.left +
-          (scene.player.x +
-            scene.player.body.halfWidth -
-            worldView.x) *
-            scaleX,
+          (scene.player.x + scene.player.body.halfWidth - worldView.x) * scaleX,
         top:
           canvasRect.top +
-          (scene.player.y -
-            scene.player.body.halfHeight -
-            worldView.y) *
+          (scene.player.y - scene.player.body.halfHeight - worldView.y) *
             scaleY,
         bottom:
           canvasRect.top +
-          (scene.player.y +
-            scene.player.body.halfHeight -
-            worldView.y) *
+          (scene.player.y + scene.player.body.halfHeight - worldView.y) *
             scaleY,
       };
       const targetRect = target
         ? {
-            left:
-              canvasRect.left +
-              (target.x - worldView.x) * scaleX,
+            left: canvasRect.left + (target.x - worldView.x) * scaleX,
             right:
               canvasRect.left +
               (target.x + target.width - worldView.x) * scaleX,
-            top:
-              canvasRect.top +
-              (target.y - worldView.y) * scaleY,
+            top: canvasRect.top + (target.y - worldView.y) * scaleY,
             bottom:
               canvasRect.top +
               (target.y + target.height - worldView.y) * scaleY,
@@ -418,19 +404,15 @@ async function inspectReceiptPlacement(viewport) {
       const overlaps = (left, right) =>
         Math.max(
           0,
-          Math.min(left.right, right.right) -
-            Math.max(left.left, right.left)
+          Math.min(left.right, right.right) - Math.max(left.left, right.left)
         ) *
         Math.max(
           0,
-          Math.min(left.bottom, right.bottom) -
-            Math.max(left.top, right.top)
+          Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
         );
       return {
         zoneId: currentZoneId,
-        placement: banner.classList.contains('place-bottom')
-          ? 'bottom'
-          : 'top',
+        placement: banner.classList.contains('place-bottom') ? 'bottom' : 'top',
         playerOverlap: overlaps(bannerRect, playerRect),
         targetOverlap: targetRect ? overlaps(bannerRect, targetRect) : 0,
         banner: rectOf(bannerRect),
@@ -645,6 +627,80 @@ async function inspectSplash() {
   await context.close();
 }
 
+async function inspectInitialResume(viewport) {
+  const resumeZoneId = 'ring_citadel';
+  const context = await browser.newContext({
+    viewport,
+    hasTouch: viewport.mobile,
+    isMobile: viewport.mobile,
+  });
+  await installSceneProbe(context);
+  await context.route('**/api/**', async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/api/init-game') {
+      return json(route, {
+        type: 'initGame',
+        postId: 'post_resume_qa',
+        postUrl: null,
+        supportUrl: null,
+        username: 'qa-climber',
+        resume: { zoneId: resumeZoneId, mode: 'account' },
+        snapshot,
+      });
+    }
+    if (pathname === '/api/board-revision') {
+      return json(route, {
+        type: 'boardRevision',
+        boardId: snapshot.boardId,
+        revision: snapshot.revision,
+      });
+    }
+    return json(
+      route,
+      { status: 'error', message: 'Unexpected QA request.' },
+      404
+    );
+  });
+  const page = await context.newPage();
+  trackDiagnostics(page, 'initial-resume');
+  await page.goto(`${baseUrl}/game.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(
+    () => window.__fallstackVisibleZoneFrames?.length >= 8,
+    null,
+    { timeout: 30_000 }
+  );
+  const state = await page.evaluate(() => ({
+    frames: window.__fallstackVisibleZoneFrames,
+    zoneEvents: window.__fallstackZoneEvents,
+    currentZone: window.__fallstackFindScene()?.currentZone ?? null,
+    respawnZone: window.__fallstackFindScene()?.respawnZone ?? null,
+    tag: document.querySelector('.zone-tag')?.textContent?.trim() ?? '',
+    aria: document.querySelector('.zone-tag')?.getAttribute('aria-label') ?? '',
+  }));
+  check(
+    state.frames.every(
+      (frame) =>
+        frame.sceneZone === resumeZoneId && frame.tag.includes('Bell Shaft')
+    ),
+    `${label(viewport)} restored checkpoint is correct on every first visible frame`,
+    state.frames,
+    { sceneZone: resumeZoneId, tag: 'Bell Shaft' }
+  );
+  check(
+    state.currentZone === resumeZoneId &&
+      state.respawnZone === resumeZoneId &&
+      state.tag.includes('Bell Shaft') &&
+      state.aria.includes('Bell Shaft') &&
+      state.zoneEvents.includes(resumeZoneId),
+    `${label(viewport)} restored checkpoint keeps scene and HUD state synchronized`,
+    state,
+    { currentZone: resumeZoneId, respawnZone: resumeZoneId, tag: 'Bell Shaft' }
+  );
+  observations.push({ viewport, state: 'initial-resume', ...state });
+  await screenshot(page, viewport, 'initial-resume');
+  await context.close();
+}
+
 async function openPage(
   viewport,
   state,
@@ -692,9 +748,7 @@ async function openPage(
     }
     if (pathname === '/api/record-fall') {
       if (recordFallDelayMs > 0)
-        await new Promise((resolve) =>
-          setTimeout(resolve, recordFallDelayMs)
-        );
+        await new Promise((resolve) => setTimeout(resolve, recordFallDelayMs));
       const receipt = receipts[state];
       assert.ok(receipt);
       if (state === 'accepted' || state === 'capped') {
@@ -948,7 +1002,7 @@ async function waitForReady(page) {
 }
 
 async function screenshot(page, viewport, state) {
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(
       outputDir,
       `${state}-${viewport.width}x${viewport.height}.png`
@@ -1027,6 +1081,11 @@ async function installContrastProbe(context) {
 
 async function installSceneProbe(context) {
   await context.addInitScript(() => {
+    window.__fallstackZoneEvents = [];
+    window.__fallstackVisibleZoneFrames = [];
+    window.addEventListener('fallstack:zone', (event) => {
+      window.__fallstackZoneEvents.push(event.detail?.zoneId ?? null);
+    });
     window.__fallstackFindScene = () => {
       const root = document.querySelector('#root');
       if (!root) return null;
@@ -1052,5 +1111,24 @@ async function installSceneProbe(context) {
       }
       return null;
     };
+    const sampleFirstVisibleFrames = () => {
+      if (window.__fallstackVisibleZoneFrames.length >= 12) return;
+      const scene = window.__fallstackFindScene();
+      const tag = document.querySelector('.zone-tag');
+      const visible =
+        scene?.player &&
+        tag &&
+        !document.querySelector('.loading-overlay') &&
+        document.querySelector('#game-canvas canvas');
+      if (visible) {
+        window.__fallstackVisibleZoneFrames.push({
+          sceneZone: scene.currentZone,
+          respawnZone: scene.respawnZone,
+          tag: tag.textContent?.trim() ?? '',
+        });
+      }
+      requestAnimationFrame(sampleFirstVisibleFrames);
+    };
+    requestAnimationFrame(sampleFirstVisibleFrames);
   });
 }

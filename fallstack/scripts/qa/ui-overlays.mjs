@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-overlays'
@@ -117,9 +118,7 @@ try {
                 : ((channel + 0.055) / 1.055) ** 2.4
             );
           return (
-            0.2126 * channels[0] +
-            0.7152 * channels[1] +
-            0.0722 * channels[2]
+            0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
           );
         };
         const foregroundLuminance = luminance(foreground);
@@ -146,7 +145,7 @@ try {
 
     await placeAtFirstCheckpoint(page);
     await page.waitForTimeout(300);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `receipt-${viewport.width}x${viewport.height}.png`
@@ -275,25 +274,17 @@ async function measureRouteGeometry(page) {
       scene.snapCameraToPlayer();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const mutation = document.querySelector('.mutation-banner.visible');
-      const checkpoint = document.querySelector(
-        '.checkpoint-banner.visible'
-      );
+      const checkpoint = document.querySelector('.checkpoint-banner.visible');
       const remote = document.querySelector('[data-qa-overlay="remote"]');
       const primary =
         mutation ??
         checkpoint ??
-        (remote && getComputedStyle(remote).display !== 'none'
-          ? remote
-          : null);
+        (remote && getComputedStyle(remote).display !== 'none' ? remote : null);
       const primaryBounds = primary?.getBoundingClientRect();
       const placement = primary
-        ? scene.hudNoticePlacement(
-            primaryBounds.height
-          )
+        ? scene.hudNoticePlacement(primaryBounds.height)
         : 'top';
-      const side = primary
-        ? scene.hudNoticeSide(primaryBounds.width)
-        : 'right';
+      const side = primary ? scene.hudNoticeSide(primaryBounds.width) : 'right';
       primary?.classList.toggle('place-bottom', placement === 'bottom');
       primary?.classList.toggle('place-top', placement === 'top');
       primary?.classList.toggle('side-left', side === 'left');
@@ -322,38 +313,26 @@ async function measureRouteGeometry(page) {
       const playerRect = {
         left:
           canvasRect.left +
-          (scene.player.x -
-            scene.player.body.halfWidth -
-            worldView.x) *
-            scaleX,
+          (scene.player.x - scene.player.body.halfWidth - worldView.x) * scaleX,
         right:
           canvasRect.left +
-          (scene.player.x +
-            scene.player.body.halfWidth -
-            worldView.x) *
-            scaleX,
+          (scene.player.x + scene.player.body.halfWidth - worldView.x) * scaleX,
         top:
           canvasRect.top +
-          (scene.player.y -
-            scene.player.body.halfHeight -
-            worldView.y) *
+          (scene.player.y - scene.player.body.halfHeight - worldView.y) *
             scaleY,
         bottom:
           canvasRect.top +
-          (scene.player.y +
-            scene.player.body.halfHeight -
-            worldView.y) *
+          (scene.player.y + scene.player.body.halfHeight - worldView.y) *
             scaleY,
       };
       const targetRect = {
         left: canvasRect.left + (target.x - worldView.x) * scaleX,
         right:
-          canvasRect.left +
-          (target.x + target.width - worldView.x) * scaleX,
+          canvasRect.left + (target.x + target.width - worldView.x) * scaleX,
         top: canvasRect.top + (target.y - worldView.y) * scaleY,
         bottom:
-          canvasRect.top +
-          (target.y + target.height - worldView.y) * scaleY,
+          canvasRect.top + (target.y + target.height - worldView.y) * scaleY,
       };
       samples.push({
         supportId: support.id,
@@ -401,13 +380,11 @@ async function measureRouteGeometry(page) {
       return (
         Math.max(
           0,
-          Math.min(left.right, right.right) -
-            Math.max(left.left, right.left)
+          Math.min(left.right, right.right) - Math.max(left.left, right.left)
         ) *
         Math.max(
           0,
-          Math.min(left.bottom, right.bottom) -
-            Math.max(left.top, right.top)
+          Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
         )
       );
     }
@@ -419,8 +396,7 @@ async function measureLandingFraming(page) {
     const scene = window.__fallstackFindScene();
     const canvas = document.querySelector('#game-canvas canvas');
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleY =
-      canvasRect.height / scene.cameras.main.worldView.height;
+    const scaleY = canvasRect.height / scene.cameras.main.worldView.height;
     const zoneTag = document.querySelector('.zone-tag').getBoundingClientRect();
     const safeTop = zoneTag.bottom + 12;
     const route = scene.towerPlatforms

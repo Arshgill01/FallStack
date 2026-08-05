@@ -3,11 +3,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const MIN_BODY_FONT_SIZE = 13;
 const MIN_TOUCH_TARGET = 44;
-const baseUrl =
-  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-readability'
 );
@@ -57,21 +57,16 @@ try {
     await page
       .locator('[data-qa-readability="checkpoint"]')
       .evaluate((element) => element.remove());
-    checkFontSizes(
-      viewport,
-      'game',
-      game,
-      [
-        'brand',
-        'community',
-        'guideButton',
-        'zoneName',
-        'zoneStatus',
-        'mutationStatus',
-        'checkpointStatus',
-        'jumpButton',
-      ]
-    );
+    checkFontSizes(viewport, 'game', game, [
+      'brand',
+      'community',
+      'guideButton',
+      'zoneName',
+      'zoneStatus',
+      'mutationStatus',
+      'checkpointStatus',
+      'jumpButton',
+    ]);
     checkNoOverflow(viewport, 'topbar', game.topbar);
     checkNoOverflow(viewport, 'brand', game.brand);
     checkNoOverflow(viewport, 'community tally', game.tally);
@@ -87,7 +82,7 @@ try {
     );
     checkTouchTarget(viewport, 'Guide button', game.guideButton);
     checkTouchTarget(viewport, 'Jump button', game.jumpButton);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `game-${viewport.width}x${viewport.height}.png`
@@ -117,7 +112,7 @@ try {
     ]);
     checkNoOverflow(viewport, 'guide', guide.card);
     checkTouchTarget(viewport, 'Guide close button', guide.close);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `guide-${viewport.width}x${viewport.height}.png`
@@ -145,7 +140,7 @@ try {
     ]);
     checkNoOverflow(viewport, 'Tower Memory', memory.card);
     checkTouchTarget(viewport, 'Tower Memory action', memory.action);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `memory-${viewport.width}x${viewport.height}.png`

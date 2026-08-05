@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const BASE_URL = 'http://127.0.0.1:8080';
 const outputDir = path.resolve(
@@ -48,7 +49,9 @@ try {
     const surface = await page.evaluate(() => {
       const viewportMeta = document.querySelector('meta[name="viewport"]');
       const bodyStyle = getComputedStyle(document.body);
-      const towerStyle = getComputedStyle(document.querySelector('.tower-wrap'));
+      const towerStyle = getComputedStyle(
+        document.querySelector('.tower-wrap')
+      );
       const touchStyle = getComputedStyle(
         document.querySelector('.touch-controls')
       );
@@ -113,7 +116,7 @@ try {
       guideContrast,
       'ratio >= 4.5'
     );
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `guide-${viewport.width}x${viewport.height}.png`
@@ -151,7 +154,7 @@ try {
       expectedLabelledBy: 'fallstack-memory-title',
     });
     checksForDialog(viewport, 'Tower Memory', memory);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `memory-${viewport.width}x${viewport.height}.png`
@@ -262,9 +265,7 @@ async function exerciseDialog(
         role: dialog?.getAttribute('role'),
         modal: dialog?.getAttribute('aria-modal'),
         labelledBy,
-        labelExists: Boolean(
-          labelledBy && document.getElementById(labelledBy)
-        ),
+        labelExists: Boolean(labelledBy && document.getElementById(labelledBy)),
         expectedLabelledBy,
         focusedCard: document.activeElement === card,
         touchControlsDisabled: Array.from(
@@ -279,9 +280,7 @@ async function exerciseDialog(
   const reverseTabInside = await page.evaluate(
     (selector) =>
       Boolean(
-        document
-          .querySelector(selector)
-          ?.contains(document.activeElement)
+        document.querySelector(selector)?.contains(document.activeElement)
       ),
     dialogSelector
   );
@@ -290,9 +289,7 @@ async function exerciseDialog(
   const forwardTabInside = await page.evaluate(
     (selector) =>
       Boolean(
-        document
-          .querySelector(selector)
-          ?.contains(document.activeElement)
+        document.querySelector(selector)?.contains(document.activeElement)
       ),
     dialogSelector
   );
@@ -333,8 +330,7 @@ function checksForDialog(viewport, name, result) {
   check(
     result.semantics.role === 'dialog' &&
       result.semantics.modal === 'true' &&
-      result.semantics.labelledBy ===
-        result.semantics.expectedLabelledBy &&
+      result.semantics.labelledBy === result.semantics.expectedLabelledBy &&
       result.semantics.labelExists,
     `${prefix} has a visible programmatic title`,
     result.semantics,
@@ -439,8 +435,8 @@ async function waitForReady(page) {
     () =>
       Boolean(
         window.__fallstackFindScene?.()?.controlsReady &&
-          window.fallstackSnapshot &&
-          !document.querySelector('.loading-overlay')
+        window.fallstackSnapshot &&
+        !document.querySelector('.loading-overlay')
       ),
     null,
     { timeout: 30_000 }
@@ -449,14 +445,11 @@ async function waitForReady(page) {
 }
 
 async function waitForInputPause(page, inputPaused) {
-  await page.waitForFunction(
-    (expected) => {
-      const scene = window.__fallstackFindScene?.();
-      if (!scene || Boolean(scene.inputPaused) !== expected) return false;
-      return expected || scene.sys.isActive();
-    },
-    inputPaused
-  );
+  await page.waitForFunction((expected) => {
+    const scene = window.__fallstackFindScene?.();
+    if (!scene || Boolean(scene.inputPaused) !== expected) return false;
+    return expected || scene.sys.isActive();
+  }, inputPaused);
 }
 
 async function readScene(page) {

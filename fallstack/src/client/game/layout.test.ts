@@ -7,11 +7,13 @@ import {
   CAMERA_AIR_LOOKAHEAD,
   CAMERA_VERTICAL_AIR_LOOKAHEAD,
   CAMERA_VERTICAL_CHARGE_LOOKAHEAD,
+  DESKTOP_CANVAS_PIXEL_BUDGET,
   cameraBottomPaddingForGameWidth,
   cameraBottomPaddingForViewport,
   cameraScrollForWorldViewStart,
   cameraScrollXForPlayer,
   cameraVerticalLookahead,
+  canvasRenderScaleForEnvironment,
   chooseHudNoticePlacement,
   chooseHudNoticeSide,
   computeGameDimensions,
@@ -114,6 +116,33 @@ void test('Safari-compatible browsers and mobile Safari keep the default profile
       coarsePointer: false,
     }),
     false
+  );
+});
+
+void test('fine-pointer Canvas surfaces share a bounded pixel workload', () => {
+  const firefox = {
+    userAgent: 'Mozilla/5.0 Firefox/151.0',
+    coarsePointer: false,
+  };
+  for (const bounds of [
+    { width: 758, height: 742 },
+    { width: 758, height: 1022 },
+  ]) {
+    const renderScale = canvasRenderScaleForEnvironment(bounds, 2, firefox);
+    const dimensions = computeGameDimensions(bounds, 2, renderScale);
+    assert.ok(
+      dimensions.gameW * dimensions.gameH <=
+        DESKTOP_CANVAS_PIXEL_BUDGET +
+          Math.max(dimensions.gameW, dimensions.gameH)
+    );
+    assert.ok(renderScale >= 1 && renderScale < 2);
+  }
+  assert.equal(
+    canvasRenderScaleForEnvironment({ width: 390, height: 711 }, 3, {
+      ...firefox,
+      coarsePointer: true,
+    }),
+    2
   );
 });
 
@@ -224,7 +253,7 @@ void test('DPR-scaled cameras preserve the requested visible world edge', () => 
 });
 
 void test('vertical lookahead previews the climb while charging and rising', () => {
-  assert.equal(cameraVerticalLookahead(true, 0, 0), 24);
+  assert.equal(cameraVerticalLookahead(true, 0, 0), 0);
   assert.equal(
     cameraVerticalLookahead(true, 100, 0),
     CAMERA_VERTICAL_CHARGE_LOOKAHEAD

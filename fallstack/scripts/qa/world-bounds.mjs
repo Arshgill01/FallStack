@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const ROUTE_WIDTH = 480;
 const PLAYABLE_INSET = 34;
@@ -59,7 +60,9 @@ try {
         const rail = document.querySelector('.tower-side-rails');
         const railRect = rail?.getBoundingClientRect();
         const railStyle = rail ? getComputedStyle(rail) : null;
-        const railBeforeStyle = rail ? getComputedStyle(rail, '::before') : null;
+        const railBeforeStyle = rail
+          ? getComputedStyle(rail, '::before')
+          : null;
         const railAfterStyle = rail ? getComputedStyle(rail, '::after') : null;
         const paintedLeft = mobile
           ? scene.currentRouteOffset + playableInset
@@ -194,8 +197,7 @@ try {
             (geometry.rail?.beforeWidth ?? 0) &&
           rightContact.maxScreenRight <=
             geometry.viewportWidth -
-              ((geometry.rail?.borderRightWidth ??
-                Number.POSITIVE_INFINITY) +
+              ((geometry.rail?.borderRightWidth ?? Number.POSITIVE_INFINITY) +
                 (geometry.rail?.afterWidth ?? 0)),
         `${viewport.width}px player stays fully inside both visible pillars`
       );
@@ -221,13 +223,12 @@ try {
       check(
         (visualContacts?.right.visualRight ?? Number.POSITIVE_INFINITY) <=
           geometry.viewportWidth -
-            ((geometry.rail?.borderRightWidth ??
-              Number.NEGATIVE_INFINITY) +
+            ((geometry.rail?.borderRightWidth ?? Number.NEGATIVE_INFINITY) +
               (geometry.rail?.afterWidth ?? 0)),
         `${viewport.width}px full falling artwork stays clear of the visible right pillar`
       );
     }
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(outputDir, `world-bounds-${viewport.width}.png`),
     });
     await context.close();
@@ -368,7 +369,10 @@ async function measureVisualContact(page, side) {
         paintedLeftScreen:
           scene.currentRouteOffset + playableInset - cameraWorldViewX,
         paintedRightScreen:
-          scene.currentRouteOffset + routeWidth - playableInset - cameraWorldViewX,
+          scene.currentRouteOffset +
+          routeWidth -
+          playableInset -
+          cameraWorldViewX,
       };
     },
     { side, playableInset: PLAYABLE_INSET, routeWidth: ROUTE_WIDTH }
