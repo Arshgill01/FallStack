@@ -20,15 +20,20 @@ await mkdir(outputDir, { recursive: true });
 const browser = await browserType.launch({
   headless: true,
   ...(browserName === 'chromium'
-    ? { args: ['--no-sandbox', '--disable-dev-shm-usage'] }
+    ? { args: ['--no-sandbox', '--disable-dev-shm-usage', '--mute-audio'] }
     : {}),
 });
 
 try {
   const context = await browser.newContext({
     viewport: { width: 375, height: 812 },
+    deviceScaleFactor: 3,
     hasTouch: true,
     isMobile: true,
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem('fallstack:gameplay-muted', 'true');
+    localStorage.setItem('fallstack:music-muted', 'true');
   });
   await installSceneProbe(context);
   const page = await context.newPage();
@@ -36,8 +41,36 @@ try {
     waitUntil: 'domcontentloaded',
   });
   await waitForReady(page);
+  await page.waitForTimeout(500);
 
   const portrait = await readLayout(page);
+  observations.startupCanvasWrites = (
+    await page.evaluate(() => window.__fallstackCanvasWrites)
+  ).filter(
+    (write) =>
+      (write.dimension === 'width' &&
+        write.value === portrait.scene.gameWidth) ||
+      (write.dimension === 'height' &&
+        write.value === portrait.scene.gameHeight)
+  );
+  check(
+    observations.startupCanvasWrites.filter(
+      (write) =>
+        write.dimension === 'width' && write.value === portrait.scene.gameWidth
+    ).length === 2 &&
+      observations.startupCanvasWrites.filter(
+        (write) =>
+          write.dimension === 'height' &&
+          write.value === portrait.scene.gameHeight
+      ).length === 2,
+    'startup adds no post-boot duplicate canvas rebuild',
+    observations.startupCanvasWrites,
+    {
+      width: portrait.scene.gameWidth,
+      height: portrait.scene.gameHeight,
+      rendererWritesPerDimension: 2,
+    }
+  );
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
   const landscape = await readLayout(page);
@@ -129,7 +162,7 @@ try {
   await page.waitForFunction(() => window.__fallstackQa.launches > 0);
   const airborneBeforeResize = await readLayout(page);
   await page.setViewportSize({ width: 812, height: 375 });
-  await waitForResize(page, 812, 375);
+  await waitForResize(page, 812, 375, 0);
   const airborneAfterResize = await readLayout(page);
   observations.airborne = {
     before: airborneBeforeResize,
@@ -226,6 +259,10 @@ try {
   const desktopContext = await browser.newContext({
     viewport: { width: 812, height: 375 },
   });
+  await desktopContext.addInitScript(() => {
+    localStorage.setItem('fallstack:gameplay-muted', 'true');
+    localStorage.setItem('fallstack:music-muted', 'true');
+  });
   const desktopPage = await desktopContext.newPage();
   await desktopPage.goto('http://127.0.0.1:8080/game.html', {
     waitUntil: 'domcontentloaded',
@@ -292,21 +329,21 @@ async function readLayout(page) {
     const camera = scene.cameras.main;
     const canvas = document.querySelector('#game-canvas canvas');
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleX = canvasRect.width / scene.scale.width;
-    const scaleY = canvasRect.height / scene.scale.height;
+    const scaleX = canvasRect.width / camera.worldView.width;
+    const scaleY = canvasRect.height / camera.worldView.height;
     const playerRect = {
       left:
         canvasRect.left +
-        (player.x - player.body.halfWidth - camera.scrollX) * scaleX,
+        (player.x - player.body.halfWidth - camera.worldView.x) * scaleX,
       right:
         canvasRect.left +
-        (player.x + player.body.halfWidth - camera.scrollX) * scaleX,
+        (player.x + player.body.halfWidth - camera.worldView.x) * scaleX,
       top:
         canvasRect.top +
-        (player.y - player.body.halfHeight - camera.scrollY) * scaleY,
+        (player.y - player.body.halfHeight - camera.worldView.y) * scaleY,
       bottom:
         canvasRect.top +
-        (player.y + player.body.halfHeight - camera.scrollY) * scaleY,
+        (player.y + player.body.halfHeight - camera.worldView.y) * scaleY,
     };
     const controls = document.querySelector('.touch-controls');
     return {
@@ -333,6 +370,20 @@ async function readLayout(page) {
       },
       scene: {
         logicalX: player.x - scene.currentRouteOffset,
+        gameWidth: scene.scale.width,
+        gameHeight: scene.scale.height,
+        canvasRect: {
+          left: canvasRect.left,
+          right: canvasRect.right,
+          top: canvasRect.top,
+          bottom: canvasRect.bottom,
+        },
+        cameraWorldView: {
+          x: camera.worldView.x,
+          y: camera.worldView.y,
+          width: camera.worldView.width,
+          height: camera.worldView.height,
+        },
         y: player.y,
         vx: player.body.velocity.x,
         vy: player.body.velocity.y,
@@ -434,7 +485,7 @@ async function waitForReady(page) {
   await page.waitForTimeout(250);
 }
 
-async function waitForResize(page, width, height) {
+async function waitForResize(page, width, height, settleMs = 300) {
   await page.waitForFunction(
     ({ width, height }) => {
       const scene = window.__fallstackFindScene?.();
@@ -447,11 +498,31 @@ async function waitForResize(page, width, height) {
     },
     { width, height }
   );
-  await page.waitForTimeout(300);
+  if (settleMs > 0) await page.waitForTimeout(settleMs);
 }
 
 async function installSceneProbe(context) {
   await context.addInitScript(() => {
+    window.__fallstackCanvasWrites = [];
+    for (const dimension of ['width', 'height']) {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        HTMLCanvasElement.prototype,
+        dimension
+      );
+      if (!descriptor?.get || !descriptor.set) continue;
+      Object.defineProperty(HTMLCanvasElement.prototype, dimension, {
+        ...descriptor,
+        get: descriptor.get,
+        set(value) {
+          window.__fallstackCanvasWrites.push({
+            dimension,
+            value: Number(value),
+            at: performance.now(),
+          });
+          descriptor.set.call(this, value);
+        },
+      });
+    }
     window.__fallstackQa = { launches: 0, falls: 0 };
     window.addEventListener('fallstack:launch', () => {
       window.__fallstackQa.launches += 1;

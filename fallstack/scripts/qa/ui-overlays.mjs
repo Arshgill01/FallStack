@@ -19,12 +19,21 @@ let checkCount = 0;
 await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  args: ['--no-sandbox', '--disable-dev-shm-usage', '--mute-audio'],
 });
 
 try {
   for (const viewport of viewports) {
-    const context = await browser.newContext({ viewport });
+    const context = await browser.newContext({
+      viewport,
+      deviceScaleFactor: 3,
+      hasTouch: true,
+      isMobile: true,
+    });
+    await context.addInitScript(() => {
+      localStorage.setItem('fallstack:gameplay-muted', 'true');
+      localStorage.setItem('fallstack:music-muted', 'true');
+    });
     await installSceneProbe(context);
     const page = await context.newPage();
     await page.goto('http://127.0.0.1:8080/game.html', {
@@ -251,8 +260,9 @@ async function measureRouteGeometry(page) {
     const canvas = document.querySelector('#game-canvas canvas');
     const tower = document.querySelector('.tower-wrap').getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleX = canvasRect.width / scene.scale.width;
-    const scaleY = canvasRect.height / scene.scale.height;
+    const camera = scene.cameras.main;
+    const scaleX = canvasRect.width / camera.worldView.width;
+    const scaleY = canvasRect.height / camera.worldView.height;
     const route = scene.towerPlatforms
       .filter((platform) => !platform.id.startsWith('obstacle-'))
       .sort((left, right) => right.y - left.y);
@@ -274,6 +284,7 @@ async function measureRouteGeometry(page) {
       scene.snapCameraToPlayer();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const mutation = document.querySelector('.mutation-banner.visible');
+      const checkpoint = document.querySelector('.checkpoint-banner.visible');
       const remote = document.querySelector('[data-qa-overlay="remote"]');
       const companionHeight =
         mutation?.classList.contains('receipt') &&
@@ -289,6 +300,17 @@ async function measureRouteGeometry(page) {
         : 'top';
       mutation?.classList.toggle('place-bottom', placement === 'bottom');
       mutation?.classList.toggle('place-top', placement === 'top');
+      const checkpointPlacement = checkpoint
+        ? scene.hudNoticePlacement(checkpoint.getBoundingClientRect().height)
+        : 'top';
+      checkpoint?.classList.toggle(
+        'place-bottom',
+        checkpointPlacement === 'bottom'
+      );
+      checkpoint?.classList.toggle(
+        'place-top',
+        checkpointPlacement === 'top'
+      );
       remote?.classList.toggle(
         'below-receipt',
         Boolean(mutation?.classList.contains('receipt')) && placement === 'top'
@@ -296,7 +318,7 @@ async function measureRouteGeometry(page) {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const overlayElements = [
         mutation,
-        document.querySelector('.checkpoint-banner.visible'),
+        checkpoint,
         remote,
       ].filter(
         (element) =>
@@ -312,42 +334,41 @@ async function measureRouteGeometry(page) {
           overlapArea(sampleOverlays[0], sampleOverlays[1])
         );
       }
-      const camera = scene.cameras.main;
       const playerRect = {
         left:
           canvasRect.left +
           (scene.player.x -
             scene.player.body.halfWidth -
-            camera.scrollX) *
+            camera.worldView.x) *
             scaleX,
         right:
           canvasRect.left +
           (scene.player.x +
             scene.player.body.halfWidth -
-            camera.scrollX) *
+            camera.worldView.x) *
             scaleX,
         top:
           canvasRect.top +
           (scene.player.y -
             scene.player.body.halfHeight -
-            camera.scrollY) *
+            camera.worldView.y) *
             scaleY,
         bottom:
           canvasRect.top +
           (scene.player.y +
             scene.player.body.halfHeight -
-            camera.scrollY) *
+            camera.worldView.y) *
             scaleY,
       };
       const targetRect = {
-        left: canvasRect.left + (target.x - camera.scrollX) * scaleX,
+        left: canvasRect.left + (target.x - camera.worldView.x) * scaleX,
         right:
           canvasRect.left +
-          (target.x + target.width - camera.scrollX) * scaleX,
-        top: canvasRect.top + (target.y - camera.scrollY) * scaleY,
+          (target.x + target.width - camera.worldView.x) * scaleX,
+        top: canvasRect.top + (target.y - camera.worldView.y) * scaleY,
         bottom:
           canvasRect.top +
-          (target.y + target.height - camera.scrollY) * scaleY,
+          (target.y + target.height - camera.worldView.y) * scaleY,
       };
       samples.push({
         supportId: support.id,
@@ -412,7 +433,8 @@ async function measureLandingFraming(page) {
     const scene = window.__fallstackFindScene();
     const canvas = document.querySelector('#game-canvas canvas');
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleY = canvasRect.height / scene.scale.height;
+    const camera = scene.cameras.main;
+    const scaleY = canvasRect.height / camera.worldView.height;
     const zoneTag = document.querySelector('.zone-tag').getBoundingClientRect();
     const safeTop = zoneTag.bottom + 12;
     const route = scene.towerPlatforms
@@ -443,7 +465,7 @@ async function measureLandingFraming(page) {
         nextLandingId: nextLanding.id,
         nextLandingTop:
           canvasRect.top +
-          (nextLanding.y - scene.cameras.main.scrollY) * scaleY,
+          (nextLanding.y - camera.worldView.y) * scaleY,
       });
     }
 
