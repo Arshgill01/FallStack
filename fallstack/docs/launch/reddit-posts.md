@@ -2,6 +2,21 @@
 
 Account: u/BrightyBrainiac. App: fallstack v0.0.39, approved and public. Home sub: r/fallstack.
 
+## Round 2 (read this first)
+
+Some of these were already posted on the old build (v0.0.39), which had a camera jolt on every landing, ledges cut off at the screen edge, and falls that didn't count after a zone change. v0.0.41 fixes all three and is live on r/fallstack now.
+
+1. **Fill in the log at the bottom first.** Find every post already made from this file on u/BrightyBrainiac and add the sub, URL, and current score/comments.
+2. **Don't repost in a sub you've already posted in.** Same text twice in one sub reads as spam and can get the account flagged. Instead, reply to your own post with comment R below. Also reply to anyone there who reported a bug, with one line saying it's fixed (if it actually is one of the three above).
+3. **Subs not posted in yet:** carry on with the schedule below, one per day.
+4. **Copy any feedback already in those threads** into the "Feedback collected" section.
+
+### R. Update comment on posts that are already up
+
+```
+pushed a fix. landing used to jerk the camera, some ledges got cut off at the edge of the screen, and falls right after a new zone weren't counting. all three should be gone now. if you bounced off it earlier because of that, might be worth another go
+```
+
 ## For whoever posts these (Codex)
 
 Read this whole section before posting anything.
