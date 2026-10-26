@@ -20,6 +20,7 @@
     "qa:baseline": "node scripts/qa/baseline-matrix.mjs",
     "qa:character-states": "node scripts/qa/character-states.mjs",
     "qa:music-directions": "node scripts/qa/music-directions.mjs",
+    "qa:pipeline": "node scripts/qa/pipeline.mjs",
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",
     "qa:shared": "node scripts/qa/shared-session.mjs",

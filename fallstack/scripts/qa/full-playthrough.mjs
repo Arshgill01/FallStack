@@ -2,6 +2,7 @@ import { chromium, webkit } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { createBoardApiMock } from './lib/board-api-mock.mjs';
 
 const options = parseArgs(process.argv.slice(2));
 const outputDir = path.resolve(options.output);
@@ -37,7 +38,37 @@ await context.addInitScript(() => {
   localStorage.setItem('fallstack:gameplay-muted', 'true');
   localStorage.setItem('fallstack:music-muted', 'true');
 });
+const boardApi = options.mockApi
+  ? createBoardApiMock({ remoteFallIntervalMs: options.remoteFallMs })
+  : null;
+if (boardApi) await context.route('**/api/**', (route) => boardApi.handle(route));
+await context.addInitScript(() => {
+  // Frame clock and camera position for hitch and jolt detection, sampled
+  // independently of the bot's polling.
+  window.__fallstackFrames = [];
+  window.__fallstackCameraY = [];
+  let scene = null;
+  const tick = (now) => {
+    window.__fallstackFrames.push(now);
+    if (!scene && window.__fallstackFrames.length % 30 === 0)
+      scene = window.__fallstackPipelineScene?.() ?? null;
+    // Camera top in CSS pixels, so per-frame jumps read as on-screen motion.
+    const view = scene?.cameras?.main?.worldView;
+    const canvas = scene?.game?.canvas;
+    window.__fallstackCameraY.push(
+      view && canvas
+        ? (view.y * canvas.getBoundingClientRect().height) / view.height
+        : null
+    );
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+});
 const page = await context.newPage();
+if (options.cpuThrottle > 1 && options.browser === 'chromium') {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: options.cpuThrottle });
+}
 const consoleEntries = [];
 const pageErrors = [];
 page.on('console', (message) => {
@@ -53,6 +84,27 @@ if (options.resumeZone) {
 }
 
 await page.addInitScript(() => {
+  window.__fallstackPipelineScene = () => {
+    const root = document.querySelector('#root');
+    const containerKey = root
+      ? Object.keys(root).find((key) => key.startsWith('__reactContainer$'))
+      : null;
+    const container = containerKey ? root[containerKey] : null;
+    const stack = [container?.current ?? container].filter(Boolean);
+    const seen = new Set();
+    while (stack.length) {
+      const fiber = stack.pop();
+      if (!fiber || seen.has(fiber)) continue;
+      seen.add(fiber);
+      for (let hook = fiber.memoizedState; hook; hook = hook.next) {
+        const scene = hook.memoizedState?.current?.scene?.keys?.FallstackScene;
+        if (scene) return scene;
+      }
+      if (fiber.child) stack.push(fiber.child);
+      if (fiber.sibling) stack.push(fiber.sibling);
+    }
+    return null;
+  };
   window.__fallstackQaEvents = [];
   for (const name of [
     'ready',
@@ -79,6 +131,7 @@ const landings = [];
 const failures = [];
 const framingFailures = [];
 const visibilityFailures = [];
+const targetVisibilityFailures = [];
 let completed = false;
 
 try {
@@ -181,6 +234,8 @@ try {
     const advanced = afterIndex !== undefined && afterIndex >= targetIndex;
     const nextPlatform =
       advanced && afterIndex !== undefined ? route[afterIndex + 1] : null;
+    // Judge framing once the camera has come to rest after touchdown.
+    if (nextPlatform) await waitForCameraSettle(page);
     const framing = nextPlatform
       ? await readLandingFraming(page, nextPlatform)
       : null;
@@ -253,6 +308,10 @@ try {
   await capture(page, outputDir, completed ? '99-summit' : '99-incomplete');
 
   const events = await page.evaluate(() => window.__fallstackQaEvents ?? []);
+  const frames = await page.evaluate(() => window.__fallstackFrames ?? []);
+  const cameraY = await page.evaluate(() => window.__fallstackCameraY ?? []);
+  const frameStats = summarizeFrames(frames, cameraY, events, options.hitchMs);
+  boardApi?.stop();
   const report = {
     generatedAt: new Date().toISOString(),
     url: options.url,
@@ -271,6 +330,10 @@ try {
     failureCount: failures.length,
     framingFailureCount: framingFailures.length,
     visibilityFailureCount: visibilityFailures.length,
+    targetVisibilityFailureCount: targetVisibilityFailures.length,
+    cpuThrottle: options.cpuThrottle,
+    mockApi: boardApi ? { remoteFallMs: options.remoteFallMs, ...boardApi.stats } : null,
+    frameStats,
     finalState: compactState(finalState),
     introFall,
     resumeCheck,
@@ -278,6 +341,7 @@ try {
     failures,
     framingFailures,
     visibilityFailures,
+    targetVisibilityFailures,
     landings,
     consoleEntries,
     pageErrors,
@@ -291,6 +355,12 @@ try {
     failureCount: failures.length,
     framingFailureCount: framingFailures.length,
     visibilityFailureCount: visibilityFailures.length,
+    targetVisibilityFailureCount: targetVisibilityFailures.length,
+    landingHitchCount: frameStats.landingHitchCount,
+    worstLandingFrameMs: frameStats.worstLandingFrameMs,
+    landingCameraJoltCount: frameStats.landingCameraJoltCount,
+    worstLandingCameraJumpPx: frameStats.worstLandingCameraJumpPx,
+    pageErrorCount: pageErrors.length,
     finalPlatform: finalState.lastPlatformId,
     currentZone: finalState.currentZone,
     elapsedMs: report.elapsedMs,
@@ -299,7 +369,8 @@ try {
   if (
     (!completed && options.requireSummit) ||
     framingFailures.length > 0 ||
-    visibilityFailures.length > 0
+    visibilityFailures.length > 0 ||
+    pageErrors.length > 0
   )
     process.exitCode = 1;
 } catch (error) {
@@ -314,6 +385,7 @@ try {
       failures,
       framingFailures,
       visibilityFailures,
+      targetVisibilityFailures,
       landings,
       consoleEntries,
       pageErrors,
@@ -322,6 +394,7 @@ try {
   await capture(page, outputDir, '99-failure').catch(() => {});
   throw error;
 } finally {
+  boardApi?.stop();
   await context.close();
   await browser.close();
 }
@@ -341,6 +414,7 @@ async function performJump(page, current, target, attempt, blockers) {
     : target.x + target.width + 88 + Math.min(18, attempt * 3);
   await positionOnSupport(page, current, desiredLaunchX);
   const setupState = await readScene(page, false);
+  await recordTargetVisibility(page, current, target);
 
   const launchArrow = direction > 0 ? 'ArrowRight' : 'ArrowLeft';
   const heldMs = chargeDuration(current, target, attempt, wallBounce);
@@ -767,6 +841,8 @@ async function readScene(page, includePlatforms) {
       return null;
     }
 
+    // Pseudo-element widths can be 'auto' when a rail is not drawn.
+    const cssPx = (value) => Number.parseFloat(value ?? '0') || 0;
     const game = findGame();
     const scene = game?.scene?.keys?.FallstackScene;
     const player = scene?.player;
@@ -784,11 +860,9 @@ async function readScene(page, includePlatforms) {
         : 1;
     const visualHalfWidth = player.body.halfWidth + 12;
     const leftPillar =
-      Number.parseFloat(railStyle?.borderLeftWidth ?? '0') +
-      Number.parseFloat(railBefore?.width ?? '0');
+      cssPx(railStyle?.borderLeftWidth) + cssPx(railBefore?.width);
     const rightPillar =
-      Number.parseFloat(railStyle?.borderRightWidth ?? '0') +
-      Number.parseFloat(railAfter?.width ?? '0');
+      cssPx(railStyle?.borderRightWidth) + cssPx(railAfter?.width);
     const visualLeft =
       (player.x - visualHalfWidth - camera.worldView.x) * scaleX;
     const visualRight =
@@ -1023,6 +1097,125 @@ function pickGeometry(platform) {
   };
 }
 
+async function waitForCameraSettle(page, timeoutMs = 700) {
+  await page.evaluate(
+    (timeout) =>
+      new Promise((resolve) => {
+        const scene = window.__fallstackPipelineScene?.();
+        if (!scene) return resolve();
+        const started = performance.now();
+        let last = scene.cameras.main.worldView.y;
+        let still = 0;
+        const tick = () => {
+          const y = scene.cameras.main.worldView.y;
+          still = Math.abs(y - last) < 0.5 ? still + 1 : 0;
+          last = y;
+          if (still >= 3 || performance.now() - started > timeout) resolve();
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+    timeoutMs
+  );
+}
+
+// The player must be able to see where they are jumping before they jump.
+async function recordTargetVisibility(page, current, target) {
+  const view = await page.evaluate((platform) => {
+    const scene = window.__fallstackPipelineScene?.();
+    const canvas = document.querySelector('#game-canvas canvas');
+    if (!scene || !canvas) return null;
+    const canvasRect = canvas.getBoundingClientRect();
+    const camera = scene.cameras.main;
+    const scaleX = canvasRect.width / camera.worldView.width;
+    const scaleY = canvasRect.height / camera.worldView.height;
+    const layout = scene.layoutPlatform(platform);
+    const zoneTag = document.querySelector('.zone-tag')?.getBoundingClientRect();
+    const controls = document.querySelector('.touch-controls');
+    const controlsRect =
+      controls && getComputedStyle(controls).display !== 'none'
+        ? controls.getBoundingClientRect()
+        : null;
+    return {
+      left: canvasRect.left + (layout.x - camera.worldView.x) * scaleX,
+      right:
+        canvasRect.left + (layout.x + layout.width - camera.worldView.x) * scaleX,
+      top: canvasRect.top + (layout.y - camera.worldView.y) * scaleY,
+      bottom:
+        canvasRect.top + (layout.y + layout.height - camera.worldView.y) * scaleY,
+      safeLeft: canvasRect.left,
+      safeRight: canvasRect.right,
+      safeTop: Math.max(canvasRect.top, (zoneTag?.bottom ?? canvasRect.top) + 4),
+      safeBottom: Math.min(canvasRect.bottom, controlsRect?.top ?? canvasRect.bottom),
+    };
+  }, target);
+  if (!view) return;
+  const offscreen = [];
+  if (view.top < view.safeTop) offscreen.push('top');
+  if (view.bottom > view.safeBottom) offscreen.push('bottom');
+  // A wide ledge may run past the edge; the player only needs part of it.
+  if (view.right < view.safeLeft + 24) offscreen.push('left');
+  if (view.left > view.safeRight - 24) offscreen.push('right');
+  if (offscreen.length === 0) return;
+  targetVisibilityFailures.push({
+    from: current?.id ?? null,
+    target: target.id,
+    zone: target.zoneId,
+    offscreen,
+    ...Object.fromEntries(
+      Object.entries(view).map(([key, value]) => [key, round(value)])
+    ),
+  });
+}
+
+function summarizeFrames(frames, cameraY, events, hitchMs) {
+  const deltas = [];
+  for (let index = 1; index < frames.length; index += 1)
+    deltas.push({
+      at: frames[index],
+      ms: frames[index] - frames[index - 1],
+      cameraPx:
+        cameraY[index] == null || cameraY[index - 1] == null
+          ? 0
+          : Math.abs(cameraY[index] - cameraY[index - 1]),
+    });
+  const sorted = deltas.map((delta) => delta.ms).sort((a, b) => a - b);
+  const percentile = (p) =>
+    sorted.length
+      ? round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))])
+      : 0;
+  const landEvents = events.filter((event) => event.name === 'land');
+  const worstIn = (from, to, key) => {
+    const window = deltas.filter((delta) => delta.at > from && delta.at <= to);
+    return window.length ? Math.max(...window.map((delta) => delta[key])) : 0;
+  };
+  const landingWindows = landEvents.map((event) =>
+    worstIn(event.at, event.at + 500, 'ms')
+  );
+  // Largest single-frame camera move right after touchdown: a visible jolt.
+  const landingCameraJumps = landEvents.map((event) =>
+    worstIn(event.at - 20, event.at + 300, 'cameraPx')
+  );
+  const median = (values) =>
+    values.length
+      ? round([...values].sort((a, b) => a - b)[Math.floor(values.length / 2)])
+      : 0;
+  return {
+    frameCount: frames.length,
+    medianFrameMs: percentile(0.5),
+    p95FrameMs: percentile(0.95),
+    p99FrameMs: percentile(0.99),
+    longFrameCount: sorted.filter((ms) => ms >= hitchMs).length,
+    landings: landingWindows.length,
+    landingHitchCount: landingWindows.filter((ms) => ms >= hitchMs).length,
+    worstLandingFrameMs: round(Math.max(0, ...landingWindows)),
+    medianLandingWorstFrameMs: median(landingWindows),
+    landingCameraJoltCount: landingCameraJumps.filter((px) => px >= 24).length,
+    worstLandingCameraJumpPx: round(Math.max(0, ...landingCameraJumps)),
+    medianLandingCameraJumpPx: median(landingCameraJumps),
+  };
+}
+
 function parseArgs(args) {
   const values = new Map();
   for (let index = 0; index < args.length; index += 1) {
@@ -1052,6 +1245,10 @@ function parseArgs(args) {
     touch: values.get('touch') === 'true',
     resumeZone: values.get('resume-zone') ?? null,
     requireSummit: values.get('require-summit') !== 'false',
+    mockApi: values.get('mock-api') === 'true',
+    remoteFallMs: numberOption(values, 'remote-fall-ms', 0),
+    cpuThrottle: numberOption(values, 'cpu-throttle', 1),
+    hitchMs: numberOption(values, 'hitch-ms', 50),
   };
 }
 
