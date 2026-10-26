@@ -9,6 +9,7 @@ import {
   CAMERA_VERTICAL_CHARGE_LOOKAHEAD,
   cameraBottomPaddingForGameWidth,
   cameraBottomPaddingForViewport,
+  cameraScrollForWorldViewStart,
   cameraScrollXForPlayer,
   cameraVerticalLookahead,
   chooseHudNoticePlacement,
@@ -55,6 +56,13 @@ void test('logical game world still preserves the full tower route', () => {
   assert.equal(gameWorldWidth(900), 900);
   assert.equal(routeOffsetForGameWidth(900), (900 - WORLD_WIDTH) / 2);
   assert.equal(cameraBottomPaddingForGameWidth(900), 260);
+});
+
+void test('camera scroll preserves the requested world view at high DPR zoom', () => {
+  assert.equal(cameraScrollForWorldViewStart(0, 390, 2), -195);
+  assert.equal(cameraScrollForWorldViewStart(45, 390, 2), -150);
+  assert.equal(cameraScrollForWorldViewStart(90, 390, 2), -105);
+  assert.equal(cameraScrollForWorldViewStart(45, 390, 1), 45);
 });
 
 void test('short landscape cameras keep the player inside the viewport', () => {

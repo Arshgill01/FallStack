@@ -107,6 +107,18 @@ export function cameraScrollXForPlayer(
   );
 }
 
+export function cameraScrollForWorldViewStart(
+  worldViewStart: number,
+  viewportSize: number,
+  zoom: number
+): number {
+  const cleanViewportSize = Number.isFinite(viewportSize)
+    ? Math.max(0, viewportSize)
+    : 0;
+  const cleanZoom = Number.isFinite(zoom) ? Math.max(1, zoom) : 1;
+  return worldViewStart - (cleanViewportSize * (cleanZoom - 1)) / 2;
+}
+
 export function cameraVerticalLookahead(
   charging: boolean,
   chargePercent: number,

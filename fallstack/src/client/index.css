@@ -2294,6 +2294,11 @@ button:disabled {
     bottom: 12px;
   }
 
+  .checkpoint-banner.place-bottom {
+    top: auto;
+    bottom: 12px;
+  }
+
   .receipt-copy {
     font-size: 13px;
   }
