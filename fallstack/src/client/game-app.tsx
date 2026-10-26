@@ -159,6 +159,7 @@ const MOBILE_NOTICE_TOP_OFFSET = 54;
 const MOBILE_NOTICE_BOTTOM_OFFSET = 12;
 const NOTICE_PLAY_CLEARANCE = 10;
 const NOTICE_STACK_GAP = 16;
+const LANDING_CAMERA_SETTLE_MS = 400;
 
 function isBoardSnapshot(
   snapshot: GameSnapshot | null | undefined
@@ -233,6 +234,7 @@ class FallstackScene extends Phaser.Scene {
   private space: Phaser.Input.Keyboard.Key | undefined;
   private facing: -1 | 1 = 1;
   private wasGrounded = false;
+  private landingCameraSettleUntil = 0;
   private suppressNextLanding = false;
   private pendingImpactSpeed = 0;
   private pendingWallImpactSpeed = 0;
@@ -546,7 +548,7 @@ class FallstackScene extends Phaser.Scene {
       this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
       const impactSpeed = this.pendingImpactSpeed;
-      this.settleVerticalCameraForLanding();
+      this.landingCameraSettleUntil = this.time.now + LANDING_CAMERA_SETTLE_MS;
       this.showPlayerCeremony(
         'land',
         Phaser.Math.Clamp((impactSpeed - 180) / 620, 0.25, 1)
@@ -815,11 +817,6 @@ class FallstackScene extends Phaser.Scene {
           platform.y < player.y - player.body.halfHeight
       ) ?? null
     );
-  }
-
-  private settleVerticalCameraForLanding() {
-    if (!this.player) return;
-    this.cameras.main.scrollY = this.cameraTargetY(this.player.y);
   }
 
   private snapCameraToPlayer() {
@@ -1172,10 +1169,13 @@ class FallstackScene extends Phaser.Scene {
         targetX,
         Math.min(1, deltaMs / 90)
       );
+      // After touchdown, catch up faster so the next ledge clears the HUD
+      // quickly, but still glide: a one-frame snap reads as a stutter.
+      const settling = this.time.now < this.landingCameraSettleUntil;
       this.cameras.main.scrollY = Phaser.Math.Linear(
         currentY,
         targetY,
-        Math.min(1, deltaMs / 120)
+        Math.min(1, deltaMs / (settling ? 60 : 120))
       );
     }
   }

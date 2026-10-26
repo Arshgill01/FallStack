@@ -457,7 +457,7 @@ async function measureLandingFraming(page) {
       );
       scene.lastPlatformId = landing.id;
       scene.player.body.setVelocity(0, 0);
-      scene.settleVerticalCameraForLanding();
+      scene.cameras.main.scrollY = scene.cameraTargetY(scene.player.y);
       scene.updateCamera(16);
       await new Promise((resolve) => requestAnimationFrame(resolve));
       samples.push({
