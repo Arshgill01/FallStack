@@ -36,7 +36,10 @@ import {
   fallZoneForRespawn,
   shouldEndRunAtY,
 } from '../shared/game/progression.js';
-import { resolveFallObservation } from '../shared/game/mutation-events.js';
+import {
+  resolveFallObservation,
+  scopeFallEvidenceToZone,
+} from '../shared/game/mutation-events.js';
 import type { MutationReceipt } from '../shared/game/mutation-receipts.js';
 import type {
   BoardSnapshot,
@@ -1030,28 +1033,31 @@ class FallstackScene extends Phaser.Scene {
     if (!shouldEndRunAtY(this.player.y, this.respawnZone)) return;
 
     const respawnZoneId = fallZoneForRespawn(this.respawnZone);
+    const detail = scopeFallEvidenceToZone<FallEventDetail>(
+      {
+        attemptId: this.currentAttemptId,
+        respawnZoneId,
+        fallX: Phaser.Math.Clamp(
+          this.player.x - this.routeOffsetX(),
+          0,
+          WORLD_WIDTH
+        ),
+        fallY: this.player.y,
+        highestY: this.highestY,
+        lastPlatformId: this.lastPlatformId,
+        lastHelperArtifactId:
+          this.time.now - this.lastHelperTouchAt < 4000
+            ? this.lastHelperArtifactId
+            : null,
+        wallBonkPlatformId: this.wallBonkPlatformId,
+        launchChargePercent: this.lastChargePercent,
+        launchDirection: this.lastLaunchDirection,
+      },
+      this.towerPlatforms,
+      window.fallstackSnapshot?.zones.flatMap((zone) => zone.artifacts) ?? []
+    );
     window.dispatchEvent(
-      new CustomEvent<FallEventDetail>('fallstack:fall', {
-        detail: {
-          attemptId: this.currentAttemptId,
-          respawnZoneId,
-          fallX: Phaser.Math.Clamp(
-            this.player.x - this.routeOffsetX(),
-            0,
-            WORLD_WIDTH
-          ),
-          fallY: this.player.y,
-          highestY: this.highestY,
-          lastPlatformId: this.lastPlatformId,
-          lastHelperArtifactId:
-            this.time.now - this.lastHelperTouchAt < 4000
-              ? this.lastHelperArtifactId
-              : null,
-          wallBonkPlatformId: this.wallBonkPlatformId,
-          launchChargePercent: this.lastChargePercent,
-          launchDirection: this.lastLaunchDirection,
-        },
-      })
+      new CustomEvent<FallEventDetail>('fallstack:fall', { detail })
     );
     this.respawn();
   }
