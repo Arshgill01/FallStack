@@ -19,6 +19,7 @@
     "qa:audio-palette": "node scripts/qa/audio-palette.mjs",
     "qa:baseline": "node scripts/qa/baseline-matrix.mjs",
     "qa:character-states": "node scripts/qa/character-states.mjs",
+    "qa:connectivity": "node scripts/qa/connectivity.mjs",
     "qa:frame-pacing": "node scripts/qa/frame-pacing.mjs",
     "qa:gameplay-feel": "node scripts/qa/gameplay-feel.mjs",
     "qa:music-directions": "node scripts/qa/music-directions.mjs",

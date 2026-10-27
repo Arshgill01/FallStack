@@ -133,6 +133,7 @@ Current useful commands from `fallstack/`:
 - `npm run lint`
 - `npm test`
 - `npm run build`
+- `npm run qa:connectivity` (simulated community days; maps every shared-mutation edge, known gaps in `src/server/testing/connectivity-contract.ts`)
 
 ## UX And Visual Direction
 

@@ -4,3 +4,4 @@ dist
 .env
 .artifacts
 docs/qa/pipeline/
+docs/qa/connectivity/
