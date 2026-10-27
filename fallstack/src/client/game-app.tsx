@@ -37,7 +37,10 @@ import {
   fallZoneForRespawn,
   shouldEndRunAtY,
 } from '../shared/game/progression.js';
-import { resolveFallObservation } from '../shared/game/mutation-events.js';
+import {
+  resolveFallObservation,
+  scopeFallEvidenceToZone,
+} from '../shared/game/mutation-events.js';
 import type { MutationReceipt } from '../shared/game/mutation-receipts.js';
 import type { BoardSnapshot, MutationBeat } from '../shared/game/board.js';
 import {
@@ -164,6 +167,7 @@ const MOBILE_NOTICE_TOP_OFFSET = 54;
 const MOBILE_NOTICE_BOTTOM_OFFSET = 12;
 const MOBILE_NOTICE_SIDE_OFFSET = 36;
 const NOTICE_PLAY_CLEARANCE = 10;
+const LANDING_CAMERA_SETTLE_MS = 400;
 
 function isBoardSnapshot(
   snapshot: GameSnapshot | null | undefined
@@ -243,6 +247,7 @@ class FallstackScene extends Phaser.Scene {
   private space: Phaser.Input.Keyboard.Key | undefined;
   private facing: -1 | 1 = 1;
   private wasGrounded = false;
+  private landingCameraSettleUntil = 0;
   private suppressNextLanding = false;
   private pendingImpactSpeed = 0;
   private pendingWallImpactSpeed = 0;
@@ -563,6 +568,7 @@ class FallstackScene extends Phaser.Scene {
       this.pendingWallImpactSpeed = 0;
     } else if (!this.wasGrounded && onFloor) {
       const impactSpeed = this.pendingImpactSpeed;
+      this.landingCameraSettleUntil = this.time.now + LANDING_CAMERA_SETTLE_MS;
       this.showPlayerCeremony(
         'land',
         Phaser.Math.Clamp((impactSpeed - 180) / 620, 0.25, 1)
@@ -1104,28 +1110,31 @@ class FallstackScene extends Phaser.Scene {
     if (!shouldEndRunAtY(this.player.y, this.respawnZone)) return;
 
     const respawnZoneId = fallZoneForRespawn(this.respawnZone);
+    const detail = scopeFallEvidenceToZone<FallEventDetail>(
+      {
+        attemptId: this.currentAttemptId,
+        respawnZoneId,
+        fallX: Phaser.Math.Clamp(
+          this.player.x - this.routeOffsetX(),
+          0,
+          WORLD_WIDTH
+        ),
+        fallY: this.player.y,
+        highestY: this.highestY,
+        lastPlatformId: this.lastPlatformId,
+        lastHelperArtifactId:
+          this.time.now - this.lastHelperTouchAt < 4000
+            ? this.lastHelperArtifactId
+            : null,
+        wallBonkPlatformId: this.wallBonkPlatformId,
+        launchChargePercent: this.lastChargePercent,
+        launchDirection: this.lastLaunchDirection,
+      },
+      this.towerPlatforms,
+      window.fallstackSnapshot?.zones.flatMap((zone) => zone.artifacts) ?? []
+    );
     window.dispatchEvent(
-      new CustomEvent<FallEventDetail>('fallstack:fall', {
-        detail: {
-          attemptId: this.currentAttemptId,
-          respawnZoneId,
-          fallX: Phaser.Math.Clamp(
-            this.player.x - this.routeOffsetX(),
-            0,
-            WORLD_WIDTH
-          ),
-          fallY: this.player.y,
-          highestY: this.highestY,
-          lastPlatformId: this.lastPlatformId,
-          lastHelperArtifactId:
-            this.time.now - this.lastHelperTouchAt < 4000
-              ? this.lastHelperArtifactId
-              : null,
-          wallBonkPlatformId: this.wallBonkPlatformId,
-          launchChargePercent: this.lastChargePercent,
-          launchDirection: this.lastLaunchDirection,
-        },
-      })
+      new CustomEvent<FallEventDetail>('fallstack:fall', { detail })
     );
     this.respawn();
   }
@@ -1242,10 +1251,13 @@ class FallstackScene extends Phaser.Scene {
         targetX,
         Math.min(1, deltaMs / 90)
       );
+      // After touchdown, catch up faster so the next ledge clears the HUD
+      // quickly, but still glide: a one-frame snap reads as a stutter.
+      const settling = this.time.now < this.landingCameraSettleUntil;
       this.cameras.main.scrollY = Phaser.Math.Linear(
         currentY,
         targetY,
-        Math.min(1, deltaMs / 120)
+        Math.min(1, deltaMs / (settling ? 60 : 120))
       );
     }
   }
@@ -1963,8 +1975,8 @@ export function GameApp() {
   const activeFallFeedbackAttemptRef = useRef<string | null>(null);
   const mutationTimerRef = useRef<number | null>(null);
   const mutationBannerRef = useRef<HTMLDivElement | null>(null);
-  const remoteBeatRef = useRef<HTMLDivElement | null>(null);
   const checkpointBannerRef = useRef<HTMLDivElement | null>(null);
+  const remoteBeatRef = useRef<HTMLDivElement | null>(null);
   const checkpointTimerRef = useRef<number | null>(null);
   const remoteBeatTimerRef = useRef<number | null>(null);
   const pendingBoardSnapshotRef = useRef<{

@@ -14,6 +14,7 @@ import { deriveImpactSites } from './impact-sites.js';
 import {
   resolveClearSite,
   resolveFallObservation,
+  scopeFallEvidenceToZone,
   type FallObservation,
 } from './mutation-events.js';
 import { generateDailyTower, WORLD_HEIGHT } from './tower.js';
@@ -218,4 +219,51 @@ void test('clean clear resolves to the zone site carrying the most failure', () 
     )?.id,
     siteName: 'First Gap',
   });
+});
+
+void test('a fall right after crossing a zone boundary still resolves', () => {
+  const tower = generateDailyTower(dailySeed);
+  const snapshot = seededSnapshot();
+  const upperZone = snapshot.zones[1]!.id;
+  const lastLowerLedge = tower.platforms
+    .filter(
+      (platform) =>
+        platform.zoneId === BOTTOM_ZONE_ID && platform.kind !== 'obstacle'
+    )
+    .sort((left, right) => left.y - right.y)[0];
+  const lowerZoneArtifact = snapshot.zones[0]!.artifacts[0];
+  assert.ok(lastLowerLedge);
+
+  // The jump crossed into the upper zone, so respawn moved before the fall.
+  const crossed = bottomObservation('attempt_zone_cross', {
+    respawnZoneId: upperZone,
+    fallX: lastLowerLedge.x + lastLowerLedge.width / 2,
+    fallY: lastLowerLedge.y + 150,
+    highestY: lastLowerLedge.y - 120,
+    lastPlatformId: lastLowerLedge.id,
+    wallBonkPlatformId: lastLowerLedge.id,
+    lastHelperArtifactId: lowerZoneArtifact?.id ?? null,
+  });
+  assert.equal(resolveFallObservation(crossed, snapshot).ok, false);
+
+  const scoped = scopeFallEvidenceToZone(
+    crossed,
+    tower.platforms,
+    snapshot.zones.flatMap((zone) => zone.artifacts)
+  );
+  assert.equal(scoped.lastPlatformId, null);
+  assert.equal(scoped.wallBonkPlatformId, null);
+  assert.equal(scoped.lastHelperArtifactId, null);
+  const resolved = resolveFallObservation(scoped, snapshot);
+  assert.ok(resolved.ok);
+  assert.equal(resolved.value.zoneId, upperZone);
+});
+
+void test('fall evidence inside the respawn zone is kept', () => {
+  const tower = generateDailyTower(dailySeed);
+  const observation = bottomObservation('attempt_same_zone');
+  assert.deepEqual(
+    scopeFallEvidenceToZone(observation, tower.platforms, []),
+    observation
+  );
 });

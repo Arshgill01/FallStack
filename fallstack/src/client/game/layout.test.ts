@@ -153,6 +153,13 @@ void test('logical game world still preserves the full tower route', () => {
   assert.equal(cameraBottomPaddingForGameWidth(900), 260);
 });
 
+void test('camera scroll preserves the requested world view at high DPR zoom', () => {
+  assert.equal(cameraScrollForWorldViewStart(0, 390, 2), -195);
+  assert.equal(cameraScrollForWorldViewStart(45, 390, 2), -150);
+  assert.equal(cameraScrollForWorldViewStart(90, 390, 2), -105);
+  assert.equal(cameraScrollForWorldViewStart(45, 390, 1), 45);
+});
+
 void test('short landscape cameras keep the player inside the viewport', () => {
   assert.equal(cameraBottomPaddingForViewport(900, 600), 260);
   assert.equal(cameraBottomPaddingForViewport(760, 254), 152.4);

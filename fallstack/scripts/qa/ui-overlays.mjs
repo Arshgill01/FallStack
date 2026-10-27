@@ -20,7 +20,7 @@ let checkCount = 0;
 await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  args: ['--no-sandbox', '--disable-dev-shm-usage', '--mute-audio'],
 });
 
 try {
@@ -30,6 +30,10 @@ try {
       deviceScaleFactor: 3,
       hasTouch: true,
       isMobile: true,
+    });
+    await context.addInitScript(() => {
+      localStorage.setItem('fallstack:gameplay-muted', 'true');
+      localStorage.setItem('fallstack:music-muted', 'true');
     });
     await installSceneProbe(context);
     const page = await context.newPage();
@@ -292,7 +296,7 @@ async function measureRouteGeometry(page) {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const overlayElements = [
         mutation,
-        document.querySelector('.checkpoint-banner.visible'),
+        checkpoint,
         remote,
       ].filter(
         (element) =>

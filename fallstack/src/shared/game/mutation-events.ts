@@ -100,6 +100,32 @@ export function resolveFallObservation(
   };
 }
 
+// A jump that crosses a zone boundary moves the respawn zone mid-air, so a
+// fall right after it still carries ledge/helper evidence from the zone below.
+// The server rejects cross-zone evidence, so drop it and let the fall resolve
+// by position inside the respawn zone instead of losing the fall entirely.
+export function scopeFallEvidenceToZone<T extends FallObservation>(
+  observation: T,
+  platforms: readonly Pick<Platform, 'id' | 'zoneId'>[],
+  artifacts: readonly Pick<Artifact, 'id' | 'zoneId'>[]
+): T {
+  const inZone = (
+    id: string | null,
+    candidates: readonly { id: string; zoneId: ZoneId }[]
+  ) =>
+    id !== null &&
+    candidates.find((candidate) => candidate.id === id)?.zoneId ===
+      observation.respawnZoneId
+      ? id
+      : null;
+  return {
+    ...observation,
+    lastPlatformId: inZone(observation.lastPlatformId, platforms),
+    wallBonkPlatformId: inZone(observation.wallBonkPlatformId, platforms),
+    lastHelperArtifactId: inZone(observation.lastHelperArtifactId, artifacts),
+  };
+}
+
 export function resolveClearSite(
   snapshot: GameSnapshot,
   zoneId: ZoneId

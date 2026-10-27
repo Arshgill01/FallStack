@@ -21,7 +21,7 @@ await mkdir(outputDir, { recursive: true });
 const browser = await browserType.launch({
   headless: true,
   ...(browserName === 'chromium'
-    ? { args: ['--no-sandbox', '--disable-dev-shm-usage'] }
+    ? { args: ['--no-sandbox', '--disable-dev-shm-usage', '--mute-audio'] }
     : {}),
 });
 
@@ -31,6 +31,10 @@ try {
     deviceScaleFactor: 3,
     hasTouch: true,
     isMobile: true,
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem('fallstack:gameplay-muted', 'true');
+    localStorage.setItem('fallstack:music-muted', 'true');
   });
   await installSceneProbe(context);
   const page = await context.newPage();
@@ -174,7 +178,7 @@ try {
   await page.waitForFunction(() => window.__fallstackQa.launches > 0);
   const airborneBeforeResize = await readLayout(page);
   await page.setViewportSize({ width: 812, height: 375 });
-  await waitForResize(page, 812, 375);
+  await waitForResize(page, 812, 375, 0);
   const airborneAfterResize = await readLayout(page);
   observations.airborne = {
     before: airborneBeforeResize,
@@ -269,6 +273,10 @@ try {
 
   const desktopContext = await browser.newContext({
     viewport: { width: 812, height: 375 },
+  });
+  await desktopContext.addInitScript(() => {
+    localStorage.setItem('fallstack:gameplay-muted', 'true');
+    localStorage.setItem('fallstack:music-muted', 'true');
   });
   const desktopPage = await desktopContext.newPage();
   await desktopPage.goto('http://127.0.0.1:8080/game.html', {
@@ -385,6 +393,20 @@ async function readLayout(page) {
       },
       scene: {
         logicalX: player.x - scene.currentRouteOffset,
+        gameWidth: scene.scale.width,
+        gameHeight: scene.scale.height,
+        canvasRect: {
+          left: canvasRect.left,
+          right: canvasRect.right,
+          top: canvasRect.top,
+          bottom: canvasRect.bottom,
+        },
+        cameraWorldView: {
+          x: camera.worldView.x,
+          y: camera.worldView.y,
+          width: camera.worldView.width,
+          height: camera.worldView.height,
+        },
         y: player.y,
         vx: player.body.velocity.x,
         vy: player.body.velocity.y,
@@ -542,7 +564,7 @@ async function readResizeProbe(page) {
   return page.evaluate(() => ({ ...window.__fallstackResizeProbe }));
 }
 
-async function waitForResize(page, width, height) {
+async function waitForResize(page, width, height, settleMs = 300) {
   await page.waitForFunction(
     ({ width, height }) => {
       const scene = window.__fallstackFindScene?.();
@@ -561,11 +583,31 @@ async function waitForResize(page, width, height) {
     { width, height },
     { timeout: 10_000 }
   );
-  await page.waitForTimeout(300);
+  if (settleMs > 0) await page.waitForTimeout(settleMs);
 }
 
 async function installSceneProbe(context) {
   await context.addInitScript(() => {
+    window.__fallstackCanvasWrites = [];
+    for (const dimension of ['width', 'height']) {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        HTMLCanvasElement.prototype,
+        dimension
+      );
+      if (!descriptor?.get || !descriptor.set) continue;
+      Object.defineProperty(HTMLCanvasElement.prototype, dimension, {
+        ...descriptor,
+        get: descriptor.get,
+        set(value) {
+          window.__fallstackCanvasWrites.push({
+            dimension,
+            value: Number(value),
+            at: performance.now(),
+          });
+          descriptor.set.call(this, value);
+        },
+      });
+    }
     window.__fallstackQa = { launches: 0, falls: 0 };
     window.addEventListener('fallstack:launch', () => {
       window.__fallstackQa.launches += 1;
