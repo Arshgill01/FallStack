@@ -1,6 +1,8 @@
 import { deriveImpactSites, type ImpactSite } from './impact-sites.js';
 import {
+  earnedHelpers,
   type Artifact,
+  type EarnedHelper,
   type FailureBucket,
   type GameSnapshot,
   type ZoneId,
@@ -41,10 +43,8 @@ export function resolveFallObservation(
   const platforms = new Map(
     tower.platforms.map((platform) => [platform.id, platform])
   );
-  const artifacts = new Map(
-    snapshot.zones
-      .flatMap((zone) => zone.artifacts)
-      .map((artifact) => [artifact.id, artifact])
+  const helpers = new Map(
+    earnedHelpers(snapshot.sites).map((helper) => [helper.id, helper])
   );
 
   if (
@@ -65,13 +65,11 @@ export function resolveFallObservation(
     return invalidObservation();
 
   const helper = observation.lastHelperArtifactId
-    ? (artifacts.get(observation.lastHelperArtifactId) ?? null)
+    ? (helpers.get(observation.lastHelperArtifactId) ?? null)
     : null;
   if (
     observation.lastHelperArtifactId &&
-    (!helper ||
-      helper.zoneId !== observation.respawnZoneId ||
-      !isHelperArtifact(helper))
+    (!helper || helper.zoneId !== observation.respawnZoneId)
   )
     return invalidObservation();
 
@@ -151,7 +149,7 @@ function siteFailureTotal(site: GameSnapshot['sites'][number]): number {
 function resolveSite(
   sites: ImpactSite[],
   platforms: Map<string, Platform>,
-  helper: Artifact | null,
+  helper: EarnedHelper | null,
   lastPlatformId: string | null,
   wallBonkPlatformId: string | null,
   fallX: number,
@@ -193,7 +191,7 @@ function siteDistance(
 
 function classifyFailure(
   observation: FallObservation,
-  helper: Artifact | null
+  helper: EarnedHelper | null
 ): FailureBucket {
   if (helper) return 'helper_overuse';
   if (observation.wallBonkPlatformId) return 'wall_bonk';
@@ -207,10 +205,6 @@ function validPlatformEvidence(
   zoneId: ZoneId
 ): boolean {
   return id === null || platforms.get(id)?.zoneId === zoneId;
-}
-
-function isHelperArtifact(artifact: Artifact): boolean {
-  return artifact.type === 'corpse_stack' || artifact.type === 'mercy_nail';
 }
 
 function invalidObservation(): FallResolution {

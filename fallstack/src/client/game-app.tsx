@@ -22,6 +22,7 @@ import type {
 import {
   BOTTOM_ZONE_ID,
   createDailySeed,
+  earnedHelpers,
   type Artifact,
   type GameSnapshot,
   type ZoneId,
@@ -1131,7 +1132,9 @@ class FallstackScene extends Phaser.Scene {
         launchDirection: this.lastLaunchDirection,
       },
       this.towerPlatforms,
-      window.fallstackSnapshot?.zones.flatMap((zone) => zone.artifacts) ?? []
+      // Earned, not just rendered: a remote update may have displaced the
+      // helper since it was touched, and the fall still belongs to it.
+      earnedHelpers(window.fallstackSnapshot?.sites ?? [])
     );
     window.dispatchEvent(
       new CustomEvent<FallEventDetail>('fallstack:fall', { detail })

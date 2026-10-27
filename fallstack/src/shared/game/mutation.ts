@@ -622,6 +622,31 @@ function deriveArtifacts(
   return artifacts.slice(0, 3);
 }
 
+export type EarnedHelper = { id: string; siteId: string; zoneId: ZoneId };
+
+// Every helper a site has earned today, rendered or not. Counters and clears
+// only grow within a day, so a helper a climber touched stays valid fall
+// evidence even after other climbers' mutations displace it from the render.
+export function earnedHelpers(
+  sites: Pick<SiteSnapshot, 'id' | 'zoneId' | 'counters'>[]
+): EarnedHelper[] {
+  return sites.flatMap((site) => {
+    const stabilized = deriveSiteStatus(site.counters) === 'Stabilized';
+    return (['short_jump', 'overjump', 'helper_overuse'] as const)
+      .filter((bucket) => {
+        const count = site.counters[bucket];
+        if (count < 3) return false;
+        const type = bucketArtifactType(bucket, count, stabilized);
+        return type === 'corpse_stack' || type === 'mercy_nail';
+      })
+      .map((bucket) => ({
+        id: `${site.id}-${bucket}`,
+        siteId: site.id,
+        zoneId: site.zoneId,
+      }));
+  });
+}
+
 function deriveSiteArtifacts(
   site: ImpactSite,
   counters: SiteMutationCounters,

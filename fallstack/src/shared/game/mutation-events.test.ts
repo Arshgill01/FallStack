@@ -148,11 +148,88 @@ void test('helper evidence wins over charge and resolves to the helper site', ()
   );
 });
 
+// First Gap with its helper outvoted: wall bonks now own the rendered slot.
+function displacedHelperSnapshot(shortJumps: number) {
+  const seeded = seededSnapshot();
+  const firstGap = seeded.sites.find((site) => site.name === 'First Gap')!;
+  return {
+    firstGap,
+    snapshot: deriveSnapshot({
+      dailySeed,
+      dateKey: '2026-07-13',
+      counters: createSeededCounters(),
+      siteCounters: Object.fromEntries(
+        seeded.sites.map((site) => [
+          site.id,
+          site.id === firstGap.id
+            ? { ...site.counters, short_jump: shortJumps, wall_bonk: 7 }
+            : site.counters,
+        ])
+      ),
+      totalFalls: SEEDED_TOTAL_FALLS,
+      totalClears: 0,
+      totalSummits: 0,
+      achievements: createInitialAchievements(),
+    }),
+  };
+}
+
+void test('a helper displaced by other climbers still resolves as a helper slip', () => {
+  const { firstGap, snapshot } = displacedHelperSnapshot(4);
+  const helperId = `${firstGap.id}-short_jump`;
+  assert.equal(
+    snapshot.zones
+      .flatMap((zone) => zone.artifacts)
+      .some((artifact) => artifact.id === helperId),
+    false,
+    'the helper is no longer rendered'
+  );
+
+  assert.deepEqual(
+    resolveFallObservation(
+      bottomObservation('attempt_displaced_helper', {
+        lastHelperArtifactId: helperId,
+      }),
+      snapshot
+    ),
+    {
+      ok: true,
+      value: {
+        zoneId: BOTTOM_ZONE_ID,
+        siteId: firstGap.id,
+        siteName: firstGap.name,
+        bucket: 'helper_overuse',
+      },
+    }
+  );
+});
+
+void test('helper evidence the site never earned is rejected', () => {
+  const { firstGap, snapshot } = displacedHelperSnapshot(2);
+  for (const forged of [
+    `${firstGap.id}-short_jump`,
+    `${firstGap.id}-wall_bonk`,
+    'impact-v1:nowhere-short_jump',
+  ]) {
+    assert.equal(
+      resolveFallObservation(
+        bottomObservation('attempt_forged_helper', {
+          lastHelperArtifactId: forged,
+        }),
+        snapshot
+      ).ok,
+      false,
+      forged
+    );
+  }
+});
+
 void test('wall evidence resolves to the impacted anchor site', () => {
   const snapshot = seededSnapshot();
   const tower = generateDailyTower(dailySeed);
   const site = deriveImpactSites(tower).find(
-    (candidate) => candidate.zoneId === BOTTOM_ZONE_ID && candidate.name !== 'First Gap'
+    (candidate) =>
+      candidate.zoneId === BOTTOM_ZONE_ID && candidate.name !== 'First Gap'
   );
 
   assert.ok(site);

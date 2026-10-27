@@ -207,7 +207,7 @@ function assertGap(run: ConnectivityRun, edge: EdgeId) {
   assertContractHeld(run);
 }
 
-void test('gap: a fall off a helper that other climbers displaced is lost', async () => {
+void test('a fall off a helper that other climbers displaced still counts as a helper slip', async () => {
   const run = new ConnectivityRun(createCommunity());
   const kai = run.join('kai', account('kai'));
   const others = ['lu', 'mo'].map((name) => run.join(name, account(name)));
@@ -224,13 +224,23 @@ void test('gap: a fall off a helper that other climbers displaced is lost', asyn
   for (const other of others)
     for (let fall = 0; fall < 2; fall += 1)
       await run.fall(other, { siteId: site.id, bucket: 'wall_bonk' });
-  await run.fall(kai, {
+  await run.sync(others[0]!);
+  assert.equal(
+    renderedArtifactAt(others[0]!.view!, site.id)?.type,
+    'ghost_platform'
+  );
+  const slip = await run.fall(kai, {
     siteId: site.id,
     bucket: 'helper_overuse',
     helperArtifactId: helper!.id,
   });
 
-  assertGap(run, 'fall.stale-helper-accepted');
+  const receipt = (slip?.body as RecordFallResponse).receipt;
+  assert.equal(receipt.accepted, true);
+  assert.equal(receipt.bucket, 'helper_overuse');
+  assert.equal(receipt.siteId, site.id);
+  assert.ok(run.ledger.exercised.get('fall.stale-helper-accepted'));
+  assertContractHeld(run);
 });
 
 void test('gap: a sixth wall bonk announces a Ghost Platform upgrade that never renders', async () => {

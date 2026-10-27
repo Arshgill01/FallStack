@@ -722,8 +722,6 @@ export function boardsEquivalent(left: BoardSnapshot, right: BoardSnapshot) {
 // deterministic reproduction in connectivity.test.ts that fails once the gap
 // is fixed, so this list can only shrink.
 export const KNOWN_CONNECTIVITY_GAPS: Partial<Record<EdgeId, string>> = {
-  'fall.stale-helper-accepted':
-    'The server validates helper evidence against its current board, so once other climbers displace a helper, a fall off it is rejected as invalid and lost.',
   'receipt.promise-visible':
     'Receipts announce "upgraded Ghost Platform/Cursed Brick" at 6 although neither changes form, and announce spawns at sites whose single rendered slot shows a different artifact.',
   'receipt.no-silent-change':
