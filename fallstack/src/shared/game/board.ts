@@ -3,9 +3,10 @@ import type {
   GameSnapshot,
   SiteSnapshot,
 } from './mutation.js';
-import type {
-  MutationReceipt,
-  VisibleMutationChange,
+import {
+  tierEffect,
+  type MutationReceipt,
+  type VisibleMutationChange,
 } from './mutation-receipts.js';
 
 export const TOWER_VERSION = 1;
@@ -102,8 +103,13 @@ function remoteMutationCopy(receipt: MutationReceipt): string {
     return `${count} clean clears reinforced ${siteName}.`;
   if (receipt.visibleChange === 'site_stabilized')
     return `${count} clean clears stabilized ${siteName}.`;
+  const effect = tierEffect(receipt.artifactType, receipt.artifactTier);
   if (receipt.visibleChange === 'site_cursed')
-    return `${siteName} became overgrown after ${count} ${remoteBucketLabel(receipt, count)}.`;
+    return effect
+      ? `${siteName} became overgrown after ${count} ${remoteBucketLabel(receipt, count)}: its ${remoteArtifactName(receipt)} ${effect.present}.`
+      : `${siteName} became overgrown after ${count} ${remoteBucketLabel(receipt, count)}.`;
+  if (receipt.visibleChange === 'artifact_upgraded' && effect)
+    return `${count} ${remoteBucketLabel(receipt, count)} made ${siteName}'s ${remoteArtifactName(receipt)} ${effect.verb}.`;
 
   const verb =
     receipt.visibleChange === 'artifact_spawned' ? 'raised' : 'upgraded';

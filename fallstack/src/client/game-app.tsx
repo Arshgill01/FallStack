@@ -24,6 +24,7 @@ import {
   createDailySeed,
   earnedHelpers,
   type Artifact,
+  type ArtifactTier,
   type GameSnapshot,
   type ZoneId,
 } from '../shared/game/mutation';
@@ -297,6 +298,7 @@ class FallstackScene extends Phaser.Scene {
       type: 'ghost_platform' | 'cursed_brick';
       zoneId: ZoneId;
       collapseAt: number;
+      durationMs: number;
       attemptId: string;
     }
   >();
@@ -1000,7 +1002,12 @@ class FallstackScene extends Phaser.Scene {
       typeof artifactId === 'string' &&
       (type === 'ghost_platform' || type === 'cursed_brick')
     )
-      this.startArtifactTimer(artifactId, type, artifactZoneId);
+      this.startArtifactTimer(
+        artifactId,
+        type,
+        (object.getData('artifactTier') as ArtifactTier | undefined) ?? 'base',
+        artifactZoneId
+      );
   }
 
   private shouldCollideWithPlatform(
@@ -1052,16 +1059,18 @@ class FallstackScene extends Phaser.Scene {
   private startArtifactTimer(
     artifactId: string,
     type: 'ghost_platform' | 'cursed_brick',
+    tier: ArtifactTier,
     zoneId: ZoneId
   ) {
     if (this.artifactTimers.has(artifactId)) return;
-    const duration = artifactUseWindowMs(type);
+    const duration = artifactUseWindowMs(type, tier);
     if (duration === null) return;
     const attemptId = this.currentAttemptId;
     this.artifactTimers.set(artifactId, {
       type,
       zoneId,
       collapseAt: this.time.now + duration,
+      durationMs: duration,
       attemptId,
     });
     this.time.delayedCall(duration, () => {
@@ -1548,7 +1557,7 @@ class FallstackScene extends Phaser.Scene {
       );
       if (!artifact) continue;
       const layout = this.layoutArtifact(artifact);
-      const duration = artifactUseWindowMs(timer.type) ?? 1;
+      const duration = timer.durationMs;
       const remaining = this.reducedMotion
         ? 3
         : Phaser.Math.Clamp(
@@ -1913,6 +1922,7 @@ class FallstackScene extends Phaser.Scene {
         0
       );
       rect.setData('artifactType', artifact.type);
+      rect.setData('artifactTier', artifact.tier);
       rect.setData('artifactId', artifact.id);
       rect.setData('artifactZoneId', artifact.zoneId);
       this.artifactBodies.add(rect);

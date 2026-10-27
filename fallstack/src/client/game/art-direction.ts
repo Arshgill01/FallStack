@@ -61,28 +61,29 @@ export function playerVisualDimensions(state: PlayerVisualState): {
   return { width: 26, height: 39 };
 }
 
+// Label order by slot, not count. Helper slots sit beside the route, so their
+// label explains the community foothold without covering a jump; ghost slots
+// sit in the jump corridor, so a ghost label would hide the landing.
 const LABEL_SLOT_ORDER: Artifact['type'][] = [
   'corpse_stack',
   'mercy_nail',
-  'ghost_platform',
   'cursed_brick',
   'lantern_trail',
+  'ghost_platform',
 ];
 
-// A site can hold several artifacts, but only one in-world label so labels
-// never stack over the jump: the one with the most history, helpers first.
+// A site can hold several artifacts but gets one in-world label, so labels
+// never stack over the jump.
 export function labelledArtifactIds(
-  artifacts: Pick<Artifact, 'id' | 'siteId' | 'type' | 'count'>[]
+  artifacts: Pick<Artifact, 'id' | 'siteId' | 'type'>[]
 ): Set<string> {
   const bySite = new Map<string, (typeof artifacts)[number]>();
   for (const artifact of artifacts) {
     const current = bySite.get(artifact.siteId);
     if (
       !current ||
-      artifact.count > current.count ||
-      (artifact.count === current.count &&
-        LABEL_SLOT_ORDER.indexOf(artifact.type) <
-          LABEL_SLOT_ORDER.indexOf(current.type))
+      LABEL_SLOT_ORDER.indexOf(artifact.type) <
+        LABEL_SLOT_ORDER.indexOf(current.type)
     )
       bySite.set(artifact.siteId, artifact);
   }

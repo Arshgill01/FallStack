@@ -104,18 +104,48 @@ export function renderReliquaryArtifact(
       );
   } else if (artifact.type === 'ghost_platform') {
     const drift = options.reducedMotion ? 0 : Math.sin(options.timeMs / 650) * 1.5;
+    // Overgrown ghosts flicker; reduced motion holds them at a steady dim.
+    const flicker =
+      tier !== 'saturated'
+        ? 1
+        : options.reducedMotion
+          ? 0.6
+          : 0.45 + Math.abs(Math.sin(options.timeMs / 90)) * 0.45;
     graphics
-      .fillStyle(c.ghost, 0.58)
+      .fillStyle(c.ghost, 0.58 * flicker)
       .fillRoundedRect(artifact.x, artifact.y + drift, artifact.width, 7, 3);
-    graphics
-      .lineStyle(2, c.ghost, 0.98)
-      .lineBetween(
-        artifact.x,
-        artifact.y + drift,
-        artifact.x + artifact.width,
-        artifact.y + drift
-      );
-    graphics.fillStyle(c.ghostDeep, 0.58);
+    if (tier === 'saturated') {
+      // A broken rim: the ghost no longer reads as a whole ledge.
+      graphics.lineStyle(2, c.ghost, 0.98 * flicker);
+      for (let x = artifact.x; x < artifact.x + artifact.width; x += 12)
+        graphics.lineBetween(
+          x,
+          artifact.y + drift,
+          Math.min(x + 7, artifact.x + artifact.width),
+          artifact.y + drift
+        );
+    } else {
+      graphics
+        .lineStyle(2, c.ghost, 0.98)
+        .lineBetween(
+          artifact.x,
+          artifact.y + drift,
+          artifact.x + artifact.width,
+          artifact.y + drift
+        );
+    }
+    if (tier === 'remembered') {
+      // A doubled rim: this ghost holds longer.
+      graphics
+        .lineStyle(1.5, c.washi, 0.9)
+        .lineBetween(
+          artifact.x + 4,
+          artifact.y - 3 + drift,
+          artifact.x + artifact.width - 4,
+          artifact.y - 3 + drift
+        );
+    }
+    graphics.fillStyle(c.ghostDeep, 0.58 * flicker);
     graphics.fillTriangle(
       artifact.x + artifact.width * 0.18,
       artifact.y + 7 + drift,
@@ -133,7 +163,11 @@ export function renderReliquaryArtifact(
       artifact.y + 7 + drift
     );
   } else {
-    const wobble = options.reducedMotion ? 0 : Math.sin(options.timeMs / 70) * 0.8;
+    // Harsher bricks shake faster.
+    const wobble = options.reducedMotion
+      ? 0
+      : Math.sin(options.timeMs / (tier === 'base' ? 70 : 40)) *
+        (tier === 'saturated' ? 1.4 : 0.8);
     graphics
       .fillStyle(c.ink, 0.95)
       .fillRect(artifact.x + wobble, artifact.y + 5, artifact.width, artifact.height);
@@ -143,6 +177,12 @@ export function renderReliquaryArtifact(
     graphics
       .fillStyle(c.danger, 1)
       .fillRect(artifact.x + wobble + 4, artifact.y, artifact.width - 8, 4);
+    if (tier === 'saturated') {
+      // A jagged top: this brick crumbles almost at once.
+      graphics.fillStyle(c.persimmon, 1);
+      for (let x = artifact.x + wobble + 2; x < artifact.x + wobble + artifact.width - 6; x += 9)
+        graphics.fillTriangle(x, artifact.y, x + 8, artifact.y, x + 4, artifact.y - 6);
+    }
     for (let i = 0; i < 3; i += 1) {
       const x = artifact.x + wobble + 8 + i * ((artifact.width - 16) / 2);
       graphics.fillStyle(c.ink, 1).fillTriangle(
@@ -155,13 +195,24 @@ export function renderReliquaryArtifact(
       );
     }
     graphics
-      .lineStyle(2, c.ink, 0.9)
+      .lineStyle(2, tier === 'saturated' ? c.persimmon : c.ink, 0.9)
       .lineBetween(
         artifact.x + artifact.width * 0.46 + wobble,
         artifact.y + 2,
         artifact.x + artifact.width * 0.56 + wobble,
         artifact.y + artifact.height - 6
       );
+    if (tier !== 'base') {
+      // A second crack: this brick crumbles faster.
+      graphics
+        .lineStyle(2, tier === 'saturated' ? c.persimmon : c.ink, 0.9)
+        .lineBetween(
+          artifact.x + artifact.width * 0.24 + wobble,
+          artifact.y + artifact.height - 6,
+          artifact.x + artifact.width * 0.34 + wobble,
+          artifact.y + 3
+        );
+    }
   }
 
   options.addLabel(

@@ -30,15 +30,16 @@ void test('every artifact has a distinct collision presentation contract', () =>
   });
 });
 
-void test('each site labels only its artifact with the most history', () => {
+void test('each site gets one label, kept out of the jump corridor', () => {
   const labelled = labelledArtifactIds([
-    { id: 'a-helper', siteId: 'a', type: 'corpse_stack', count: 4 },
-    { id: 'a-ghost', siteId: 'a', type: 'ghost_platform', count: 4 },
-    { id: 'a-lantern', siteId: 'a', type: 'lantern_trail', count: 3 },
-    { id: 'b-brick', siteId: 'b', type: 'cursed_brick', count: 9 },
-    { id: 'b-lantern', siteId: 'b', type: 'lantern_trail', count: 12 },
+    { id: 'a-ghost', siteId: 'a', type: 'ghost_platform' },
+    { id: 'a-helper', siteId: 'a', type: 'corpse_stack' },
+    { id: 'a-lantern', siteId: 'a', type: 'lantern_trail' },
+    { id: 'b-ghost', siteId: 'b', type: 'ghost_platform' },
+    { id: 'b-brick', siteId: 'b', type: 'cursed_brick' },
+    { id: 'c-ghost', siteId: 'c', type: 'ghost_platform' },
   ]);
-  assert.deepEqual([...labelled].sort(), ['a-helper', 'b-lantern']);
+  assert.deepEqual([...labelled].sort(), ['a-helper', 'b-brick', 'c-ghost']);
 });
 
 void test('artifact labels stay inside narrow and wide tower bounds', () => {

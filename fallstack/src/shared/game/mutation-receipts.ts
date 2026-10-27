@@ -2,6 +2,7 @@ import {
   nextThreshold,
   planSiteArtifacts,
   siteStatus,
+  type ArtifactTier,
   type ArtifactType,
   type FailureBucket,
   type SiteMutationCounters,
@@ -40,6 +41,7 @@ export type MutationReceipt = {
   // The artifact the visible change is about. Absent on receipts stored
   // before receipts were derived from the rendered site.
   artifactType?: ArtifactType | null;
+  artifactTier?: ArtifactTier | null;
   copy: string;
 };
 
@@ -65,7 +67,28 @@ type CounterTransition = {
 export type SiteChange = {
   change: VisibleMutationChange;
   artifactType: ArtifactType | null;
+  artifactTier: ArtifactTier | null;
 };
+
+export type TierEffect = { verb: string; present: string };
+
+// What a tier does to a temporary artifact, in words (see the client's
+// artifact-mechanics for the timings). Helpers and lanterns change form
+// instead, so they have no tier effect.
+export function tierEffect(
+  type: ArtifactType | null | undefined,
+  tier: ArtifactTier | null | undefined
+): TierEffect | null {
+  if (type === 'ghost_platform' && tier === 'remembered')
+    return { verb: 'hold longer', present: 'holds longer' };
+  if (type === 'ghost_platform' && tier === 'saturated')
+    return { verb: 'flicker out fast', present: 'flickers out fast' };
+  if (type === 'cursed_brick' && tier === 'remembered')
+    return { verb: 'crumble faster', present: 'crumbles faster' };
+  if (type === 'cursed_brick' && tier === 'saturated')
+    return { verb: 'crumble almost at once', present: 'crumbles almost at once' };
+  return null;
+}
 
 // Compares what the site renders before and after one counter moves, using
 // the same plan the snapshot renders from.
@@ -91,14 +114,20 @@ export function describeSiteChange(
         : statusAfter === 'Reinforced'
           ? 'site_reinforced'
           : 'site_cursed';
-    return { change, artifactType: changed?.type ?? null };
+    return {
+      change,
+      artifactType: changed?.type ?? null,
+      artifactTier: changed?.tier ?? null,
+    };
   }
-  if (!changed) return { change: 'mark_added', artifactType: null };
+  if (!changed)
+    return { change: 'mark_added', artifactType: null, artifactTier: null };
+  const found = { artifactType: changed.type, artifactTier: changed.tier };
   const prior = plansBefore.get(changed.slot);
-  if (!prior) return { change: 'artifact_spawned', artifactType: changed.type };
+  if (!prior) return { change: 'artifact_spawned', ...found };
   if (prior.type === changed.type && changed.tier === 'saturated')
-    return { change: 'site_cursed', artifactType: changed.type };
-  return { change: 'artifact_upgraded', artifactType: changed.type };
+    return { change: 'site_cursed', ...found };
+  return { change: 'artifact_upgraded', ...found };
 }
 
 function transition(
@@ -113,6 +142,7 @@ function transition(
       counterAfter: counterBefore,
       change: 'none',
       artifactType: null,
+      artifactTier: null,
     };
   const siteAfter = { ...siteBefore, [counter]: counterBefore + 1 };
   return {
@@ -153,6 +183,7 @@ export function createMutationReceipt(
     nextThreshold: threshold,
     visibleChange: moved.change,
     artifactType: moved.artifactType,
+    artifactTier: moved.artifactTier,
     copy: failureReceiptCopy(input, moved, accepted, threshold),
   };
 }
@@ -180,6 +211,7 @@ export function createClearMutationReceipt(
     nextThreshold: threshold,
     visibleChange: moved.change,
     artifactType: moved.artifactType,
+    artifactTier: moved.artifactTier,
     copy: clearReceiptCopy(input, moved, accepted, threshold),
   };
 }
@@ -254,6 +286,13 @@ function failureReceiptCopy(
   }
 
   const name = moved.artifactType ? artifactName(moved.artifactType) : null;
+  const effect = tierEffect(moved.artifactType, moved.artifactTier);
+  if (moved.change === 'artifact_upgraded' && name && effect) {
+    return `Your fall made ${input.siteName}'s ${name} ${effect.verb}. ${thresholdCopy(input.bucket, moved.counterAfter, threshold, 'overgrow it')}`;
+  }
+  if (moved.change === 'site_cursed' && name && effect) {
+    return `Your fall overgrew ${input.siteName}: its ${name} now ${effect.present}.`;
+  }
   if (moved.change === 'artifact_spawned' && name) {
     return `Your fall spawned ${name} at ${input.siteName}. ${thresholdCopy(input.bucket, moved.counterAfter, threshold, 'upgrade it')}`;
   }

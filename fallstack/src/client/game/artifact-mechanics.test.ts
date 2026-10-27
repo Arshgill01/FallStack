@@ -47,3 +47,22 @@ void test('temporary artifact timing is deterministic and distinct', () => {
   assert.equal(artifactUseWindowMs('mercy_nail'), null);
   assert.equal(artifactUseWindowMs('lantern_trail'), null);
 });
+
+void test('ghosts hold longer when remembered and flicker out when overgrown', () => {
+  assert.ok(
+    artifactUseWindowMs('ghost_platform', 'remembered')! >
+      artifactUseWindowMs('ghost_platform', 'base')!
+  );
+  assert.ok(
+    artifactUseWindowMs('ghost_platform', 'saturated')! <
+      artifactUseWindowMs('ghost_platform', 'base')!
+  );
+});
+
+void test('cursed bricks crumble faster at every tier', () => {
+  const base = artifactUseWindowMs('cursed_brick', 'base')!;
+  const remembered = artifactUseWindowMs('cursed_brick', 'remembered')!;
+  const saturated = artifactUseWindowMs('cursed_brick', 'saturated')!;
+  assert.ok(base > remembered && remembered > saturated);
+  assert.equal(artifactUseWindowMs('mercy_nail', 'saturated'), null);
+});

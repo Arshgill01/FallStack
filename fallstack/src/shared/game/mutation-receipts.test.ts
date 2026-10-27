@@ -8,6 +8,7 @@ import {
   createNonSiteMutationReceipt,
 } from './mutation-receipts.js';
 import { ZERO_COUNTERS } from './mutation.js';
+import { mutationBeatForReceipt } from './board.js';
 
 void test('accepted fall receipt proves exact site, delta, and spawned artifact', () => {
   assert.deepEqual(
@@ -35,6 +36,7 @@ void test('accepted fall receipt proves exact site, delta, and spawned artifact'
       nextThreshold: 6,
       visibleChange: 'artifact_spawned',
       artifactType: 'corpse_stack',
+      artifactTier: 'base',
       copy: 'Your fall spawned Corpse Stack at First Gap. 3 more short jumps upgrade it.',
     }
   );
@@ -67,6 +69,7 @@ void test('capped receipt never claims a board or counter change', () => {
       nextThreshold: 6,
       visibleChange: 'none',
       artifactType: null,
+      artifactTier: null,
       copy: 'First Gap has heard enough from you today. Shared state stayed at 3.',
     }
   );
@@ -130,6 +133,26 @@ void test('receipts announce what the site renders, not raw thresholds', () => {
   });
   assert.equal(quiet.visibleChange, 'mark_added');
   assert.match(quiet.copy, /^Your fall changed /);
+});
+
+void test('tier upgrades name what the artifact now does, here and remotely', () => {
+  const holds = wallBonkReceipt({ ...ZERO_COUNTERS, wall_bonk: 5 });
+  assert.equal(holds.artifactTier, 'remembered');
+  assert.match(holds.copy, /^Your fall made Moon Chapel · Lower Scar's Ghost Platform hold longer\./);
+  assert.equal(
+    mutationBeatForReceipt(holds)?.copy,
+    "6 wall bonks made Moon Chapel · Lower Scar's Ghost Platform hold longer."
+  );
+
+  const flickers = wallBonkReceipt({ ...ZERO_COUNTERS, wall_bonk: 9 });
+  assert.equal(
+    flickers.copy,
+    'Your fall overgrew Moon Chapel · Lower Scar: its Ghost Platform now flickers out fast.'
+  );
+  assert.equal(
+    mutationBeatForReceipt(flickers)?.copy,
+    'Moon Chapel · Lower Scar became overgrown after 10 wall bonks: its Ghost Platform flickers out fast.'
+  );
 });
 
 void test('stale board receipt cannot imply a mutation', () => {

@@ -1,13 +1,21 @@
-import type { ArtifactType } from '../../shared/game/mutation.js';
+import type { ArtifactTier, ArtifactType } from '../../shared/game/mutation.js';
 
-const GHOST_USE_WINDOW_MS = 900;
-const CURSED_CRUMBLE_MS = 650;
+// Tiers change how long a temporary artifact holds, never its footprint, so
+// no tier can block a route. A remembered ghost helps longer; an overgrown
+// one flickers out. Cursed bricks only get harsher.
+const USE_WINDOW_MS: Partial<
+  Record<ArtifactType, Record<ArtifactTier, number>>
+> = {
+  ghost_platform: { base: 900, remembered: 1300, saturated: 600 },
+  cursed_brick: { base: 650, remembered: 450, saturated: 300 },
+};
 const ONE_WAY_TOP_TOLERANCE = 8;
 
-export function artifactUseWindowMs(type: ArtifactType): number | null {
-  if (type === 'ghost_platform') return GHOST_USE_WINDOW_MS;
-  if (type === 'cursed_brick') return CURSED_CRUMBLE_MS;
-  return null;
+export function artifactUseWindowMs(
+  type: ArtifactType,
+  tier: ArtifactTier = 'base'
+): number | null {
+  return USE_WINDOW_MS[type]?.[tier] ?? null;
 }
 
 export function canCollideWithArtifact(input: {
