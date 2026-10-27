@@ -13,6 +13,12 @@ export type GameDimensions = {
   renderScale: number;
 };
 
+export type BrowserRenderingEnvironment = {
+  userAgent: string;
+  coarsePointer: boolean;
+};
+
+export const DESKTOP_CANVAS_PIXEL_BUDGET = 1_600_000;
 const WIDE_CAMERA_BOTTOM_PADDING = 260;
 const NARROW_CAMERA_BOTTOM_PADDING = 150;
 const MAX_CAMERA_BOTTOM_PADDING_RATIO = 0.6;
@@ -35,15 +41,26 @@ export type VerticalSpan = {
   weight?: number;
 };
 
+export type HorizontalSpan = {
+  left: number;
+  right: number;
+  weight?: number;
+};
+
 export type HudNoticePlacement = 'top' | 'bottom';
+export type HudNoticeSide = 'left' | 'right';
 
 export function computeGameDimensions(
   bounds: ContainerBounds,
-  devicePixelRatio = 1
+  devicePixelRatio = 1,
+  maxRenderScale = 2
 ): GameDimensions {
   const containerW = cleanPixelSize(bounds.width);
   const containerH = cleanPixelSize(bounds.height);
-  const renderScale = renderScaleForDevicePixelRatio(devicePixelRatio);
+  const renderScale = renderScaleForDevicePixelRatio(
+    devicePixelRatio,
+    maxRenderScale
+  );
   return {
     containerW,
     containerH,
@@ -54,11 +71,46 @@ export function computeGameDimensions(
 }
 
 export function renderScaleForDevicePixelRatio(
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  maxRenderScale = 2
 ): number {
+  const safeMaxRenderScale = Number.isFinite(maxRenderScale)
+    ? Math.min(2, Math.max(1, maxRenderScale))
+    : 2;
   return Number.isFinite(devicePixelRatio)
-    ? Math.min(2, Math.max(1, devicePixelRatio))
+    ? Math.min(safeMaxRenderScale, Math.max(1, devicePixelRatio))
     : 1;
+}
+
+export function shouldUseDesktopSafariCanvasProfile(
+  environment: BrowserRenderingEnvironment
+): boolean {
+  const userAgent = environment.userAgent;
+  const isSafari = /Safari\//.test(userAgent);
+  const isSafariCompatibleBrowser =
+    /(Chrome|Chromium|CriOS|Edg|EdgiOS|OPR|FxiOS)\//.test(userAgent);
+  return isSafari && !isSafariCompatibleBrowser && !environment.coarsePointer;
+}
+
+export function canvasRenderScaleForEnvironment(
+  bounds: ContainerBounds,
+  devicePixelRatio: number,
+  environment: BrowserRenderingEnvironment
+): number {
+  const browserMaximum = shouldUseDesktopSafariCanvasProfile(environment)
+    ? 1
+    : 2;
+  if (environment.coarsePointer)
+    return renderScaleForDevicePixelRatio(devicePixelRatio, browserMaximum);
+  const cssPixels =
+    cleanPixelSize(bounds.width) * cleanPixelSize(bounds.height);
+  if (cssPixels <= 0)
+    return renderScaleForDevicePixelRatio(devicePixelRatio, browserMaximum);
+  const budgetMaximum = Math.sqrt(DESKTOP_CANVAS_PIXEL_BUDGET / cssPixels);
+  return renderScaleForDevicePixelRatio(
+    devicePixelRatio,
+    Math.min(browserMaximum, budgetMaximum)
+  );
 }
 
 export function gameWorldWidth(viewportWidth: number): number {
@@ -107,16 +159,34 @@ export function cameraScrollXForPlayer(
   );
 }
 
+/**
+ * Phaser zooms around the camera centre. When its backing canvas is larger
+ * than the CSS viewport, `camera.scrollX/Y` is therefore not the visible
+ * world's left/top edge. Convert a desired world-view edge into the scroll
+ * value Phaser expects.
+ */
 export function cameraScrollForWorldViewStart(
   worldViewStart: number,
   viewportSize: number,
-  zoom: number
+  renderScale: number
 ): number {
-  const cleanViewportSize = Number.isFinite(viewportSize)
-    ? Math.max(0, viewportSize)
-    : 0;
-  const cleanZoom = Number.isFinite(zoom) ? Math.max(1, zoom) : 1;
-  return worldViewStart - (cleanViewportSize * (cleanZoom - 1)) / 2;
+  const safeViewportSize = Math.max(0, viewportSize);
+  const safeRenderScale = Number.isFinite(renderScale)
+    ? Math.max(1, renderScale)
+    : 1;
+  return worldViewStart - (safeViewportSize * (safeRenderScale - 1)) / 2;
+}
+
+export function worldViewStartForCameraScroll(
+  cameraScroll: number,
+  viewportSize: number,
+  renderScale: number
+): number {
+  const safeViewportSize = Math.max(0, viewportSize);
+  const safeRenderScale = Number.isFinite(renderScale)
+    ? Math.max(1, renderScale)
+    : 1;
+  return cameraScroll + (safeViewportSize * (safeRenderScale - 1)) / 2;
 }
 
 export function cameraVerticalLookahead(
@@ -126,7 +196,7 @@ export function cameraVerticalLookahead(
 ): number {
   if (charging) {
     const progress = clamp(chargePercent / 100, 0, 1);
-    return 24 + progress * (CAMERA_VERTICAL_CHARGE_LOOKAHEAD - 24);
+    return progress * CAMERA_VERTICAL_CHARGE_LOOKAHEAD;
   }
   return velocityY < 0
     ? Math.min(CAMERA_VERTICAL_AIR_LOOKAHEAD, Math.abs(velocityY) * 0.045)
@@ -181,6 +251,33 @@ export function chooseHudNoticePlacement(input: {
     : 'top';
 }
 
+export function chooseHudNoticeSide(input: {
+  viewportWidth: number;
+  noticeWidth: number;
+  leftOffset: number;
+  rightOffset: number;
+  protectedSpans: HorizontalSpan[];
+}): HudNoticeSide {
+  const noticeWidth = Math.max(0, input.noticeWidth);
+  const left = {
+    left: input.leftOffset,
+    right: input.leftOffset + noticeWidth,
+  };
+  const right = {
+    left: input.viewportWidth - input.rightOffset - noticeWidth,
+    right: input.viewportWidth - input.rightOffset,
+  };
+  const score = (candidate: HorizontalSpan) =>
+    input.protectedSpans.reduce(
+      (total, span) =>
+        total +
+        horizontalOverlapLength(candidate, span) *
+          Math.max(1, span.weight ?? 1),
+      0
+    );
+  return score(left) < score(right) ? 'left' : 'right';
+}
+
 export function visibleHorizontalSpan(
   left: number,
   right: number,
@@ -218,6 +315,16 @@ function overlapLength(left: VerticalSpan, right: VerticalSpan): number {
   return Math.max(
     0,
     Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
+  );
+}
+
+function horizontalOverlapLength(
+  left: HorizontalSpan,
+  right: HorizontalSpan
+): number {
+  return Math.max(
+    0,
+    Math.min(left.right, right.right) - Math.max(left.left, right.left)
   );
 }
 

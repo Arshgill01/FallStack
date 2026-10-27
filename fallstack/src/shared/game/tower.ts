@@ -6,7 +6,13 @@ import {
   ZONE_NAMES,
   type ZoneId,
 } from './zones.js';
-import { MOVEMENT_TUNING } from './movement.js';
+import {
+  chargeRatioForHeldMs,
+  jumpArcForHeldMs,
+  launchVelocityForChargeRatio,
+  MOVEMENT_TUNING,
+  PLAYER_COLLISION_SIZE,
+} from './movement.js';
 
 export const WORLD_WIDTH = 480;
 export const WORLD_HEIGHT = ZONE_IDS.length * ZONE_HEIGHT;
@@ -15,6 +21,15 @@ export const CHECKPOINT_RESPAWN_CENTER_X = 240;
 const CHECKPOINT_STACK_CLEARANCE = 96;
 const LATE_ROUTE_EDGE_MARGIN = 46;
 const PROTECTED_OPENING_LEDGE_COUNT = 7;
+const PROTECTED_OPENING_SEED = 'fallstack-2026-07-11';
+const DIRECT_JUMP_INPUT_FRAME_MS = 0;
+const DIRECT_JUMP_APEX_MARGIN = 4;
+const DIRECT_JUMP_SAFETY_MARGIN = 4;
+const GENERATED_DIRECT_JUMP_MARGIN = 4;
+const CHECKPOINT_DIRECT_VERTICAL_REACH = Math.ceil(
+  jumpArcForHeldMs(DIRECT_JUMP_INPUT_FRAME_MS).rise +
+    PLAYER_COLLISION_SIZE.height / 2
+);
 
 export type PlatformKind = 'stone' | 'metal' | 'moon' | 'summit' | 'obstacle';
 
@@ -111,6 +126,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
   let prevY = WORLD_HEIGHT - 60;
   const prevX = 180;
   const prevW = 120;
+  let prevWidth = prevW;
   let prevCenter = prevX + prevW / 2;
 
   platforms.push({
@@ -146,7 +162,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
         nextY - cpY < CHECKPOINT_STACK_CLEARANCE
       ) {
         nextY =
-          prevY - cpY <= MOVEMENT_TUNING.reachableVertical
+          prevY - cpY <= CHECKPOINT_DIRECT_VERTICAL_REACH
             ? cpY
             : cpY + CHECKPOINT_STACK_CLEARANCE;
         break;
@@ -166,12 +182,23 @@ export function generateDailyTower(seed: string): GeneratedTower {
     // Checkpoints are wider/more forgiving
     const isCP = checkpointYLevels.includes(nextY);
     if (isCP) {
-      pWidth = 148;
+      pWidth = 158;
     }
 
     // Set horizontal coordinate based on the shared movement reachability budget.
     const traversal = traversalForZone(zone.id);
-    const maxOffset = traversal.maxHorizontalStep;
+    const minOffset =
+      seed === PROTECTED_OPENING_SEED &&
+      count <= PROTECTED_OPENING_LEDGE_COUNT
+        ? traversal.minHorizontalStep
+        : Math.max(
+            traversal.minHorizontalStep,
+            minimumDirectCenterOffset(
+              { width: prevWidth, y: prevY },
+              { width: pWidth, y: nextY }
+            ) + GENERATED_DIRECT_JUMP_MARGIN
+          );
+    const maxOffset = Math.max(traversal.maxHorizontalStep, minOffset);
 
     // As we get close to the summit, gradually pull the target center towards 240
     let centerTarget = prevCenter;
@@ -185,7 +212,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
       : chooseNextCenter({
           centerTarget,
           maxOffset,
-          minOffset: traversal.minHorizontalStep,
+          minOffset,
           platformWidth: pWidth,
           prevCenter,
           sideMargin:
@@ -271,6 +298,7 @@ export function generateDailyTower(seed: string): GeneratedTower {
     }
 
     prevY = nextY;
+    prevWidth = pWidth;
     prevCenter = nextCenter;
     count++;
   }
@@ -510,12 +538,75 @@ function isReachable(from: Platform, to: Platform): boolean {
   const toCenter = to.x + to.width / 2;
   const horizontal = Math.abs(toCenter - fromCenter);
   const vertical = from.y - to.y;
+  const maximumVertical = to.id.includes('checkpoint')
+    ? CHECKPOINT_DIRECT_VERTICAL_REACH
+    : MOVEMENT_TUNING.reachableVertical;
 
   return (
     horizontal <= MOVEMENT_TUNING.reachableHorizontal &&
+    horizontal >= minimumDirectCenterOffset(from, to) &&
     vertical >= 0 &&
-    vertical <= MOVEMENT_TUNING.reachableVertical
+    vertical <= maximumVertical
   );
+}
+
+export function minimumDirectCenterOffset(
+  from: Pick<Platform, 'width' | 'y'>,
+  to: Pick<Platform, 'width' | 'y'>
+): number {
+  const vertical = from.y - to.y;
+  if (vertical < 0) return Number.POSITIVE_INFINITY;
+
+  const launch = minimumLaunchForVertical(vertical);
+  if (!launch) return Number.POSITIVE_INFINITY;
+  const discriminant =
+    launch.y * launch.y - 2 * MOVEMENT_TUNING.gravityY * vertical;
+  if (discriminant < 0) return Number.POSITIVE_INFINITY;
+
+  const descendingTime =
+    (-launch.y + Math.sqrt(discriminant)) / MOVEMENT_TUNING.gravityY;
+  const brakedTravel =
+    launch.x * descendingTime -
+    0.5 *
+      MOVEMENT_TUNING.airSteerAccelerationX *
+      descendingTime *
+      descendingTime;
+  const availableLandingWidth = (from.width + to.width) / 2;
+
+  return Math.max(
+    0,
+    Math.ceil(
+      brakedTravel - availableLandingWidth + DIRECT_JUMP_SAFETY_MARGIN
+    )
+  );
+}
+
+function minimumLaunchForVertical(
+  vertical: number
+): { x: number; y: number } | null {
+  const clearsTarget = (heldMs: number): boolean => {
+    const launch = launchVelocityForChargeRatio(chargeRatioForHeldMs(heldMs));
+    return (
+      (launch.y * launch.y) / (2 * MOVEMENT_TUNING.gravityY) >=
+      vertical + DIRECT_JUMP_APEX_MARGIN
+    );
+  };
+
+  if (!clearsTarget(MOVEMENT_TUNING.chargeMs)) return null;
+  if (clearsTarget(DIRECT_JUMP_INPUT_FRAME_MS)) {
+    return launchVelocityForChargeRatio(
+      chargeRatioForHeldMs(DIRECT_JUMP_INPUT_FRAME_MS)
+    );
+  }
+
+  let lower: number = DIRECT_JUMP_INPUT_FRAME_MS;
+  let upper: number = MOVEMENT_TUNING.chargeMs;
+  for (let iteration = 0; iteration < 16; iteration += 1) {
+    const midpoint = (lower + upper) / 2;
+    if (clearsTarget(midpoint)) upper = midpoint;
+    else lower = midpoint;
+  }
+  return launchVelocityForChargeRatio(chargeRatioForHeldMs(upper));
 }
 
 function clamp(value: number, min: number, max: number): number {

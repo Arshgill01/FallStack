@@ -4,11 +4,13 @@ export function canCollideWithPlatform(input: {
   checkpoint: boolean;
   playerVelocityY: number;
   playerBottom: number;
+  playerPreviousBottom: number;
   platformTop: number;
 }): boolean {
   if (!input.checkpoint) return true;
   return (
     input.playerVelocityY >= 0 &&
-    input.playerBottom <= input.platformTop + ONE_WAY_TOP_TOLERANCE
+    input.playerPreviousBottom <=
+      input.platformTop + ONE_WAY_TOP_TOLERANCE
   );
 }

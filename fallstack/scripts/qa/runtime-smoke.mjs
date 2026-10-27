@@ -3,13 +3,15 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/runtime-smoke'
 );
-const browserName = process.argv
-  .find((value) => value.startsWith('--browser='))
-  ?.slice('--browser='.length) ?? 'chromium';
+const browserName =
+  process.argv
+    .find((value) => value.startsWith('--browser='))
+    ?.slice('--browser='.length) ?? 'chromium';
 const browserType = { chromium, webkit }[browserName];
 if (!browserType) throw new Error(`Unsupported browser: ${browserName}`);
 const MOVE_HOLD_MS = browserName === 'webkit' ? 340 : 140;
@@ -40,7 +42,11 @@ try {
   await touchPage.goto('http://127.0.0.1:8080/game.html');
   await waitForReady(touchPage);
   await touchPage.waitForTimeout(250);
-  const pointer = await createPointerDriver(touchContext, touchPage, browserName);
+  const pointer = await createPointerDriver(
+    touchContext,
+    touchPage,
+    browserName
+  );
 
   const beforeMove = await readScene(touchPage);
   assert.equal(
@@ -54,7 +60,10 @@ try {
     MOVE_HOLD_MS
   );
   const afterMove = await readScene(touchPage);
-  assert.ok(afterMove.x > beforeMove.x + 10, 'right touch control moves the climber');
+  assert.ok(
+    afterMove.x > beforeMove.x + 10,
+    'right touch control moves the climber'
+  );
   assert.equal(afterMove.input.right, false, 'right touch releases cleanly');
 
   await touchPage.waitForTimeout(MOVE_SETTLE_MS);
@@ -67,7 +76,11 @@ try {
   const afterWarmMove = await readScene(touchPage);
   const warmMove = beforeWarmMove.x - afterWarmMove.x;
   assert.ok(warmMove > 10, 'a repeated touch moves the climber');
-  assert.equal(afterWarmMove.input.left, false, 'repeated touch releases cleanly');
+  assert.equal(
+    afterWarmMove.input.left,
+    false,
+    'repeated touch releases cleanly'
+  );
 
   const fallsBefore = afterWarmMove.events.falls;
   const landsBeforeFall = afterWarmMove.events.lands;
@@ -88,8 +101,16 @@ try {
     fallsBefore + 1,
     'one touch-driven fall produces exactly one respawn'
   );
-  assert.equal(afterRespawn.grounded, true, 'touch-driven respawn settles on its checkpoint');
-  assert.equal(afterRespawn.input.right, false, 'falling touch releases before respawn');
+  assert.equal(
+    afterRespawn.grounded,
+    true,
+    'touch-driven respawn settles on its checkpoint'
+  );
+  assert.equal(
+    afterRespawn.input.right,
+    false,
+    'falling touch releases before respawn'
+  );
   assert.equal(
     afterRespawn.events.lands,
     landsBeforeFall,
@@ -129,9 +150,10 @@ try {
   assert.equal(afterJump.input.jump, false, 'jump touch releases cleanly');
 
   const frames = await measureFrames(touchPage, 2_000);
-  await touchPage
-    .locator('.game-shell')
-    .screenshot({ path: path.join(outputDir, 'touch-airborne.png') });
+  await captureScreenshot(touchPage, {
+    locator: touchPage.locator('.game-shell'),
+    path: path.join(outputDir, 'touch-airborne.png'),
+  });
   await touchContext.close();
 
   const reducedContext = await browser.newContext({
@@ -166,9 +188,10 @@ try {
   );
   await reducedPointer.up();
   const reducedFrames = await measureFrames(reducedPage, 1_500);
-  await reducedPage
-    .locator('.game-shell')
-    .screenshot({ path: path.join(outputDir, 'reduced-motion.png') });
+  await captureScreenshot(reducedPage, {
+    locator: reducedPage.locator('.game-shell'),
+    path: path.join(outputDir, 'reduced-motion.png'),
+  });
   await reducedContext.close();
 
   const localWarnings = touchConsole.filter(
@@ -261,7 +284,9 @@ async function waitForReady(page) {
     Boolean(
       window.__fallstackFindScene?.()?.controlsReady &&
       window.fallstackSnapshot &&
-      !document.querySelector('[aria-label="Move right"]')?.hasAttribute('disabled') &&
+      !document
+        .querySelector('[aria-label="Move right"]')
+        ?.hasAttribute('disabled') &&
       !document.querySelector('.loading-overlay')
     )
   );
@@ -280,7 +305,8 @@ async function readScene(page) {
       grounded: Boolean(player.body.blocked.down || player.body.touching.down),
       particleCount: scene.particles.length,
       reducedMotion: scene.reducedMotion,
-      mediaReducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      mediaReducedMotion: matchMedia('(prefers-reduced-motion: reduce)')
+        .matches,
       input: { ...window.fallstackInput },
       events: { ...window.__fallstackQa },
     };
@@ -367,7 +393,9 @@ async function measureFrames(page, durationMs) {
 }
 
 function percentile(sorted, ratio) {
-  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * ratio))] ?? 0;
+  return (
+    sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * ratio))] ?? 0
+  );
 }
 
 function round(value) {

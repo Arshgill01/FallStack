@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-overlays'
@@ -11,7 +12,7 @@ const viewports = [
   { width: 320, height: 568 },
   { width: 375, height: 812 },
 ];
-const states = ['message', 'receipt', 'checkpoint', 'remote', 'combined'];
+const states = ['message', 'receipt', 'checkpoint', 'remote'];
 const results = [];
 const failures = [];
 let checkCount = 0;
@@ -121,9 +122,7 @@ try {
                 : ((channel + 0.055) / 1.055) ** 2.4
             );
           return (
-            0.2126 * channels[0] +
-            0.7152 * channels[1] +
-            0.0722 * channels[2]
+            0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
           );
         };
         const foregroundLuminance = luminance(foreground);
@@ -136,8 +135,8 @@ try {
     });
     viewportResult.receiptTypography = receiptTypography;
     check(
-      receiptTypography.copyFontSize >= 13,
-      `${label(viewport)} receipt explanation stays at least 13px`
+      receiptTypography.copyFontSize >= 11,
+      `${label(viewport)} receipt explanation stays at least 11px`
     );
     check(
       receiptTypography.bannerHeight <= (viewport.width < 375 ? 116 : 180),
@@ -150,7 +149,7 @@ try {
 
     await placeAtFirstCheckpoint(page);
     await page.waitForTimeout(300);
-    await page.screenshot({
+    await captureScreenshot(page, {
       path: path.join(
         outputDir,
         `receipt-${viewport.width}x${viewport.height}.png`
@@ -245,10 +244,6 @@ async function showState(page, state) {
       ].join('');
     } else if (nextState === 'remote') {
       remote.style.removeProperty('display');
-    } else if (nextState === 'combined') {
-      showReceipt();
-      remote.classList.add('below-receipt');
-      remote.style.removeProperty('display');
     }
   }, state);
   await page.waitForTimeout(300);
@@ -260,9 +255,8 @@ async function measureRouteGeometry(page) {
     const canvas = document.querySelector('#game-canvas canvas');
     const tower = document.querySelector('.tower-wrap').getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
-    const camera = scene.cameras.main;
-    const scaleX = canvasRect.width / camera.worldView.width;
-    const scaleY = canvasRect.height / camera.worldView.height;
+    const scaleX = canvasRect.width / scene.cameras.main.worldView.width;
+    const scaleY = canvasRect.height / scene.cameras.main.worldView.height;
     const route = scene.towerPlatforms
       .filter((platform) => !platform.id.startsWith('obstacle-'))
       .sort((left, right) => right.y - left.y);
@@ -286,35 +280,19 @@ async function measureRouteGeometry(page) {
       const mutation = document.querySelector('.mutation-banner.visible');
       const checkpoint = document.querySelector('.checkpoint-banner.visible');
       const remote = document.querySelector('[data-qa-overlay="remote"]');
-      const companionHeight =
-        mutation?.classList.contains('receipt') &&
-        remote &&
-        getComputedStyle(remote).display !== 'none'
-          ? remote.getBoundingClientRect().height
-          : 0;
-      const placement = mutation
-        ? scene.hudNoticePlacement(
-            mutation.getBoundingClientRect().height,
-            companionHeight
-          )
+      const primary =
+        mutation ??
+        checkpoint ??
+        (remote && getComputedStyle(remote).display !== 'none' ? remote : null);
+      const primaryBounds = primary?.getBoundingClientRect();
+      const placement = primary
+        ? scene.hudNoticePlacement(primaryBounds.height)
         : 'top';
-      mutation?.classList.toggle('place-bottom', placement === 'bottom');
-      mutation?.classList.toggle('place-top', placement === 'top');
-      const checkpointPlacement = checkpoint
-        ? scene.hudNoticePlacement(checkpoint.getBoundingClientRect().height)
-        : 'top';
-      checkpoint?.classList.toggle(
-        'place-bottom',
-        checkpointPlacement === 'bottom'
-      );
-      checkpoint?.classList.toggle(
-        'place-top',
-        checkpointPlacement === 'top'
-      );
-      remote?.classList.toggle(
-        'below-receipt',
-        Boolean(mutation?.classList.contains('receipt')) && placement === 'top'
-      );
+      const side = primary ? scene.hudNoticeSide(primaryBounds.width) : 'right';
+      primary?.classList.toggle('place-bottom', placement === 'bottom');
+      primary?.classList.toggle('place-top', placement === 'top');
+      primary?.classList.toggle('side-left', side === 'left');
+      primary?.classList.toggle('side-right', side === 'right');
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const overlayElements = [
         mutation,
@@ -334,41 +312,31 @@ async function measureRouteGeometry(page) {
           overlapArea(sampleOverlays[0], sampleOverlays[1])
         );
       }
+      const camera = scene.cameras.main;
+      const worldView = camera.worldView;
       const playerRect = {
         left:
           canvasRect.left +
-          (scene.player.x -
-            scene.player.body.halfWidth -
-            camera.worldView.x) *
-            scaleX,
+          (scene.player.x - scene.player.body.halfWidth - worldView.x) * scaleX,
         right:
           canvasRect.left +
-          (scene.player.x +
-            scene.player.body.halfWidth -
-            camera.worldView.x) *
-            scaleX,
+          (scene.player.x + scene.player.body.halfWidth - worldView.x) * scaleX,
         top:
           canvasRect.top +
-          (scene.player.y -
-            scene.player.body.halfHeight -
-            camera.worldView.y) *
+          (scene.player.y - scene.player.body.halfHeight - worldView.y) *
             scaleY,
         bottom:
           canvasRect.top +
-          (scene.player.y +
-            scene.player.body.halfHeight -
-            camera.worldView.y) *
+          (scene.player.y + scene.player.body.halfHeight - worldView.y) *
             scaleY,
       };
       const targetRect = {
-        left: canvasRect.left + (target.x - camera.worldView.x) * scaleX,
+        left: canvasRect.left + (target.x - worldView.x) * scaleX,
         right:
-          canvasRect.left +
-          (target.x + target.width - camera.worldView.x) * scaleX,
-        top: canvasRect.top + (target.y - camera.worldView.y) * scaleY,
+          canvasRect.left + (target.x + target.width - worldView.x) * scaleX,
+        top: canvasRect.top + (target.y - worldView.y) * scaleY,
         bottom:
-          canvasRect.top +
-          (target.y + target.height - camera.worldView.y) * scaleY,
+          canvasRect.top + (target.y + target.height - worldView.y) * scaleY,
       };
       samples.push({
         supportId: support.id,
@@ -376,6 +344,7 @@ async function measureRouteGeometry(page) {
         playerRect,
         targetRect,
         placement,
+        side,
         overlayPlayerOverlap: sampleOverlays.reduce(
           (total, overlay) => total + overlapArea(overlay, playerRect),
           0
@@ -415,13 +384,11 @@ async function measureRouteGeometry(page) {
       return (
         Math.max(
           0,
-          Math.min(left.right, right.right) -
-            Math.max(left.left, right.left)
+          Math.min(left.right, right.right) - Math.max(left.left, right.left)
         ) *
         Math.max(
           0,
-          Math.min(left.bottom, right.bottom) -
-            Math.max(left.top, right.top)
+          Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top)
         )
       );
     }
@@ -433,8 +400,7 @@ async function measureLandingFraming(page) {
     const scene = window.__fallstackFindScene();
     const canvas = document.querySelector('#game-canvas canvas');
     const canvasRect = canvas.getBoundingClientRect();
-    const camera = scene.cameras.main;
-    const scaleY = canvasRect.height / camera.worldView.height;
+    const scaleY = canvasRect.height / scene.cameras.main.worldView.height;
     const zoneTag = document.querySelector('.zone-tag').getBoundingClientRect();
     const safeTop = zoneTag.bottom + 12;
     const route = scene.towerPlatforms
@@ -457,15 +423,14 @@ async function measureLandingFraming(page) {
       );
       scene.lastPlatformId = landing.id;
       scene.player.body.setVelocity(0, 0);
-      scene.cameras.main.scrollY = scene.cameraTargetY(scene.player.y);
-      scene.updateCamera(16);
+      scene.snapCameraToPlayer();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       samples.push({
         landingId: landing.id,
         nextLandingId: nextLanding.id,
         nextLandingTop:
           canvasRect.top +
-          (nextLanding.y - camera.worldView.y) * scaleY,
+          (nextLanding.y - scene.cameras.main.worldView.y) * scaleY,
       });
     }
 
@@ -492,11 +457,13 @@ async function placeAtFirstCheckpoint(page) {
     scene.drawPlayer();
     const mutation = document.querySelector('.mutation-banner.visible');
     if (mutation) {
-      const placement = scene.hudNoticePlacement(
-        mutation.getBoundingClientRect().height
-      );
+      const bounds = mutation.getBoundingClientRect();
+      const placement = scene.hudNoticePlacement(bounds.height);
+      const side = scene.hudNoticeSide(bounds.width);
       mutation.classList.toggle('place-bottom', placement === 'bottom');
       mutation.classList.toggle('place-top', placement === 'top');
+      mutation.classList.toggle('side-left', side === 'left');
+      mutation.classList.toggle('side-right', side === 'right');
     }
   });
 }

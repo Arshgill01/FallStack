@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 import {
   createBoardIdentity,
   createBoardSnapshot,
@@ -19,6 +20,7 @@ import {
 } from '../../dist/types/shared/game/mutation.js';
 import { resolveFallObservation } from '../../dist/types/shared/game/mutation-events.js';
 import { planFallMutation } from '../../dist/types/shared/game/mutation-plans.js';
+import { BOTTOM_ZONE_ID } from '../../dist/types/shared/game/zones.js';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/shared-session'
@@ -68,6 +70,7 @@ async function handleApi(route, role) {
       postId: 'post_shared_qa',
       username: 'qa-climber',
       snapshot: snapshot(),
+      resume: { zoneId: BOTTOM_ZONE_ID, mode: 'account' },
     });
   }
 
@@ -125,7 +128,11 @@ async function handleApi(route, role) {
     });
   }
 
-  return json(route, { status: 'error', message: `Unhandled ${pathname}` }, 500);
+  return json(
+    route,
+    { status: 'error', message: `Unhandled ${pathname}` },
+    500
+  );
 }
 
 function json(route, body, status = 200) {
@@ -145,6 +152,8 @@ const contexts = await Promise.all([
   browser.newContext({ viewport: { width: 375, height: 812 } }),
 ]);
 const errors = [];
+let alice = null;
+let bob = null;
 
 try {
   for (const [index, context] of contexts.entries()) {
@@ -187,7 +196,9 @@ try {
     );
   }
 
-  const [alice, bob] = await Promise.all(contexts.map((context) => context.newPage()));
+  [alice, bob] = await Promise.all(
+    contexts.map((context) => context.newPage())
+  );
   for (const [name, page] of [
     ['alice', alice],
     ['bob', bob],
@@ -217,7 +228,9 @@ try {
   assert.equal(afterAlice.totalFalls, SEEDED_TOTAL_FALLS + 2);
   assert.equal(afterAlice.latestReceiptSite, 'First Gap');
   assert.match(afterAlice.latestReceiptBucket, /short jump/i);
-  await alice.screenshot({ path: path.join(outputDir, 'alice-mutated.png') });
+  await captureScreenshot(alice, {
+    path: path.join(outputDir, 'alice-mutated.png'),
+  });
 
   const bobBeforeFlight = await readClient(bob);
   assert.equal(bobBeforeFlight.revision, SEEDED_TOTAL_FALLS);
@@ -231,7 +244,9 @@ try {
   const bobAirborne = await readClient(bob);
   assert.equal(bobAirborne.grounded, false, 'second climber is airborne');
 
-  await bob.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await bob.evaluate(() =>
+    document.dispatchEvent(new Event('visibilitychange'))
+  );
   await waitFor(() => revisionReads >= 1 && initReads >= 3, 3_000);
   await bob.waitForTimeout(120);
   const deferred = await readClient(bob);
@@ -252,9 +267,18 @@ try {
   assert.equal(reconciled.firstGapShortJumps, 6);
   assert.equal(reconciled.hasMercyNail, true);
   assert.match(reconciled.remoteBeat, /First Gap|Mercy Nail/i);
-  await bob.screenshot({ path: path.join(outputDir, 'bob-reconciled.png') });
+  await captureScreenshot(bob, {
+    path: path.join(outputDir, 'bob-reconciled.png'),
+  });
 
-  await bob.reload();
+  await bob.close();
+  bob = await contexts[1].newPage();
+  bob.on('pageerror', (error) => errors.push(`bob-reopen: ${String(error)}`));
+  bob.on('console', (message) => {
+    if (message.type() === 'error')
+      errors.push(`bob-reopen: ${message.text()}`);
+  });
+  await bob.goto('http://127.0.0.1:8080/game.html');
   await waitForReady(bob);
   const reloaded = await readClient(bob);
   assert.equal(reloaded.revision, SEEDED_TOTAL_FALLS + 2);
@@ -281,6 +305,32 @@ try {
   );
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   assert.deepEqual(errors, []);
+} catch (error) {
+  const diagnostic = {
+    generatedAt: new Date().toISOString(),
+    error:
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : String(error),
+    server: { revision, totalFalls, revisionReads, initReads },
+    alice: alice
+      ? await readClient(alice).catch((readError) => ({
+          readError: String(readError),
+        }))
+      : null,
+    bob: bob
+      ? await readClient(bob).catch((readError) => ({
+          readError: String(readError),
+        }))
+      : null,
+    errors,
+  };
+  await writeFile(
+    path.join(outputDir, 'failure.json'),
+    `${JSON.stringify(diagnostic, null, 2)}\n`
+  );
+  process.stderr.write(`${JSON.stringify(diagnostic, null, 2)}\n`);
+  throw error;
 } finally {
   await Promise.all(contexts.map((context) => context.close()));
   await browser.close();
@@ -306,7 +356,9 @@ async function waitForReady(page) {
   await page.waitForFunction(() => {
     return Boolean(
       window.__fallstackFindScene?.()?.controlsReady &&
-        window.fallstackSnapshot
+      window.fallstackSnapshot &&
+      !document.querySelector('.loading-overlay') &&
+      document.querySelector('.game-shell')?.dataset.gameplayReady === 'true'
     );
   });
 }
@@ -345,7 +397,8 @@ async function readClient(page) {
     const scene = window.__fallstackFindScene?.();
     const player = scene?.player;
     const snapshot = window.fallstackSnapshot;
-    if (!scene || !player?.body || !snapshot) throw new Error('Client state unavailable');
+    if (!scene || !player?.body || !snapshot)
+      throw new Error('Client state unavailable');
     const firstGap = snapshot.sites.find((site) => site.name === 'First Gap');
     const route = scene.towerPlatforms
       .filter((platform) => platform.kind !== 'obstacle')
@@ -376,10 +429,14 @@ async function readClient(page) {
         (artifact) => artifact.type === 'mercy_nail'
       ),
       latestReceiptSite:
-        document.querySelector('.receipt-site')?.childNodes[0]?.textContent?.trim() ?? '',
+        document
+          .querySelector('.receipt-site')
+          ?.childNodes[0]?.textContent?.trim() ?? '',
       latestReceiptBucket:
-        document.querySelector('.receipt-site small')?.textContent?.trim() ?? '',
-      remoteBeat: document.querySelector('.remote-beat')?.textContent?.trim() ?? '',
+        document.querySelector('.receipt-site small')?.textContent?.trim() ??
+        '',
+      remoteBeat:
+        document.querySelector('.remote-beat')?.textContent?.trim() ?? '',
     };
   });
 }

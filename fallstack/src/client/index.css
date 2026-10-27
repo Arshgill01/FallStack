@@ -318,7 +318,8 @@ button:disabled {
 @media (min-width: 600px) {
   .game-shell {
     max-width: 760px;
-    margin: 0 auto;
+    max-height: 800px;
+    margin: auto;
     border-inline: 1px solid rgba(98, 208, 196, 0.16);
     box-shadow: 0 0 72px rgba(0, 0, 0, 0.56);
   }
@@ -735,9 +736,21 @@ button:disabled {
   box-shadow: 4px 5px 0 #180d18;
 }
 
-.splash-ledge-one { left: 9%; bottom: 18%; width: 31%; }
-.splash-ledge-two { right: 8%; bottom: 47%; width: 34%; }
-.splash-ledge-three { left: 14%; bottom: 76%; width: 25%; }
+.splash-ledge-one {
+  left: 9%;
+  bottom: 18%;
+  width: 31%;
+}
+.splash-ledge-two {
+  right: 8%;
+  bottom: 47%;
+  width: 34%;
+}
+.splash-ledge-three {
+  left: 14%;
+  bottom: 76%;
+  width: 25%;
+}
 
 .splash-corpse-stack {
   position: absolute;
@@ -757,9 +770,19 @@ button:disabled {
   transform: translateX(-50%);
 }
 
-.splash-corpse-stack i:nth-child(1) { bottom: 0; width: 70px; }
-.splash-corpse-stack i:nth-child(2) { bottom: 9px; width: 58px; }
-.splash-corpse-stack i:nth-child(3) { bottom: 18px; width: 44px; border-color: #d9b45c; }
+.splash-corpse-stack i:nth-child(1) {
+  bottom: 0;
+  width: 70px;
+}
+.splash-corpse-stack i:nth-child(2) {
+  bottom: 9px;
+  width: 58px;
+}
+.splash-corpse-stack i:nth-child(3) {
+  bottom: 18px;
+  width: 44px;
+  border-color: #d9b45c;
+}
 
 .splash-tower .artifact-label {
   right: 6%;
@@ -855,8 +878,12 @@ button:disabled {
     grid-template-rows: auto 1fr;
   }
 
-  .splash-masthead { grid-column: 1 / -1; }
-  .splash-tower { min-height: 0; }
+  .splash-masthead {
+    grid-column: 1 / -1;
+  }
+  .splash-tower {
+    min-height: 0;
+  }
   .splash-copy {
     display: flex;
     flex-direction: column;
@@ -865,7 +892,10 @@ button:disabled {
     border-left: 4px solid #d9b45c;
     padding: 36px;
   }
-  .splash-user { right: 36px; bottom: 28px; }
+  .splash-user {
+    right: 36px;
+    bottom: 28px;
+  }
 }
 
 .mutation-banner.visible {
@@ -1515,10 +1545,6 @@ button:disabled {
   z-index: 98;
 }
 
-.remote-beat.below-receipt {
-  top: 170px;
-}
-
 .remote-beat span {
   display: block;
   margin-bottom: 3px;
@@ -1548,7 +1574,16 @@ button:disabled {
   box-shadow:
     5px 5px 0 rgba(24, 13, 24, 0.84),
     inset 0 0 0 2px #171426;
-  clip-path: polygon(4% 0, 96% 0, 100% 22%, 100% 78%, 96% 100%, 4% 100%, 0 78%, 0 22%);
+  clip-path: polygon(
+    4% 0,
+    96% 0,
+    100% 22%,
+    100% 78%,
+    96% 100%,
+    4% 100%,
+    0 78%,
+    0 22%
+  );
 }
 
 .checkpoint-banner::before {
@@ -1559,6 +1594,16 @@ button:disabled {
   border-radius: 50%;
   background: #e95f45;
   transform: translateY(-50%);
+}
+
+.checkpoint-banner.place-bottom {
+  top: auto;
+  bottom: 14px;
+}
+
+.remote-beat.place-bottom {
+  top: auto;
+  bottom: 14px;
 }
 
 .checkpoint-title {
@@ -1662,7 +1707,16 @@ button:disabled {
     0 0 0 6px #29243f,
     0 0 0 8px #d8cdb7,
     12px 16px 0 rgba(24, 13, 24, 0.55);
-  clip-path: polygon(3% 0, 97% 0, 100% 2%, 100% 98%, 97% 100%, 3% 100%, 0 98%, 0 2%);
+  clip-path: polygon(
+    3% 0,
+    97% 0,
+    100% 2%,
+    100% 98%,
+    97% 100%,
+    3% 100%,
+    0 98%,
+    0 2%
+  );
 }
 
 .result-card::before,
@@ -1676,8 +1730,12 @@ button:disabled {
   opacity: 0.22;
 }
 
-.result-card::before { left: 8px; }
-.result-card::after { right: 8px; }
+.result-card::before {
+  left: 8px;
+}
+.result-card::after {
+  right: 8px;
+}
 
 .result-card h2 {
   color: #592337;
@@ -2269,23 +2327,23 @@ button:disabled {
 
   .mutation-banner {
     top: 54px;
-    right: 12px;
+    right: 36px;
     bottom: auto;
-    left: 12px;
-    width: auto;
-    max-width: none;
-    padding: 8px 10px 9px;
+    left: auto;
+    width: min(224px, calc(100% - 72px));
+    max-width: 224px;
+    padding: 7px 9px 8px;
     font-size: 13px;
-    line-height: 1.35;
+    line-height: 1.25;
   }
 
   .mutation-banner.receipt {
     top: 54px;
-    right: 12px;
+    right: 36px;
     bottom: auto;
-    left: 12px;
-    width: auto;
-    max-width: none;
+    left: auto;
+    width: min(224px, calc(100% - 72px));
+    max-width: 224px;
   }
 
   .mutation-banner.place-bottom,
@@ -2294,23 +2352,77 @@ button:disabled {
     bottom: 12px;
   }
 
+  .receipt-stamp {
+    min-height: 20px;
+    padding: 3px 6px;
+    font-size: 7px;
+  }
+
+  .receipt-proof {
+    gap: 7px;
+    padding: 5px 7px;
+  }
+
+  .receipt-site {
+    font-size: 12px;
+  }
+
+  .receipt-site small {
+    margin-top: 2px;
+    font-size: 7px;
+  }
+
+  .receipt-proof strong {
+    font-size: 16px;
+  }
+
+  .receipt-copy {
+    display: -webkit-box;
+    overflow: hidden;
+    padding: 4px 7px 5px;
+    font-size: 11px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .remote-beat {
+    top: 54px;
+    right: 36px;
+    width: min(196px, calc(100% - 72px));
+  }
+
+  .remote-beat.place-bottom {
+    top: auto;
+    bottom: 12px;
+  }
+
+  .checkpoint-banner {
+    top: 54px;
+    right: 36px;
+    left: auto;
+    width: min(188px, calc(100% - 72px));
+    max-width: 188px;
+    padding: 7px 11px 8px;
+    text-align: left;
+    transform: translateY(-8px);
+  }
+
+  .checkpoint-banner.visible {
+    transform: translateY(0);
+  }
+
   .checkpoint-banner.place-bottom {
     top: auto;
     bottom: 12px;
   }
 
-  .receipt-copy {
-    font-size: 13px;
-  }
-
-  .remote-beat {
-    top: 54px;
-    right: 12px;
-    width: min(250px, calc(100% - 24px));
-  }
-
-  .remote-beat.below-receipt {
-    top: 222px;
+  .mutation-banner.side-left,
+  .mutation-banner.receipt.side-left,
+  .remote-beat.side-left,
+  .checkpoint-banner.side-left {
+    right: auto;
+    left: 36px;
   }
 
   .jump-btn {
@@ -2352,6 +2464,10 @@ button:disabled {
 
   .topbar-actions {
     width: 122px;
+  }
+
+  .topbar .eyebrow {
+    letter-spacing: 0.75px;
   }
 
   .community-tally-word {
@@ -2399,10 +2515,6 @@ button:disabled {
     line-height: 1.25;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-  }
-
-  .remote-beat.below-receipt {
-    display: none;
   }
 }
 

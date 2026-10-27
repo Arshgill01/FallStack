@@ -3,13 +3,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
-  process.argv[2] ??
-    'docs/quality-reconstruction/evidence/gate-1-baseline'
+  process.argv[2] ?? 'docs/quality-reconstruction/evidence/gate-1-baseline'
 );
-const baseUrl =
-  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const sourceCommit = process.env.FALLSTACK_QA_SOURCE_COMMIT ?? 'unknown';
 
 await mkdir(outputDir, { recursive: true });
@@ -104,7 +103,7 @@ async function captureSplash(label, viewport) {
     waitUntil: 'domcontentloaded',
   });
   await page.waitForSelector('button');
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, `${label}.png`),
     animations: 'disabled',
   });
@@ -187,9 +186,7 @@ async function captureInputSequence() {
   );
   await page.waitForFunction(
     () =>
-      document
-        .querySelector('.mutation-banner')
-        ?.classList.contains('visible'),
+      document.querySelector('.mutation-banner')?.classList.contains('visible'),
     null,
     { timeout: 5_000 }
   );
@@ -219,10 +216,7 @@ async function captureDialogsAndProgression() {
   await page.getByRole('button', { name: 'Memory' }).click();
   await page.waitForSelector('.tower-memory-card');
   await capturePage(page, 'tower-memory-mobile', 'pre-input');
-  await page
-    .locator('.tower-memory-actions .result-close-btn')
-    .first()
-    .click();
+  await page.locator('.tower-memory-actions .result-close-btn').first().click();
 
   for (const zone of [
     {
@@ -274,6 +268,13 @@ async function captureDialogsAndProgression() {
   await page.evaluate(() => {
     const scene = window.__fallstackFindScene();
     scene.restoreCheckpoint('event_horizon_crown');
+  });
+  await page.waitForFunction(() => {
+    const scene = window.__fallstackFindScene();
+    return scene.player.body.blocked.down || scene.player.body.touching.down;
+  });
+  await page.evaluate(() => {
+    const scene = window.__fallstackFindScene();
     scene.onLand(scene.player, {
       getData(key) {
         if (key === 'platformId') return 'summit';
@@ -328,7 +329,7 @@ async function capturePage(page, label, kind, details = {}) {
   const eventCounts = await page.evaluate(() =>
     window.__fallstackQa ? { ...window.__fallstackQa } : null
   );
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, `${label}.png`),
     animations: 'disabled',
   });
@@ -348,8 +349,8 @@ async function waitForReady(page) {
     () =>
       Boolean(
         window.__fallstackFindScene?.()?.controlsReady &&
-          window.fallstackSnapshot &&
-          !document.querySelector('.loading-overlay')
+        window.fallstackSnapshot &&
+        !document.querySelector('.loading-overlay')
       ),
     null,
     { timeout: 15_000 }

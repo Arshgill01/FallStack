@@ -3,13 +3,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ??
     'docs/quality-reconstruction/evidence/character-washi-pilgrim'
 );
-const baseUrl =
-  process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
+const baseUrl = process.env.FALLSTACK_QA_BASE_URL ?? 'http://127.0.0.1:8080';
 const states = [
   {
     name: 'grounded',
@@ -121,7 +121,7 @@ try {
         height: 112,
       };
       const filename = `${motion}-${state.name}.png`;
-      await page.screenshot({
+      await captureScreenshot(page, {
         path: path.join(outputDir, filename),
         clip,
       });
@@ -134,9 +134,10 @@ try {
       });
 
       if (motion === 'standard' && state.name === 'grounded') {
-        await page
-          .locator('.game-shell')
-          .screenshot({ path: path.join(outputDir, 'mobile-context.png') });
+        await captureScreenshot(page, {
+          locator: page.locator('.game-shell'),
+          path: path.join(outputDir, 'mobile-context.png'),
+        });
       }
     }
 
@@ -216,11 +217,11 @@ async function waitForReady(page) {
     () =>
       Boolean(
         window.__fallstackFindScene?.()?.controlsReady &&
-          window.fallstackSnapshot &&
-          !document
-            .querySelector('[aria-label="Move right"]')
-            ?.hasAttribute('disabled') &&
-          !document.querySelector('.loading-overlay')
+        window.fallstackSnapshot &&
+        !document
+          .querySelector('[aria-label="Move right"]')
+          ?.hasAttribute('disabled') &&
+        !document.querySelector('.loading-overlay')
       ),
     null,
     { timeout: 10_000 }
@@ -263,8 +264,7 @@ async function forceState(page, state) {
         width: player.body.width,
         height: player.body.height,
       },
-      rotationRadians:
-        Math.round(scene.playerGraphics.rotation * 1000) / 1000,
+      rotationRadians: Math.round(scene.playerGraphics.rotation * 1000) / 1000,
       alpha: Math.round(scene.playerGraphics.alpha * 1000) / 1000,
     };
   }, state);
@@ -273,17 +273,14 @@ async function forceState(page, state) {
 async function playerScreenPosition(page) {
   const canvas = await page.locator('canvas').boundingBox();
   assert.ok(canvas, 'Phaser canvas is visible');
-  return page.evaluate(
-    (box) => {
-      const scene = window.__fallstackFindScene();
-      const view = scene.cameras.main.worldView;
-      return {
-        x: box.x + ((scene.player.x - view.x) / view.width) * box.width,
-        y: box.y + ((scene.player.y - view.y) / view.height) * box.height,
-      };
-    },
-    canvas
-  );
+  return page.evaluate((box) => {
+    const scene = window.__fallstackFindScene();
+    const view = scene.cameras.main.worldView;
+    return {
+      x: box.x + ((scene.player.x - view.x) / view.width) * box.width,
+      y: box.y + ((scene.player.y - view.y) / view.height) * box.height,
+    };
+  }, canvas);
 }
 
 async function writeContactSheet(browserInstance, motion, captures) {
@@ -313,7 +310,8 @@ async function writeContactSheet(browserInstance, motion, captures) {
       <div class="grid">${cards.join('')}</div>
     </main>
   `);
-  await page.locator('.sheet').screenshot({
+  await captureScreenshot(page, {
+    locator: page.locator('.sheet'),
     path: path.join(outputDir, `${motion}-contact-sheet.png`),
   });
   await context.close();
@@ -347,9 +345,10 @@ async function captureNarrowContext(browserInstance) {
   assert.deepEqual(metrics.viewport, { width: 320, height: 568 });
   assert.deepEqual(metrics.physics, { width: 20, height: 28 });
   assert.equal(metrics.cssPerWorldPixel, 1);
-  await page
-    .locator('.game-shell')
-    .screenshot({ path: path.join(outputDir, 'mobile-context-320.png') });
+  await captureScreenshot(page, {
+    locator: page.locator('.game-shell'),
+    path: path.join(outputDir, 'mobile-context-320.png'),
+  });
   await context.close();
   return metrics;
 }

@@ -7,12 +7,15 @@ import {
   CAMERA_AIR_LOOKAHEAD,
   CAMERA_VERTICAL_AIR_LOOKAHEAD,
   CAMERA_VERTICAL_CHARGE_LOOKAHEAD,
+  DESKTOP_CANVAS_PIXEL_BUDGET,
   cameraBottomPaddingForGameWidth,
   cameraBottomPaddingForViewport,
   cameraScrollForWorldViewStart,
   cameraScrollXForPlayer,
   cameraVerticalLookahead,
+  canvasRenderScaleForEnvironment,
   chooseHudNoticePlacement,
+  chooseHudNoticeSide,
   computeGameDimensions,
   gameWorldWidth,
   PLAYER_VISUAL_EDGE_CLEARANCE,
@@ -21,7 +24,9 @@ import {
   renderScaleForDevicePixelRatio,
   ROUTE_PLAYABLE_INSET,
   routeOffsetForGameWidth,
+  shouldUseDesktopSafariCanvasProfile,
   visibleHorizontalSpan,
+  worldViewStartForCameraScroll,
 } from './layout.js';
 
 void test('game dimensions use the viewport size without squeezing the tower', () => {
@@ -42,6 +47,16 @@ void test('game dimensions use the viewport size without squeezing the tower', (
       renderScale: 2,
     }
   );
+  assert.deepEqual(
+    computeGameDimensions({ width: 390.4, height: 635.6 }, 2.5, 1),
+    {
+      containerW: 390,
+      containerH: 636,
+      gameW: 390,
+      gameH: 636,
+      renderScale: 1,
+    }
+  );
 });
 
 void test('render scale is finite and capped to control canvas memory', () => {
@@ -49,6 +64,86 @@ void test('render scale is finite and capped to control canvas memory', () => {
   assert.equal(renderScaleForDevicePixelRatio(0.8), 1);
   assert.equal(renderScaleForDevicePixelRatio(1.5), 1.5);
   assert.equal(renderScaleForDevicePixelRatio(3), 2);
+  assert.equal(renderScaleForDevicePixelRatio(2, 1), 1);
+  assert.equal(renderScaleForDevicePixelRatio(2, 1.5), 1.5);
+  assert.equal(renderScaleForDevicePixelRatio(2, Number.NaN), 2);
+});
+
+void test('desktop Safari uses the constrained Canvas rendering profile', () => {
+  const safari =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15';
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: safari,
+      coarsePointer: false,
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: safari,
+      coarsePointer: true,
+    }),
+    false
+  );
+});
+
+void test('Safari-compatible browsers and mobile Safari keep the default profile', () => {
+  const chrome =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+  const iosSafari =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) ' +
+    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: chrome,
+      coarsePointer: false,
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: iosSafari,
+      coarsePointer: true,
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseDesktopSafariCanvasProfile({
+      userAgent: 'Mozilla/5.0 Firefox/141.0',
+      coarsePointer: false,
+    }),
+    false
+  );
+});
+
+void test('fine-pointer Canvas surfaces share a bounded pixel workload', () => {
+  const firefox = {
+    userAgent: 'Mozilla/5.0 Firefox/151.0',
+    coarsePointer: false,
+  };
+  for (const bounds of [
+    { width: 758, height: 742 },
+    { width: 758, height: 1022 },
+  ]) {
+    const renderScale = canvasRenderScaleForEnvironment(bounds, 2, firefox);
+    const dimensions = computeGameDimensions(bounds, 2, renderScale);
+    assert.ok(
+      dimensions.gameW * dimensions.gameH <=
+        DESKTOP_CANVAS_PIXEL_BUDGET +
+          Math.max(dimensions.gameW, dimensions.gameH)
+    );
+    assert.ok(renderScale >= 1 && renderScale < 2);
+  }
+  assert.equal(
+    canvasRenderScaleForEnvironment({ width: 390, height: 711 }, 3, {
+      ...firefox,
+      coarsePointer: true,
+    }),
+    2
+  );
 });
 
 void test('logical game world still preserves the full tower route', () => {
@@ -139,8 +234,33 @@ void test('committed-jump lookahead keeps a readable part of the next landing vi
   }
 });
 
+void test('DPR-scaled cameras preserve the requested visible world edge', () => {
+  for (const viewportSize of [320, 375, 393, 526, 844]) {
+    for (const renderScale of [1, 1.5, 2]) {
+      for (const worldViewStart of [0, 43.5, 87, 412, 16_754]) {
+        const cameraScroll = cameraScrollForWorldViewStart(
+          worldViewStart,
+          viewportSize,
+          renderScale
+        );
+        assert.equal(
+          worldViewStartForCameraScroll(
+            cameraScroll,
+            viewportSize,
+            renderScale
+          ),
+          worldViewStart
+        );
+      }
+    }
+  }
+
+  assert.equal(cameraScrollForWorldViewStart(0, 393, 2), -196.5);
+  assert.equal(cameraScrollForWorldViewStart(87, 393, 2), -109.5);
+});
+
 void test('vertical lookahead previews the climb while charging and rising', () => {
-  assert.equal(cameraVerticalLookahead(true, 0, 0), 24);
+  assert.equal(cameraVerticalLookahead(true, 0, 0), 0);
   assert.equal(
     cameraVerticalLookahead(true, 100, 0),
     CAMERA_VERTICAL_CHARGE_LOOKAHEAD
@@ -152,7 +272,7 @@ void test('vertical lookahead previews the climb while charging and rising', () 
   assert.equal(cameraVerticalLookahead(false, 0, 240), 0);
 });
 
-void test('mobile notices choose the side away from protected play geometry', () => {
+void test('mobile notices choose the vertical edge away from play geometry', () => {
   const common = {
     viewportHeight: 500,
     noticeHeight: 140,
@@ -184,6 +304,39 @@ void test('mobile notices choose the side away from protected play geometry', ()
       companionGap: 16,
     }),
     'bottom'
+  );
+});
+
+void test('mobile notices choose the horizontal edge away from play geometry', () => {
+  const common = {
+    viewportWidth: 320,
+    noticeWidth: 188,
+    leftOffset: 36,
+    rightOffset: 36,
+  };
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [{ left: -53, right: 95 }],
+    }),
+    'right'
+  );
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [{ left: 225, right: 373 }],
+    }),
+    'left'
+  );
+  assert.equal(
+    chooseHudNoticeSide({
+      ...common,
+      protectedSpans: [
+        { left: 150, right: 175, weight: 2 },
+        { left: 40, right: 80 },
+      ],
+    }),
+    'right'
   );
 });
 

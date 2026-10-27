@@ -52,7 +52,13 @@ export function deriveImpactSites(tower: GeneratedTower): ImpactSite[] {
     const jumps = jumpsByZone.get(zoneId) ?? [];
     return candidateIndexes(jumps.length).map((jumpIndex, siteIndex) => {
       const jump = jumps[jumpIndex]!;
-      return makeImpactSite(zoneId, jump, siteIndex, route);
+      return makeImpactSite(
+        zoneId,
+        jump,
+        siteIndex,
+        route,
+        tower.platforms
+      );
     });
   });
 }
@@ -66,13 +72,20 @@ function makeImpactSite(
   zoneId: ZoneId,
   jump: RouteJump,
   siteIndex: number,
-  route: Platform[]
+  route: Platform[],
+  allPlatforms: Platform[]
 ): ImpactSite {
   const approachCenter = centerX(jump.approach);
   const landingCenter = centerX(jump.landing);
-  const helperWidth = 54;
   const ghostWidth = 64;
   const zone = zoneById(zoneId);
+  const helperSlot = makeHelperSlot(
+    jump.approach,
+    jump.landing,
+    zone.yTop,
+    zone.yBottom,
+    allPlatforms
+  );
 
   return {
     id: `impact-v${IMPACT_SITE_VERSION}:${jump.approach.id}:${jump.landing.id}`,
@@ -80,19 +93,7 @@ function makeImpactSite(
     zoneId,
     anchorPlatformId: jump.landing.id,
     approachPlatformId: jump.approach.id,
-    helperSlot: {
-      x: boundedX((approachCenter + landingCenter) / 2, helperWidth),
-      y: betweenPlatformY(
-        jump.approach,
-        jump.landing,
-        (jump.approach.y + jump.landing.y) / 2,
-        18,
-        zone.yTop,
-        zone.yBottom
-      ),
-      width: helperWidth,
-      height: 18,
-    },
+    helperSlot,
     hazardSlot: hazardSlot(
       jump.approach,
       jump.landing,
@@ -115,6 +116,61 @@ function makeImpactSite(
     },
     baselinePathIds: [jump.approach.id, jump.landing.id],
   };
+}
+
+function makeHelperSlot(
+  approach: Platform,
+  landing: Platform,
+  zoneTop: number,
+  zoneBottom: number,
+  allPlatforms: Platform[]
+): Rect {
+  const height = 18;
+  const y = betweenPlatformY(
+    approach,
+    landing,
+    (approach.y + landing.y) / 2,
+    height,
+    zoneTop,
+    zoneBottom
+  );
+  const landingMovesRight = centerX(landing) >= centerX(approach);
+  const gap = 8;
+  const occupiedLeft = Math.min(approach.x, landing.x);
+  const occupiedRight = Math.max(
+    approach.x + approach.width,
+    landing.x + landing.width
+  );
+  const sides = landingMovesRight
+    ? (['right', 'left'] as const)
+    : (['left', 'right'] as const);
+
+  // Helpers remain fully solid, so they must not become a ceiling over the
+  // launch ledge or a pocket under the landing. Prefer the far side of the
+  // landing, where the extra foothold catches an overjump without changing
+  // the baseline jump corridor.
+  for (const inset of [46, 8]) {
+    for (const width of [54, 48, 42, 36, 30, 24, 18]) {
+      for (const side of sides) {
+        const x =
+          side === 'left'
+            ? occupiedLeft - gap - width
+            : occupiedRight + gap;
+        const slot = { x: Math.round(x), y, width, height };
+        if (
+          slot.x < inset ||
+          slot.x + slot.width > WORLD_WIDTH - inset
+        )
+          continue;
+        if (allPlatforms.every((platform) => !rectsOverlap(slot, platform)))
+          return slot;
+      }
+    }
+  }
+
+  throw new Error(
+    `No route-safe helper slot for ${approach.id} -> ${landing.id}`
+  );
 }
 
 function siteName(zoneId: ZoneId, siteIndex: number): string {

@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium, webkit } from 'playwright';
+import { captureScreenshot } from './capture-screenshot.mjs';
 
 const outputDir = path.resolve(
   process.argv[2] ?? 'docs/qa/final-pass/ui-resize'
@@ -41,41 +42,56 @@ try {
     waitUntil: 'domcontentloaded',
   });
   await waitForReady(page);
-  await page.waitForTimeout(500);
+  await installResizeProbe(page);
 
-  const portrait = await readLayout(page);
-  observations.startupCanvasWrites = (
-    await page.evaluate(() => window.__fallstackCanvasWrites)
-  ).filter(
-    (write) =>
-      (write.dimension === 'width' &&
-        write.value === portrait.scene.gameWidth) ||
-      (write.dimension === 'height' &&
-        write.value === portrait.scene.gameHeight)
-  );
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.waitForTimeout(300);
+  const sameSizeResizeProbe = await readResizeProbe(page);
+  observations.sameSizeResizeProbe = sameSizeResizeProbe;
   check(
-    observations.startupCanvasWrites.filter(
-      (write) =>
-        write.dimension === 'width' && write.value === portrait.scene.gameWidth
-    ).length === 2 &&
-      observations.startupCanvasWrites.filter(
-        (write) =>
-          write.dimension === 'height' &&
-          write.value === portrait.scene.gameHeight
-      ).length === 2,
-    'startup adds no post-boot duplicate canvas rebuild',
-    observations.startupCanvasWrites,
+    sameSizeResizeProbe.scaleResizes === 0 &&
+      sameSizeResizeProbe.platformRebuilds === 0 &&
+      sameSizeResizeProbe.cameraSnaps === 0,
+    'repeated same-size resize signals do no game layout work',
+    sameSizeResizeProbe,
     {
-      width: portrait.scene.gameWidth,
-      height: portrait.scene.gameHeight,
-      rendererWritesPerDimension: 2,
+      scaleResizes: 0,
+      platformRebuilds: 0,
+      cameraSnaps: 0,
     }
   );
+
+  const portrait = await readLayout(page);
+  check(
+    portrait.rendering.profile === 'default' &&
+      portrait.rendering.renderScale === 2 &&
+      Math.abs(portrait.rendering.backingScale - 2) <= 0.01,
+    'mobile keeps the default high-DPR rendering profile',
+    portrait.rendering,
+    { profile: 'default', renderScale: 2, backingScale: 2 }
+  );
+  await resetResizeProbe(page);
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
   const landscape = await readLayout(page);
+  const orientationResizeProbe = await readResizeProbe(page);
   observations.portrait = portrait;
   observations.landscape = landscape;
+  observations.orientationResizeProbe = orientationResizeProbe;
+  check(
+    orientationResizeProbe.scaleResizes === 1 &&
+      orientationResizeProbe.platformRebuilds === 1 &&
+      orientationResizeProbe.cameraSnaps === 1,
+    'one orientation change performs one scale, route, and camera layout pass',
+    orientationResizeProbe,
+    {
+      scaleResizes: 1,
+      platformRebuilds: 1,
+      cameraSnaps: 1,
+    }
+  );
   check(
     landscape.coarsePointer && landscape.touchControls.display === 'flex',
     'coarse-pointer landscape keeps fixed touch controls',
@@ -186,7 +202,7 @@ try {
     airborneAfterResize.scene.playerRect,
     'inside canvas'
   );
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, 'touch-landscape.png'),
     fullPage: true,
   });
@@ -196,8 +212,8 @@ try {
   await waitForReady(page);
   await page.locator('.action-btn', { hasText: 'Guide' }).click();
   await page.waitForSelector('.guide-card');
-  await page.waitForFunction(
-    () => document.activeElement?.matches('.guide-card')
+  await page.waitForFunction(() =>
+    document.activeElement?.matches('.guide-card')
   );
   await page.setViewportSize({ width: 812, height: 375 });
   await waitForResize(page, 812, 375);
@@ -228,14 +244,13 @@ try {
       }
     );
     check(
-      dialog.touchControlsDisplay === 'flex' &&
-        dialog.touchControlsDisabled,
+      dialog.touchControlsDisplay === 'flex' && dialog.touchControlsDisabled,
       `Guide keeps visible disabled touch controls in ${orientation}`,
       dialog,
       { display: 'flex', disabled: true }
     );
   }
-  await page.screenshot({
+  await captureScreenshot(page, {
     path: path.join(outputDir, 'guide-portrait-after-resize.png'),
     fullPage: true,
   });
@@ -328,6 +343,7 @@ async function readLayout(page) {
     const player = scene.player;
     const camera = scene.cameras.main;
     const canvas = document.querySelector('#game-canvas canvas');
+    const canvasContainer = document.querySelector('#game-canvas');
     const canvasRect = canvas.getBoundingClientRect();
     const scaleX = canvasRect.width / camera.worldView.width;
     const scaleY = canvasRect.height / camera.worldView.height;
@@ -352,6 +368,13 @@ async function readLayout(page) {
         height: innerHeight,
       },
       coarsePointer: matchMedia('(pointer: coarse)').matches,
+      rendering: {
+        profile: canvasContainer.dataset.renderProfile,
+        renderScale: Number(canvasContainer.dataset.renderScale),
+        backingScale: canvas.width / canvasRect.width,
+        backingWidth: canvas.width,
+        backingHeight: canvas.height,
+      },
       controlsHintDisplay: getComputedStyle(
         document.querySelector('.controls-hint')
       ).display,
@@ -413,10 +436,10 @@ async function readDialogLayout(page) {
       focusInside: Boolean(card?.contains(document.activeElement)),
       insideViewport: Boolean(
         rect &&
-          rect.left >= 0 &&
-          rect.right <= innerWidth &&
-          rect.top >= 0 &&
-          rect.bottom <= innerHeight
+        rect.left >= 0 &&
+        rect.right <= innerWidth &&
+        rect.top >= 0 &&
+        rect.bottom <= innerHeight
       ),
       cardRect: rect
         ? {
@@ -449,8 +472,20 @@ async function moveWithVisibleTouchControl(context, page, name) {
   if (name === 'webkit') {
     await page.mouse.move(point.x, point.y);
     await page.mouse.down();
-    await page.waitForTimeout(360);
-    await page.mouse.up();
+    try {
+      await page.waitForFunction(
+        (beforeX) => {
+          const scene = window.__fallstackFindScene?.();
+          return (
+            scene && scene.player.x - scene.currentRouteOffset - beforeX > 10
+          );
+        },
+        before.scene.logicalX,
+        { timeout: 3_000 }
+      );
+    } finally {
+      await page.mouse.up();
+    }
   } else {
     const cdp = await context.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent', {
@@ -476,8 +511,8 @@ async function waitForReady(page) {
     () =>
       Boolean(
         window.__fallstackFindScene?.()?.controlsReady &&
-          window.fallstackSnapshot &&
-          !document.querySelector('.loading-overlay')
+        window.fallstackSnapshot &&
+        !document.querySelector('.loading-overlay')
       ),
     null,
     { timeout: 30_000 }
@@ -485,18 +520,68 @@ async function waitForReady(page) {
   await page.waitForTimeout(250);
 }
 
+async function installResizeProbe(page) {
+  await page.evaluate(() => {
+    const scene = window.__fallstackFindScene();
+    const probe = {
+      scaleResizes: 0,
+      platformRebuilds: 0,
+      cameraSnaps: 0,
+      cameraSnapSources: [],
+    };
+    const scaleResize = scene.scale.resize.bind(scene.scale);
+    const rebuildPlatformBodies = scene.rebuildPlatformBodies.bind(scene);
+    const snapCameraToPlayer = scene.snapCameraToPlayer.bind(scene);
+    scene.scale.resize = (...args) => {
+      probe.scaleResizes += 1;
+      return scaleResize(...args);
+    };
+    scene.rebuildPlatformBodies = (...args) => {
+      probe.platformRebuilds += 1;
+      return rebuildPlatformBodies(...args);
+    };
+    scene.snapCameraToPlayer = (...args) => {
+      probe.cameraSnaps += 1;
+      probe.cameraSnapSources.push(
+        new Error().stack?.split('\n').slice(2, 5) ?? []
+      );
+      return snapCameraToPlayer(...args);
+    };
+    window.__fallstackResizeProbe = probe;
+  });
+}
+
+async function resetResizeProbe(page) {
+  await page.evaluate(() => {
+    window.__fallstackResizeProbe.scaleResizes = 0;
+    window.__fallstackResizeProbe.platformRebuilds = 0;
+    window.__fallstackResizeProbe.cameraSnaps = 0;
+    window.__fallstackResizeProbe.cameraSnapSources = [];
+  });
+}
+
+async function readResizeProbe(page) {
+  return page.evaluate(() => ({ ...window.__fallstackResizeProbe }));
+}
+
 async function waitForResize(page, width, height, settleMs = 300) {
   await page.waitForFunction(
     ({ width, height }) => {
       const scene = window.__fallstackFindScene?.();
+      const canvas = document.querySelector('#game-canvas canvas');
+      const canvasRect = canvas?.getBoundingClientRect();
       return (
         innerWidth === width &&
         innerHeight === height &&
         scene?.scale.width > 0 &&
-        scene?.scale.height > 0
+        scene?.scale.height > 0 &&
+        canvasRect &&
+        Math.abs(scene.viewportWidth() - canvasRect.width) <= 1 &&
+        Math.abs(scene.viewportHeight() - canvasRect.height) <= 1
       );
     },
-    { width, height }
+    { width, height },
+    { timeout: 10_000 }
   );
   if (settleMs > 0) await page.waitForTimeout(settleMs);
 }

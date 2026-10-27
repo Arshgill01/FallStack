@@ -74,6 +74,10 @@ try {
       String(args['remote-fall-ms'] ?? 1500),
       '--canvas',
       'false',
+      // The bot is judged on its JSON report; per-jump screenshots only add
+      // capture time, and Chromium's surface capture fails headless on macOS.
+      '--screenshots',
+      'false',
       '--require-summit',
       args.full ? 'true' : 'false',
       '--max-jumps',
