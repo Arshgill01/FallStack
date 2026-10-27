@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   ARTIFACT_COLLISION_CLASS,
-  artifactVisualTier,
+  labelledArtifactIds,
   clampedArtifactLabelCenter,
   inWorldArtifactLabel,
   RELIQUARY_ZONE_PALETTES,
@@ -30,10 +30,15 @@ void test('every artifact has a distinct collision presentation contract', () =>
   });
 });
 
-void test('artifact counts map to stable visible intensity tiers', () => {
-  assert.equal(artifactVisualTier(1), 'base');
-  assert.equal(artifactVisualTier(6), 'remembered');
-  assert.equal(artifactVisualTier(12), 'saturated');
+void test('each site labels only its artifact with the most history', () => {
+  const labelled = labelledArtifactIds([
+    { id: 'a-helper', siteId: 'a', type: 'corpse_stack', count: 4 },
+    { id: 'a-ghost', siteId: 'a', type: 'ghost_platform', count: 4 },
+    { id: 'a-lantern', siteId: 'a', type: 'lantern_trail', count: 3 },
+    { id: 'b-brick', siteId: 'b', type: 'cursed_brick', count: 9 },
+    { id: 'b-lantern', siteId: 'b', type: 'lantern_trail', count: 12 },
+  ]);
+  assert.deepEqual([...labelled].sort(), ['a-helper', 'b-lantern']);
 });
 
 void test('artifact labels stay inside narrow and wide tower bounds', () => {

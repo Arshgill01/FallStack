@@ -31,6 +31,7 @@ function zoneWithArtifact(type: ArtifactType | null): ZoneSnapshot {
         count: 3,
         seededCount: 0,
         organicCount: 3,
+        tier: 'base',
       }
     : null;
   return {

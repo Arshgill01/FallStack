@@ -61,12 +61,32 @@ export function playerVisualDimensions(state: PlayerVisualState): {
   return { width: 26, height: 39 };
 }
 
-export type ArtifactVisualTier = 'base' | 'remembered' | 'saturated';
+const LABEL_SLOT_ORDER: Artifact['type'][] = [
+  'corpse_stack',
+  'mercy_nail',
+  'ghost_platform',
+  'cursed_brick',
+  'lantern_trail',
+];
 
-export function artifactVisualTier(count: number): ArtifactVisualTier {
-  if (count >= 12) return 'saturated';
-  if (count >= 6) return 'remembered';
-  return 'base';
+// A site can hold several artifacts, but only one in-world label so labels
+// never stack over the jump: the one with the most history, helpers first.
+export function labelledArtifactIds(
+  artifacts: Pick<Artifact, 'id' | 'siteId' | 'type' | 'count'>[]
+): Set<string> {
+  const bySite = new Map<string, (typeof artifacts)[number]>();
+  for (const artifact of artifacts) {
+    const current = bySite.get(artifact.siteId);
+    if (
+      !current ||
+      artifact.count > current.count ||
+      (artifact.count === current.count &&
+        LABEL_SLOT_ORDER.indexOf(artifact.type) <
+          LABEL_SLOT_ORDER.indexOf(current.type))
+    )
+      bySite.set(artifact.siteId, artifact);
+  }
+  return new Set([...bySite.values()].map((artifact) => artifact.id));
 }
 
 export function clampedArtifactLabelCenter(

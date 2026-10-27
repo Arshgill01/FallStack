@@ -1,6 +1,10 @@
 import {
   nextThreshold,
+  planSiteArtifacts,
+  siteStatus,
+  type ArtifactType,
   type FailureBucket,
+  type SiteMutationCounters,
 } from './mutation.js';
 
 export type MutationRejection =
@@ -33,6 +37,9 @@ export type MutationReceipt = {
   counterAfter: number | null;
   nextThreshold: number | null;
   visibleChange: VisibleMutationChange;
+  // The artifact the visible change is about. Absent on receipts stored
+  // before receipts were derived from the rendered site.
+  artifactType?: ArtifactType | null;
   copy: string;
 };
 
@@ -43,15 +50,77 @@ type FailureReceiptInput = {
   siteId: string;
   siteName: string;
   bucket: FailureBucket;
-  counterBefore: number;
-  counterAfter: number;
+  // The site's full counters before this event, seeded plus organic.
+  siteBefore: SiteMutationCounters;
   rejection?: MutationRejection | null;
 };
 
-type ClearReceiptInput = Omit<
-  FailureReceiptInput,
-  'bucket'
->;
+type ClearReceiptInput = Omit<FailureReceiptInput, 'bucket'>;
+
+type CounterTransition = {
+  counterBefore: number;
+  counterAfter: number;
+};
+
+export type SiteChange = {
+  change: VisibleMutationChange;
+  artifactType: ArtifactType | null;
+};
+
+// Compares what the site renders before and after one counter moves, using
+// the same plan the snapshot renders from.
+export function describeSiteChange(
+  before: SiteMutationCounters,
+  after: SiteMutationCounters
+): SiteChange {
+  const statusBefore = siteStatus(before);
+  const statusAfter = siteStatus(after);
+  const plansAfter = planSiteArtifacts(after);
+  const plansBefore = new Map(
+    planSiteArtifacts(before).map((plan) => [plan.slot, plan])
+  );
+  const changed = plansAfter.find((plan) => {
+    const prior = plansBefore.get(plan.slot);
+    return !prior || prior.type !== plan.type || prior.tier !== plan.tier;
+  });
+
+  if (statusAfter !== statusBefore) {
+    const change: VisibleMutationChange =
+      statusAfter === 'Stabilized'
+        ? 'site_stabilized'
+        : statusAfter === 'Reinforced'
+          ? 'site_reinforced'
+          : 'site_cursed';
+    return { change, artifactType: changed?.type ?? null };
+  }
+  if (!changed) return { change: 'mark_added', artifactType: null };
+  const prior = plansBefore.get(changed.slot);
+  if (!prior) return { change: 'artifact_spawned', artifactType: changed.type };
+  if (prior.type === changed.type && changed.tier === 'saturated')
+    return { change: 'site_cursed', artifactType: changed.type };
+  return { change: 'artifact_upgraded', artifactType: changed.type };
+}
+
+function transition(
+  siteBefore: SiteMutationCounters,
+  counter: keyof SiteMutationCounters,
+  accepted: boolean
+): CounterTransition & SiteChange {
+  const counterBefore = siteBefore[counter];
+  if (!accepted)
+    return {
+      counterBefore,
+      counterAfter: counterBefore,
+      change: 'none',
+      artifactType: null,
+    };
+  const siteAfter = { ...siteBefore, [counter]: counterBefore + 1 };
+  return {
+    counterBefore,
+    counterAfter: counterBefore + 1,
+    ...describeSiteChange(siteBefore, siteAfter),
+  };
+}
 
 type NonSiteReceiptInput = {
   eventId: string;
@@ -66,10 +135,8 @@ export function createMutationReceipt(
 ): MutationReceipt {
   const rejection = input.rejection ?? null;
   const accepted = rejection === null;
-  const visibleChange = accepted
-    ? failureVisibleChange(input.counterBefore, input.counterAfter)
-    : 'none';
-  const threshold = nextThreshold(input.counterAfter);
+  const moved = transition(input.siteBefore, input.bucket, accepted);
+  const threshold = nextThreshold(moved.counterAfter);
 
   return {
     eventId: input.eventId,
@@ -81,11 +148,12 @@ export function createMutationReceipt(
     siteId: input.siteId,
     siteName: input.siteName,
     bucket: input.bucket,
-    counterBefore: input.counterBefore,
-    counterAfter: input.counterAfter,
+    counterBefore: moved.counterBefore,
+    counterAfter: moved.counterAfter,
     nextThreshold: threshold,
-    visibleChange,
-    copy: failureReceiptCopy(input, accepted, visibleChange, threshold),
+    visibleChange: moved.change,
+    artifactType: moved.artifactType,
+    copy: failureReceiptCopy(input, moved, accepted, threshold),
   };
 }
 
@@ -94,10 +162,8 @@ export function createClearMutationReceipt(
 ): MutationReceipt {
   const rejection = input.rejection ?? null;
   const accepted = rejection === null;
-  const visibleChange = accepted
-    ? clearVisibleChange(input.counterBefore, input.counterAfter)
-    : 'none';
-  const threshold = nextClearThreshold(input.counterAfter);
+  const moved = transition(input.siteBefore, 'successfulClears', accepted);
+  const threshold = nextClearThreshold(moved.counterAfter);
 
   return {
     eventId: input.eventId,
@@ -109,11 +175,12 @@ export function createClearMutationReceipt(
     siteId: input.siteId,
     siteName: input.siteName,
     bucket: 'successful_clear',
-    counterBefore: input.counterBefore,
-    counterAfter: input.counterAfter,
+    counterBefore: moved.counterBefore,
+    counterAfter: moved.counterAfter,
     nextThreshold: threshold,
-    visibleChange,
-    copy: clearReceiptCopy(input, accepted, visibleChange, threshold),
+    visibleChange: moved.change,
+    artifactType: moved.artifactType,
+    copy: clearReceiptCopy(input, moved, accepted, threshold),
   };
 }
 
@@ -140,15 +207,6 @@ export function createNonSiteMutationReceipt(
   };
 }
 
-function clearVisibleChange(
-  before: number,
-  after: number
-): VisibleMutationChange {
-  if (before < 3 && after >= 3) return 'site_reinforced';
-  if (before < 6 && after >= 6) return 'site_stabilized';
-  return 'mark_added';
-}
-
 function nextClearThreshold(count: number): number | null {
   if (count < 3) return 3;
   if (count < 6) return 6;
@@ -157,23 +215,23 @@ function nextClearThreshold(count: number): number | null {
 
 function clearReceiptCopy(
   input: ClearReceiptInput,
+  moved: CounterTransition & SiteChange,
   accepted: boolean,
-  visibleChange: VisibleMutationChange,
   threshold: number | null
 ): string {
   if (!accepted) {
     if (input.rejection === 'capped') {
-      return `${input.siteName} remembers your clean line. Shared state stayed at ${input.counterAfter}.`;
+      return `${input.siteName} remembers your clean line. Shared state stayed at ${moved.counterAfter}.`;
     }
-    return `Shared state stayed at ${input.counterAfter}.`;
+    return `Shared state stayed at ${moved.counterAfter}.`;
   }
-  if (visibleChange === 'site_reinforced') {
-    return `Your clean line reinforced ${input.siteName}. ${clearThresholdCopy(input.counterAfter, threshold)}`;
+  if (moved.change === 'site_reinforced') {
+    return `Your clean line reinforced ${input.siteName}. ${clearThresholdCopy(moved.counterAfter, threshold)}`;
   }
-  if (visibleChange === 'site_stabilized') {
+  if (moved.change === 'site_stabilized') {
     return `Your clean line stabilized ${input.siteName}.`;
   }
-  return `Your clean line changed ${input.siteName}: ${input.counterBefore} → ${input.counterAfter}. ${clearThresholdCopy(input.counterAfter, threshold)}`;
+  return `Your clean line changed ${input.siteName}: ${moved.counterBefore} → ${moved.counterAfter}. ${clearThresholdCopy(moved.counterAfter, threshold)}`;
 }
 
 function clearThresholdCopy(count: number, threshold: number | null): string {
@@ -182,40 +240,31 @@ function clearThresholdCopy(count: number, threshold: number | null): string {
   return `${remaining} more clean ${remaining === 1 ? 'clear stabilizes' : 'clears stabilize'} it.`;
 }
 
-function failureVisibleChange(
-  before: number,
-  after: number
-): VisibleMutationChange {
-  if (before < 3 && after >= 3) return 'artifact_spawned';
-  if (before < 6 && after >= 6) return 'artifact_upgraded';
-  if (before < 10 && after >= 10) return 'site_cursed';
-  return 'mark_added';
-}
-
 function failureReceiptCopy(
   input: FailureReceiptInput,
+  moved: CounterTransition & SiteChange,
   accepted: boolean,
-  visibleChange: VisibleMutationChange,
   threshold: number | null
 ): string {
   if (!accepted) {
     if (input.rejection === 'capped') {
-      return `${input.siteName} has heard enough from you today. Shared state stayed at ${input.counterAfter}.`;
+      return `${input.siteName} has heard enough from you today. Shared state stayed at ${moved.counterAfter}.`;
     }
-    return `Shared state stayed at ${input.counterAfter}.`;
+    return `Shared state stayed at ${moved.counterAfter}.`;
   }
 
-  if (visibleChange === 'artifact_spawned') {
-    return `Your fall spawned ${artifactName(input.bucket, input.counterAfter)} at ${input.siteName}. ${thresholdCopy(input.bucket, input.counterAfter, threshold, 'upgrade it')}`;
+  const name = moved.artifactType ? artifactName(moved.artifactType) : null;
+  if (moved.change === 'artifact_spawned' && name) {
+    return `Your fall spawned ${name} at ${input.siteName}. ${thresholdCopy(input.bucket, moved.counterAfter, threshold, 'upgrade it')}`;
   }
-  if (visibleChange === 'artifact_upgraded') {
-    return `Your fall upgraded ${artifactName(input.bucket, input.counterAfter)} at ${input.siteName}. ${thresholdCopy(input.bucket, input.counterAfter, threshold, 'overgrow it')}`;
+  if (moved.change === 'artifact_upgraded' && name) {
+    return `Your fall upgraded ${name} at ${input.siteName}. ${thresholdCopy(input.bucket, moved.counterAfter, threshold, 'overgrow it')}`;
   }
-  if (visibleChange === 'site_cursed') {
+  if (moved.change === 'site_cursed') {
     return `Your fall overgrew ${input.siteName}.`;
   }
 
-  return `Your fall changed ${input.siteName}: ${input.counterBefore} → ${input.counterAfter}. ${thresholdCopy(input.bucket, input.counterAfter, threshold, 'change it')}`;
+  return `Your fall changed ${input.siteName}: ${moved.counterBefore} → ${moved.counterAfter}. ${thresholdCopy(input.bucket, moved.counterAfter, threshold, 'change it')}`;
 }
 
 function thresholdCopy(
@@ -247,9 +296,10 @@ function bucketLabel(bucket: FailureBucket, count: number): string {
   return count === 1 ? singular : `${singular}s`;
 }
 
-function artifactName(bucket: FailureBucket, count: number): string {
-  if (bucket === 'short_jump')
-    return count >= 6 ? 'Mercy Nail' : 'Corpse Stack';
-  if (bucket === 'wall_bonk') return 'Ghost Platform';
-  return 'Cursed Brick';
+function artifactName(type: ArtifactType): string {
+  if (type === 'corpse_stack') return 'Corpse Stack';
+  if (type === 'mercy_nail') return 'Mercy Nail';
+  if (type === 'ghost_platform') return 'Ghost Platform';
+  if (type === 'cursed_brick') return 'Cursed Brick';
+  return 'Lantern Trail';
 }

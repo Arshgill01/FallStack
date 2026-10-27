@@ -131,7 +131,7 @@ export function createBoardApiMock({ remoteFallIntervalMs = 0 } = {}) {
           siteId: fall.siteId,
           siteName: fall.siteName,
           bucket: fall.bucket,
-          counter: siteCounters[fall.siteId][fall.bucket],
+          siteCounters: { ...siteCounters[fall.siteId] },
           contributorBucketCount: 0,
           contributorDailyFallCount: 0,
           existingReceipt: receipts.get(body.eventId) ?? null,
@@ -163,7 +163,7 @@ export function createBoardApiMock({ remoteFallIntervalMs = 0 } = {}) {
           revision,
           siteId: site.siteId,
           siteName: site.siteName,
-          counter: siteCounters[site.siteId].successfulClears,
+          siteCounters: { ...siteCounters[site.siteId] },
           contributorClearCount: 0,
           existingReceipt: receipts.get(body.eventId) ?? null,
         });

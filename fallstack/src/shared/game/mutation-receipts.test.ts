@@ -7,6 +7,7 @@ import {
   createMutationReceipt,
   createNonSiteMutationReceipt,
 } from './mutation-receipts.js';
+import { ZERO_COUNTERS } from './mutation.js';
 
 void test('accepted fall receipt proves exact site, delta, and spawned artifact', () => {
   assert.deepEqual(
@@ -17,8 +18,7 @@ void test('accepted fall receipt proves exact site, delta, and spawned artifact'
       siteId: 'impact-v1:start:ledge-orbital_scrapyard-1',
       siteName: 'First Gap',
       bucket: 'short_jump',
-      counterBefore: 2,
-      counterAfter: 3,
+      siteBefore: { ...ZERO_COUNTERS, short_jump: 2 },
     }),
     {
       eventId: 'fall_event_12345678',
@@ -34,6 +34,7 @@ void test('accepted fall receipt proves exact site, delta, and spawned artifact'
       counterAfter: 3,
       nextThreshold: 6,
       visibleChange: 'artifact_spawned',
+      artifactType: 'corpse_stack',
       copy: 'Your fall spawned Corpse Stack at First Gap. 3 more short jumps upgrade it.',
     }
   );
@@ -48,8 +49,7 @@ void test('capped receipt never claims a board or counter change', () => {
       siteId: 'impact-v1:start:ledge-orbital_scrapyard-1',
       siteName: 'First Gap',
       bucket: 'short_jump',
-      counterBefore: 3,
-      counterAfter: 3,
+      siteBefore: { ...ZERO_COUNTERS, short_jump: 3 },
       rejection: 'capped',
     }),
     {
@@ -66,6 +66,7 @@ void test('capped receipt never claims a board or counter change', () => {
       counterAfter: 3,
       nextThreshold: 6,
       visibleChange: 'none',
+      artifactType: null,
       copy: 'First Gap has heard enough from you today. Shared state stayed at 3.',
     }
   );
@@ -78,8 +79,7 @@ void test('third clean clear reinforces the exact site', () => {
     revisionBefore: 40,
     siteId: 'impact-v1:start:ledge-orbital_scrapyard-1',
     siteName: 'First Gap',
-    counterBefore: 2,
-    counterAfter: 3,
+    siteBefore: { ...ZERO_COUNTERS, successfulClears: 2 },
   });
 
   assert.equal(receipt.accepted, true);
@@ -88,6 +88,48 @@ void test('third clean clear reinforces the exact site', () => {
   assert.equal(receipt.visibleChange, 'site_reinforced');
   assert.equal(receipt.nextThreshold, 6);
   assert.equal(receipt.copy, 'Your clean line reinforced First Gap. 3 more clean clears stabilize it.');
+});
+
+function wallBonkReceipt(siteBefore: typeof ZERO_COUNTERS) {
+  return createMutationReceipt({
+    eventId: 'fall_event_wall_bonk',
+    boardId: 'board_2026_07_13_v1',
+    revisionBefore: 50,
+    siteId: 'impact-v1:a:b',
+    siteName: 'Moon Chapel · Lower Scar',
+    bucket: 'wall_bonk',
+    siteBefore,
+  });
+}
+
+void test('receipts announce what the site renders, not raw thresholds', () => {
+  // A third wall bonk spawns a ghost beside an existing corpse stack.
+  const spawned = wallBonkReceipt({ ...ZERO_COUNTERS, short_jump: 4, wall_bonk: 2 });
+  assert.equal(spawned.visibleChange, 'artifact_spawned');
+  assert.equal(spawned.artifactType, 'ghost_platform');
+
+  // The sixth marks the ghost as remembered; the tenth overgrows it.
+  assert.equal(
+    wallBonkReceipt({ ...ZERO_COUNTERS, wall_bonk: 5 }).visibleChange,
+    'artifact_upgraded'
+  );
+  assert.equal(
+    wallBonkReceipt({ ...ZERO_COUNTERS, wall_bonk: 9 }).visibleChange,
+    'site_cursed'
+  );
+
+  // A helper slip under a louder overjump brick changes nothing visible.
+  const quiet = createMutationReceipt({
+    eventId: 'fall_event_helper_slip',
+    boardId: 'board_2026_07_13_v1',
+    revisionBefore: 50,
+    siteId: 'impact-v1:a:b',
+    siteName: 'Moon Chapel · Lower Scar',
+    bucket: 'helper_overuse',
+    siteBefore: { ...ZERO_COUNTERS, overjump: 5, helper_overuse: 2 },
+  });
+  assert.equal(quiet.visibleChange, 'mark_added');
+  assert.match(quiet.copy, /^Your fall changed /);
 });
 
 void test('stale board receipt cannot imply a mutation', () => {

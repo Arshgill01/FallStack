@@ -62,7 +62,10 @@ export type Artifact = {
   count: number;
   seededCount: number;
   organicCount: number;
+  tier: ArtifactTier;
 };
+
+export type ArtifactTier = 'base' | 'remembered' | 'saturated';
 
 export type ZoneSnapshot = {
   id: ZoneId;
@@ -258,7 +261,7 @@ export function deriveSnapshot(input: {
       counters,
       seededCounters: seeded,
       organicCounters: subtractCounters(counters, seeded),
-      artifacts: deriveSiteArtifacts(site, counters, status, seeded),
+      artifacts: deriveSiteArtifacts(site, counters, seeded),
     };
   });
   const zoneCounters = aggregateSiteCounters(impactSites, siteCounters);
@@ -417,34 +420,15 @@ export function mergeAchievementState(
   return merged;
 }
 
-export function deriveZone(
-  zoneId: ZoneId,
-  counters: ZoneMutationCounters,
-  impactSites: ImpactSite[]
-): ZoneSnapshot {
-  const status = deriveSiteStatus(counters);
-  const artifacts = deriveArtifacts(zoneId, counters, status, impactSites);
-
-  return {
-    id: zoneId,
-    name: ZONE_NAMES[zoneId],
-    status,
-    statusLabel: displayZoneStatus(status),
-    counters: { ...counters },
-    artifacts,
-  };
-}
-
 function deriveZoneFromSites(
   zoneId: ZoneId,
   counters: ZoneMutationCounters,
   sites: SiteSnapshot[]
 ): ZoneSnapshot {
   const status = deriveSiteStatus(counters);
-  const artifacts = sites
-    .map((site) => preferredSiteArtifact(site.artifacts))
-    .filter((artifact): artifact is Artifact => Boolean(artifact))
-    .slice(0, 3);
+  // Capped by construction: at most three impact sites per zone and one
+  // artifact per site slot (helper, ghost, hazard, lantern).
+  const artifacts = sites.flatMap((site) => site.artifacts);
 
   return {
     id: zoneId,
@@ -454,26 +438,6 @@ function deriveZoneFromSites(
     counters: { ...counters },
     artifacts,
   };
-}
-
-function preferredSiteArtifact(artifacts: Artifact[]): Artifact | null {
-  return (
-    [...artifacts].sort(
-      (left, right) =>
-        right.count - left.count ||
-        artifactPriority(left.bucket) - artifactPriority(right.bucket)
-    )[0] ?? null
-  );
-}
-
-function artifactPriority(
-  bucket: FailureBucket | 'successful_clear'
-): number {
-  if (bucket === 'short_jump') return 0;
-  if (bucket === 'wall_bonk') return 1;
-  if (bucket === 'overjump') return 2;
-  if (bucket === 'helper_overuse') return 3;
-  return 4;
 }
 
 function deriveSiteStatus(counters: SiteMutationCounters): ZoneStatus {
@@ -580,48 +544,6 @@ function deriveRawStatus(counters: ZoneMutationCounters): ZoneStatus {
   return 'Quiet';
 }
 
-function deriveArtifacts(
-  zoneId: ZoneId,
-  counters: ZoneMutationCounters,
-  status: ZoneStatus,
-  impactSites: ImpactSite[]
-): Artifact[] {
-  const artifacts: Artifact[] = [];
-  const helpfulBucket =
-    counters.short_jump >= counters.wall_bonk ? 'short_jump' : 'wall_bonk';
-  const helpfulCount = counters[helpfulBucket];
-  if (helpfulCount >= 3) {
-    artifacts.push(
-      makeArtifact(zoneId, helpfulBucket, helpfulCount, status, impactSites)
-    );
-  }
-
-  const hazardBucket =
-    counters.overjump >= counters.helper_overuse
-      ? 'overjump'
-      : 'helper_overuse';
-  const hazardCount = counters[hazardBucket];
-  if (hazardCount >= 3) {
-    artifacts.push(
-      makeArtifact(zoneId, hazardBucket, hazardCount, status, impactSites)
-    );
-  }
-
-  if (counters.successfulClears >= 3) {
-    artifacts.push(
-      makeArtifact(
-        zoneId,
-        'successful_clear',
-        counters.successfulClears,
-        status,
-        impactSites
-      )
-    );
-  }
-
-  return artifacts.slice(0, 3);
-}
-
 export type EarnedHelper = { id: string; siteId: string; zoneId: ZoneId };
 
 // Every helper a site has earned today, rendered or not. Counters and clears
@@ -647,58 +569,85 @@ export function earnedHelpers(
   });
 }
 
+export type ArtifactSlotKind = 'helper' | 'ghost' | 'hazard' | 'lantern';
+
+export type SiteArtifactPlan = {
+  slot: ArtifactSlotKind;
+  bucket: FailureBucket | 'successful_clear';
+  type: ArtifactType;
+  count: number;
+  tier: ArtifactTier;
+};
+
+// What a site renders for a set of counters, one artifact per slot. Both the
+// snapshot and mutation receipts derive from this, so a receipt can only
+// announce a change the tower actually draws.
+export function planSiteArtifacts(
+  counters: SiteMutationCounters
+): SiteArtifactPlan[] {
+  const stabilized = deriveSiteStatus(counters) === 'Stabilized';
+  const plans: SiteArtifactPlan[] = [];
+  const add = (
+    slot: ArtifactSlotKind,
+    bucket: FailureBucket | 'successful_clear',
+    count: number,
+    type: ArtifactType
+  ) => {
+    if (count >= ARTIFACT_SPAWN_COUNT)
+      plans.push({ slot, bucket, type, count, tier: artifactTier(bucket, count) });
+  };
+  add(
+    'helper',
+    'short_jump',
+    counters.short_jump,
+    bucketArtifactType('short_jump', counters.short_jump, stabilized)
+  );
+  add('ghost', 'wall_bonk', counters.wall_bonk, 'ghost_platform');
+  // Overjumps and helper slips both curse the landing edge; the louder
+  // bucket owns the brick.
+  const hazard =
+    counters.overjump >= counters.helper_overuse ? 'overjump' : 'helper_overuse';
+  add(
+    'hazard',
+    hazard,
+    counters[hazard],
+    bucketArtifactType(hazard, counters[hazard], stabilized)
+  );
+  add('lantern', 'successful_clear', counters.successfulClears, 'lantern_trail');
+  return plans;
+}
+
+export const ARTIFACT_SPAWN_COUNT = 3;
+
+// Visible intensity: a remembered mark at 6, overgrown at 10 (the same
+// thresholds receipts announce). Clean clears stop at remembered.
+export function artifactTier(
+  bucket: FailureBucket | 'successful_clear',
+  count: number
+): ArtifactTier {
+  if (bucket !== 'successful_clear' && count >= 10) return 'saturated';
+  if (count >= 6) return 'remembered';
+  return 'base';
+}
+
+export function siteStatus(counters: SiteMutationCounters): ZoneStatus {
+  return deriveSiteStatus(counters);
+}
+
 function deriveSiteArtifacts(
   site: ImpactSite,
   counters: SiteMutationCounters,
-  status: ZoneStatus,
   seeded: SiteMutationCounters
 ): Artifact[] {
-  const artifacts: Artifact[] = [];
-  const helpfulBucket =
-    counters.short_jump >= counters.wall_bonk ? 'short_jump' : 'wall_bonk';
-  const helpfulCount = counters[helpfulBucket];
-  if (helpfulCount >= 3) {
-    artifacts.push(
-      makeSiteArtifact(
-        site,
-        helpfulBucket,
-        helpfulCount,
-        status,
-        seeded[helpfulBucket]
-      )
-    );
-  }
-
-  const hazardBucket =
-    counters.overjump >= counters.helper_overuse
-      ? 'overjump'
-      : 'helper_overuse';
-  const hazardCount = counters[hazardBucket];
-  if (hazardCount >= 3) {
-    artifacts.push(
-      makeSiteArtifact(
-        site,
-        hazardBucket,
-        hazardCount,
-        status,
-        seeded[hazardBucket]
-      )
-    );
-  }
-
-  if (counters.successfulClears >= 3) {
-    artifacts.push(
-      makeSiteArtifact(
-        site,
-        'successful_clear',
-        counters.successfulClears,
-        status,
-        seeded.successfulClears
-      )
-    );
-  }
-
-  return artifacts;
+  return planSiteArtifacts(counters).map((plan) =>
+    makeSiteArtifact(
+      site,
+      plan,
+      plan.bucket === 'successful_clear'
+        ? seeded.successfulClears
+        : seeded[plan.bucket]
+    )
+  );
 }
 
 function deriveResult(
@@ -759,32 +708,13 @@ function displayArtifactName(type: ArtifactType): string {
   return 'Lantern Trail';
 }
 
-function makeArtifact(
-  zoneId: ZoneId,
-  bucket: FailureBucket | 'successful_clear',
-  count: number,
-  status: ZoneStatus,
-  impactSites: ImpactSite[]
-): Artifact {
-  const site = impactSiteForBucket(impactSites, bucket);
-  const seededCount = Math.min(
-    count,
-    bucket === 'successful_clear'
-      ? seededCounters[zoneId].successfulClears
-      : seededCounters[zoneId][bucket]
-  );
-  return makeSiteArtifact(site, bucket, count, status, seededCount);
-}
-
 function makeSiteArtifact(
   site: ImpactSite,
-  bucket: FailureBucket | 'successful_clear',
-  count: number,
-  status: ZoneStatus,
+  plan: SiteArtifactPlan,
   seededCounter: number
 ): Artifact {
-  const slot = artifactSlot(site, bucket);
-  const stabilized = status === 'Stabilized';
+  const { bucket, count, type, tier } = plan;
+  const slot = artifactSlot(site, plan.slot);
   const seededCount = Math.min(count, seededCounter);
   const organicCount = Math.max(0, count - seededCount);
 
@@ -803,10 +733,10 @@ function makeSiteArtifact(
       count,
       seededCount,
       organicCount,
+      tier,
     };
   }
 
-  const type = bucketArtifactType(bucket, count, stabilized);
   return {
     ...slot,
     id: `${site.id}-${bucket}`,
@@ -821,31 +751,14 @@ function makeSiteArtifact(
     count,
     seededCount,
     organicCount,
+    tier,
   };
 }
 
-function impactSiteForBucket(
-  impactSites: ImpactSite[],
-  bucket: FailureBucket | 'successful_clear'
-): ImpactSite {
-  const index =
-    bucket === 'short_jump' || bucket === 'successful_clear'
-      ? 0
-      : bucket === 'wall_bonk'
-        ? 1
-        : 2;
-  const site = impactSites[index] ?? impactSites[0];
-  if (!site) throw new Error('Cannot derive an artifact without an impact site.');
-  return site;
-}
-
-function artifactSlot(
-  site: ImpactSite,
-  bucket: FailureBucket | 'successful_clear'
-): Rect {
-  if (bucket === 'short_jump') return site.helperSlot;
-  if (bucket === 'wall_bonk' || bucket === 'successful_clear')
-    return site.ghostSlot;
+function artifactSlot(site: ImpactSite, slot: ArtifactSlotKind): Rect {
+  if (slot === 'helper') return site.helperSlot;
+  if (slot === 'ghost') return site.ghostSlot;
+  if (slot === 'lantern') return site.lanternSlot;
   return site.hazardSlot;
 }
 

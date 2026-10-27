@@ -7,6 +7,7 @@ import {
   planFallMutation,
   planSummitMutation,
 } from './mutation-plans.js';
+import { ZERO_COUNTERS } from './mutation.js';
 
 const input = {
   eventId: 'fall_event_12345678',
@@ -15,7 +16,7 @@ const input = {
   siteId: 'impact-v1:start:ledge-orbital_scrapyard-1',
   siteName: 'First Gap',
   bucket: 'short_jump' as const,
-  counter: 2,
+  siteCounters: { ...ZERO_COUNTERS, short_jump: 2 },
   contributorBucketCount: 0,
   contributorDailyFallCount: 0,
 };
@@ -67,7 +68,7 @@ void test('clear and summit plans apply their independent contributor caps', () 
     revision: 40,
     siteId: input.siteId,
     siteName: input.siteName,
-    counter: 2,
+    siteCounters: { ...ZERO_COUNTERS, successfulClears: 2 },
     contributorClearCount: 3,
   });
   const summit = planSummitMutation({

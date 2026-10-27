@@ -92,8 +92,8 @@ async function handleApi(route, role) {
     const resolved = resolveFallObservation(parsed.value, currentSnapshot);
     assert.equal(resolved.ok, true, 'server resolved the real browser fall');
     const fall = resolved.value;
-    const counter = siteCounters[fall.siteId]?.[fall.bucket];
-    assert.equal(typeof counter, 'number');
+    const siteBefore = siteCounters[fall.siteId];
+    assert.equal(typeof siteBefore?.[fall.bucket], 'number');
     const plan = planFallMutation({
       eventId: body.eventId,
       boardId: identity.boardId,
@@ -101,7 +101,7 @@ async function handleApi(route, role) {
       siteId: fall.siteId,
       siteName: fall.siteName,
       bucket: fall.bucket,
-      counter,
+      siteCounters: { ...siteBefore },
       contributorBucketCount: role === 'bob' ? 3 : 0,
       contributorDailyFallCount: 0,
       existingReceipt,

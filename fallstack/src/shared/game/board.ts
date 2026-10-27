@@ -125,6 +125,11 @@ function remoteBucketLabel(receipt: MutationReceipt, count: number): string {
 }
 
 function remoteArtifactName(receipt: MutationReceipt): string {
+  if (receipt.artifactType === 'corpse_stack') return 'Corpse Stack';
+  if (receipt.artifactType === 'mercy_nail') return 'Mercy Nail';
+  if (receipt.artifactType === 'ghost_platform') return 'Ghost Platform';
+  if (receipt.artifactType === 'cursed_brick') return 'Cursed Brick';
+  if (receipt.artifactType === 'lantern_trail') return 'Lantern Trail';
   if (receipt.bucket === 'short_jump')
     return (receipt.counterAfter ?? 0) >= 6 ? 'Mercy Nail' : 'Corpse Stack';
   if (receipt.bucket === 'wall_bonk') return 'Ghost Platform';

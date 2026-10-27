@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
-import type { Artifact } from '../../shared/game/mutation.js';
-import { artifactVisualTier, RELIQUARY_COLORS } from './art-direction.js';
+import type { Artifact, ArtifactTier } from '../../shared/game/mutation.js';
+import { RELIQUARY_COLORS } from './art-direction.js';
 
 export type ArtifactLabelRenderer = (
   centerX: number,
@@ -18,7 +18,7 @@ export function renderReliquaryArtifact(
   }
 ): void {
   const c = RELIQUARY_COLORS;
-  const tier = artifactVisualTier(artifact.count);
+  const tier = artifact.tier;
 
   if (artifact.type === 'lantern_trail') {
     const lift = options.reducedMotion ? 0 : Math.sin(options.timeMs / 420) * 2;
@@ -176,7 +176,7 @@ export function renderReliquaryArtifact(
 function drawArtifactTierMarks(
   graphics: Phaser.GameObjects.Graphics,
   artifact: Artifact,
-  tier: ReturnType<typeof artifactVisualTier>
+  tier: ArtifactTier
 ): void {
   if (tier === 'base') return;
   const c = RELIQUARY_COLORS;

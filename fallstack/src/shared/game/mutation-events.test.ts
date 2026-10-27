@@ -148,8 +148,9 @@ void test('helper evidence wins over charge and resolves to the helper site', ()
   );
 });
 
-// First Gap with its helper outvoted: wall bonks now own the rendered slot.
-function displacedHelperSnapshot(shortJumps: number) {
+// A stabilized First Gap whose hazard slot held an overjump Corpse Stack
+// until louder helper slips turned it into a Mercy Nail.
+function displacedHelperSnapshot(overjumps: number) {
   const seeded = seededSnapshot();
   const firstGap = seeded.sites.find((site) => site.name === 'First Gap')!;
   return {
@@ -162,7 +163,12 @@ function displacedHelperSnapshot(shortJumps: number) {
         seeded.sites.map((site) => [
           site.id,
           site.id === firstGap.id
-            ? { ...site.counters, short_jump: shortJumps, wall_bonk: 7 }
+            ? {
+                ...site.counters,
+                overjump: overjumps,
+                helper_overuse: 5,
+                successfulClears: 6,
+              }
             : site.counters,
         ])
       ),
@@ -176,7 +182,7 @@ function displacedHelperSnapshot(shortJumps: number) {
 
 void test('a helper displaced by other climbers still resolves as a helper slip', () => {
   const { firstGap, snapshot } = displacedHelperSnapshot(4);
-  const helperId = `${firstGap.id}-short_jump`;
+  const helperId = `${firstGap.id}-overjump`;
   assert.equal(
     snapshot.zones
       .flatMap((zone) => zone.artifacts)
@@ -207,7 +213,7 @@ void test('a helper displaced by other climbers still resolves as a helper slip'
 void test('helper evidence the site never earned is rejected', () => {
   const { firstGap, snapshot } = displacedHelperSnapshot(2);
   for (const forged of [
-    `${firstGap.id}-short_jump`,
+    `${firstGap.id}-overjump`,
     `${firstGap.id}-wall_bonk`,
     'impact-v1:nowhere-short_jump',
   ]) {

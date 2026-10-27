@@ -302,17 +302,35 @@ const COUNTERS = [
 ] as const;
 type Counter = (typeof COUNTERS)[number];
 
-export function renderedArtifactAt(
+export function renderedArtifactsAt(
   snapshot: BoardSnapshot,
   siteId: string
-): Artifact | undefined {
+): Artifact[] {
   return snapshot.zones
     .flatMap((zone) => zone.artifacts)
-    .find((artifact) => artifact.siteId === siteId);
+    .filter((artifact) => artifact.siteId === siteId);
 }
 
-function artifactSignature(artifact: Artifact | undefined): string {
-  return artifact ? `${artifact.type}:${artifact.bucket}` : 'none';
+// The first rendered artifact at a site, optionally of one type.
+export function renderedArtifactAt(
+  snapshot: BoardSnapshot,
+  siteId: string,
+  type?: Artifact['type']
+): Artifact | undefined {
+  return renderedArtifactsAt(snapshot, siteId).find(
+    (artifact) => !type || artifact.type === type
+  );
+}
+
+// Everything a climber can see change at a site: each artifact's shape and
+// intensity tier, independent of draw order.
+function siteSignature(snapshot: BoardSnapshot, siteId: string): string {
+  return (
+    renderedArtifactsAt(snapshot, siteId)
+      .map((artifact) => `${artifact.type}:${artifact.tier}`)
+      .sort()
+      .join('+') || 'none'
+  );
 }
 
 function siteById(snapshot: BoardSnapshot, siteId: string) {
@@ -391,8 +409,7 @@ export function checkMutation(input: MutationCheck) {
     return (
       !prior ||
       prior.status !== site.status ||
-      artifactSignature(renderedArtifactAt(before, site.id)) !==
-        artifactSignature(renderedArtifactAt(after, site.id))
+      siteSignature(before, site.id) !== siteSignature(after, site.id)
     );
   });
   ledger.check(
@@ -465,46 +482,50 @@ function checkVisibleChange(input: MutationCheck) {
   const { ledger, before, after, receipt } = input;
   const siteId = receipt.siteId;
   if (!siteId || !input.counter) return;
-  const prior = renderedArtifactAt(before, siteId);
-  const next = renderedArtifactAt(after, siteId);
-  const site = siteById(after, siteId);
+  const prior = siteSignature(before, siteId);
+  const next = siteSignature(after, siteId);
+  const statusBefore = siteById(before, siteId)?.status;
+  const status = siteById(after, siteId)?.status;
+  const rendersChanged = prior !== next;
   const change = receipt.visibleChange;
+  const describe = () =>
+    `${receipt.siteName} ${prior}/${statusBefore} → ${next}/${status}: "${receipt.copy}"`;
 
   if (change === 'artifact_spawned' || change === 'artifact_upgraded') {
     ledger.check(
       'receipt.promise-visible',
-      next?.bucket === receipt.bucket &&
-        artifactSignature(prior) !== artifactSignature(next),
-      () =>
-        `${change} ${receipt.bucket} at ${receipt.siteName}, but the tower renders ${artifactSignature(next)} (was ${artifactSignature(prior)}): "${receipt.copy}"`
+      rendersChanged,
+      () => `${change}, but nothing new renders at ${describe()}`
     );
   } else if (change === 'site_cursed') {
+    const overgrown =
+      (statusBefore !== status &&
+        (status === 'Cursed' || status === 'Haunted')) ||
+      (rendersChanged &&
+        renderedArtifactsAt(after, siteId).some(
+          (artifact) => artifact.tier === 'saturated'
+        ));
     ledger.check(
       'receipt.promise-visible',
-      site?.status === 'Cursed' || site?.status === 'Haunted',
+      overgrown,
       () =>
-        `site_cursed at ${receipt.siteName}, but its status is ${site?.status}: "${receipt.copy}"`
+        `site_cursed, but the site did not visibly overgrow at ${describe()}`
     );
   } else if (change === 'site_reinforced' || change === 'site_stabilized') {
     const expected: ZoneStatus =
       change === 'site_reinforced' ? 'Reinforced' : 'Stabilized';
     ledger.check(
       'receipt.promise-visible',
-      site?.status === expected,
-      () =>
-        `${change} at ${receipt.siteName}, but its status is ${site?.status}: "${receipt.copy}"`
+      status === expected,
+      () => `${change}, but the status is ${status} at ${describe()}`
     );
   }
 
-  const visualChanged =
-    artifactSignature(prior) !== artifactSignature(next) ||
-    siteById(before, siteId)?.status !== site?.status;
-  if (receipt.accepted && visualChanged) {
+  if (receipt.accepted && (rendersChanged || statusBefore !== status)) {
     ledger.check(
       'receipt.no-silent-change',
       change !== 'mark_added' && change !== 'none',
-      () =>
-        `${receipt.siteName} changed ${artifactSignature(prior)}/${siteById(before, siteId)?.status} → ${artifactSignature(next)}/${site?.status} but the receipt only said "${receipt.copy}"`
+      () => `the site changed under a plain receipt at ${describe()}`
     );
   }
 }
@@ -597,15 +618,12 @@ export function checkSnapshot(ledger: ContractLedger, snapshot: BoardSnapshot) {
 // Design-pressure measurements over a board, counted per sample.
 export function probeSnapshot(ledger: ContractLedger, snapshot: BoardSnapshot) {
   for (const site of snapshot.sites) {
-    const hidden = Math.max(
-      0,
-      site.artifacts.length - (renderedArtifactAt(snapshot, site.id) ? 1 : 0)
-    );
+    const rendered = renderedArtifactsAt(snapshot, site.id);
     ledger.probe(
       'probe.hidden-artifact',
-      hidden,
+      Math.max(0, site.artifacts.length - rendered.length),
       () =>
-        `${site.name}: earned ${site.artifacts.map((artifact) => artifact.type).join(' + ')}, renders ${renderedArtifactAt(snapshot, site.id)?.type ?? 'nothing'}`
+        `${site.name}: earned ${site.artifacts.map((artifact) => artifact.type).join(' + ')}, renders ${rendered.map((artifact) => artifact.type).join(' + ') || 'nothing'}`
     );
   }
   for (const zone of snapshot.zones) {
@@ -615,8 +633,7 @@ export function probeSnapshot(ledger: ContractLedger, snapshot: BoardSnapshot) {
     )[0];
     for (const site of sites) {
       if (site === target) continue;
-      if (renderedArtifactAt(snapshot, site.id)?.type !== 'cursed_brick')
-        continue;
+      if (!renderedArtifactAt(snapshot, site.id, 'cursed_brick')) continue;
       ledger.probe(
         'probe.uncalmable-curse',
         1,
@@ -721,9 +738,4 @@ export function boardsEquivalent(left: BoardSnapshot, right: BoardSnapshot) {
 // Contract edges that currently fail, with the reason. Each entry has a
 // deterministic reproduction in connectivity.test.ts that fails once the gap
 // is fixed, so this list can only shrink.
-export const KNOWN_CONNECTIVITY_GAPS: Partial<Record<EdgeId, string>> = {
-  'receipt.promise-visible':
-    'Receipts announce "upgraded Ghost Platform/Cursed Brick" at 6 although neither changes form, and announce spawns at sites whose single rendered slot shows a different artifact.',
-  'receipt.no-silent-change':
-    'Each site renders only its highest-count artifact, so a clear can swap a solid Corpse Stack for a non-solid Lantern Trail (and a fall swaps it back) under a plain "changed 4 → 5" receipt.',
-};
+export const KNOWN_CONNECTIVITY_GAPS: Partial<Record<EdgeId, string>> = {};

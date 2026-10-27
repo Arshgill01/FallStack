@@ -345,8 +345,18 @@ void test('artifact derivation stays capped per zone under high traffic', () => 
     },
   });
 
+  // One artifact per site slot (helper, ghost, hazard, lantern).
   assert.equal(
-    snapshot.zones.every((zone) => zone.artifacts.length <= 3),
+    snapshot.sites.every((site) => {
+      const slots = snapshot.zones
+        .flatMap((zone) => zone.artifacts)
+        .filter((artifact) => artifact.siteId === site.id);
+      return slots.length <= 4 && new Set(slots.map((a) => a.bucket === 'overjump' || a.bucket === 'helper_overuse' ? 'hazard' : a.bucket)).size === slots.length;
+    }),
+    true
+  );
+  assert.equal(
+    snapshot.zones.every((zone) => zone.artifacts.length <= 12),
     true
   );
   assert.equal(

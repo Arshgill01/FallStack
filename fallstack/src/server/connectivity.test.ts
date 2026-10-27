@@ -7,6 +7,7 @@ import { createCommunity } from './testing/community.js';
 import {
   KNOWN_CONNECTIVITY_GAPS,
   renderedArtifactAt,
+  renderedArtifactsAt,
   type EdgeId,
 } from './testing/connectivity-contract.js';
 import {
@@ -189,24 +190,6 @@ void test('signed-out climbers share one fail-closed contribution budget', async
   assertContractHeld(run);
 });
 
-// Known gaps: each reproduction asserts the gap is still there. When a fix
-// lands, the matching test fails until the edge leaves KNOWN_CONNECTIVITY_GAPS
-// and the assertion flips to requiring the contract.
-function assertGap(run: ConnectivityRun, edge: EdgeId) {
-  const failures = run.ledger.violations.filter(
-    (violation) => violation.edge === edge
-  );
-  if (KNOWN_CONNECTIVITY_GAPS[edge]) {
-    assert.ok(
-      failures.length > 0,
-      `${edge} no longer reproduces; drop it from KNOWN_CONNECTIVITY_GAPS`
-    );
-  } else {
-    assert.deepEqual(failures, []);
-  }
-  assertContractHeld(run);
-}
-
 void test('a fall off a helper that other climbers displaced still counts as a helper slip', async () => {
   const run = new ConnectivityRun(createCommunity());
   const kai = run.join('kai', account('kai'));
@@ -214,21 +197,36 @@ void test('a fall off a helper that other climbers displaced still counts as a h
   await kai.init();
   for (const other of others) await other.init();
   const site = quietSite(kai.view!, 2);
+
+  // Overjumps curse the landing; clean clears stabilize it into a foothold.
   for (let fall = 0; fall < 3; fall += 1)
-    await run.fall(others[0]!, { siteId: site.id, bucket: 'short_jump' });
+    await run.fall(others[0]!, { siteId: site.id, bucket: 'overjump' });
+  await run.fall(others[1]!, { siteId: site.id, bucket: 'overjump' });
+  for (const other of others)
+    for (let clear = 0; clear < 3; clear += 1)
+      await run.clear(other, QUIET_ZONE);
   await run.sync(kai);
   const helper = kai.visibleHelperAt(site.id);
-  assert.equal(helper?.type, 'corpse_stack');
+  assert.equal(helper?.id, `${site.id}-overjump`);
 
-  // Wall bonks overtake the short jumps; the site now renders a ghost.
-  for (const other of others)
-    for (let fall = 0; fall < 2; fall += 1)
-      await run.fall(other, { siteId: site.id, bucket: 'wall_bonk' });
-  await run.sync(others[0]!);
+  // Louder helper slips take the hazard slot; the overjump foothold is gone.
+  for (const other of others) await run.sync(other);
+  for (let fall = 0; fall < 3; fall += 1)
+    await run.fall(others[0]!, { siteId: site.id, bucket: 'helper_overuse' });
+  for (let fall = 0; fall < 2; fall += 1)
+    await run.fall(others[1]!, { siteId: site.id, bucket: 'helper_overuse' });
+  const board = await run.community.authoritative();
   assert.equal(
-    renderedArtifactAt(others[0]!.view!, site.id)?.type,
-    'ghost_platform'
+    renderedArtifactAt(board, site.id, 'mercy_nail')?.bucket,
+    'helper_overuse'
   );
+  assert.equal(
+    renderedArtifactsAt(board, site.id).some(
+      (artifact) => artifact.id === helper!.id
+    ),
+    false
+  );
+
   const slip = await run.fall(kai, {
     siteId: site.id,
     bucket: 'helper_overuse',
@@ -243,7 +241,7 @@ void test('a fall off a helper that other climbers displaced still counts as a h
   assertContractHeld(run);
 });
 
-void test('gap: a sixth wall bonk announces a Ghost Platform upgrade that never renders', async () => {
+void test('a sixth wall bonk visibly marks the ghost it announces', async () => {
   const run = new ConnectivityRun(createCommunity());
   const climbers = ['nia', 'oz'].map((name) => run.join(name, account(name)));
   for (const climber of climbers) await climber.init();
@@ -253,25 +251,32 @@ void test('gap: a sixth wall bonk announces a Ghost Platform upgrade that never 
     for (let fall = 0; fall < 3; fall += 1)
       await run.fall(climber, { siteId: site.id, bucket: 'wall_bonk' });
 
-  assertGap(run, 'receipt.promise-visible');
+  const ghost = renderedArtifactAt(
+    await run.community.authoritative(),
+    site.id,
+    'ghost_platform'
+  );
+  assert.equal(ghost?.tier, 'remembered');
+  assertContractHeld(run);
 });
 
-void test('gap: clean clears silently swap First Gap\u2019s foothold for a lantern', async () => {
+void test('clean clears light a lantern beside First Gap\u2019s foothold and announce it', async () => {
   const run = new ConnectivityRun(createCommunity());
   const pia = run.join('pia', account('pia'));
   await pia.init();
   const firstGap = pia.view!.sites.find((site) => site.name === 'First Gap')!;
-  assert.equal(
-    renderedArtifactAt(pia.view!, firstGap.id)?.type,
-    'corpse_stack'
-  );
+  assert.ok(renderedArtifactAt(pia.view!, firstGap.id, 'corpse_stack'));
 
   for (let clear = 0; clear < 3; clear += 1)
     await run.clear(pia, 'orbital_scrapyard');
 
   const board = await run.community.authoritative();
-  assert.equal(renderedArtifactAt(board, firstGap.id)?.type, 'lantern_trail');
-  assertGap(run, 'receipt.no-silent-change');
+  assert.ok(
+    renderedArtifactAt(board, firstGap.id, 'corpse_stack'),
+    'foothold stays'
+  );
+  assert.ok(renderedArtifactAt(board, firstGap.id, 'lantern_trail'));
+  assertContractHeld(run);
 });
 
 void test('simulated community days honour the connectivity contract outside known gaps', async () => {

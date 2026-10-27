@@ -63,7 +63,6 @@ const snapshot = createBoardSnapshot(
 );
 const firstSite = snapshot.sites[0];
 assert.ok(firstSite);
-const counterBefore = firstSite.counters.short_jump;
 const receipts = {
   accepted: createMutationReceipt({
     eventId: 'fall:qa-accepted',
@@ -72,8 +71,7 @@ const receipts = {
     siteId: firstSite.id,
     siteName: firstSite.name,
     bucket: 'short_jump',
-    counterBefore,
-    counterAfter: counterBefore + 1,
+    siteBefore: firstSite.counters,
   }),
   capped: createMutationReceipt({
     eventId: 'fall:qa-capped',
@@ -82,8 +80,7 @@ const receipts = {
     siteId: firstSite.id,
     siteName: firstSite.name,
     bucket: 'short_jump',
-    counterBefore,
-    counterAfter: counterBefore,
+    siteBefore: firstSite.counters,
     rejection: 'capped',
   }),
   stale: createNonSiteMutationReceipt({

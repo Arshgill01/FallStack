@@ -29,7 +29,7 @@ import {
   checkObserverSync,
   checkSnapshot,
   probeSnapshot,
-  renderedArtifactAt,
+  renderedArtifactsAt,
   type EdgeId,
   type Violation,
 } from './connectivity-contract.js';
@@ -273,12 +273,14 @@ export class ConnectivityRun {
     ]
       .filter(([contributor]) => contributor !== player.contributorKey)
       .reduce((sum, [, count]) => sum + count, 0);
-    const rendered = renderedArtifactAt(before, siteId);
+    const rendered = renderedArtifactsAt(before, siteId)
+      .map((artifact) => artifact.type)
+      .join(' + ');
     this.ledger.probe(
       'probe.shared-encounter',
       others > 0 ? 1 : 0,
       () =>
-        `${player.name} met ${siteName(before, siteId)} carrying ${others} mutation(s) from others (renders ${rendered?.type ?? 'nothing'})`
+        `${player.name} met ${siteName(before, siteId)} carrying ${others} mutation(s) from others (renders ${rendered || 'nothing'})`
     );
   }
 
@@ -458,12 +460,14 @@ export async function runCommunitySimulation(
     }
 
     const site = sites[climber.siteIndex]!;
-    const rendered = renderedArtifactAt(view, site.id);
+    const rendered = renderedArtifactsAt(view, site.id).map(
+      (artifact) => artifact.type
+    );
     let success = climber.skill + (config.jumpEase ?? 0.12);
-    if (rendered?.type === 'corpse_stack' || rendered?.type === 'mercy_nail')
+    if (rendered.includes('corpse_stack') || rendered.includes('mercy_nail'))
       success += 0.08;
-    if (rendered?.type === 'ghost_platform') success += 0.04;
-    if (rendered?.type === 'cursed_brick') success -= 0.08;
+    if (rendered.includes('ghost_platform')) success += 0.04;
+    if (rendered.includes('cursed_brick')) success -= 0.08;
     if (site.status === 'Cursed') success -= 0.04;
     if (random() < Math.min(0.97, success)) {
       climber.siteIndex += 1;

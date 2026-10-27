@@ -298,21 +298,18 @@ async function recordFallMutationWith(
   const contributor = contributorToken(dependencies.context);
   const bucketField = `${contributor}|site|${input.fall.siteId}|${input.fall.bucket}`;
   const dailyField = `${contributor}|falls`;
-  const seeded = createSeededSiteCounters(input.state.dailySeed)[
-    input.fall.siteId
-  ]?.[input.fall.bucket];
 
   return runTransaction(dependencies.redis, keys, async (read) => {
     const [
       existing,
-      organicCounter,
+      siteCounters,
       bucketCount,
       dailyCount,
       acceptedEvents,
       currentHighestY,
     ] = await Promise.all([
       read.receipt(input.eventId),
-      read.number(keys.counters, counterField),
+      read.site(input.state.dailySeed, input.fall.siteId),
       read.number(keys.contributors, bucketField),
       read.number(keys.contributors, dailyField),
       read.number(keys.meta, 'acceptedEvents'),
@@ -329,7 +326,7 @@ async function recordFallMutationWith(
       siteId: input.fall.siteId,
       siteName: input.fall.siteName,
       bucket: input.fall.bucket,
-      counter: (seeded ?? 0) + organicCounter,
+      siteCounters,
       contributorBucketCount: bucketCount,
       contributorDailyFallCount: dailyCount,
       existingReceipt: existing,
@@ -374,20 +371,18 @@ async function recordClearMutationWith(
   const keys = boardKeys(input.state.board);
   const counterField = siteCounterField(input.siteId, 'successfulClears');
   const contributorField = `${contributorToken(dependencies.context)}|zone|${input.zoneId}|clears`;
-  const seeded = createSeededSiteCounters(input.state.dailySeed)[input.siteId]
-    ?.successfulClears;
 
   return runTransaction(dependencies.redis, keys, async (read) => {
     const [
       existing,
-      organicCounter,
+      siteCounters,
       contributorCount,
       acceptedEvents,
       currentHighestY,
       currentBestStabilizer,
     ] = await Promise.all([
       read.receipt(input.eventId),
-      read.number(keys.counters, counterField),
+      read.site(input.state.dailySeed, input.siteId),
       read.number(keys.contributors, contributorField),
       read.number(keys.meta, 'acceptedEvents'),
       read.number(
@@ -403,7 +398,7 @@ async function recordClearMutationWith(
       revision: SEEDED_TOTAL_FALLS + acceptedEvents,
       siteId: input.siteId,
       siteName: input.siteName,
-      counter: (seeded ?? 0) + organicCounter,
+      siteCounters,
       contributorClearCount: contributorCount,
       existingReceipt: existing,
     });
@@ -548,6 +543,8 @@ async function runTransaction(
 type TransactionReader = {
   number: (key: string, field: string, fallback?: number) => Promise<number>;
   receipt: (eventId: string) => Promise<MutationReceipt | null>;
+  // Seeded plus organic counters for one site, read under the watch.
+  site: (dailySeed: string, siteId: string) => Promise<SiteMutationCounters>;
 };
 
 function transactionReader(
@@ -559,6 +556,21 @@ function transactionReader(
       safeNumber(await redis.hGet(key, field), fallback),
     receipt: async (eventId) =>
       parseMutationReceipt(await redis.hGet(keys.events, eventId)),
+    site: async (dailySeed, siteId) => {
+      const seeded = {
+        ...ZERO_COUNTERS,
+        ...createSeededSiteCounters(dailySeed)[siteId],
+      };
+      const counters = Object.keys(ZERO_COUNTERS) as (keyof SiteMutationCounters)[];
+      const organic = await Promise.all(
+        counters.map(async (counter) =>
+          safeNumber(await redis.hGet(keys.counters, siteCounterField(siteId, counter)))
+        )
+      );
+      return Object.fromEntries(
+        counters.map((counter, index) => [counter, seeded[counter] + organic[index]!])
+      ) as SiteMutationCounters;
+    },
   };
 }
 

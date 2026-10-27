@@ -25,6 +25,8 @@ export type ImpactSite = {
   helperSlot: Rect;
   hazardSlot: Rect;
   ghostSlot: Rect;
+  // Non-solid: the clean-clear trail floats just above the landing ledge.
+  lanternSlot: Rect;
   baselinePathIds: [string, string];
 };
 
@@ -112,6 +114,12 @@ function makeImpactSite(
         zone.yBottom
       ),
       width: ghostWidth,
+      height: 14,
+    },
+    lanternSlot: {
+      x: Math.round(jump.landing.x),
+      y: Math.max(zone.yTop, Math.round(jump.landing.y - 28)),
+      width: Math.max(48, Math.round(jump.landing.width)),
       height: 14,
     },
     baselinePathIds: [jump.approach.id, jump.landing.id],

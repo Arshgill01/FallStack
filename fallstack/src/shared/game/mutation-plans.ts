@@ -1,4 +1,4 @@
-import type { FailureBucket } from './mutation.js';
+import type { FailureBucket, SiteMutationCounters } from './mutation.js';
 import {
   createClearMutationReceipt,
   createMutationReceipt,
@@ -24,7 +24,8 @@ export function planFallMutation(input: {
   siteId: string;
   siteName: string;
   bucket: FailureBucket;
-  counter: number;
+  // The site's full counters before this event, seeded plus organic.
+  siteCounters: SiteMutationCounters;
   contributorBucketCount: number;
   contributorDailyFallCount: number;
   existingReceipt?: MutationReceipt | null;
@@ -47,8 +48,7 @@ export function planFallMutation(input: {
     siteId: input.siteId,
     siteName: input.siteName,
     bucket: input.bucket,
-    counterBefore: input.counter,
-    counterAfter: input.counter + (capped ? 0 : 1),
+    siteBefore: input.siteCounters,
     rejection: capped ? 'capped' : null,
   });
 
@@ -65,7 +65,7 @@ export function planClearMutation(input: {
   revision: number;
   siteId: string;
   siteName: string;
-  counter: number;
+  siteCounters: SiteMutationCounters;
   contributorClearCount: number;
   existingReceipt?: MutationReceipt | null;
 }): MutationPlan {
@@ -78,8 +78,7 @@ export function planClearMutation(input: {
       revisionBefore: input.revision,
       siteId: input.siteId,
       siteName: input.siteName,
-      counterBefore: input.counter,
-      counterAfter: input.counter + (capped ? 0 : 1),
+      siteBefore: input.siteCounters,
       rejection: capped ? 'capped' : null,
     }),
     applyMutation: !capped,

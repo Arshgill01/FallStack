@@ -88,6 +88,7 @@ import { INITIAL_INPUT, resetSharedInput, type InputState } from './game/input';
 import {
   clampedArtifactLabelCenter,
   inWorldArtifactLabel,
+  labelledArtifactIds,
   PLAYER_CEREMONY_DURATION_MS,
   RELIQUARY_COLORS,
   playerVisualState,
@@ -1328,11 +1329,17 @@ class FallstackScene extends Phaser.Scene {
     // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
+    const labelled = labelledArtifactIds(
+      snapshot.zones.flatMap((zone) => zone.artifacts)
+    );
     for (const zone of snapshot.zones) {
       if (!activeZoneIds.has(zone.id)) continue;
       for (const artifact of zone.artifacts) {
         if (this.expiredArtifactIds.has(artifact.id)) continue;
-        this.drawArtifact(this.layoutArtifact(artifact));
+        this.drawArtifact(
+          this.layoutArtifact(artifact),
+          labelled.has(artifact.id)
+        );
       }
     }
   }
@@ -1342,13 +1349,15 @@ class FallstackScene extends Phaser.Scene {
     renderReliquaryPlatform(this.graphics, platform);
   }
 
-  private drawArtifact(artifact: Artifact) {
+  private drawArtifact(artifact: Artifact, labelled: boolean) {
     if (!this.graphics) return;
     renderReliquaryArtifact(this.graphics, artifact, {
       reducedMotion: this.reducedMotion,
       timeMs: this.time.now,
-      addLabel: (centerX, y) =>
-        this.addArtifactLabel(centerX, y, inWorldArtifactLabel(artifact)),
+      addLabel: (centerX, y) => {
+        if (labelled)
+          this.addArtifactLabel(centerX, y, inWorldArtifactLabel(artifact));
+      },
     });
   }
 
@@ -1589,10 +1598,11 @@ class FallstackScene extends Phaser.Scene {
     const slot =
       highlight.receipt.bucket === 'short_jump'
         ? site.helperSlot
-        : highlight.receipt.bucket === 'wall_bonk' ||
-            highlight.receipt.bucket === 'successful_clear'
+        : highlight.receipt.bucket === 'wall_bonk'
           ? site.ghostSlot
-          : site.hazardSlot;
+          : highlight.receipt.bucket === 'successful_clear'
+            ? site.lanternSlot
+            : site.hazardSlot;
     const x = this.layoutX(slot.x);
     const pulse = this.reducedMotion
       ? 0.92

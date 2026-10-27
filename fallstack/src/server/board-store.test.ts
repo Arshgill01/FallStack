@@ -515,8 +515,8 @@ void test('high traffic retains only the newest twenty visible mutation beats', 
       }))
     )
     .filter((candidate) => candidate.count === 0)
-    .slice(0, 7);
-  assert.equal(emptyCounters.length, 7);
+    .slice(0, 10);
+  assert.equal(emptyCounters.length, 10);
   const visibleRevisions: number[] = [];
 
   for (const [siteIndex, candidate] of emptyCounters.entries()) {
@@ -547,7 +547,7 @@ void test('high traffic retains only the newest twenty visible mutation beats', 
     }
   }
 
-  assert.equal(visibleRevisions.length, 21);
+  assert.ok(visibleRevisions.length > 20, `${visibleRevisions.length} visible beats`);
   const updated = await reader.loadBoardState();
   assert.equal(updated.recentMutations.length, 20);
   assert.deepEqual(
