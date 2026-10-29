@@ -5,3 +5,4 @@ dist
 .artifacts
 docs/qa/pipeline/
 docs/qa/connectivity/
+docs/qa/shared-presence/
