@@ -778,7 +778,14 @@ async function performJump(page, current, target, attempt, blockers) {
 
   const launchArrow = direction > 0 ? 'ArrowRight' : 'ArrowLeft';
   await neutralizePowerUps(page);
-  const heldMs = chargeDuration(current, target, attempt, wallBounce);
+  await waitForCalmAir(page);
+  const heldMs = chargeDuration(
+    current,
+    target,
+    attempt,
+    wallBounce,
+    await effectiveGravity(page)
+  );
   const launchCount = await eventCount(page, 'launch');
   const landCount = await eventCount(page, 'land');
   const chargeCount = await eventCount(page, 'charge');
@@ -1178,7 +1185,16 @@ function flightCorrection(state, target, launchDirection, attempt) {
   return positionError > 0 ? 'ArrowRight' : 'ArrowLeft';
 }
 
-function chargeDuration(current, target, attempt, wallBounce) {
+// World gravity plus the per-body offset biomes apply (Orrery Crown floats).
+async function effectiveGravity(page) {
+  return page.evaluate(() => {
+    const scene = window.__fallstackPipelineScene?.();
+    const world = scene?.physics?.world?.gravity?.y ?? 1850;
+    return world + (scene?.player?.body?.gravity?.y ?? 0);
+  });
+}
+
+function chargeDuration(current, target, attempt, wallBounce, gravity = 1850) {
   const verticalGap = current ? current.y - target.y : 110;
   const horizontalGap = current
     ? Math.abs(current.x + current.width / 2 - (target.x + target.width / 2))
@@ -1187,7 +1203,6 @@ function chargeDuration(current, target, attempt, wallBounce) {
     verticalGap > 100 || horizontalGap > 110
       ? Math.min(90, Math.max(0, attempt - 1) * 18)
       : 0;
-  const gravity = 1850;
   const minimumVelocityY = 650;
   const maximumVelocityY = 1050;
   const minimumChargeRatio = 0.42;
@@ -1233,6 +1248,21 @@ async function neutralizePowerUps(page) {
     dynamics.loadout.timedUntil = { spark: 0, updraft: 0 };
     dynamics.loadout.held = { second_wind: 0, thread: 0 };
   });
+}
+
+// In the Gale Loom a player reads the HUD gust call and leaps in calm air;
+// the bot does the same instead of steering mid-flight.
+async function waitForCalmAir(page) {
+  const deadline = performance.now() + 7_000;
+  while (performance.now() < deadline) {
+    const calm = await page.evaluate(() => {
+      const scene = window.__fallstackPipelineScene?.();
+      const gust = scene?.dynamics?.gust?.(scene.time.now, scene.currentZone);
+      return !gust || (gust.phase === 'calm' && gust.msRemaining > 1_400);
+    });
+    if (calm) return;
+    await page.waitForTimeout(100);
+  }
 }
 
 async function waitForGrounded(page, timeoutMs) {
