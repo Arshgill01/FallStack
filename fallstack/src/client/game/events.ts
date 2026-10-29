@@ -61,4 +61,8 @@ export type SoundId =
   | 'mutation'
   | 'checkpoint'
   | 'summit'
+  | 'pickup'
+  | 'spring'
+  | 'hop'
+  | 'thread'
   | 'ui';

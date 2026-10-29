@@ -1,5 +1,5 @@
 import { ZONE_IDS, type ZoneId } from './zones.js';
-import type { Platform } from './tower.js';
+import { WORLD_WIDTH, type Platform } from './tower.js';
 
 // Biomes are a presentation and feel layer over the existing zone ladder. Zone
 // IDs, tower geometry, and every mutation counter stay keyed exactly as before,
@@ -52,7 +52,7 @@ export const BIOMES: Record<BiomeId, BiomeDefinition> = {
     ordinal: 1,
     mechanic: 'vents',
     mechanicLabel: 'Bellows vents',
-    rule: 'Vents breathe on a beat. Jump through a puff and it lifts you.',
+    rule: 'Vents beside the ledges breathe on a beat. Step into a puff and it carries you up.',
     css: { ground: '#2A1410', accent: '#FF7A3D', accentInk: '#16111A' },
     palette: {
       sky: 0x2a1410,
@@ -193,6 +193,8 @@ export const VENT_TUNING = {
   liftAccelerationY: -2150,
 } as const;
 
+const VENT_EDGE_MARGIN = 34 + VENT_TUNING.width / 2;
+
 export type VentColumn = {
   id: string;
   zoneId: ZoneId;
@@ -215,18 +217,56 @@ export function ventColumnsForTower(
     if (lower.zoneId !== upper.zoneId) continue;
     // Every third jump breathes, offset per seed so towers differ day to day.
     if ((i + hashString(seed)) % 3 !== 0) continue;
+    // Vents sit off the outer lip of the lower ledge, on the side away from
+    // the next jump, so they never bend a straight leap. They work as an
+    // optional elevator, and they catch a slip off that lip.
     const lowerCenter = lower.x + lower.width / 2;
     const upperCenter = upper.x + upper.width / 2;
-    vents.push({
+    const towardNext = upperCenter >= lowerCenter ? 1 : -1;
+    const centerX = Math.round(
+      Math.max(
+        VENT_EDGE_MARGIN,
+        Math.min(
+          WORLD_WIDTH - VENT_EDGE_MARGIN,
+          lowerCenter - towardNext * (lower.width / 2 + VENT_TUNING.width / 2 + 6)
+        )
+      )
+    );
+    const vent: VentColumn = {
       id: `vent:${lower.id}`,
       zoneId: lower.zoneId,
-      centerX: Math.round((lowerCenter + upperCenter) / 2),
-      yTop: upper.y - 150,
-      yBottom: lower.y,
+      centerX,
+      // Capped at the upper ledge so the column never reaches into the
+      // airspace of the jump after this one.
+      yTop: upper.y + 10,
+      yBottom: lower.y + 80,
       phaseMs: hashString(`${seed}:${lower.id}`) % VENT_TUNING.periodMs,
-    });
+    };
+    if (!crossesAnyJumpCorridor(vent, route)) vents.push(vent);
   }
   return vents;
+}
+
+// Samples the straight centre-to-centre line of every route jump. A vent is
+// only kept when no line crosses it, so it can never bend a direct leap.
+export function crossesAnyJumpCorridor(
+  vent: Pick<VentColumn, 'centerX' | 'yTop' | 'yBottom'>,
+  route: Platform[]
+): boolean {
+  for (let i = 0; i < route.length - 1; i++) {
+    const lower = route[i]!;
+    const upper = route[i + 1]!;
+    const fromX = lower.x + lower.width / 2;
+    const toX = upper.x + upper.width / 2;
+    for (let t = 0.1; t <= 0.9; t += 0.05) {
+      const point = {
+        x: fromX + (toX - fromX) * t,
+        y: lower.y - 14 + (upper.y - lower.y) * t,
+      };
+      if (ventContains(vent, point)) return true;
+    }
+  }
+  return false;
 }
 
 export function ventStrengthAt(timeMs: number, vent: VentColumn): number {
@@ -238,7 +278,7 @@ export function ventStrengthAt(timeMs: number, vent: VentColumn): number {
 }
 
 export function ventContains(
-  vent: VentColumn,
+  vent: Pick<VentColumn, 'centerX' | 'yTop' | 'yBottom'>,
   point: { x: number; y: number }
 ): boolean {
   return (

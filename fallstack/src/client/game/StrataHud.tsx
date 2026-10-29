@@ -206,13 +206,7 @@ export function PowerUpIcon({ kind }: { kind: PowerUpKind }) {
           strokeLinejoin="round"
         />
       ) : kind === 'second_wind' ? (
-        <path
-          d="M11 26 Q20 12 29 26 M14 31 Q20 22 26 31"
-          fill="none"
-          stroke="#16111A"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
+        <path d="M13 19 L20 10 L27 19Z M13 30 L20 21 L27 30Z" fill="#16111A" />
       ) : (
         <>
           <rect x="13" y="12" width="14" height="16" rx="2" fill="none" stroke="#16111A" strokeWidth="3" />

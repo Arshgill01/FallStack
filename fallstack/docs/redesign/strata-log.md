@@ -43,7 +43,12 @@ event shapes.
 4. **Power-ups are solo and client-only.** They're placed deterministically
    from the daily seed (everyone sees the same detours) and never persisted.
    None is required to finish: the tower's existing default path is untouched.
-5. **Safety Thread suppresses the fall event.** A caught fall is not a fall, so
+5. **The climber picker doesn't auto-open.** AGENTS.md says the first viewport
+   must show the tower before any wall, so the picker opens from a climber chip
+   in the top bar. The chip is filled with the biome accent until you make a
+   first pick. The choice is saved in `localStorage['fallstack:climber']`
+   inside try/catch; it's only a per-device convenience.
+6. **Safety Thread suppresses the fall event.** A caught fall is not a fall, so
    no mutation is recorded. The cap is 1, or 2 for the Diver. Flag this for the
    mutation worktree if they want near-misses counted.
 
@@ -80,8 +85,74 @@ Pickups re-arm when you respawn.
 | Kite | Updraft | 60% longer |
 | Diver | Safety Thread | Holds 2 |
 
+## Scene hook points (`client/game-app.tsx`)
+
+When resolving merge conflicts, these are the only behavioural insertions:
+
+- **Fields:** `dynamics: ClimbDynamics`, `prevJumpInput`, `publishedLoadoutKey`, `publishedGustKey`.
+- **`create()`:** `dynamics.setTower` / `setClimber`, and a `fallstack:climber` listener.
+- **`update()`:**
+  - `airForces` → `body.setGravityY(extraGravityY)`. This replaces the old `setGravityY(0)`; an extra of 0 gives the old behaviour.
+  - Ground settle comes from `dynamics.groundSettle(zone)`. It's 0.32 everywhere except ice.
+  - In the air: wind acceleration, Updraft fall cap, and Second Wind on a fresh Jump press.
+  - Charge time goes through `dynamics.effectiveChargeMs` (Spark).
+  - Landing calls `onStrataLanding` (safe-ledge memory and springs).
+  - Every frame: `collectPickups`, `publishLoadout`, `publishGust`.
+- **`checkFall()`:** `tryThreadCatch(runEnding)` runs before the normal fall path.
+- **`respawn()`:** `dynamics.onRespawn`.
+- **`drawWorld()`:** uses `renderBiomeBackdrop` / `renderBiomePlatform` (it used `renderReliquary*` before).
+- **`drawDynamicElements()`:** `drawStrata(g)`, which draws vents, pickups and gust streaks.
+- **`drawPlayer()`:** `renderClimber(climberId)`. The Pilgrim still uses `renderReliquaryPlayer`.
+- **`drawChargeIntent()`:** the arc preview uses biome gravity.
+- **Shell:**
+  - Climber state, plus `climberSelectOpen` in `gameplayReady`.
+  - `data-biome` and biome CSS variables on `<main>`.
+  - The climber chip in the top bar.
+  - `<StrataHud>` inside `.tower-wrap`.
+  - The guide section "Five biomes, four pickups".
+  - Strata sound cues.
+
+New window events (all scene → shell, presentation only):
+
+| Event | Detail |
+| --- | --- |
+| `fallstack:climber` | `{climberId}` (shell → scene) |
+| `fallstack:loadout` | `{chips}` |
+| `fallstack:gust` | `{phase, direction}` or `null` |
+| `fallstack:pickup` | `{kind}` |
+| `fallstack:strata-moment` | `{kind: 'spring' \| 'hop' \| 'thread'}` |
+
+## Visual direction: "Strata"
+
+- An ink ground (`#16111A`), bone paper (`#F3EBDD`), hard 2–3px ink edges, and
+  offset block shadows instead of soft cards.
+- Display type is **Big Shoulders Display**, bundled locally (OFL, latin subset,
+  36 KB): tall condensed letterforms for a vertical game. Body type stays
+  Zen Maru Gothic.
+- HUD accents retint per biome through `--biome-accent`, set on `<main>` from
+  `currentZoneId`.
+- The top-bar hanko and Japanese reliquary styling are hidden, not deleted, so
+  `index.css` stays mergeable.
+- `redesign.css` is imported after `index.css` in `game.tsx` only. The splash page
+  is untouched.
+- Old art still on screen (owned by the mutation layer or left for a later pass):
+  artifact sprites (`renderArtifacts.ts`) and the swinging checkpoint lanterns.
+
 ## Progress log
 
 - **Checkpoint 1:** pure modules `biomes.ts`, `powerups.ts`, `climbers.ts`, plus
   16 tests. Design canvas published (direction board, climber select, HUD,
   moments).
+- **Checkpoint 2:** scene and shell wiring (`climb-dynamics.ts`,
+  `renderBiomes.ts`, `renderClimbers.ts`, `StrataHud.tsx`, `ClimberSelect.tsx`),
+  plus 7 client tests.
+- **Checkpoint 3:** `redesign.css` and the bundled display font, the guide section,
+  and sound cues (`pickup`, `spring`, `hop`, `thread`).
+  - QA pipeline, iPhone profile: 60 jumps from Kiln Hollow into Tidewell with
+    0 falls, 0 framing, visibility or notice failures, and 0 page errors.
+  - Visual probe fixes:
+    - The climber dialog sat under the HUD banners because of a z-index override; removed it.
+    - The zone tag is now a single line.
+    - Loadout chips moved to the bottom-left so they don't collide with the receipt banner.
+    - The biome-entry title is smaller.
+    - The Second Wind glyph was redrawn because it read as a frown.

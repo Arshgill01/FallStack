@@ -40,6 +40,10 @@ export const AUDIO_LEVELS = {
   checkpointLatch: 0.078,
   checkpointBell: 0.056,
   summitBell: 0.06,
+  pickupChime: 0.05,
+  springBoing: 0.055,
+  hopPuff: 0.05,
+  threadReel: 0.05,
 } as const;
 
 export const MUSIC_START_DELAY_MS = 80;
@@ -409,6 +413,10 @@ export class ProceduralSound {
     if (id === 'mutation') return this.mutationStamp();
     if (id === 'checkpoint') return this.checkpoint();
     if (id === 'summit') return this.summit();
+    if (id === 'pickup') return this.pickup();
+    if (id === 'spring') return this.spring();
+    if (id === 'hop') return this.hop();
+    if (id === 'thread') return this.thread();
     return this.noise(0.026, 1_600, 0.038, 'bandpass', 1.4);
   }
 
@@ -706,6 +714,36 @@ export class ProceduralSound {
         index * 145
       );
     }
+  }
+
+  // Strata layer: short, dry cues so pickups never compete with landings.
+  private pickup() {
+    this.tone(587.33, 0.09, AUDIO_LEVELS.pickupChime, 'triangle', 0.003);
+    this.scheduleGameplay(
+      () => this.tone(880, 0.12, AUDIO_LEVELS.pickupChime * 0.8, 'sine', 0.003),
+      70
+    );
+  }
+
+  private spring() {
+    this.tone(196, 0.16, AUDIO_LEVELS.springBoing, 'triangle', 0.002);
+    this.scheduleGameplay(
+      () => this.tone(293.66, 0.12, AUDIO_LEVELS.springBoing * 0.7, 'sine', 0.002),
+      55
+    );
+  }
+
+  private hop() {
+    this.noise(0.06, 2_200, AUDIO_LEVELS.hopPuff, 'bandpass', 1.2);
+    this.tone(440, 0.08, AUDIO_LEVELS.hopPuff * 0.6, 'sine', 0.002);
+  }
+
+  private thread() {
+    this.noise(0.12, 3_400, AUDIO_LEVELS.threadReel, 'highpass', 0.9);
+    this.scheduleGameplay(
+      () => this.tone(329.63, 0.2, AUDIO_LEVELS.threadReel, 'triangle', 0.004),
+      90
+    );
   }
 
   private ping(frequency: number, duration: number, volume: number) {

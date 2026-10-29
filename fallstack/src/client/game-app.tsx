@@ -142,6 +142,7 @@ import { ClimberSelect } from './game/ClimberSelect';
 import { StrataHud } from './game/StrataHud';
 import { biomeFeel, biomeForZone } from '../shared/game/biomes.js';
 import { CLIMBERS, type ClimberId } from '../shared/game/climbers.js';
+import { POWER_UP_KINDS, POWER_UPS } from '../shared/game/powerups.js';
 import { ClimberFigure } from './game/ClimberFigure';
 import {
   applyLocalClear,
@@ -2294,6 +2295,21 @@ export function GameApp() {
     );
   }, [climberId]);
 
+  // Strata cues ride the existing gameplay sound bus and its mute switch.
+  useEffect(() => {
+    const onPickup = () => soundRef.current?.play('pickup');
+    const onMoment = (event: Event) =>
+      soundRef.current?.play(
+        (event as CustomEvent<StrataMomentDetail>).detail.kind
+      );
+    window.addEventListener('fallstack:pickup', onPickup);
+    window.addEventListener('fallstack:strata-moment', onMoment);
+    return () => {
+      window.removeEventListener('fallstack:pickup', onPickup);
+      window.removeEventListener('fallstack:strata-moment', onMoment);
+    };
+  }, []);
+
   const confirmClimber = useCallback((next: ClimberId) => {
     storeClimber(next);
     setClimberId(next);
@@ -3604,6 +3620,26 @@ export function GameApp() {
                   <dt>Clean clears</dt>
                   <dd>The community is repairing this route.</dd>
                 </div>
+              </dl>
+            </section>
+
+            <section
+              className="guide-section"
+              aria-labelledby="strata-rules-title"
+            >
+              <h3 id="strata-rules-title">Five biomes, four pickups</h3>
+              <p>
+                Each biome moves differently: vents lift, bladders spring,
+                gusts push, ice skids, and the Crown floats. Pickups sit on
+                detours and reset when you respawn.
+              </p>
+              <dl className="guide-key">
+                {POWER_UP_KINDS.map((kind) => (
+                  <div key={kind}>
+                    <dt>{POWER_UPS[kind].name}</dt>
+                    <dd>{POWER_UPS[kind].hint}.</dd>
+                  </div>
+                ))}
               </dl>
             </section>
 

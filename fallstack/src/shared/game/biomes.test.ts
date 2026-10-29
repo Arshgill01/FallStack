@@ -14,6 +14,7 @@ import {
   GUST_TUNING,
   isBiomeEntryZone,
   LOW_GRAVITY_SCALE,
+  routeLedges,
   SLICK_GROUND_SETTLE,
   springLedgeIds,
   springReboundVelocityY,
@@ -62,6 +63,32 @@ void test('vents only breathe inside Kiln Hollow and between real jumps', () => 
       assert.ok(vent.centerX > 0 && vent.centerX < 480);
     }
     assert.deepEqual(vents, ventColumnsForTower(seed, tower.platforms));
+  }
+});
+
+void test('no jump corridor in the tower passes through a vent', () => {
+  for (const seed of SEEDS) {
+    const tower = generateDailyTower(seed);
+    const route = routeLedges(tower.platforms);
+    const vents = ventColumnsForTower(seed, tower.platforms);
+    for (let index = 0; index < route.length - 1; index++) {
+      const lower = route[index]!;
+      const upper = route[index + 1]!;
+      const fromX = lower.x + lower.width / 2;
+      const toX = upper.x + upper.width / 2;
+      for (let t = 0.15; t <= 0.85; t += 0.05) {
+        const point = {
+          x: fromX + (toX - fromX) * t,
+          y: lower.y - 14 + (upper.y - lower.y) * t,
+        };
+        for (const vent of vents)
+          assert.equal(
+            ventContains(vent, point),
+            false,
+            `${seed} ${lower.id}->${upper.id} crosses ${vent.id}`
+          );
+      }
+    }
   }
 });
 

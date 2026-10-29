@@ -387,10 +387,9 @@ export function drawPowerUpGlyph(
       .beginPath().moveTo(x - 5 * s, y).lineTo(x, y - 5 * s).lineTo(x + 5 * s, y).strokePath()
       .beginPath().moveTo(x - 5 * s, y + 5 * s).lineTo(x, y).lineTo(x + 5 * s, y + 5 * s).strokePath();
   } else if (kind === 'second_wind') {
-    g.lineStyle(2.4 * s, INK, 1);
-    g.beginPath().arc(x, y + 4 * s, 6 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
-    g.beginPath().arc(x, y + 8 * s, 4 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
-    g.fillStyle(INK, 1).fillCircle(x, y - 4 * s, 1.6 * s);
+    g.fillStyle(INK, 1)
+      .fillTriangle(x - 5 * s, y - 0.5 * s, x + 5 * s, y - 0.5 * s, x, y - 6.5 * s)
+      .fillTriangle(x - 5 * s, y + 6 * s, x + 5 * s, y + 6 * s, x, y);
   } else {
     g.lineStyle(2.2 * s, INK, 1).strokeRect(x - 4.5 * s, y - 5.5 * s, 9 * s, 11 * s);
     g.lineStyle(1.4 * s, INK, 1)
