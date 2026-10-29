@@ -2,9 +2,11 @@ import type { Rect } from '../../shared/game/impact-sites.js';
 import { slotKindForBucket } from '../../shared/game/forming.js';
 import {
   artifactSlot,
+  isFailureBucket,
   ZONE_NAMES,
   type SiteSnapshot,
 } from '../../shared/game/mutation.js';
+import type { SaveCredit } from '../../shared/game/mutation-receipts.js';
 import type { Platform } from '../../shared/game/tower.js';
 import { zoneById } from '../../shared/game/tower.js';
 import type { BoardEcho } from '../../shared/realtime.js';
@@ -65,6 +67,35 @@ export function echoStamp(echo: BoardEcho): string {
   if (echo.visibleChange === 'artifact_upgraded') return 'A fall deepened this';
   if (echo.visibleChange === 'site_cursed') return 'A fall overgrew this';
   return `+1 ${bucketWord(echo.bucket)}`;
+}
+
+// The climber's own clear lighting up the community artifacts it thanked.
+export function thanksEchoes(
+  saves: readonly SaveCredit[],
+  sites: readonly Pick<SiteSnapshot, 'id' | 'zoneId'>[]
+): { echo: BoardEcho; stamp: string }[] {
+  return saves.flatMap((save) => {
+    const site = sites.find((candidate) =>
+      save.artifactId.startsWith(`${candidate.id}-`)
+    );
+    const bucket = site ? save.artifactId.slice(site.id.length + 1) : '';
+    if (!site || !isFailureBucket(bucket)) return [];
+    return [
+      {
+        echo: {
+          kind: 'clear' as const,
+          key: '00000000',
+          zoneId: site.zoneId,
+          siteId: site.id,
+          bucket,
+          count: save.savesAfter,
+          visibleChange: 'mark_added' as const,
+          climber: null,
+        },
+        stamp: `Caught ${save.savesAfter} ${save.savesAfter === 1 ? 'climber' : 'climbers'}`,
+      },
+    ];
+  });
 }
 
 export function echoIsMajor(echo: BoardEcho): boolean {

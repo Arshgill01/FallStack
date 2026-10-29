@@ -84,3 +84,53 @@ void test('clear and summit plans apply their independent contributor caps', () 
   assert.equal(summit.applyMutation, true);
   assert.equal(summit.receipt.revisionAfter, 41);
 });
+
+const clearInput = {
+  eventId: 'clear_event_12345678',
+  boardId: 'board_2026_07_13_v1',
+  revision: 41,
+  siteId: 'impact-v1:start:ledge-orbital_scrapyard-1',
+  siteName: 'First Gap',
+  siteCounters: { ...ZERO_COUNTERS, short_jump: 4 },
+  contributorClearCount: 0,
+};
+const rescuer = {
+  artifactId: 'impact-v1:start:ledge-orbital_scrapyard-1-short_jump',
+  siteName: 'First Gap',
+  artifactType: 'corpse_stack' as const,
+  savesBefore: 3,
+  contributorSaveCount: 0,
+};
+
+void test('a clear thanks each rescuer the climber has not thanked today', () => {
+  const plan = planClearMutation({
+    ...clearInput,
+    rescuers: [
+      rescuer,
+      { ...rescuer, artifactId: 'already-thanked', contributorSaveCount: 1 },
+    ],
+  });
+  assert.deepEqual(plan.receipt.saves, [
+    {
+      artifactId: rescuer.artifactId,
+      siteName: 'First Gap',
+      artifactType: 'corpse_stack',
+      savesAfter: 4,
+    },
+  ]);
+  assert.match(
+    plan.receipt.copy,
+    /You thanked First Gap's Corpse Stack \(caught 4\)\.$/
+  );
+});
+
+void test('a capped clear thanks nobody', () => {
+  const plan = planClearMutation({
+    ...clearInput,
+    contributorClearCount: 3,
+    rescuers: [rescuer],
+  });
+  assert.equal(plan.receipt.accepted, false);
+  assert.deepEqual(plan.receipt.saves, []);
+  assert.doesNotMatch(plan.receipt.copy, /thanked/);
+});

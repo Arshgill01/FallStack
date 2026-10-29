@@ -8,11 +8,13 @@ import type {
   Artifact,
   FailureBucket,
   SiteSnapshot,
+  ZoneId,
   ZoneStatus,
 } from '../../shared/game/mutation.js';
 import {
   CONTRIBUTOR_BUCKET_CAP,
   CONTRIBUTOR_DAILY_FALL_CAP,
+  CONTRIBUTOR_SAVE_CAP,
   CONTRIBUTOR_SUMMIT_CAP,
   CONTRIBUTOR_ZONE_CLEAR_CAP,
 } from '../../shared/game/mutation-plans.js';
@@ -24,6 +26,7 @@ import {
 } from '../../shared/realtime.js';
 import { zoneById } from '../../shared/game/tower.js';
 import { bucketDrivesVisibleSlot, siteFace } from '../../shared/game/forming.js';
+import { resolveClearRescuers } from '../../shared/game/mutation-events.js';
 
 export type EdgeKind = 'contract' | 'probe';
 
@@ -147,6 +150,12 @@ export const CONNECTIVITY_EDGES = {
     from: 'zone clear',
     to: 'most-scarred site',
     rule: 'A clean clear reinforces the site in its zone with the most failures.',
+    kind: 'contract',
+  },
+  'clear.saves': {
+    from: 'clear after standing on community artifacts',
+    to: 'those artifacts’ saves',
+    rule: 'An accepted clear adds one save to each valid rescuer in its zone the climber has not thanked today, and to nothing else.',
     kind: 'contract',
   },
   'clear.resume': {
@@ -294,6 +303,19 @@ export class CapModel {
 
   recordSummit(contributor: string) {
     bump(this.#summits, contributor);
+  }
+
+  readonly #saves = new Map<string, number>();
+
+  wouldAcceptSave(contributor: string, artifactId: string) {
+    return (
+      (this.#saves.get(`${contributor}|${artifactId}`) ?? 0) <
+      CONTRIBUTOR_SAVE_CAP
+    );
+  }
+
+  recordSave(contributor: string, artifactId: string) {
+    bump(this.#saves, `${contributor}|${artifactId}`);
   }
 
   // Lets callers skip actions the climber could not contribute anyway.
@@ -724,6 +746,48 @@ export function probeSnapshot(ledger: ContractLedger, snapshot: BoardSnapshot) {
   }
 }
 
+export function checkSaves(input: {
+  ledger: ContractLedger;
+  before: BoardSnapshot;
+  after: BoardSnapshot;
+  receipt: MutationReceipt;
+  zoneId: ZoneId;
+  helperArtifactIds: string[];
+  caps: CapModel;
+  contributor: string;
+}) {
+  const { before, after, receipt } = input;
+  const expected = receipt.accepted
+    ? resolveClearRescuers(before, input.zoneId, input.helperArtifactIds)
+        .map((rescuer) => rescuer.id)
+        .filter((id) => input.caps.wouldAcceptSave(input.contributor, id))
+    : [];
+  for (const id of expected) input.caps.recordSave(input.contributor, id);
+  const problems: string[] = [];
+  const ids = new Set([
+    ...Object.keys(before.saves),
+    ...Object.keys(after.saves),
+  ]);
+  for (const id of ids) {
+    const delta = (after.saves[id] ?? 0) - (before.saves[id] ?? 0);
+    const want = expected.includes(id) ? 1 : 0;
+    if (delta !== want) problems.push(`${id} moved ${delta}, expected ${want}`);
+  }
+  const credited = (receipt.saves ?? []).map((save) => save.artifactId).sort();
+  if (credited.join() !== [...expected].sort().join())
+    problems.push(`receipt thanked ${credited.join() || 'nothing'}, expected ${expected.join() || 'nothing'}`);
+  for (const id of expected) {
+    const artifact = after.zones
+      .flatMap((zone) => zone.artifacts)
+      .find((candidate) => candidate.id === id);
+    if (artifact && artifact.saves !== after.saves[id])
+      problems.push(`${id} renders caught ${artifact.saves}, board has ${after.saves[id]}`);
+  }
+  input.ledger.check('clear.saves', problems.length === 0, () =>
+    problems.slice(0, 4).join('; ')
+  );
+}
+
 export function checkClearTarget(
   ledger: ContractLedger,
   before: BoardSnapshot,
@@ -797,6 +861,12 @@ export function boardsEquivalent(left: BoardSnapshot, right: BoardSnapshot) {
     left.totalSummits !== right.totalSummits
   )
     return false;
+  const saveIds = new Set([
+    ...Object.keys(left.saves),
+    ...Object.keys(right.saves),
+  ]);
+  for (const id of saveIds)
+    if ((left.saves[id] ?? 0) !== (right.saves[id] ?? 0)) return false;
   return left.sites.every((site) => {
     const other = siteById(right, site.id);
     return (

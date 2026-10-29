@@ -21,6 +21,7 @@ import {
   validateRecordSummitRequest,
 } from '../../shared/game/events.js';
 import {
+  resolveClearRescuers,
   resolveClearSite,
   resolveFallObservation,
 } from '../../shared/game/mutation-events.js';
@@ -239,6 +240,11 @@ export function createApi(dependencies: ApiDependencies): Hono {
         ...site,
         highestY: body.highestY,
         username: await currentDisplayUsername(dependencies),
+        rescuers: resolveClearRescuers(
+          boardSnapshotFor(state),
+          body.zoneId,
+          body.helperArtifactIds
+        ),
       });
       const resume =
         await dependencies.boardStore.advancePlayerCheckpoint(body.zoneId);

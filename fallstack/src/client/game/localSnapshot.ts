@@ -13,7 +13,11 @@ import {
   type ZoneId,
   type ZoneMutationCounters,
 } from '../../shared/game/mutation.js';
-import { resolveClearSite } from '../../shared/game/mutation-events.js';
+import {
+  resolveClearRescuers,
+  resolveClearSite,
+} from '../../shared/game/mutation-events.js';
+import { thanksCopy } from '../../shared/game/mutation-receipts.js';
 import { nextZoneId, ZONES } from '../../shared/game/tower.js';
 import type { ClearEventDetail, SummitEventDetail } from './events.js';
 
@@ -72,6 +76,7 @@ export function applyLocalFall(
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits,
     achievements,
+    saves: snapshot.saves,
   });
 }
 
@@ -89,6 +94,13 @@ export function applyLocalClear(
     (zone) => zone.id === detail.zoneId
   )?.counters.successfulClears;
   updateLocalBestStabilizer(achievements, (successfulClears ?? 0) + 1);
+  const saves = { ...snapshot.saves };
+  for (const rescuer of resolveClearRescuers(
+    snapshot,
+    detail.zoneId,
+    detail.helperArtifactIds
+  ))
+    saves[rescuer.id] = (saves[rescuer.id] ?? 0) + 1;
   return deriveSnapshot({
     dailySeed: snapshot.dailySeed,
     dateKey: snapshot.dateKey,
@@ -98,6 +110,7 @@ export function applyLocalClear(
     totalClears: snapshot.totalClears + 1,
     totalSummits: snapshot.totalSummits,
     achievements,
+    saves,
   });
 }
 
@@ -121,6 +134,7 @@ export function applyLocalSummit(
     totalClears: snapshot.totalClears,
     totalSummits: snapshot.totalSummits + 1,
     achievements,
+    saves: snapshot.saves,
   });
 }
 
@@ -155,12 +169,23 @@ export function localClearMessage(
   const nextZone = next
     ? snapshot.zones.find((candidate) => candidate.id === next)
     : undefined;
-  return clearFeedback({
+  const feedback = clearFeedback({
     zoneName: zone?.name ?? 'This zone',
     clears: zone?.counters.successfulClears ?? 1,
     counted: true,
     ...(nextZone ? { nextZoneStatus: nextZone.status } : {}),
   });
+  const thanks = thanksCopy(
+    resolveClearRescuers(snapshot, detail.zoneId, detail.helperArtifactIds).map(
+      (rescuer) => ({
+        artifactId: rescuer.id,
+        siteName: rescuer.siteName,
+        artifactType: rescuer.type,
+        savesAfter: snapshot.saves[rescuer.id] ?? 1,
+      })
+    )
+  );
+  return thanks ? `${feedback} ${thanks}` : feedback;
 }
 
 function countersFromSnapshot(

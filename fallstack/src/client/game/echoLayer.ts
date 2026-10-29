@@ -48,7 +48,12 @@ export class EchoLayer {
     }
   ) {}
 
-  show(echo: BoardEcho, placement: EchoPlacement, nowMs: number) {
+  show(
+    echo: BoardEcho,
+    placement: EchoPlacement,
+    nowMs: number,
+    stamp: string = echoStamp(echo)
+  ) {
     const view = this.scene.cameras.main.worldView;
     const direction = offscreenDirection(placement.slot.y, {
       top: view.y,
@@ -66,7 +71,7 @@ export class EchoLayer {
       echo,
       placement,
       startedAt: nowMs,
-      stamp: this.#stamp(echo, placement),
+      stamp: this.#stamp(echo, placement, stamp),
     });
   }
 
@@ -163,11 +168,11 @@ export class EchoLayer {
     }
   }
 
-  #stamp(echo: BoardEcho, placement: EchoPlacement) {
+  #stamp(echo: BoardEcho, placement: EchoPlacement, stamp: string) {
     const text = this.#text(echoIsMajor(echo));
     const slotX = this.options.layoutX(placement.slot.x);
     text
-      .setText(echoStamp(echo))
+      .setText(stamp)
       .setOrigin(0.5, 1)
       .setPosition(slotX + placement.slot.width / 2, placement.slot.y - 10);
     return text;

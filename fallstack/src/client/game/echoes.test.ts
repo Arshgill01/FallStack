@@ -15,6 +15,7 @@ import {
   offscreenDirection,
   offscreenMarkerCopy,
   OwnEchoKeys,
+  thanksEchoes,
 } from './echoes.js';
 
 const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
@@ -117,4 +118,30 @@ void test('own echo keys are remembered and bounded', () => {
   assert.equal(keys.has('00000001'), true);
   for (let index = 0; index < 70; index += 1) keys.add(index.toString(16).padStart(8, '0'));
   assert.equal(keys.has('00000001'), false);
+});
+
+void test('thanks light the artifacts a clear credited, with their new totals', () => {
+  const [thanks] = thanksEchoes(
+    [
+      {
+        artifactId: `${site.id}-short_jump`,
+        siteName: site.name,
+        artifactType: 'corpse_stack',
+        savesAfter: 1,
+      },
+      {
+        artifactId: 'impact-v1:nowhere-short_jump',
+        siteName: 'Nowhere',
+        artifactType: 'corpse_stack',
+        savesAfter: 9,
+      },
+    ],
+    snapshot.sites
+  );
+  assert.equal(thanks?.stamp, 'Caught 1 climber');
+  assert.deepEqual(
+    echoPlacement(thanks!.echo, snapshot.sites, platforms)?.slot,
+    site.helperSlot
+  );
+  assert.equal(thanksEchoes([], snapshot.sites).length, 0);
 });

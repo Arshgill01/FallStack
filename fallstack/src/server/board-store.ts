@@ -32,7 +32,10 @@ import {
   type MutationPlan,
 } from '../shared/game/mutation-plans.js';
 import { type MutationReceipt } from '../shared/game/mutation-receipts.js';
-import type { ResolvedFall } from '../shared/game/mutation-events.js';
+import type {
+  ClearRescuer,
+  ResolvedFall,
+} from '../shared/game/mutation-events.js';
 
 const DAILY_KEY_TTL_SECONDS = 60 * 60 * 72;
 const MAX_TRANSACTION_ATTEMPTS = 3;
@@ -98,6 +101,7 @@ export type StoredBoardState = {
   totalSummits: number;
   achievements: AchievementState;
   recentMutations: MutationBeat[];
+  saves: Record<string, number>;
 };
 
 export type StoredBoardRevision = {
@@ -154,12 +158,13 @@ async function loadBoardStateWith(
 ): Promise<StoredBoardState> {
   const { board, seed } = currentBoard(dependencies);
   const keys = boardKeys(board);
-  const [counterFields, metaFields, achievementFields, recentMembers] =
+  const [counterFields, metaFields, achievementFields, recentMembers, saveFields] =
     await Promise.all([
       dependencies.redis.hGetAll(keys.counters),
       dependencies.redis.hGetAll(keys.meta),
       dependencies.redis.hGetAll(keys.achievements),
       dependencies.redis.zRange(keys.recent, 0, -1),
+      dependencies.redis.hGetAll(keys.saves),
     ]);
   const siteCounters = createSeededSiteCounters(seed.dailySeed);
 
@@ -183,6 +188,11 @@ async function loadBoardStateWith(
       .map(({ member }) => parseMutationBeat(member))
       .filter((beat): beat is MutationBeat => Boolean(beat))
       .slice(-20),
+    saves: Object.fromEntries(
+      Object.entries(saveFields)
+        .map(([artifactId, value]) => [artifactId, safeNumber(value)] as const)
+        .filter(([, value]) => value > 0)
+    ),
   };
 }
 
@@ -277,6 +287,7 @@ export function boardSnapshotFor(state: StoredBoardState): BoardSnapshot {
       totalClears: state.totalClears,
       totalSummits: state.totalSummits,
       achievements: state.achievements,
+      saves: state.saves,
     }),
     state.revision,
     state.recentMutations
@@ -366,11 +377,15 @@ async function recordClearMutationWith(
     siteName: string;
     highestY: number;
     username: string;
+    rescuers?: ClearRescuer[];
   }
 ): Promise<MutationReceipt> {
   const keys = boardKeys(input.state.board);
   const counterField = siteCounterField(input.siteId, 'successfulClears');
-  const contributorField = `${contributorToken(dependencies.context)}|zone|${input.zoneId}|clears`;
+  const contributor = contributorToken(dependencies.context);
+  const contributorField = `${contributor}|zone|${input.zoneId}|clears`;
+  const rescuers = input.rescuers ?? [];
+  const saveField = (artifactId: string) => `${contributor}|saved|${artifactId}`;
 
   return runTransaction(dependencies.redis, keys, async (read) => {
     const [
@@ -392,6 +407,18 @@ async function recordClearMutationWith(
       ),
       read.number(keys.achievements, 'bestStabilizerClears'),
     ]);
+    const rescuerStates = await Promise.all(
+      rescuers.map(async (rescuer) => ({
+        artifactId: rescuer.id,
+        siteName: rescuer.siteName,
+        artifactType: rescuer.type,
+        savesBefore: await read.number(keys.saves, rescuer.id),
+        contributorSaveCount: await read.number(
+          keys.contributors,
+          saveField(rescuer.id)
+        ),
+      }))
+    );
     const plan = planClearMutation({
       eventId: input.eventId,
       boardId: input.state.board.boardId,
@@ -400,6 +427,7 @@ async function recordClearMutationWith(
       siteName: input.siteName,
       siteCounters,
       contributorClearCount: contributorCount,
+      rescuers: rescuerStates,
       existingReceipt: existing,
     });
 
@@ -412,6 +440,10 @@ async function recordClearMutationWith(
         await tx.hIncrBy(keys.contributors, contributorField, 1);
         await tx.hIncrBy(keys.meta, 'organicClears', 1);
         await tx.hIncrBy(keys.meta, 'acceptedEvents', 1);
+        for (const save of plan.receipt.saves ?? []) {
+          await tx.hIncrBy(keys.saves, save.artifactId, 1);
+          await tx.hIncrBy(keys.contributors, saveField(save.artifactId), 1);
+        }
         await queueHighestClimber(
           tx,
           keys,
@@ -518,7 +550,8 @@ async function runTransaction(
       keys.contributors,
       keys.events,
       keys.achievements,
-      keys.recent
+      keys.recent,
+      keys.saves
     );
     try {
       const work = await prepare(transactionReader(redis, keys));
@@ -645,6 +678,7 @@ function boardKeys(board: BoardIdentity) {
     achievements: `${prefix}:achievements`,
     recent: `${prefix}:recent-mutations`,
     progress: `${prefix}:player-progress`,
+    saves: `${prefix}:saves`,
   };
 }
 

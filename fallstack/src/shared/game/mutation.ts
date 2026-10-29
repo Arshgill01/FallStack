@@ -63,6 +63,8 @@ export type Artifact = {
   seededCount: number;
   organicCount: number;
   tier: ArtifactTier;
+  // Climbers who stood on this artifact and went on to clear the zone.
+  saves: number;
 };
 
 export type ArtifactTier = 'base' | 'remembered' | 'saturated';
@@ -95,6 +97,8 @@ export type GameSnapshot = {
   headline: string;
   sites: SiteSnapshot[];
   zones: ZoneSnapshot[];
+  // Saves per artifact id; only rescuers (footholds and ghosts) earn them.
+  saves: Record<string, number>;
   result: ResultSummary;
 };
 
@@ -245,7 +249,9 @@ export function deriveSnapshot(input: {
   totalClears: number;
   totalSummits: number;
   achievements: AchievementState;
+  saves?: Record<string, number>;
 }): GameSnapshot {
+  const saves = input.saves ?? {};
   const impactSites = deriveImpactSites(generateDailyTower(input.dailySeed));
   const siteCounters =
     input.siteCounters ??
@@ -261,7 +267,7 @@ export function deriveSnapshot(input: {
       counters,
       seededCounters: seeded,
       organicCounters: subtractCounters(counters, seeded),
-      artifacts: deriveSiteArtifacts(site, counters, seeded),
+      artifacts: deriveSiteArtifacts(site, counters, seeded, saves),
     };
   });
   const zoneCounters = aggregateSiteCounters(impactSites, siteCounters);
@@ -284,6 +290,7 @@ export function deriveSnapshot(input: {
     headline: `${SEEDED_TOTAL_FALLS} opening scars · ${Math.max(0, input.totalFalls - SEEDED_TOTAL_FALLS)} community ${Math.max(0, input.totalFalls - SEEDED_TOTAL_FALLS) === 1 ? 'fall' : 'falls'}`,
     sites,
     zones,
+    saves: { ...saves },
     result: deriveResult(
       input.dailySeed,
       zones,
@@ -569,6 +576,49 @@ export function earnedHelpers(
   });
 }
 
+export type EarnedRescuer = EarnedHelper & {
+  type: 'corpse_stack' | 'mercy_nail' | 'ghost_platform';
+};
+
+// Everything a climber can stand on that the community grew: footholds and
+// ghost ledges. Standing on one and then clearing the zone is a save.
+export function earnedRescuers(
+  sites: Pick<SiteSnapshot, 'id' | 'zoneId' | 'counters'>[]
+): EarnedRescuer[] {
+  return sites.flatMap((site) => {
+    const stabilized = deriveSiteStatus(site.counters) === 'Stabilized';
+    const rescuers: EarnedRescuer[] = [];
+    for (const bucket of FAILURE_BUCKETS) {
+      const count = site.counters[bucket];
+      if (count < ARTIFACT_SPAWN_COUNT) continue;
+      const type = bucketArtifactType(bucket, count, stabilized);
+      if (!isRescuerType(type)) continue;
+      rescuers.push({
+        id: `${site.id}-${bucket}`,
+        siteId: site.id,
+        zoneId: site.zoneId,
+        type,
+      });
+    }
+    return rescuers;
+  });
+}
+
+export function isRescuerType(
+  type: ArtifactType
+): type is EarnedRescuer['type'] {
+  return (
+    type === 'corpse_stack' ||
+    type === 'mercy_nail' ||
+    type === 'ghost_platform'
+  );
+}
+
+function withCaught(label: string, caught: number): string {
+  if (caught <= 0) return label;
+  return `${label.replace(/\.$/, '')} · caught ${caught}.`;
+}
+
 export type ArtifactSlotKind = 'helper' | 'ghost' | 'hazard' | 'lantern';
 
 export type SiteArtifactPlan = {
@@ -637,7 +687,8 @@ export function siteStatus(counters: SiteMutationCounters): ZoneStatus {
 function deriveSiteArtifacts(
   site: ImpactSite,
   counters: SiteMutationCounters,
-  seeded: SiteMutationCounters
+  seeded: SiteMutationCounters,
+  saves: Record<string, number>
 ): Artifact[] {
   return planSiteArtifacts(counters).map((plan) =>
     makeSiteArtifact(
@@ -645,7 +696,8 @@ function deriveSiteArtifacts(
       plan,
       plan.bucket === 'successful_clear'
         ? seeded.successfulClears
-        : seeded[plan.bucket]
+        : seeded[plan.bucket],
+      saves
     )
   );
 }
@@ -661,11 +713,12 @@ function deriveResult(
   const usefulArtifact =
     zones
       .flatMap((zone) => zone.artifacts.map((artifact) => ({ zone, artifact })))
-      .filter(
-        ({ artifact }) =>
-          artifact.type === 'corpse_stack' || artifact.type === 'mercy_nail'
-      )
-      .sort((a, b) => b.artifact.count - a.artifact.count)[0] ?? null;
+      .filter(({ artifact }) => isRescuerType(artifact.type))
+      .sort(
+        (a, b) =>
+          b.artifact.saves - a.artifact.saves ||
+          b.artifact.count - a.artifact.count
+      )[0] ?? null;
 
   return {
     towerName: 'The Cursed Stack',
@@ -675,7 +728,7 @@ function deriveResult(
     mostCursedZone: mostCursed.name,
     mostCursedStatus: mostCursed.statusLabel,
     mostUsefulArtifact: usefulArtifact
-      ? `${displayArtifactName(usefulArtifact.artifact.type)} · ${usefulArtifact.zone.name}`
+      ? `${displayArtifactName(usefulArtifact.artifact.type)} · ${usefulArtifact.zone.name}${usefulArtifact.artifact.saves > 0 ? ` · caught ${usefulArtifact.artifact.saves}` : ''}`
       : 'No foothold has earned trust yet.',
     bestStabilizerUsername: achievements.bestStabilizerUsername,
     highestClimberUsername: achievements.highestClimberUsername,
@@ -711,7 +764,8 @@ function displayArtifactName(type: ArtifactType): string {
 function makeSiteArtifact(
   site: ImpactSite,
   plan: SiteArtifactPlan,
-  seededCounter: number
+  seededCounter: number,
+  saves: Record<string, number>
 ): Artifact {
   const { bucket, count, type, tier } = plan;
   const slot = artifactSlot(site, plan.slot);
@@ -734,12 +788,15 @@ function makeSiteArtifact(
       seededCount,
       organicCount,
       tier,
+      saves: 0,
     };
   }
 
+  const id = `${site.id}-${bucket}`;
+  const caught = isRescuerType(type) ? (saves[id] ?? 0) : 0;
   return {
     ...slot,
-    id: `${site.id}-${bucket}`,
+    id,
     type,
     zoneId: site.zoneId,
     siteId: site.id,
@@ -747,11 +804,15 @@ function makeSiteArtifact(
     anchorPlatformId: site.anchorPlatformId,
     bucket,
     solid: type !== 'lantern_trail',
-    label: artifactLabel(type, bucket, count, seededCount, organicCount),
+    label: withCaught(
+      artifactLabel(type, bucket, count, seededCount, organicCount),
+      caught
+    ),
     count,
     seededCount,
     organicCount,
     tier,
+    saves: caught,
   };
 }
 

@@ -484,3 +484,37 @@ function zoneTopForTest(zoneId: ZoneId): number {
   const bottomUpIndex = ZONE_IDS.indexOf(zoneId);
   return (ZONE_IDS.length - bottomUpIndex - 1) * ZONE_HEIGHT;
 }
+
+void test('rescuers that caught climbers say so, and the result ranks by saves', () => {
+  const seed = createDailySeed(new Date('2026-07-08T00:00:00Z'));
+  const plain = deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+  });
+  const corpse = plain.zones
+    .flatMap((zone) => zone.artifacts)
+    .find((artifact) => artifact.type === 'corpse_stack')!;
+  const brick = plain.zones
+    .flatMap((zone) => zone.artifacts)
+    .find((artifact) => artifact.type === 'cursed_brick')!;
+  const saved = deriveSnapshot({
+    ...seed,
+    counters: createSeededCounters(),
+    totalFalls: 37,
+    totalClears: 0,
+    totalSummits: 0,
+    achievements: createInitialAchievements(),
+    saves: { [corpse.id]: 5, [brick.id]: 9 },
+  });
+  const artifacts = saved.zones.flatMap((zone) => zone.artifacts);
+  const savedCorpse = artifacts.find((artifact) => artifact.id === corpse.id)!;
+  assert.equal(savedCorpse.saves, 5);
+  assert.match(savedCorpse.label, / · caught 5\.$/);
+  // Bricks never catch anyone, whatever the map says.
+  assert.equal(artifacts.find((artifact) => artifact.id === brick.id)?.saves, 0);
+  assert.match(saved.result.mostUsefulArtifact, /caught 5$/);
+});

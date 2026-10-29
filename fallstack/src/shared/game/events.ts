@@ -16,6 +16,7 @@ const MAX_FUTURE_EVENT_MS = 10 * 60 * 1000;
 const MAX_PAST_EVENT_MS = 24 * 60 * 60 * 1000;
 const CLEAR_BOUNDARY_OVERSHOOT_Y = MOVEMENT_TUNING.reachableVertical;
 const SUMMIT_PROGRESS_MAX_Y = 300;
+export const MAX_CLEAR_HELPERS = 6;
 
 type ValidationResult<T> =
   | { ok: true; value: T }
@@ -84,6 +85,17 @@ export function validateRecordClearRequest(
   if (!isNumberInRange(body.highestY, 0, WORLD_HEIGHT)) return invalid('Invalid clear event.');
   if (!isPlausibleTimestamp(body.timestamp, now)) return invalid('Invalid clear event.');
 
+  // Older clients send no helpers; that is a clear without saves.
+  const helperArtifactIds = body.helperArtifactIds ?? [];
+  if (
+    !Array.isArray(helperArtifactIds) ||
+    helperArtifactIds.length > MAX_CLEAR_HELPERS ||
+    !helperArtifactIds.every(
+      (id) => typeof id === 'string' && validWorldId(id)
+    )
+  )
+    return invalid('Invalid clear event.');
+
   const zone = zoneById(body.zoneId);
   if (body.highestY > zone.yTop) return invalid('Invalid clear event.');
   if (body.highestY < zone.yTop - CLEAR_BOUNDARY_OVERSHOOT_Y)
@@ -98,6 +110,7 @@ export function validateRecordClearRequest(
       attemptId: body.attemptId,
       zoneId: body.zoneId,
       highestY: body.highestY,
+      helperArtifactIds: [...new Set(helperArtifactIds as string[])],
       timestamp: body.timestamp,
     },
   };

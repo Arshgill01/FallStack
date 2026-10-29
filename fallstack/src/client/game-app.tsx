@@ -24,6 +24,7 @@ import {
   BOTTOM_ZONE_ID,
   createDailySeed,
   earnedHelpers,
+  isRescuerType,
   type Artifact,
   type ArtifactTier,
   type GameSnapshot,
@@ -44,7 +45,11 @@ import {
   resolveFallObservation,
   scopeFallEvidenceToZone,
 } from '../shared/game/mutation-events.js';
-import type { MutationReceipt } from '../shared/game/mutation-receipts.js';
+import { MAX_CLEAR_HELPERS } from '../shared/game/events.js';
+import type {
+  MutationReceipt,
+  SaveCredit,
+} from '../shared/game/mutation-receipts.js';
 import type { BoardSnapshot, MutationBeat } from '../shared/game/board.js';
 import {
   echoKeyForEvent,
@@ -123,7 +128,7 @@ import {
 import { renderReliquaryArtifact } from './game/renderArtifacts';
 import { renderFormingMark, renderTierPressure } from './game/renderForming';
 import { EchoLayer } from './game/echoLayer';
-import { echoPlacement, OwnEchoKeys } from './game/echoes';
+import { echoPlacement, OwnEchoKeys, thanksEchoes } from './game/echoes';
 import {
   deriveFormingMarks,
   slotKindForBucket,
@@ -303,6 +308,9 @@ class FallstackScene extends Phaser.Scene {
     until: number;
   } | null = null;
   private expiredArtifactIds = new Set<string>();
+  // Community footholds and ghosts stood on since the last checkpoint; a
+  // clear thanks them.
+  private rescuersThisZone = new Set<string>();
   private echoLayer?: EchoLayer;
   private artifactTimers = new Map<
     string,
@@ -674,6 +682,16 @@ class FallstackScene extends Phaser.Scene {
     };
   }
 
+  // Your clear lighting the community footholds that carried you.
+  showThanks(saves: readonly SaveCredit[]) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.echoLayer) return;
+    for (const { echo, stamp } of thanksEchoes(saves, snapshot.sites)) {
+      const placement = echoPlacement(echo, snapshot.sites, this.towerPlatforms);
+      if (placement) this.echoLayer.show(echo, placement, this.time.now, stamp);
+    }
+  }
+
   // Another climber's event, the moment the server accepts it.
   showEcho(echo: BoardEcho) {
     const snapshot = window.fallstackSnapshot;
@@ -1019,6 +1037,12 @@ class FallstackScene extends Phaser.Scene {
     if (player.body.blocked.down || player.body.touching.down) {
       this.landingMaterial = artifactLandingMaterial(type);
       this.landingSurface = 'artifact';
+      if (
+        typeof artifactId === 'string' &&
+        artifactZoneId === this.respawnZone &&
+        isRescuerType(type)
+      )
+        this.rescuersThisZone.add(artifactId);
     }
     if (type === 'corpse_stack' || type === 'mercy_nail') {
       if (typeof artifactId === 'string') {
@@ -1133,12 +1157,18 @@ class FallstackScene extends Phaser.Scene {
     this.respawnZone = nextZone;
     this.checkpointed.add(clearedZone);
     this.showPlayerCeremony('checkpoint');
+    const helperArtifactIds = [...this.rescuersThisZone].slice(
+      0,
+      MAX_CLEAR_HELPERS
+    );
+    this.rescuersThisZone.clear();
     window.dispatchEvent(
       new CustomEvent<ClearEventDetail>('fallstack:clear', {
         detail: {
           attemptId: this.currentAttemptId,
           zoneId: clearedZone,
           highestY: this.highestY,
+          helperArtifactIds,
         },
       })
     );
@@ -1198,6 +1228,7 @@ class FallstackScene extends Phaser.Scene {
     this.publishedChargePercent = 0;
     this.lastHelperTouchAt = -Infinity;
     this.lastHelperArtifactId = null;
+    this.rescuersThisZone.clear();
     this.wallBonkPlatformId = null;
     this.lastLaunchDirection = 0;
     this.pendingImpactSpeed = 0;
@@ -2971,6 +3002,7 @@ export function GameApp() {
         setResume(data.resume);
         applyBoardSnapshot(data.snapshot);
         showCheckpoint(data.message, '');
+        sceneRef.current?.showThanks(data.receipt.saves ?? []);
       } catch (error) {
         console.error('record-clear failed', error);
         if (showApiErrorReceipt(error)) return;

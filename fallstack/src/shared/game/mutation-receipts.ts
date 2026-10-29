@@ -42,7 +42,16 @@ export type MutationReceipt = {
   // before receipts were derived from the rendered site.
   artifactType?: ArtifactType | null;
   artifactTier?: ArtifactTier | null;
+  // Community artifacts this clear thanked, with their new totals.
+  saves?: SaveCredit[];
   copy: string;
+};
+
+export type SaveCredit = {
+  artifactId: string;
+  siteName: string;
+  artifactType: ArtifactType;
+  savesAfter: number;
 };
 
 type FailureReceiptInput = {
@@ -57,7 +66,9 @@ type FailureReceiptInput = {
   rejection?: MutationRejection | null;
 };
 
-type ClearReceiptInput = Omit<FailureReceiptInput, 'bucket'>;
+type ClearReceiptInput = Omit<FailureReceiptInput, 'bucket'> & {
+  saves?: SaveCredit[];
+};
 
 type CounterTransition = {
   counterBefore: number;
@@ -212,8 +223,26 @@ export function createClearMutationReceipt(
     visibleChange: moved.change,
     artifactType: moved.artifactType,
     artifactTier: moved.artifactTier,
-    copy: clearReceiptCopy(input, moved, accepted, threshold),
+    saves: accepted ? (input.saves ?? []) : [],
+    copy: withThanks(
+      clearReceiptCopy(input, moved, accepted, threshold),
+      accepted ? (input.saves ?? []) : []
+    ),
   };
+}
+
+// The other half of a fall: the climber this foothold held up says so.
+export function thanksCopy(saves: readonly SaveCredit[]): string {
+  const [first] = saves;
+  if (!first) return '';
+  if (saves.length === 1)
+    return `You thanked ${first.siteName}'s ${artifactName(first.artifactType)} (caught ${first.savesAfter}).`;
+  return `You thanked ${saves.length} community footholds.`;
+}
+
+function withThanks(copy: string, saves: readonly SaveCredit[]): string {
+  const thanks = thanksCopy(saves);
+  return thanks ? `${copy} ${thanks}` : copy;
 }
 
 export function createNonSiteMutationReceipt(

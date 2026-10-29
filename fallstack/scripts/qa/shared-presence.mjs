@@ -270,6 +270,59 @@ try {
   assert.match(offscreen.markers.above ?? '', /↑/);
   report.steps.push({ step: 'offscreen', alice: offscreen });
 
+  // Saves: dave stood on First Gap's community foothold and cleared the
+  // zone. Alice's open tower learns that foothold caught a climber.
+  const dave = appFor('dave');
+  const firstGap = await alice.evaluate(() => {
+    const snapshot = window.fallstackSnapshot;
+    const corpse = snapshot.zones[0].artifacts.find(
+      (artifact) => artifact.type === 'corpse_stack' && artifact.siteName === 'First Gap'
+    );
+    return {
+      boardId: snapshot.boardId,
+      revision: snapshot.revision,
+      corpseId: corpse.id,
+    };
+  });
+  const clearResponse = await dave.fetch(
+    new Request('http://local/api/record-clear', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId: 'clear:dave_lower_ruins_1:orbital_scrapyard',
+        boardId: firstGap.boardId,
+        boardRevision: firstGap.revision,
+        attemptId: 'dave_lower_ruins_1',
+        zoneId: 'orbital_scrapyard',
+        highestY: (await alice.evaluate(() => window.__fallstackFindScene().towerPlatforms
+          .filter((platform) => platform.zoneId === 'orbital_scrapyard')
+          .reduce((top, platform) => Math.min(top, platform.y), Infinity))) - 30,
+        helperArtifactIds: [firstGap.corpseId],
+        timestamp: Date.now(),
+      }),
+    })
+  );
+  const clearBody = await clearResponse.json();
+  assert.equal(clearResponse.status, 200, JSON.stringify(clearBody));
+  assert.equal(clearBody.receipt.saves?.[0]?.savesAfter, 1, clearBody.message);
+  assert.match(clearBody.message, /You thanked First Gap's Corpse Stack \(caught 1\)/);
+  assert.equal(broadcasts.at(-1).message.echo.climber, 'u/dave');
+  await alice.waitForTimeout(250);
+  await shot(alice, '04-clear-echo-named');
+  await alice.waitForFunction(
+    (id) =>
+      window.fallstackSnapshot.zones[0].artifacts.find((artifact) => artifact.id === id)
+        ?.saves === 1,
+    firstGap.corpseId,
+    { timeout: 5_000 }
+  );
+  const caught = await alice.evaluate(
+    (id) => window.fallstackSnapshot.zones[0].artifacts.find((artifact) => artifact.id === id).label,
+    firstGap.corpseId
+  );
+  assert.match(caught, /caught 1\.$/);
+  report.steps.push({ step: 'saves', receipt: clearBody.message, aliceLabel: caught });
+
   report.broadcasts = broadcasts.length;
   report.errors = errors;
   await writeFile(

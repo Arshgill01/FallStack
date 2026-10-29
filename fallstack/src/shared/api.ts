@@ -53,6 +53,8 @@ export type RecordClearRequest = {
   attemptId: string;
   zoneId: ZoneId;
   highestY: number;
+  // Community footholds and ghosts the climber stood on in this zone.
+  helperArtifactIds: string[];
   timestamp: number;
 };
 

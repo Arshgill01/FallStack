@@ -9,6 +9,10 @@ import {
 } from '../shared/realtime.js';
 import { BOTTOM_ZONE_ID, ZONE_IDS } from '../shared/game/mutation.js';
 import { zoneById } from '../shared/game/tower.js';
+import {
+  resolveClearRescuers,
+  resolveClearSite,
+} from '../shared/game/mutation-events.js';
 
 void test('concurrent climbers at one site preserve both mutations and ordered revisions', async () => {
   const redis = new InMemoryRedis();
@@ -759,3 +763,53 @@ function contextFor(userId: string) {
     userId,
   };
 }
+
+void test('clears thank community rescuers once per climber, across replays', async () => {
+  const redis = new InMemoryRedis();
+  const now = () => new Date('2026-07-13T12:00:00.000Z');
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+  const initial = await alice.loadBoardState();
+  const snapshot = boardSnapshotFor(initial);
+  const corpse = snapshot.zones[0]!.artifacts.find(
+    (artifact) => artifact.type === 'corpse_stack'
+  )!;
+  const rescuers = resolveClearRescuers(snapshot, ZONE_IDS[0], [
+    corpse.id,
+    'impact-v1:forged-short_jump',
+  ]);
+  assert.deepEqual(
+    rescuers.map((rescuer) => rescuer.id),
+    [corpse.id]
+  );
+  const clear = (store: typeof alice, eventId: string) =>
+    store.loadBoardState().then((state) => {
+      const site = resolveClearSite(boardSnapshotFor(state), ZONE_IDS[0])!;
+      return store.recordClearMutation({
+        state,
+        eventId,
+        zoneId: ZONE_IDS[0],
+        ...site,
+        highestY: zoneById(ZONE_IDS[0]).yTop,
+        username: 'u/climber',
+        rescuers,
+      });
+    });
+
+  const first = await clear(alice, 'clear-alice-1');
+  assert.deepEqual(first.saves?.map((save) => save.savesAfter), [1]);
+  const again = await clear(alice, 'clear-alice-2');
+  assert.deepEqual(again.saves, [], 'alice already thanked it today');
+  const replay = await clear(alice, 'clear-alice-1');
+  assert.deepEqual(replay, first, 'a replay returns the stored receipt');
+  const fromBob = await clear(bob, 'clear-bob-1');
+  assert.deepEqual(fromBob.saves?.map((save) => save.savesAfter), [2]);
+
+  const board = boardSnapshotFor(await alice.loadBoardState());
+  const rendered = board.zones[0]!.artifacts.find(
+    (artifact) => artifact.id === corpse.id
+  );
+  assert.deepEqual(board.saves, { [corpse.id]: 2 });
+  assert.equal(rendered?.saves, 2);
+  assert.match(rendered?.label ?? '', /caught 2\.$/);
+});

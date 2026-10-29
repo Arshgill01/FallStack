@@ -269,7 +269,10 @@ export class Player {
     return this.submit<RecordFallResponse>('/record-fall', request);
   }
 
-  async clear(zoneId: ZoneId): Promise<ApiCall<RecordClearResponse>> {
+  async clear(
+    zoneId: ZoneId,
+    helperArtifactIds: string[] = []
+  ): Promise<ApiCall<RecordClearResponse>> {
     const view = this.requireView();
     const attemptId = this.nextId('attempt');
     const request: RecordClearRequest = {
@@ -279,6 +282,7 @@ export class Player {
       attemptId,
       zoneId,
       highestY: zoneById(zoneId).yTop - 12,
+      helperArtifactIds,
       timestamp: this.nowMs(),
     };
     const call = await this.submit<RecordClearResponse>(
