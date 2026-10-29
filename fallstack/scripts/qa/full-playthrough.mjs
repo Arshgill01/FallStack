@@ -779,13 +779,7 @@ async function performJump(page, current, target, attempt, blockers) {
   const launchArrow = direction > 0 ? 'ArrowRight' : 'ArrowLeft';
   await neutralizePowerUps(page);
   await waitForCalmAir(page);
-  const heldMs = chargeDuration(
-    current,
-    target,
-    attempt,
-    wallBounce,
-    await effectiveGravity(page)
-  );
+  const heldMs = chargeDuration(current, target, attempt, wallBounce);
   const launchCount = await eventCount(page, 'launch');
   const landCount = await eventCount(page, 'land');
   const chargeCount = await eventCount(page, 'charge');
@@ -1185,16 +1179,7 @@ function flightCorrection(state, target, launchDirection, attempt) {
   return positionError > 0 ? 'ArrowRight' : 'ArrowLeft';
 }
 
-// World gravity plus the per-body offset biomes apply (Orrery Crown floats).
-async function effectiveGravity(page) {
-  return page.evaluate(() => {
-    const scene = window.__fallstackPipelineScene?.();
-    const world = scene?.physics?.world?.gravity?.y ?? 1850;
-    return world + (scene?.player?.body?.gravity?.y ?? 0);
-  });
-}
-
-function chargeDuration(current, target, attempt, wallBounce, gravity = 1850) {
+function chargeDuration(current, target, attempt, wallBounce) {
   const verticalGap = current ? current.y - target.y : 110;
   const horizontalGap = current
     ? Math.abs(current.x + current.width / 2 - (target.x + target.width / 2))
@@ -1203,6 +1188,7 @@ function chargeDuration(current, target, attempt, wallBounce, gravity = 1850) {
     verticalGap > 100 || horizontalGap > 110
       ? Math.min(90, Math.max(0, attempt - 1) * 18)
       : 0;
+  const gravity = 1850;
   const minimumVelocityY = 650;
   const maximumVelocityY = 1050;
   const minimumChargeRatio = 0.42;

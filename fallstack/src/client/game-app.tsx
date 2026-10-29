@@ -601,7 +601,10 @@ class FallstackScene extends Phaser.Scene {
       const percent = chargeRatioForHeldMs(held);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
-        const launch = launchVelocityForChargeRatio(percent);
+        const launch = this.dynamics.scaleLaunch(
+          launchVelocityForChargeRatio(percent),
+          this.currentZone
+        );
         this.pendingImpactSpeed = 0;
         this.pendingWallImpactSpeed = 0;
         this.facing = this.chargeDirection;
@@ -1759,7 +1762,10 @@ class FallstackScene extends Phaser.Scene {
     if (!this.charging || !this.player) return;
     const player = this.player;
     const chargeRatio = chargeRatioForHeldMs(this.chargeTime);
-    const launch = launchVelocityForChargeRatio(chargeRatio);
+    const launch = this.dynamics.scaleLaunch(
+      launchVelocityForChargeRatio(chargeRatio),
+      this.currentZone
+    );
     const direction = this.chargeDirection;
     const points = Array.from({ length: 5 }, (_, index) => {
       const seconds = (index + 1) * 0.045;

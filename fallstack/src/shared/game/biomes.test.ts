@@ -148,6 +148,21 @@ void test('gusts are telegraphed in the same direction before they push', () => 
   }
 });
 
+void test('low gravity floats longer without changing any arc', () => {
+  const crown = zonesForBiome('orrery_crown')[0]!;
+  const feel = biomeFeel(crown);
+  const g = 1850;
+  for (const [vx, vy] of [[210, 650], [460, 1050], [335, 850]] as const) {
+    const base = { apex: (vy * vy) / (2 * g), reach: (vx * 2 * vy) / g };
+    const sx = vx * feel.launchScale;
+    const sy = vy * feel.launchScale;
+    const sg = g * feel.gravityScale;
+    assert.ok(Math.abs((sy * sy) / (2 * sg) - base.apex) < 1e-9);
+    assert.ok(Math.abs((sx * 2 * sy) / sg - base.reach) < 1e-9);
+    assert.ok((2 * sy) / sg > (2 * vy) / g, 'hang time grows');
+  }
+});
+
 void test('biome feel only bends gravity in the Crown and friction in the Archive', () => {
   for (const zoneId of ZONE_IDS) {
     const feel = biomeFeel(zoneId);

@@ -60,7 +60,7 @@ event shapes.
 | 2 | Tidewell | 4–5 | Bladder springs | Every other ledge is a spring. Landing at 430 px/s or faster rebounds you straight up. Holding Jump on touchdown plants you instead. |
 | 3 | Gale Loom | 6–8 | Crosswind gusts | A 5.2 s cycle: calm, then a 0.7 s warning (HUD shows the direction), then a 1.5 s gust of up to 110 px/s² sideways. Only airborne players are pushed. |
 | 4 | Rime Archive | 9–10 | Slick ledges | The ground settle factor drops from 0.32 to 0.12, so landings skid. Charging zeroes x velocity, which stops the skid. |
-| 5 | Orrery Crown | 11–12 | Low gravity | Gravity × 0.8. |
+| 5 | Orrery Crown | 11–12 | Low gravity | Gravity × 0.8 and launch velocity × √0.8. Apex height and landing distance are unchanged; hang time grows about 12%, and air steering gets that extra time. |
 
 ## Power-ups
 
@@ -156,3 +156,41 @@ New window events (all scene → shell, presentation only):
     - Loadout chips moved to the bottom-left so they don't collide with the receipt banner.
     - The biome-entry title is smaller.
     - The Second Wind glyph was redrawn because it read as a frown.
+- **Checkpoint 4: full-tower verification.**
+  - Baseline: the untouched `1fa2e09`, full laptop climb, reached the summit in
+    152 jumps with 0 falls.
+  - The strata build first stalled in three places. Each fix is below.
+    - **Vents in jump corridors** wrecked aimed leaps. Vents now sit off the
+      outer lip, and any vent a route corridor crosses is dropped. There's a
+      test for this.
+    - **Gale Loom gusts.** Softened to 110 px/s². The QA bot now waits for calm
+      air, the way the HUD tells players to.
+    - **Orrery Crown overshoot.** Plain 0.8× gravity stretched every arc past
+      the tuned geometry. Launches now scale by √0.8, which keeps apex height
+      and landing distance identical. There's a test for this.
+  - Final strata build, full laptop climb: summit in 153 jumps, 0 falls,
+    0 problems, p95 frame 17.4 ms.
+  - Quick runs on iPhone, laptop, desktop and small phone: 0 falls and
+    0 problems on every profile.
+  - QA bot changes (`scripts/qa/full-playthrough.mjs`):
+    - It drops its own pickups before each jump, because its charge model
+      assumes base physics.
+    - It waits for calm air in the Gale Loom.
+
+## Follow-ups and known gaps
+
+- **Not covered by the bot:** Spark, Updraft, Second Wind and Thread in live play,
+  and steering against gusts. Unit tests cover these; they still need a human
+  playtest pass for feel.
+- **No Devvit playtest yet.** Everything ran in local Chromium with the QA board
+  mock.
+- **Old art still on screen:** artifact sprites and the swinging checkpoint
+  lanterns are still the reliquary style. Artifacts belong to the mutation layer,
+  so restyle them after the merge.
+- **Shared-board worktree:** another worktree is in progress on
+  `feat/shared-board-presence`. Expect conflicts in `game-app.tsx`; use the
+  hook-point list above. Ask that worktree whether Safety Thread catches should
+  count as near-misses.
+- **Legacy renderers left in place:** `renderReliquaryBackdrop` and
+  `renderReliquaryPlatform` are unused by the scene now but still covered by
+  `art-direction` tests. Delete them only after the merge settles.

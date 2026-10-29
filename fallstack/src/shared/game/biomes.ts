@@ -395,13 +395,19 @@ export const LOW_GRAVITY_SCALE = 0.8;
 
 export type BiomeFeel = {
   gravityScale: number;
+  // Launch velocities scale by √gravityScale, which keeps every arc's apex
+  // and landing distance identical: the Crown floats longer without moving
+  // any jump out of (or into) reach of the tuned tower.
+  launchScale: number;
   groundSettle: number;
 };
 
 export function biomeFeel(zoneId: ZoneId): BiomeFeel {
   const mechanic = biomeForZone(zoneId).mechanic;
+  const gravityScale = mechanic === 'low_gravity' ? LOW_GRAVITY_SCALE : 1;
   return {
-    gravityScale: mechanic === 'low_gravity' ? LOW_GRAVITY_SCALE : 1,
+    gravityScale,
+    launchScale: Math.sqrt(gravityScale),
     groundSettle:
       mechanic === 'slick' ? SLICK_GROUND_SETTLE : DEFAULT_GROUND_SETTLE,
   };

@@ -118,6 +118,14 @@ export class ClimbDynamics {
     };
   }
 
+  scaleLaunch(
+    launch: { x: number; y: number },
+    zoneId: ZoneId
+  ): { x: number; y: number } {
+    const scale = biomeFeel(zoneId).launchScale;
+    return { x: launch.x * scale, y: launch.y * scale };
+  }
+
   groundSettle(zoneId: ZoneId): number {
     return biomeFeel(zoneId).groundSettle;
   }
