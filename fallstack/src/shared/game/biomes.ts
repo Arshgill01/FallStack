@@ -189,8 +189,8 @@ export const VENT_TUNING = {
   activeMs: 950,
   rampMs: 180,
   width: 58,
-  // Cancels most of gravity while airborne inside an active puff.
-  liftAccelerationY: -1550,
+  // Briefly overcomes gravity while airborne inside an active puff.
+  liftAccelerationY: -2150,
 } as const;
 
 export type VentColumn = {

@@ -338,7 +338,7 @@ function drawFeet(
     .lineBetween(input.x + spread, input.feetY, input.x + spread - input.facing * 3, input.feetY);
 }
 
-function drawCeremonyMark(
+export function drawCeremonyMark(
   graphics: Phaser.GameObjects.Graphics,
   input: {
     x: number;

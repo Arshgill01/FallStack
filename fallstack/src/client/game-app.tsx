@@ -11,6 +11,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 import type {
   InitGameResponse,
@@ -93,8 +94,6 @@ import {
   PLAYER_CEREMONY_DURATION_MS,
   RELIQUARY_COLORS,
   playerVisualState,
-  reliquaryZoneFor,
-  reliquaryZoneName,
   shouldShowArtifactLabels,
   type PlayerCeremonyState,
 } from './game/art-direction';
@@ -117,11 +116,33 @@ import {
   type HudNoticeSide,
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
-import { renderReliquaryPlayer } from './game/renderPlayer';
+import { renderClimber } from './game/renderClimbers';
 import {
-  renderReliquaryBackdrop,
-  renderReliquaryPlatform,
-} from './game/renderTower';
+  POWER_UP_COLORS,
+  renderBiomeBackdrop,
+  renderBiomePlatform,
+  renderGust,
+  renderPickup,
+  renderVents,
+} from './game/renderBiomes';
+import { ClimbDynamics, loadoutChipsKey } from './game/climb-dynamics';
+import {
+  hasStoredClimber,
+  readStoredClimber,
+  storeClimber,
+  zoneDisplayName,
+  zoneNumber,
+  type ClimberEventDetail,
+  type GustEventDetail,
+  type LoadoutEventDetail,
+  type PickupEventDetail,
+  type StrataMomentDetail,
+} from './game/strata-ui';
+import { ClimberSelect } from './game/ClimberSelect';
+import { StrataHud } from './game/StrataHud';
+import { biomeFeel, biomeForZone } from '../shared/game/biomes.js';
+import { CLIMBERS, type ClimberId } from '../shared/game/climbers.js';
+import { ClimberFigure } from './game/ClimberFigure';
 import {
   applyLocalClear,
   applyLocalFall,
@@ -278,6 +299,11 @@ class FallstackScene extends Phaser.Scene {
   private towerSeed = createDailySeed().dailySeed;
   private towerPlatforms: Platform[] = generateDailyTower(this.towerSeed)
     .platforms;
+  // Strata layer: biome feel, pickups, and the chosen climber.
+  private dynamics = new ClimbDynamics();
+  private prevJumpInput = false;
+  private publishedLoadoutKey = '';
+  private publishedGustKey = '';
   private chargeTime = 0;
   private publishedChargePercent = -1;
   private inputPaused = false;
@@ -428,6 +454,21 @@ class FallstackScene extends Phaser.Scene {
       this.viewportLayoutPending = true;
     });
 
+    this.dynamics.setTower(this.towerSeed, this.towerPlatforms);
+    this.dynamics.setClimber(window.fallstackClimber ?? readStoredClimber());
+    this.dynamics.noteSafeLanding(START_POS.x, START_POS.y);
+    const onClimber = (event: Event) => {
+      this.dynamics.setClimber(
+        (event as CustomEvent<ClimberEventDetail>).detail.climberId
+      );
+      this.playerVisualKey = '';
+      this.publishLoadout(true);
+    };
+    window.addEventListener('fallstack:climber', onClimber);
+    this.events.once('destroy', () =>
+      window.removeEventListener('fallstack:climber', onClimber)
+    );
+
     this.refreshSnapshot(window.fallstackSnapshot);
     this.publishZone();
     this.snapCameraToPlayer();
@@ -469,7 +510,16 @@ class FallstackScene extends Phaser.Scene {
       if (input.left) this.facing = -1;
       if (input.right) this.facing = 1;
     }
-    body.setGravityY(0);
+    const routeX = this.player.x - this.routeOffsetX();
+    const forces = this.dynamics.airForces({
+      zoneId: this.currentZone,
+      x: routeX,
+      y: this.player.y,
+      velocityY: body.velocity.y,
+      airborne: !onFloor,
+      nowMs: this.time.now,
+    });
+    body.setGravityY(forces.extraGravityY);
     if (onFloor) {
       body.setAccelerationX(0);
       body.setDragX(MOVEMENT_TUNING.groundDragX);
@@ -484,12 +534,25 @@ class FallstackScene extends Phaser.Scene {
             ? -MOVEMENT_TUNING.groundSpeed
             : input.right
               ? MOVEMENT_TUNING.groundSpeed
-              : Phaser.Math.Linear(body.velocity.x, 0, 0.32)
+              : Phaser.Math.Linear(
+                  body.velocity.x,
+                  0,
+                  this.dynamics.groundSettle(this.currentZone)
+                )
       );
       this.wallBonkPlatformId = null;
     } else {
       const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
-      body.setAccelerationX(steer * MOVEMENT_TUNING.airSteerAccelerationX);
+      body.setAccelerationX(
+        steer * MOVEMENT_TUNING.airSteerAccelerationX + forces.accelerationX
+      );
+      if (
+        forces.maxFallVelocityY !== null &&
+        body.velocity.y > forces.maxFallVelocityY
+      )
+        body.setVelocityY(forces.maxFallVelocityY);
+      if (input.jump && !this.prevJumpInput && !this.charging)
+        this.trySecondWind(steer === 0 ? 0 : steer > 0 ? 1 : -1);
       body.setMaxVelocity(
         MOVEMENT_TUNING.airMaxVelocityX,
         MOVEMENT_TUNING.maxVelocityY
@@ -513,7 +576,10 @@ class FallstackScene extends Phaser.Scene {
       this.artifactLabelDismissedZones.add(this.currentZone);
 
     if (this.charging) {
-      this.chargeTime = Math.max(0, this.time.now - this.chargeStart);
+      this.chargeTime = this.dynamics.effectiveChargeMs(
+        Math.max(0, this.time.now - this.chargeStart),
+        this.time.now
+      );
       const percent = chargeRatioForHeldMs(this.chargeTime);
       const roundedPercent = Math.round(percent * 10) * 10;
       if (roundedPercent !== this.publishedChargePercent) {
@@ -527,7 +593,10 @@ class FallstackScene extends Phaser.Scene {
     }
 
     if (this.charging && (!input.jump || !onFloor)) {
-      const held = Math.max(0, this.time.now - this.chargeStart);
+      const held = this.dynamics.effectiveChargeMs(
+        Math.max(0, this.time.now - this.chargeStart),
+        this.time.now
+      );
       const percent = chargeRatioForHeldMs(held);
       this.lastChargePercent = Math.round(percent * 100);
       if (onFloor && !input.jump) {
@@ -589,6 +658,7 @@ class FallstackScene extends Phaser.Scene {
       );
       this.pendingImpactSpeed = 0;
       this.pendingWallImpactSpeed = 0;
+      this.onStrataLanding(impactSpeed, input.jump);
 
       if (!this.reducedMotion) {
         for (let i = 0; i < 8; i++) {
@@ -609,6 +679,10 @@ class FallstackScene extends Phaser.Scene {
       }
     }
     this.wasGrounded = onFloor;
+    this.prevJumpInput = input.jump;
+    this.collectPickups();
+    this.publishLoadout(false);
+    this.publishGust();
 
     this.checkProgress();
     this.checkFall();
@@ -626,6 +700,7 @@ class FallstackScene extends Phaser.Scene {
     if (snapshot?.dailySeed && snapshot.dailySeed !== this.towerSeed) {
       this.towerSeed = snapshot.dailySeed;
       this.towerPlatforms = generateDailyTower(snapshot.dailySeed).platforms;
+      this.dynamics.setTower(this.towerSeed, this.towerPlatforms);
       this.rebuildPlatformBodies();
     }
     this.drawWorld();
@@ -1118,7 +1193,9 @@ class FallstackScene extends Phaser.Scene {
 
   private checkFall() {
     if (!this.player) return;
-    if (!shouldEndRunAtY(this.player.y, this.respawnZone)) return;
+    const runEnding = shouldEndRunAtY(this.player.y, this.respawnZone);
+    if (this.tryThreadCatch(runEnding)) return;
+    if (!runEnding) return;
 
     const respawnZoneId = fallZoneForRespawn(this.respawnZone);
     const detail = scopeFallEvidenceToZone<FallEventDetail>(
@@ -1178,6 +1255,8 @@ class FallstackScene extends Phaser.Scene {
     this.landingSurface = 'route';
     this.lastPlatformId = this.respawnZone === BOTTOM_ZONE_ID ? 'start' : null;
     this.showPlayerCeremony('respawn');
+    this.dynamics.onRespawn(checkpoint);
+    this.publishLoadout(true);
     this.artifactTimers.clear();
     this.expiredArtifactIds.clear();
     this.drawWorld();
@@ -1312,17 +1391,17 @@ class FallstackScene extends Phaser.Scene {
       const zoneSnapshot = window.fallstackSnapshot?.zones.find(
         (item) => item.id === zone.id
       );
-      renderReliquaryBackdrop(this.bgGraphics, {
+      renderBiomeBackdrop(this.bgGraphics, {
+        zoneId: zone.id,
         zoneTop: zone.yTop,
         zoneBottom: zone.yBottom,
         gameWidth: drawW,
         routeOffset: this.currentRouteOffset,
-        zone: reliquaryZoneFor(zone.id),
       });
       this.addZoneLabel(
         this.layoutX(42),
         zone.yBottom - 1180,
-        reliquaryZoneName(zone.id),
+        zoneDisplayName(zone.id),
         zoneSnapshot
           ? zoneEffectPresentation(zoneSnapshot).label
           : 'No active mark'
@@ -1355,7 +1434,9 @@ class FallstackScene extends Phaser.Scene {
 
   private drawPlatform(platform: Platform) {
     if (!this.graphics) return;
-    renderReliquaryPlatform(this.graphics, platform);
+    renderBiomePlatform(this.graphics, platform, {
+      spring: this.dynamics.springs.has(platform.id),
+    });
   }
 
   private drawArtifact(artifact: Artifact, labelled: boolean) {
@@ -1495,11 +1576,182 @@ class FallstackScene extends Phaser.Scene {
     // 6. DRAW THE EXACT SITE NAMED BY THE LATEST MUTATION RECEIPT
     this.drawMutationHighlight(g);
 
-    // 7. DRAW THE COMMITTED CHARGE ARC
+    // 7. DRAW BIOME MOTION AND PICKUPS
+    this.drawStrata(g);
+
+    // 8. DRAW THE COMMITTED CHARGE ARC
     this.drawChargeIntent(g);
 
-    // 8. DRAW PLAYER ON ITS OWN CACHED POSE LAYER
+    // 9. DRAW PLAYER ON ITS OWN CACHED POSE LAYER
     this.drawPlayer();
+  }
+
+  // ── Strata layer: pickups, biome mechanics, and their HUD events ──────────
+
+  private trySecondWind(steer: -1 | 0 | 1) {
+    if (!this.player) return;
+    const hop = this.dynamics.trySecondWind(steer);
+    if (!hop) return;
+    const body = this.player.body;
+    if (hop.x !== null) {
+      body.setVelocityX(hop.x);
+      this.facing = hop.x > 0 ? 1 : -1;
+    }
+    body.setVelocityY(hop.y);
+    this.pendingImpactSpeed = 0;
+    this.burst(this.player.x, this.player.y + 12, POWER_UP_COLORS.second_wind);
+    this.publishMoment({ kind: 'hop' });
+    this.publishLoadout(true);
+  }
+
+  private onStrataLanding(impactSpeed: number, holdingJump: boolean) {
+    if (!this.player) return;
+    if (this.landingSurface === 'route' || this.landingSurface === 'checkpoint')
+      this.dynamics.noteSafeLanding(
+        this.player.x - this.routeOffsetX(),
+        this.player.y
+      );
+    const rebound = this.dynamics.springRebound(
+      this.landingSurface === 'route' ? this.lastPlatformId : null,
+      impactSpeed,
+      holdingJump
+    );
+    if (rebound === null) return;
+    this.player.body.setVelocity(0, rebound);
+    this.burst(this.player.x, this.player.y + 14, POWER_UP_COLORS.second_wind);
+    this.publishMoment({ kind: 'spring' });
+  }
+
+  private tryThreadCatch(runEnding: boolean): boolean {
+    if (!this.player) return false;
+    const ledge = this.dynamics.tryThreadCatch(
+      this.player.y,
+      this.player.body.velocity.y,
+      runEnding
+    );
+    if (!ledge) return false;
+    this.player.body.reset(this.layoutX(ledge.x), ledge.y - 4);
+    this.player.body.setAcceleration(0, 0);
+    this.wasGrounded = false;
+    this.suppressNextLanding = true;
+    this.pendingImpactSpeed = 0;
+    this.pendingWallImpactSpeed = 0;
+    this.charging = false;
+    this.chargeTime = 0;
+    this.updateCurrentZone();
+    this.showPlayerCeremony('respawn', 0.6);
+    this.burst(this.player.x, this.player.y, POWER_UP_COLORS.thread);
+    this.snapCameraToPlayer();
+    this.publishMoment({ kind: 'thread' });
+    this.publishLoadout(true);
+    return true;
+  }
+
+  private collectPickups() {
+    if (!this.player) return;
+    const taken = this.dynamics.collectTouching(
+      {
+        x: this.player.x - this.routeOffsetX(),
+        y: this.player.y,
+        width: PLAYER_COLLISION_SIZE.width,
+        height: PLAYER_COLLISION_SIZE.height,
+      },
+      this.activeZoneIds(),
+      this.time.now
+    );
+    for (const pickup of taken) {
+      this.burst(this.layoutX(pickup.x), pickup.y, POWER_UP_COLORS[pickup.kind]);
+      window.dispatchEvent(
+        new CustomEvent<PickupEventDetail>('fallstack:pickup', {
+          detail: { kind: pickup.kind },
+        })
+      );
+    }
+    if (taken.length) this.publishLoadout(true);
+  }
+
+  private publishLoadout(force: boolean) {
+    const chips = this.dynamics.chips(this.time.now);
+    const key = loadoutChipsKey(chips);
+    if (!force && key === this.publishedLoadoutKey) return;
+    this.publishedLoadoutKey = key;
+    window.dispatchEvent(
+      new CustomEvent<LoadoutEventDetail>('fallstack:loadout', {
+        detail: { chips },
+      })
+    );
+  }
+
+  private publishGust() {
+    const gust = this.dynamics.gust(this.time.now, this.currentZone);
+    const key = gust ? `${gust.phase}:${gust.direction}` : 'none';
+    if (key === this.publishedGustKey) return;
+    this.publishedGustKey = key;
+    window.dispatchEvent(
+      new CustomEvent<GustEventDetail>('fallstack:gust', {
+        detail: gust ? { phase: gust.phase, direction: gust.direction } : null,
+      })
+    );
+  }
+
+  private publishMoment(detail: StrataMomentDetail) {
+    window.dispatchEvent(
+      new CustomEvent<StrataMomentDetail>('fallstack:strata-moment', { detail })
+    );
+  }
+
+  private burst(x: number, y: number, color: number) {
+    if (this.reducedMotion) return;
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * (90 + Math.random() * 70),
+        vy: Math.sin(angle) * (90 + Math.random() * 70) - 30,
+        color,
+        alpha: 0.9,
+        size: 2 + Math.random() * 1.5,
+        life: 480,
+        maxLife: 480,
+        type: 'dust',
+      });
+    }
+  }
+
+  private drawStrata(g: Phaser.GameObjects.Graphics) {
+    const routeOffset = this.routeOffsetX();
+    const activeZoneIds = this.activeZoneIds();
+    renderVents(
+      g,
+      this.dynamics.vents.filter((vent) => activeZoneIds.has(vent.zoneId)),
+      {
+        timeMs: this.time.now,
+        routeOffset,
+        reducedMotion: this.reducedMotion,
+        visible: (y) => this.isCameraVisibleY(y, 160),
+      }
+    );
+    for (const pickup of this.dynamics.pickups) {
+      if (this.dynamics.collected.has(pickup.id)) continue;
+      if (!activeZoneIds.has(pickup.zoneId)) continue;
+      if (!this.isCameraVisibleY(pickup.y, 40)) continue;
+      renderPickup(g, pickup, {
+        x: pickup.x + routeOffset,
+        timeMs: this.time.now,
+        reducedMotion: this.reducedMotion,
+      });
+    }
+    const gust = this.dynamics.gust(this.time.now, this.currentZone);
+    if (gust) {
+      const view = this.cameras.main.worldView;
+      renderGust(
+        g,
+        gust,
+        { left: view.x, top: view.y, width: view.width, height: view.height },
+        { timeMs: this.time.now, reducedMotion: this.reducedMotion }
+      );
+    }
   }
 
   private drawChargeIntent(g: Phaser.GameObjects.Graphics) {
@@ -1515,7 +1767,11 @@ class FallstackScene extends Phaser.Scene {
         y:
           player.y +
           launch.y * seconds +
-          0.5 * MOVEMENT_TUNING.gravityY * seconds * seconds,
+          0.5 *
+            MOVEMENT_TUNING.gravityY *
+            biomeFeel(this.currentZone).gravityScale *
+            seconds *
+            seconds,
       };
     });
 
@@ -1659,12 +1915,16 @@ class FallstackScene extends Phaser.Scene {
         : Math.round(ceremony.progress * 4)
       : 0;
     const strengthTier = ceremony ? Math.round(ceremony.strength * 4) : 0;
-    const visualKey = `${pose}:${this.facing}:${chargeTier}:${ceremonyTier}:${strengthTier}:${this.reducedMotion}`;
+    const glow = this.dynamics.chips(this.time.now).some((chip) => chip.timed)
+      ? 1
+      : 0;
+    const visualKey = `${this.dynamics.climberId}:${glow}:${pose}:${this.facing}:${chargeTier}:${ceremonyTier}:${strengthTier}:${this.reducedMotion}`;
     this.playerGraphics.setPosition(this.player.x, this.player.y);
     if (visualKey === this.playerVisualKey) return;
     this.playerVisualKey = visualKey;
     this.playerGraphics.clear();
-    renderReliquaryPlayer(this.playerGraphics, {
+    renderClimber(this.playerGraphics, this.dynamics.climberId, {
+      glow,
       x: 0,
       y: 0,
       facing: this.facing,
@@ -1940,6 +2200,9 @@ export function GameApp() {
     useState<MutationReceipt | null>(null);
   const [charge, setCharge] = useState(0);
   const [currentZoneId, setCurrentZoneId] = useState<ZoneId>(BOTTOM_ZONE_ID);
+  const [climberId, setClimberId] = useState<ClimberId>(() => readStoredClimber());
+  const [climberChosen, setClimberChosen] = useState(() => hasStoredClimber());
+  const [climberSelectOpen, setClimberSelectOpen] = useState(false);
   const [sharedAvailable, setSharedAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
@@ -2013,8 +2276,32 @@ export function GameApp() {
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
   const gameplayReady = Boolean(
-    !loading && sceneReady && snapshot && resume && !summitOpen && !guideOpen
+    !loading &&
+      sceneReady &&
+      snapshot &&
+      resume &&
+      !summitOpen &&
+      !guideOpen &&
+      !climberSelectOpen
   );
+
+  useLayoutEffect(() => {
+    window.fallstackClimber = climberId;
+    window.dispatchEvent(
+      new CustomEvent<ClimberEventDetail>('fallstack:climber', {
+        detail: { climberId },
+      })
+    );
+  }, [climberId]);
+
+  const confirmClimber = useCallback((next: ClimberId) => {
+    storeClimber(next);
+    setClimberId(next);
+    setClimberChosen(true);
+    setClimberSelectOpen(false);
+  }, []);
+  const closeClimberSelect = useCallback(() => setClimberSelectOpen(false), []);
+  const currentBiome = biomeForZone(currentZoneId);
 
   const toggleMusic = useCallback(() => {
     const nextMuted = !musicMuted;
@@ -2264,12 +2551,12 @@ export function GameApp() {
 
   const currentZoneInfo = useMemo(() => {
     if (!snapshot?.zones?.length)
-      return { name: reliquaryZoneName(BOTTOM_ZONE_ID), segment: null };
+      return { name: zoneDisplayName(BOTTOM_ZONE_ID), segment: null };
     const segment =
       snapshot.zones.find((zone) => zone.id === currentZoneId) ??
       snapshot.zones[0] ??
       null;
-    return { name: reliquaryZoneName(currentZoneId), segment };
+    return { name: zoneDisplayName(currentZoneId), segment };
   }, [currentZoneId, snapshot]);
 
   const currentZoneEffect = useMemo(
@@ -2332,7 +2619,7 @@ export function GameApp() {
     if (resume.zoneId !== BOTTOM_ZONE_ID) {
       const frameId = window.requestAnimationFrame(() => {
         showCheckpoint(
-          `Checkpoint restored · ${reliquaryZoneName(resume.zoneId)}`,
+          `Checkpoint restored · ${zoneDisplayName(resume.zoneId)}`,
           resume.mode === 'account'
             ? 'Saved to your Reddit account for today.'
             : 'Saved on this device for today.'
@@ -3060,6 +3347,14 @@ export function GameApp() {
       className="game-shell"
       data-build-id={BUILD_ID}
       data-gameplay-ready={gameplayReady}
+      data-biome={currentBiome.id}
+      style={
+        {
+          '--biome-ground': currentBiome.css.ground,
+          '--biome-accent': currentBiome.css.accent,
+          '--biome-accent-ink': currentBiome.css.accentInk,
+        } as CSSProperties
+      }
     >
       {/* ── TOP BAR ── */}
       <header className="topbar">
@@ -3085,6 +3380,19 @@ export function GameApp() {
         </div>
 
         <div className="topbar-actions" aria-label="Game reference">
+          <button
+            type="button"
+            className={`action-btn climber-chip${climberChosen ? '' : ' unchosen'}`}
+            aria-label={`Climber: ${CLIMBERS[climberId].name}. Change climber`}
+            onClick={() => {
+              setGuideOpen(false);
+              setSummitOpen(false);
+              setClimberSelectOpen(true);
+            }}
+          >
+            <ClimberFigure climberId={climberId} size={20} />
+            <span>{climberChosen ? CLIMBERS[climberId].name : 'Climber'}</span>
+          </button>
           <button
             type="button"
             className="action-btn"
@@ -3120,11 +3428,14 @@ export function GameApp() {
           role="status"
           aria-label={`Current zone: ${currentZoneInfo.name}. ${currentZoneEffect.description}`}
         >
-          {currentZoneInfo.name}
+          <span className="zone-name">{currentZoneInfo.name}</span>
+          <span className="zone-number">Zone {zoneNumber(currentZoneId)}</span>
           <span className={`zone-badge ${currentZoneEffect.badgeClass}`}>
             {currentZoneEffect.label}
           </span>
         </div>
+
+        <StrataHud zoneId={currentZoneId} />
 
         {/* Controls hint */}
         <div className="hud-overlay controls-hint" aria-hidden="true">
@@ -3204,7 +3515,10 @@ export function GameApp() {
         {/* Loading overlay */}
         {(loading ||
           !sceneReady ||
-          (!guideOpen && !summitOpen && !gameplayReady)) && (
+          (!guideOpen &&
+            !summitOpen &&
+            !climberSelectOpen &&
+            !gameplayReady)) && (
           <div className="loading-overlay" aria-hidden="true">
             <div className="loading-text">
               {loading ? 'Reading the mountain…' : 'Calibrating the jump…'}
@@ -3215,6 +3529,15 @@ export function GameApp() {
 
       {/* ── TOUCH CONTROLS ── */}
       <TouchControls disabled={!gameplayReady} charge={charge} />
+
+      {climberSelectOpen ? (
+        <ClimberSelect
+          current={climberId}
+          firstVisit={!climberChosen}
+          onConfirm={confirmClimber}
+          onClose={closeClimberSelect}
+        />
+      ) : null}
 
       {guideOpen ? (
         <div
