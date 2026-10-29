@@ -169,7 +169,6 @@ async function echoState(page) {
   return page.evaluate(() => {
     const layer = window.__fallstackFindScene()?.echoLayer;
     if (!layer) return null;
-    const active = layer['#active'] ?? null;
     const texts = window
       .__fallstackFindScene()
       .children.list.filter((child) => child.type === 'Text' && child.visible)
@@ -181,7 +180,6 @@ async function echoState(page) {
         below: texts.find((text) => text.startsWith('↓')) ?? null,
       },
       stamps: texts.filter((text) => /^\+1 |A fall|New since/.test(text)),
-      unused: active,
     };
   });
 }
