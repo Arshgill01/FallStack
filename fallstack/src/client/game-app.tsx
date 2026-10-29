@@ -3481,7 +3481,8 @@ export function GameApp() {
               <p>
                 Falls add one anonymous scar at the missed jump. Repeated misses
                 can grow helpers, temporary ghosts, or crumbling hazards. A
-                clean zone clear repairs the route and becomes your checkpoint.
+                clean zone clear repairs the route and becomes your checkpoint,
+                and thanks every community foothold you stood on.
               </p>
               <dl className="guide-key">
                 <div>

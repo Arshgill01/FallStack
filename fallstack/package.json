@@ -27,6 +27,7 @@
     "qa:playthrough": "node scripts/qa/full-playthrough.mjs",
     "qa:runtime": "node scripts/qa/runtime-smoke.mjs",
     "qa:shared": "node scripts/qa/shared-session.mjs",
+    "qa:presence": "node scripts/qa/shared-presence.mjs",
     "qa:tower-corpus": "node scripts/qa/tower-corpus.mjs",
     "qa:ui-accessibility": "node scripts/qa/ui-accessibility.mjs",
     "qa:ui-overlays": "node scripts/qa/ui-overlays.mjs",
