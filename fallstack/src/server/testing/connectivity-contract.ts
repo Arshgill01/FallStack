@@ -19,6 +19,7 @@ import {
 import type { MutationReceipt } from '../../shared/game/mutation-receipts.js';
 import { realtimeChannelForBoard } from '../../shared/realtime.js';
 import { zoneById } from '../../shared/game/tower.js';
+import { bucketDrivesVisibleSlot, siteFace } from '../../shared/game/forming.js';
 
 export type EdgeKind = 'contract' | 'probe';
 
@@ -88,6 +89,12 @@ export const CONNECTIVITY_EDGES = {
     from: 'rendered tower change',
     to: 'receipt',
     rule: 'If the rendered artifact at a site changes, the receipt that caused it announces a visible change.',
+    kind: 'contract',
+  },
+  'receipt.every-fall-visible': {
+    from: 'accepted event',
+    to: 'rendered site face',
+    rule: 'Every accepted event below a slot’s ceiling changes what the site draws (artifact, forming silhouette, or tier pip), so nobody’s fall is invisible.',
     kind: 'contract',
   },
   'snapshot.provenance': {
@@ -518,6 +525,22 @@ function checkVisibleChange(input: MutationCheck) {
       'receipt.promise-visible',
       status === expected,
       () => `${change}, but the status is ${status} at ${describe()}`
+    );
+  }
+
+  const priorSite = siteById(before, siteId);
+  const nextSite = siteById(after, siteId);
+  const bucket = input.counter === 'successfulClears' ? 'successful_clear' : input.counter;
+  if (
+    receipt.accepted &&
+    priorSite &&
+    nextSite &&
+    bucketDrivesVisibleSlot(priorSite.counters, bucket)
+  ) {
+    ledger.check(
+      'receipt.every-fall-visible',
+      siteFace(priorSite) !== siteFace(nextSite),
+      () => `${receipt.siteName} drew the same face after ${describe()}`
     );
   }
 

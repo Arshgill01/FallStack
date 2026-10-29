@@ -117,6 +117,8 @@ import {
   type HudNoticeSide,
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
+import { renderFormingMark, renderTierPressure } from './game/renderForming';
+import { deriveFormingMarks } from '../shared/game/forming.js';
 import { renderReliquaryPlayer } from './game/renderPlayer';
 import {
   renderReliquaryBackdrop,
@@ -509,7 +511,9 @@ class FallstackScene extends Phaser.Scene {
       body.setVelocityX(0);
     }
 
-    if (input.left || input.right || this.charging || !onFloor)
+    // Only the climber's own input dismisses labels; a respawn drop or a
+    // remote reconcile must not hide the tower's explanation of itself.
+    if (input.left || input.right || this.charging)
       this.artifactLabelDismissedZones.add(this.currentZone);
 
     if (this.charging) {
@@ -1178,6 +1182,8 @@ class FallstackScene extends Phaser.Scene {
     this.landingSurface = 'route';
     this.lastPlatformId = this.respawnZone === BOTTOM_ZONE_ID ? 'start' : null;
     this.showPlayerCeremony('respawn');
+    // After a fall the tower has something new to say about this zone.
+    this.artifactLabelDismissedZones.delete(this.respawnZone);
     this.artifactTimers.clear();
     this.expiredArtifactIds.clear();
     this.drawWorld();
@@ -1338,8 +1344,21 @@ class FallstackScene extends Phaser.Scene {
     // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
+    // A site one fall from growing something says so instead of describing
+    // what it already has: that sentence is the invitation.
+    const forming = deriveFormingMarks(snapshot.sites).sort(
+      (left, right) =>
+        left.needed - left.count - (right.needed - right.count)
+    );
+    const imminentSites = new Set(
+      forming
+        .filter((mark) => mark.needed - mark.count === 1)
+        .map((mark) => mark.siteId)
+    );
     const labelled = labelledArtifactIds(
-      snapshot.zones.flatMap((zone) => zone.artifacts)
+      snapshot.zones
+        .flatMap((zone) => zone.artifacts)
+        .filter((artifact) => !imminentSites.has(artifact.siteId))
     );
     for (const zone of snapshot.zones) {
       if (!activeZoneIds.has(zone.id)) continue;
@@ -1350,6 +1369,25 @@ class FallstackScene extends Phaser.Scene {
           labelled.has(artifact.id)
         );
       }
+    }
+
+    // 5. DRAW ARTIFACTS STILL FORMING FROM SUB-THRESHOLD FALLS
+    const labelledSites = new Set(
+      snapshot.zones
+        .flatMap((zone) => zone.artifacts)
+        .filter((artifact) => labelled.has(artifact.id))
+        .map((artifact) => artifact.siteId)
+    );
+    for (const mark of forming) {
+      if (!activeZoneIds.has(mark.zoneId) || !this.graphics) continue;
+      const layout = { ...mark, x: this.layoutX(mark.x) };
+      renderFormingMark(this.graphics, layout, {
+        reducedMotion: this.reducedMotion,
+        timeMs: this.time.now,
+      });
+      if (labelledSites.has(mark.siteId)) continue;
+      labelledSites.add(mark.siteId);
+      this.addArtifactLabel(layout.x + layout.width / 2, layout.y - 6, mark.copy);
     }
   }
 
@@ -1368,6 +1406,7 @@ class FallstackScene extends Phaser.Scene {
           this.addArtifactLabel(centerX, y, inWorldArtifactLabel(artifact));
       },
     });
+    renderTierPressure(this.graphics, artifact);
   }
 
   private drawDynamicElements(deltaMs: number) {

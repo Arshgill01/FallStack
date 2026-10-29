@@ -755,14 +755,17 @@ function makeSiteArtifact(
   };
 }
 
-function artifactSlot(site: ImpactSite, slot: ArtifactSlotKind): Rect {
+export function artifactSlot(
+  site: ImpactSite,
+  slot: ArtifactSlotKind
+): Rect {
   if (slot === 'helper') return site.helperSlot;
   if (slot === 'ghost') return site.ghostSlot;
   if (slot === 'lantern') return site.lanternSlot;
   return site.hazardSlot;
 }
 
-function bucketArtifactType(
+export function bucketArtifactType(
   bucket: FailureBucket,
   count: number,
   stabilized: boolean
