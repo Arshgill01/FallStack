@@ -66,6 +66,15 @@ export function slotDrivers(counters: SiteMutationCounters): SlotDriver[] {
   ];
 }
 
+export function slotKindForBucket(
+  bucket: FailureBucket | 'successful_clear'
+): ArtifactSlotKind {
+  if (bucket === 'short_jump') return 'helper';
+  if (bucket === 'wall_bonk') return 'ghost';
+  if (bucket === 'successful_clear') return 'lantern';
+  return 'hazard';
+}
+
 export function deriveFormingMarks(
   sites: readonly SiteSnapshot[]
 ): FormingMark[] {

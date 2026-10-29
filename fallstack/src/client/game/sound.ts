@@ -65,6 +65,7 @@ export type SoundPlaybackDetail = {
   impactSpeed?: number;
   side?: WallBonkEventDetail['side'];
   artifactType?: ArtifactCollapseEventDetail['type'];
+  echoKind?: 'fall' | 'clear' | 'summit';
 };
 
 export type LandingProfile = {
@@ -409,6 +410,7 @@ export class ProceduralSound {
     if (id === 'mutation') return this.mutationStamp();
     if (id === 'checkpoint') return this.checkpoint();
     if (id === 'summit') return this.summit();
+    if (id === 'echo') return this.echo(detail.echoKind);
     return this.noise(0.026, 1_600, 0.038, 'bandpass', 1.4);
   }
 
@@ -706,6 +708,20 @@ export class ProceduralSound {
         index * 145
       );
     }
+  }
+
+  // Someone else, somewhere in the tower: the same gestures as a fall or a
+  // checkpoint bell, muffled and far away so they never compete with yours.
+  private echo(kind: SoundPlaybackDetail['echoKind']) {
+    if (kind === 'fall') {
+      this.noise(0.12, 420, AUDIO_LEVELS.fallNoise * 0.28, 'lowpass', 0.7);
+      this.scheduleGameplay(
+        () => this.tone(74, 0.14, AUDIO_LEVELS.fallTone * 0.3, 'triangle', 0.006),
+        90
+      );
+      return;
+    }
+    this.tone(369.99, 0.3, AUDIO_LEVELS.checkpointBell * 0.3, 'sine', 0.02);
   }
 
   private ping(frequency: number, duration: number, volume: number) {

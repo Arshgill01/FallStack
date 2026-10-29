@@ -24,9 +24,18 @@ import {
   resolveClearSite,
   resolveFallObservation,
 } from '../../shared/game/mutation-events.js';
-import { createNonSiteMutationReceipt } from '../../shared/game/mutation-receipts.js';
+import {
+  createNonSiteMutationReceipt,
+  type MutationReceipt,
+} from '../../shared/game/mutation-receipts.js';
+import { TOP_ZONE_ID } from '../../shared/game/mutation.js';
 import { redditModmailUrl, redditPostUrl } from '../../shared/reddit.js';
-import { realtimeChannelForBoard } from '../../shared/realtime.js';
+import {
+  echoForReceipt,
+  realtimeChannelForBoard,
+  type BoardEcho,
+  type BoardRevisionMessage,
+} from '../../shared/realtime.js';
 import {
   boardSnapshotFor,
   advancePlayerCheckpoint,
@@ -52,14 +61,7 @@ type ApiDependencies = {
   context: { postId?: string; subredditName?: string; username?: string };
   reddit: { getCurrentUsername: () => Promise<string | undefined> };
   realtime?: {
-    send: (
-      channel: string,
-      message: {
-        type: 'board-revision';
-        boardId: string;
-        revision: number;
-      }
-    ) => Promise<void>;
+    send: (channel: string, message: BoardRevisionMessage) => Promise<void>;
   };
   boardStore: typeof defaultBoardStore;
   now: () => number;
@@ -166,8 +168,14 @@ export function createApi(dependencies: ApiDependencies): Hono {
       );
       await publishBoardRevision(
         dependencies,
-        receipt.accepted && receipt.revisionAfter > state.revision,
-        snapshot
+        isNewMutation(receipt, state),
+        snapshot,
+        echoForReceipt({
+          kind: 'fall',
+          receipt,
+          zoneId: resolution.value.zoneId,
+          climber: null,
+        })
       );
 
       return c.json<RecordFallResponse>({
@@ -239,8 +247,14 @@ export function createApi(dependencies: ApiDependencies): Hono {
       );
       await publishBoardRevision(
         dependencies,
-        receipt.accepted && receipt.revisionAfter > state.revision,
-        snapshot
+        isNewMutation(receipt, state),
+        snapshot,
+        echoForReceipt({
+          kind: 'clear',
+          receipt,
+          zoneId: body.zoneId,
+          climber: await namedClimber(dependencies),
+        })
       );
 
       return c.json<RecordClearResponse>({
@@ -300,8 +314,14 @@ export function createApi(dependencies: ApiDependencies): Hono {
       );
       await publishBoardRevision(
         dependencies,
-        receipt.accepted && receipt.revisionAfter > state.revision,
-        snapshot
+        isNewMutation(receipt, state),
+        snapshot,
+        echoForReceipt({
+          kind: 'summit',
+          receipt,
+          zoneId: TOP_ZONE_ID,
+          climber: await namedClimber(dependencies),
+        })
       );
 
       return c.json<RecordSummitResponse>({
@@ -349,10 +369,32 @@ async function currentDisplayUsername(
   return username ? `u/${username}` : 'a quiet climber';
 }
 
+// Display identity for positive echoes only; a signed-out climber stays
+// unnamed rather than becoming "a quiet climber" in someone else's tower.
+async function namedClimber(
+  dependencies: ApiDependencies
+): Promise<string | null> {
+  const username =
+    dependencies.context.username ??
+    (await dependencies.reddit.getCurrentUsername()) ??
+    null;
+  return username && /^[A-Za-z0-9_-]{2,24}$/.test(username)
+    ? `u/${username}`
+    : null;
+}
+
+function isNewMutation(
+  receipt: MutationReceipt,
+  state: Awaited<ReturnType<typeof loadBoardState>>
+): boolean {
+  return receipt.accepted && receipt.revisionAfter > state.revision;
+}
+
 async function publishBoardRevision(
   dependencies: ApiDependencies,
   accepted: boolean,
-  snapshot: ReturnType<typeof boardSnapshotFor>
+  snapshot: ReturnType<typeof boardSnapshotFor>,
+  echo: BoardEcho
 ): Promise<void> {
   if (!accepted || !dependencies.realtime) return;
   await dependencies.realtime
@@ -360,6 +402,7 @@ async function publishBoardRevision(
       type: 'board-revision',
       boardId: snapshot.boardId,
       revision: snapshot.revision,
+      echo,
     })
     .catch((error: unknown) => {
       console.warn('Realtime revision hint failed; polling will recover.', error);

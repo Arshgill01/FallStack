@@ -20,6 +20,7 @@ import type {
   PlayerResume,
 } from '../shared/api';
 import {
+  artifactSlot,
   BOTTOM_ZONE_ID,
   createDailySeed,
   earnedHelpers,
@@ -46,9 +47,12 @@ import {
 import type { MutationReceipt } from '../shared/game/mutation-receipts.js';
 import type { BoardSnapshot, MutationBeat } from '../shared/game/board.js';
 import {
+  echoKeyForEvent,
   isBoardRevisionMessage,
   isNewerBoardRevision,
+  parseBoardEcho,
   realtimeChannelForBoard,
+  type BoardEcho,
 } from '../shared/realtime.js';
 import {
   generateDailyTower,
@@ -118,7 +122,12 @@ import {
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
 import { renderFormingMark, renderTierPressure } from './game/renderForming';
-import { deriveFormingMarks } from '../shared/game/forming.js';
+import { EchoLayer } from './game/echoLayer';
+import { echoPlacement, OwnEchoKeys } from './game/echoes';
+import {
+  deriveFormingMarks,
+  slotKindForBucket,
+} from '../shared/game/forming.js';
 import { renderReliquaryPlayer } from './game/renderPlayer';
 import {
   renderReliquaryBackdrop,
@@ -294,6 +303,7 @@ class FallstackScene extends Phaser.Scene {
     until: number;
   } | null = null;
   private expiredArtifactIds = new Set<string>();
+  private echoLayer?: EchoLayer;
   private artifactTimers = new Map<
     string,
     {
@@ -428,6 +438,12 @@ class FallstackScene extends Phaser.Scene {
       // Phaser updates camera dimensions after emitting this event. Reconcile
       // layout on the next game frame so projection uses the new viewport.
       this.viewportLayoutPending = true;
+    });
+
+    this.echoLayer = new EchoLayer(this, {
+      layoutX: (x) => this.layoutX(x),
+      renderScale: () => this.renderScale,
+      reducedMotion: () => this.reducedMotion,
     });
 
     this.refreshSnapshot(window.fallstackSnapshot);
@@ -656,6 +672,14 @@ class FallstackScene extends Phaser.Scene {
       snapshot,
       until: this.time.now + 5_200,
     };
+  }
+
+  // Another climber's event, the moment the server accepts it.
+  showEcho(echo: BoardEcho) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.echoLayer) return;
+    const placement = echoPlacement(echo, snapshot.sites, this.towerPlatforms);
+    if (placement) this.echoLayer.show(echo, placement, this.time.now);
   }
 
   hudNoticePlacement(noticeHeight: number): HudNoticePlacement {
@@ -1534,6 +1558,9 @@ class FallstackScene extends Phaser.Scene {
     // 6. DRAW THE EXACT SITE NAMED BY THE LATEST MUTATION RECEIPT
     this.drawMutationHighlight(g);
 
+    // 6b. DRAW OTHER CLIMBERS' EVENTS AS THEY LAND
+    this.echoLayer?.draw(g, this.time.now);
+
     // 7. DRAW THE COMMITTED CHARGE ARC
     this.drawChargeIntent(g);
 
@@ -1643,14 +1670,11 @@ class FallstackScene extends Phaser.Scene {
       (candidate) => candidate.id === highlight.receipt.siteId
     );
     if (!site) return;
-    const slot =
-      highlight.receipt.bucket === 'short_jump'
-        ? site.helperSlot
-        : highlight.receipt.bucket === 'wall_bonk'
-          ? site.ghostSlot
-          : highlight.receipt.bucket === 'successful_clear'
-            ? site.lanternSlot
-            : site.hazardSlot;
+    if (!highlight.receipt.bucket) return;
+    const slot = artifactSlot(
+      site,
+      slotKindForBucket(highlight.receipt.bucket)
+    );
     const x = this.layoutX(slot.x);
     const pulse = this.reducedMotion
       ? 0.92
@@ -2048,6 +2072,8 @@ export function GameApp() {
   const pendingBoardApplyRef = useRef<() => void>(() => {});
   const pendingBoardApplyTimerRef = useRef<number | null>(null);
   const restoredBoardRef = useRef<string | null>(null);
+  const ownEchoKeysRef = useRef(new OwnEchoKeys());
+  const lastEchoSoundAtRef = useRef(0);
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
@@ -2764,6 +2790,20 @@ export function GameApp() {
       onMessage: (message: unknown) => {
         const current = window.fallstackSnapshot;
         if (
+          isBoardRevisionMessage(message) &&
+          isBoardSnapshot(current) &&
+          message.boardId === current.boardId
+        ) {
+          const echo = parseBoardEcho(message.echo);
+          if (echo && !ownEchoKeysRef.current.has(echo.key)) {
+            sceneRef.current?.showEcho(echo);
+            if (performance.now() - lastEchoSoundAtRef.current > 700) {
+              lastEchoSoundAtRef.current = performance.now();
+              soundRef.current?.play('echo', { echoKind: echo.kind });
+            }
+          }
+        }
+        if (
           requestInFlight ||
           !isBoardSnapshot(current) ||
           !isBoardRevisionMessage(message) ||
@@ -2844,6 +2884,7 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(echoKeyForEvent(`fall:${detail.attemptId}`));
       try {
         const res = await fetch('/api/record-fall', {
           method: 'POST',
@@ -2911,6 +2952,9 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(
+        echoKeyForEvent(`clear:${detail.attemptId}:${detail.zoneId}`)
+      );
       try {
         const res = await fetch('/api/record-clear', {
           method: 'POST',
@@ -2964,6 +3008,7 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(echoKeyForEvent(`summit:${detail.attemptId}`));
       try {
         const res = await fetch('/api/record-summit', {
           method: 'POST',

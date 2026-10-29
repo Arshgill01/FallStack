@@ -17,7 +17,11 @@ import {
   CONTRIBUTOR_ZONE_CLEAR_CAP,
 } from '../../shared/game/mutation-plans.js';
 import type { MutationReceipt } from '../../shared/game/mutation-receipts.js';
-import { realtimeChannelForBoard } from '../../shared/realtime.js';
+import {
+  echoKeyForEvent,
+  parseBoardEcho,
+  realtimeChannelForBoard,
+} from '../../shared/realtime.js';
 import { zoneById } from '../../shared/game/tower.js';
 import { bucketDrivesVisibleSlot, siteFace } from '../../shared/game/forming.js';
 
@@ -113,6 +117,12 @@ export const CONNECTIVITY_EDGES = {
     from: 'accepted mutation',
     to: 'realtime channel',
     rule: 'Each accepted mutation sends one revision hint on the board channel; rejections send none.',
+    kind: 'contract',
+  },
+  'realtime.echo': {
+    from: 'accepted mutation',
+    to: 'every open client',
+    rule: 'The hint carries an echo of exactly what happened (site, bucket, count, visible change) so other climbers see it live; fall echoes name nobody.',
     kind: 'contract',
   },
   'remote.convergence': {
@@ -360,7 +370,12 @@ export type MutationCheck = {
   receipt: MutationReceipt;
   responseSnapshot: BoardSnapshot | undefined;
   expectedAccepted: boolean;
-  newHints: { channel: string; boardId: string; revision: number }[];
+  newHints: {
+    channel: string;
+    boardId: string;
+    revision: number;
+    echo?: unknown;
+  }[];
   counter: Counter | null;
   actorUsername: string | null;
 };
@@ -462,6 +477,41 @@ export function checkMutation(input: MutationCheck) {
     () =>
       `expected ${expectedHints} hint(s) at r${after.revision}, got ${JSON.stringify(input.newHints)}`
   );
+
+  if (accepted && input.newHints.length === 1) {
+    const echo = parseBoardEcho(input.newHints[0]!.echo);
+    const expectedKind =
+      input.counter === null
+        ? 'summit'
+        : input.counter === 'successfulClears'
+          ? 'clear'
+          : 'fall';
+    const problems: string[] = [];
+    if (!echo) problems.push('missing or malformed echo');
+    else {
+      if (echo.kind !== expectedKind)
+        problems.push(`kind ${echo.kind} vs ${expectedKind}`);
+      if (echo.key !== echoKeyForEvent(receipt.eventId))
+        problems.push('key does not match the event');
+      if (echo.siteId !== receipt.siteId || echo.bucket !== receipt.bucket)
+        problems.push(`site/bucket ${echo.siteId}/${echo.bucket}`);
+      if (echo.count !== receipt.counterAfter)
+        problems.push(`count ${echo.count} vs ${receipt.counterAfter}`);
+      if (echo.visibleChange !== receipt.visibleChange)
+        problems.push(`change ${echo.visibleChange} vs ${receipt.visibleChange}`);
+      if (expectedKind === 'fall' && echo.climber !== null)
+        problems.push(`fall echo names ${echo.climber}`);
+      if (
+        expectedKind !== 'fall' &&
+        input.actorUsername &&
+        echo.climber !== `u/${input.actorUsername}`
+      )
+        problems.push(`positive echo names ${echo.climber}`);
+    }
+    ledger.check('realtime.echo', problems.length === 0, () =>
+      problems.join('; ')
+    );
+  }
 
   if (input.counter && input.counter !== 'successfulClears') {
     const beat = after.recentMutations.find(

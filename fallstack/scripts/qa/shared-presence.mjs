@@ -158,6 +158,27 @@ async function openClimber(browser, userId) {
   return page;
 }
 
+async function echoState(page) {
+  return page.evaluate(() => {
+    const layer = window.__fallstackFindScene()?.echoLayer;
+    if (!layer) return null;
+    const active = layer['#active'] ?? null;
+    const texts = window
+      .__fallstackFindScene()
+      .children.list.filter((child) => child.type === 'Text' && child.visible)
+      .map((child) => child.text);
+    return {
+      active: texts.filter((text) => /^\+1 |grew|deepened|overgrew|cleared|reinforced|stabilized|summit/.test(text)).length,
+      markers: {
+        above: texts.find((text) => text.startsWith('↑')) ?? null,
+        below: texts.find((text) => text.startsWith('↓')) ?? null,
+      },
+      stamps: texts.filter((text) => /^\+1 |A fall/.test(text)),
+      unused: active,
+    };
+  });
+}
+
 async function shot(page, name) {
   await page.screenshot({ path: path.join(outputDir, `${name}.png`) });
 }
@@ -186,6 +207,68 @@ try {
     return scene.artifactLabels.map((label) => ({ text: label.text, visible: label.visible, y: Math.round(label.y) }));
   });
   report.steps.push({ step: 'forming', firstGap: forming });
+
+  // Echo: bob really falls in his browser; alice sees it at the same site
+  // the moment the server accepts it, and bob does not echo himself.
+  const bob = await openClimber(browser, 'bob');
+  const echoesBefore = broadcasts.length;
+  await bob.keyboard.down('ArrowLeft');
+  await bob.waitForFunction(() => window.fallstackSnapshot?.organicFalls >= 3, null, {
+    timeout: 8_000,
+  });
+  await bob.keyboard.up('ArrowLeft');
+  assert.equal(broadcasts.length, echoesBefore + 1, 'one broadcast per fall');
+  const bobEcho = broadcasts.at(-1).message.echo;
+  assert.equal(bobEcho.kind, 'fall');
+  assert.equal(bobEcho.climber, null, 'fall echoes are anonymous');
+  await alice.waitForTimeout(260);
+  const aliceEcho = await echoState(alice);
+  const bobSelf = await echoState(bob);
+  await shot(alice, '02-echo-alice-sees-bob');
+  assert.equal(aliceEcho.active, 1, 'alice renders bob’s fall');
+  assert.equal(bobSelf.active, 0, 'bob does not echo his own fall');
+  report.steps.push({ step: 'echo', echo: bobEcho, alice: aliceEcho, bob: bobSelf });
+
+  // Off-screen: carol falls far above, through the real API.
+  const carol = appFor('carol');
+  const high = await alice.evaluate(() => {
+    const site = window.fallstackSnapshot.sites.find((item) =>
+      item.zoneId === 'ring_citadel'
+    );
+    return { zoneId: site.zoneId, x: site.helperSlot.x, y: site.helperSlot.y };
+  });
+  const boardNow = await alice.evaluate(() => ({
+    boardId: window.fallstackSnapshot.boardId,
+    revision: window.fallstackSnapshot.revision,
+  }));
+  const carolResponse = await carol.fetch(
+    new Request('http://local/api/record-fall', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId: 'fall:carol_far_above_1',
+        boardId: boardNow.boardId,
+        boardRevision: boardNow.revision,
+        attemptId: 'carol_far_above_1',
+        respawnZoneId: high.zoneId,
+        fallX: high.x,
+        fallY: high.y + 200,
+        highestY: high.y,
+        lastPlatformId: null,
+        lastHelperArtifactId: null,
+        wallBonkPlatformId: null,
+        launchChargePercent: 40,
+        launchDirection: 1,
+        timestamp: Date.now(),
+      }),
+    })
+  );
+  assert.equal(carolResponse.status, 200, await carolResponse.clone().text());
+  await alice.waitForTimeout(200);
+  const offscreen = await echoState(alice);
+  await shot(alice, '03-echo-offscreen-marker');
+  assert.match(offscreen.markers.above ?? '', /↑/);
+  report.steps.push({ step: 'offscreen', alice: offscreen });
 
   report.broadcasts = broadcasts.length;
   report.errors = errors;

@@ -22,7 +22,11 @@ import type {
   SiteSnapshot,
   ZoneId,
 } from '../../shared/game/mutation.js';
-import { realtimeChannelForBoard } from '../../shared/realtime.js';
+import {
+  realtimeChannelForBoard,
+  type BoardEcho,
+  type BoardRevisionMessage,
+} from '../../shared/realtime.js';
 import {
   generateDailyTower,
   zoneById,
@@ -41,6 +45,7 @@ export type RealtimeHint = {
   channel: string;
   boardId: string;
   revision: number;
+  echo?: BoardEcho;
   at: number;
 };
 
@@ -75,10 +80,7 @@ export function createCommunity(options: CommunityOptions = {}) {
   const subredditName = options.subredditName ?? 'fallstack_dev';
   const postId = options.postId ?? 't3_connectivity';
   const realtime = {
-    async send(
-      channel: string,
-      message: { type: 'board-revision'; boardId: string; revision: number }
-    ) {
+    async send(channel: string, message: BoardRevisionMessage) {
       const hint = { channel, ...message, at: nowMs };
       hints.push(hint);
       for (const subscriber of subscribers) subscriber(hint);

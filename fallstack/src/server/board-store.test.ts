@@ -3,6 +3,10 @@ import test from 'node:test';
 import { boardSnapshotFor, createBoardStore } from './board-store.js';
 import { createApi } from './routes/api.js';
 import { InMemoryRedis } from './testing/in-memory-redis.js';
+import {
+  echoKeyForEvent,
+  type BoardRevisionMessage,
+} from '../shared/realtime.js';
 import { BOTTOM_ZONE_ID, ZONE_IDS } from '../shared/game/mutation.js';
 import { zoneById } from '../shared/game/tower.js';
 
@@ -661,7 +665,7 @@ void test('the clear API derives and returns the authenticated resume checkpoint
   const redis = new InMemoryRedis();
   const realtimeMessages: Array<{
     channel: string;
-    message: { boardId: string; revision: number };
+    message: BoardRevisionMessage;
   }> = [];
   const currentDate = new Date('2026-07-13T12:00:00.000Z');
   const store = createBoardStore({
@@ -715,6 +719,17 @@ void test('the clear API derives and returns the authenticated resume checkpoint
         type: 'board-revision',
         boardId: initial.board.boardId,
         revision: initial.revision + 1,
+        // Clears are positive, so the echo may name the climber.
+        echo: {
+          kind: 'clear',
+          key: echoKeyForEvent('clear-first-zone'),
+          zoneId: ZONE_IDS[0],
+          siteId: realtimeMessages[0]?.message.echo?.siteId,
+          bucket: 'successful_clear',
+          count: 3,
+          visibleChange: 'site_reinforced',
+          climber: 'u/alice',
+        },
       },
     },
   ]);
