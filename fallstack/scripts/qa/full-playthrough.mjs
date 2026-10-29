@@ -777,6 +777,7 @@ async function performJump(page, current, target, attempt, blockers) {
   await recordTargetVisibility(page, current, target);
 
   const launchArrow = direction > 0 ? 'ArrowRight' : 'ArrowLeft';
+  await neutralizePowerUps(page);
   const heldMs = chargeDuration(current, target, attempt, wallBounce);
   const launchCount = await eventCount(page, 'launch');
   const landCount = await eventCount(page, 'land');
@@ -1220,6 +1221,18 @@ function blockingObstacles(platforms, current, target) {
       platform.y + platform.height > target.y &&
       platform.y < target.y + target.height
   );
+}
+
+// The charge model above is calibrated to base physics. Pickups the bot grabs
+// mid-arc (Spark, Updraft) would silently retime its next leap, so it drops
+// them before each jump; their behaviour is covered by unit tests.
+async function neutralizePowerUps(page) {
+  await page.evaluate(() => {
+    const dynamics = window.__fallstackPipelineScene?.()?.dynamics;
+    if (!dynamics?.loadout) return;
+    dynamics.loadout.timedUntil = { spark: 0, updraft: 0 };
+    dynamics.loadout.held = { second_wind: 0, thread: 0 };
+  });
 }
 
 async function waitForGrounded(page, timeoutMs) {
