@@ -4,7 +4,7 @@
 // browser is muted. Screenshots use page.screenshot, which works headless on
 // macOS where the CDP canvas capture helper does not.
 //
-//   npm run build && npx tsc --build && node scripts/qa/shared-presence.mjs
+//   npm run build && npx tsc --build && node scripts/qa/shared-presence.mjs [outDir]
 import assert from 'node:assert/strict';
 import { createReadStream } from 'node:fs';
 import { mkdir, stat, writeFile } from 'node:fs/promises';
@@ -24,6 +24,13 @@ const outputDir = path.resolve(
 );
 await mkdir(outputDir, { recursive: true });
 
+// FALLSTACK_QA_VIEWPORT=1280x800 checks the desktop layout.
+const [viewportWidth, viewportHeight] = (
+  process.env.FALLSTACK_QA_VIEWPORT ?? '390x844'
+)
+  .split('x')
+  .map(Number);
+const VIEWPORT = { width: viewportWidth, height: viewportHeight };
 const COMMUNITY = {
   subredditId: 't5_fallstack_qa',
   subredditName: 'fallstack',
@@ -95,7 +102,7 @@ async function seedFall(userId, siteName, bucket) {
 }
 
 async function openClimber(browser, userId) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext({ viewport: VIEWPORT });
   await context.addInitScript(() => {
     localStorage.setItem('fallstack:gameplay-muted', 'true');
     localStorage.setItem('fallstack:music-muted', 'true');
@@ -226,8 +233,11 @@ try {
   const bobSelf = await echoState(bob);
   await shot(alice, '02-echo-alice-sees-bob');
   assert.equal(aliceEcho.active, 1, 'alice renders bob’s fall');
+  await alice.waitForSelector('.presence-pill', { timeout: 5_000 });
+  const presence = await alice.locator('.presence-pill').innerText();
+  assert.match(presence, /^2 climbing$/);
   assert.equal(bobSelf.active, 0, 'bob does not echo his own fall');
-  report.steps.push({ step: 'echo', echo: bobEcho, alice: aliceEcho, bob: bobSelf });
+  report.steps.push({ step: 'echo', echo: bobEcho, alice: aliceEcho, bob: bobSelf, presence });
 
   // Off-screen: carol falls far above, through the real API.
   const carol = appFor('carol');

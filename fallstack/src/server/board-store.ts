@@ -40,6 +40,7 @@ import type {
 } from '../shared/game/mutation-events.js';
 
 const DAILY_KEY_TTL_SECONDS = 60 * 60 * 72;
+export const PRESENCE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_TRANSACTION_ATTEMPTS = 3;
 
 type BoardStoreContext = {
@@ -71,6 +72,9 @@ type BoardStoreRedis = {
   hGet: (key: string, field: string) => Promise<string | undefined>;
   hGetAll: (key: string) => Promise<Record<string, string>>;
   hMGet: (key: string, fields: string[]) => Promise<(string | null)[]>;
+  zAdd: (key: string, ...members: SortedMember[]) => Promise<unknown>;
+  zCard: (key: string) => Promise<number>;
+  zRemRangeByScore: (key: string, min: number, max: number) => Promise<unknown>;
   hSet: (
     key: string,
     values: Record<string, string>
@@ -129,6 +133,8 @@ export function createBoardStore(dependencies: BoardStoreDependencies) {
       loadBoardStateWith({ ...resolved, now: () => date }),
     loadPlayerResume: () => loadPlayerResumeWith(resolved),
     loadPlayerLegacy: () => loadPlayerLegacyWith(resolved),
+    touchPresence: () => touchPresenceWith(resolved),
+    loadRecentClimbers: () => loadRecentClimbersWith(resolved),
     advancePlayerCheckpoint: (clearedZoneId: ZoneId) =>
       advancePlayerCheckpointWith(resolved, clearedZoneId),
     recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
@@ -152,6 +158,8 @@ export const loadBoardStateForDate = defaultBoardStore.loadBoardStateForDate;
 export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
 export const loadPlayerResume = defaultBoardStore.loadPlayerResume;
 export const loadPlayerLegacy = defaultBoardStore.loadPlayerLegacy;
+export const touchPresence = defaultBoardStore.touchPresence;
+export const loadRecentClimbers = defaultBoardStore.loadRecentClimbers;
 export const advancePlayerCheckpoint =
   defaultBoardStore.advancePlayerCheckpoint;
 export const recordFallMutation = defaultBoardStore.recordFallMutation;
@@ -229,6 +237,35 @@ async function loadPlayerResumeWith(
     zoneId: isZoneId(stored) ? stored : ZONE_IDS[0],
     mode: 'account',
   };
+}
+
+// Honest presence: climbers who opened or acted on today's board recently.
+// Members are contributor tokens and never leave the server; only the count
+// does. Signed-out climbers without a device id share one token, so the
+// count is a lower bound.
+async function touchPresenceWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<void> {
+  const { board } = currentBoard(dependencies);
+  const key = boardKeys(board).presence;
+  await dependencies.redis.zAdd(key, {
+    member: contributorToken(dependencies.context),
+    score: dependencies.now().getTime(),
+  });
+  await dependencies.redis.expire(key, DAILY_KEY_TTL_SECONDS);
+}
+
+async function loadRecentClimbersWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<number> {
+  const { board } = currentBoard(dependencies);
+  const key = boardKeys(board).presence;
+  await dependencies.redis.zRemRangeByScore(
+    key,
+    0,
+    dependencies.now().getTime() - PRESENCE_WINDOW_MS
+  );
+  return dependencies.redis.zCard(key);
 }
 
 // Reads the contribution fields the caps already keep, so a climber's own
@@ -726,6 +763,7 @@ function boardKeys(board: BoardIdentity) {
     recent: `${prefix}:recent-mutations`,
     progress: `${prefix}:player-progress`,
     saves: `${prefix}:saves`,
+    presence: `${prefix}:presence`,
   };
 }
 

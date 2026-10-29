@@ -29,6 +29,8 @@ export type InitGameResponse = {
   username: string;
   resume: PlayerResume;
   legacy: PlayerLegacy;
+  // Distinct climbers on this board in the last ten minutes, you included.
+  recentClimbers: number;
   snapshot: BoardSnapshot;
 };
 
@@ -36,6 +38,7 @@ export type BoardRevisionResponse = {
   type: 'boardRevision';
   boardId: string;
   revision: number;
+  recentClimbers: number;
 };
 
 export type RecordFallRequest = FallObservation & {

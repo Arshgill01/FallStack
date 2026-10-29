@@ -13,6 +13,7 @@ export class InMemoryRedis {
   #hGetReads = 0;
   #hGetAllReads = 0;
   #zRangeReads = 0;
+  #zCardReads = 0;
 
   async watch(...keys: string[]): Promise<InMemoryTransaction> {
     return new InMemoryTransaction(
@@ -52,6 +53,24 @@ export class InMemoryRedis {
     return first > last ? [] : members.slice(first, last + 1);
   }
 
+  async zCard(key: string): Promise<number> {
+    this.#zCardReads += 1;
+    this.purgeExpired(key);
+    return this.#sortedSets.get(key)?.size ?? 0;
+  }
+
+  async zRemRangeByScore(key: string, min: number, max: number): Promise<number> {
+    const set = this.sortedSet(key);
+    let removed = 0;
+    for (const [member, score] of set)
+      if (score >= min && score <= max) {
+        set.delete(member);
+        removed += 1;
+      }
+    if (removed) this.bump(key);
+    return removed;
+  }
+
   version(key: string): number {
     return this.#versions.get(key) ?? 0;
   }
@@ -74,13 +93,20 @@ export class InMemoryRedis {
     this.#hGetReads = 0;
     this.#hGetAllReads = 0;
     this.#zRangeReads = 0;
+    this.#zCardReads = 0;
   }
 
-  readCounts(): { hGet: number; hGetAll: number; zRange: number } {
+  readCounts(): {
+    hGet: number;
+    hGetAll: number;
+    zRange: number;
+    zCard: number;
+  } {
     return {
       hGet: this.#hGetReads,
       hGetAll: this.#hGetAllReads,
       zRange: this.#zRangeReads,
+      zCard: this.#zCardReads,
     };
   }
 
@@ -99,7 +125,12 @@ export class InMemoryRedis {
     return next;
   }
 
-  zAdd(key: string, members: SortedMember[]): number {
+  // Devvit's shape: members as rest arguments.
+  async zAdd(key: string, ...members: SortedMember[]): Promise<number> {
+    return this.zAddMembers(key, members);
+  }
+
+  zAddMembers(key: string, members: SortedMember[]): number {
     const set = this.sortedSet(key);
     for (const member of members) set.set(member.member, member.score);
     this.bump(key);
@@ -199,7 +230,7 @@ export class InMemoryTransaction {
     key: string,
     ...members: SortedMember[]
   ): Promise<InMemoryTransaction> {
-    this.#commands.push(() => this.redis.zAdd(key, members));
+    this.#commands.push(() => this.redis.zAddMembers(key, members));
     return this;
   }
 

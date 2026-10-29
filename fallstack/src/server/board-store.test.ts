@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { boardSnapshotFor, createBoardStore } from './board-store.js';
+import {
+  boardSnapshotFor,
+  createBoardStore,
+  PRESENCE_WINDOW_MS,
+} from './board-store.js';
 import { createApi } from './routes/api.js';
 import { InMemoryRedis } from './testing/in-memory-redis.js';
 import {
@@ -404,11 +408,14 @@ void test('the revision endpoint reads only current board metadata', async () =>
     type: 'boardRevision',
     boardId: initial.board.boardId,
     revision: initial.revision,
+    recentClimbers: 0,
   });
+  // The 15s poll stays O(1): revision plus the presence count, never the board.
   assert.deepEqual(redis.readCounts(), {
     hGet: 1,
     hGetAll: 0,
     zRange: 0,
+    zCard: 1,
   });
 });
 
@@ -850,4 +857,21 @@ void test('each climber gets back only their own marks on the tower', async () =
   });
   assert.deepEqual(await bob.loadPlayerLegacy(), { marks: [], clearedZones: [] });
   assert.deepEqual(await nobody.loadPlayerLegacy(), { marks: [], clearedZones: [] });
+});
+
+void test('presence counts distinct climbers inside a ten-minute window', async () => {
+  const redis = new InMemoryRedis();
+  let nowMs = Date.parse('2026-07-13T12:00:00.000Z');
+  const now = () => new Date(nowMs);
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+
+  await alice.touchPresence();
+  await alice.touchPresence();
+  await bob.touchPresence();
+  assert.equal(await alice.loadRecentClimbers(), 2);
+
+  nowMs += PRESENCE_WINDOW_MS + 1;
+  await bob.touchPresence();
+  assert.equal(await alice.loadRecentClimbers(), 1, 'alice went quiet');
 });

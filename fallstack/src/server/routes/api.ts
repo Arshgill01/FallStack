@@ -44,9 +44,11 @@ import {
   loadBoardState,
   loadPlayerLegacy,
   loadPlayerResume,
+  loadRecentClimbers,
   recordClearMutation,
   recordFallMutation,
   recordSummitMutation,
+  touchPresence,
 } from '../board-store.js';
 
 const defaultBoardStore = {
@@ -54,6 +56,8 @@ const defaultBoardStore = {
   loadBoardState,
   loadPlayerResume,
   loadPlayerLegacy,
+  touchPresence,
+  loadRecentClimbers,
   advancePlayerCheckpoint,
   recordClearMutation,
   recordFallMutation,
@@ -86,10 +90,12 @@ export function createApi(dependencies: ApiDependencies): Hono {
     if (!postId) return error(c, 'postId is required but missing from context');
 
     try {
-      const [state, resume, legacy] = await Promise.all([
+      await touchPresenceQuietly(dependencies);
+      const [state, resume, legacy, recentClimbers] = await Promise.all([
         dependencies.boardStore.loadBoardState(),
         dependencies.boardStore.loadPlayerResume(),
         dependencies.boardStore.loadPlayerLegacy(),
+        dependencies.boardStore.loadRecentClimbers().catch(() => 0),
       ]);
       const username =
         dependencies.context.username ??
@@ -104,6 +110,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
         username,
         resume,
         legacy,
+        recentClimbers,
         snapshot: boardSnapshotFor(state),
       });
     } catch (err) {
@@ -117,11 +124,15 @@ export function createApi(dependencies: ApiDependencies): Hono {
       return error(c, 'postId is required but missing from context');
 
     try {
-      const state = await dependencies.boardStore.loadBoardRevision();
+      const [state, recentClimbers] = await Promise.all([
+        dependencies.boardStore.loadBoardRevision(),
+        dependencies.boardStore.loadRecentClimbers().catch(() => 0),
+      ]);
       return c.json<BoardRevisionResponse>({
         type: 'boardRevision',
         boardId: state.board.boardId,
         revision: state.revision,
+        recentClimbers,
       });
     } catch (err) {
       console.error('board-revision failed', err);
@@ -132,6 +143,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
   api.post('/record-fall', async (c) => {
     if (!dependencies.context.postId)
       return error(c, 'postId is required but missing from context');
+    await touchPresenceQuietly(dependencies);
 
     const parsed = validateRecordFallRequest(
       await c.req.json<Partial<RecordFallRequest>>().catch(() => null),
@@ -208,6 +220,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
   api.post('/record-clear', async (c) => {
     if (!dependencies.context.postId)
       return error(c, 'postId is required but missing from context');
+    await touchPresenceQuietly(dependencies);
 
     const parsed = validateRecordClearRequest(
       await c.req.json<Partial<RecordClearRequest>>().catch(() => null),
@@ -293,6 +306,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
   api.post('/record-summit', async (c) => {
     if (!dependencies.context.postId)
       return error(c, 'postId is required but missing from context');
+    await touchPresenceQuietly(dependencies);
 
     const parsed = validateRecordSummitRequest(
       await c.req.json<Partial<RecordSummitRequest>>().catch(() => null),
@@ -391,6 +405,13 @@ async function namedClimber(
   return username && /^[A-Za-z0-9_-]{2,24}$/.test(username)
     ? `u/${username}`
     : null;
+}
+
+// Presence is a courtesy signal; it must never cost a climber their event.
+async function touchPresenceQuietly(dependencies: ApiDependencies) {
+  await dependencies.boardStore.touchPresence().catch((error: unknown) => {
+    console.warn('Presence touch failed.', error);
+  });
 }
 
 function isNewMutation(

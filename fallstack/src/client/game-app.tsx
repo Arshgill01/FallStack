@@ -2092,6 +2092,7 @@ export function GameApp() {
   const [sceneReady, setSceneReady] = useState(false);
   const [resume, setResume] = useState<PlayerResume | null>(null);
   const [legacy, setLegacy] = useState<PlayerLegacy>(EMPTY_LEGACY);
+  const [recentClimbers, setRecentClimbers] = useState(0);
   const changedSinceVisitRef = useRef<ChangedSlot[]>([]);
   const [summitOpen, setSummitOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -2386,6 +2387,7 @@ export function GameApp() {
       setDiscussionUrl(data.postUrl);
       setSupportUrl(data.supportUrl);
       setResume(data.resume);
+      setRecentClimbers(data.recentClimbers ?? 0);
       const playerLegacy = data.legacy ?? EMPTY_LEGACY;
       setLegacy(playerLegacy);
       const since = sinceLastVisit(
@@ -2880,7 +2882,11 @@ export function GameApp() {
       if (document.visibilityState !== 'visible') return;
       void (async () => {
         try {
-          const changed = await fetchChangedBoardSnapshot(snapshot);
+          const changed = await fetchChangedBoardSnapshot(
+            snapshot,
+            fetch,
+            (revision) => setRecentClimbers(revision.recentClimbers ?? 0)
+          );
           if (changed) reconcileRemoteSnapshot(changed);
         } catch (error) {
           console.error('shared refresh failed', error);
@@ -2930,6 +2936,7 @@ export function GameApp() {
           try {
             const response = await fetch('/api/init-game');
             const data = await parseApiResponse<InitGameResponse>(response);
+            setRecentClimbers(data.recentClimbers ?? 0);
             reconcileRemoteSnapshot(data.snapshot);
           } catch (error) {
             console.error(
@@ -3326,6 +3333,17 @@ export function GameApp() {
             {currentZoneEffect.label}
           </span>
         </div>
+
+        {sharedAvailable && recentClimbers > 1 ? (
+          <div
+            className="hud-overlay presence-pill"
+            role="status"
+            aria-label={`${recentClimbers} climbers on this tower in the last 10 minutes`}
+          >
+            <span className="presence-dot" aria-hidden="true" />
+            {recentClimbers} climbing
+          </div>
+        ) : null}
 
         {/* Controls hint */}
         <div className="hud-overlay controls-hint" aria-hidden="true">
