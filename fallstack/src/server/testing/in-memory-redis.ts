@@ -27,6 +27,13 @@ export class InMemoryRedis {
     return this.#hashes.get(key)?.get(field);
   }
 
+  async hMGet(key: string, fields: string[]): Promise<(string | null)[]> {
+    this.#hGetReads += 1;
+    this.purgeExpired(key);
+    const hash = this.#hashes.get(key);
+    return fields.map((field) => hash?.get(field) ?? null);
+  }
+
   async hGetAll(key: string): Promise<Record<string, string>> {
     this.#hGetAllReads += 1;
     this.purgeExpired(key);

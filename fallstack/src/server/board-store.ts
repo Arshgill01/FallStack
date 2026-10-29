@@ -16,6 +16,7 @@ import {
   createSeededCounters,
   createSeededSiteCounters,
   deriveSnapshot,
+  FAILURE_BUCKETS,
   isZoneId,
   SEEDED_TOTAL_FALLS,
   TOP_ZONE_ID,
@@ -32,6 +33,7 @@ import {
   type MutationPlan,
 } from '../shared/game/mutation-plans.js';
 import { type MutationReceipt } from '../shared/game/mutation-receipts.js';
+import type { PlayerLegacy } from '../shared/api.js';
 import type {
   ClearRescuer,
   ResolvedFall,
@@ -68,6 +70,7 @@ type BoardStoreRedis = {
   expire: (key: string, seconds: number) => Promise<unknown> | unknown;
   hGet: (key: string, field: string) => Promise<string | undefined>;
   hGetAll: (key: string) => Promise<Record<string, string>>;
+  hMGet: (key: string, fields: string[]) => Promise<(string | null)[]>;
   hSet: (
     key: string,
     values: Record<string, string>
@@ -125,6 +128,7 @@ export function createBoardStore(dependencies: BoardStoreDependencies) {
     loadBoardStateForDate: (date: Date) =>
       loadBoardStateWith({ ...resolved, now: () => date }),
     loadPlayerResume: () => loadPlayerResumeWith(resolved),
+    loadPlayerLegacy: () => loadPlayerLegacyWith(resolved),
     advancePlayerCheckpoint: (clearedZoneId: ZoneId) =>
       advancePlayerCheckpointWith(resolved, clearedZoneId),
     recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
@@ -147,6 +151,7 @@ export const loadBoardState = defaultBoardStore.loadBoardState;
 export const loadBoardStateForDate = defaultBoardStore.loadBoardStateForDate;
 export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
 export const loadPlayerResume = defaultBoardStore.loadPlayerResume;
+export const loadPlayerLegacy = defaultBoardStore.loadPlayerLegacy;
 export const advancePlayerCheckpoint =
   defaultBoardStore.advancePlayerCheckpoint;
 export const recordFallMutation = defaultBoardStore.recordFallMutation;
@@ -223,6 +228,48 @@ async function loadPlayerResumeWith(
   return {
     zoneId: isZoneId(stored) ? stored : ZONE_IDS[0],
     mode: 'account',
+  };
+}
+
+// Reads the contribution fields the caps already keep, so a climber's own
+// marks cost one read and no new writes. A shared anonymous token is nobody's
+// legacy, so it gets none.
+async function loadPlayerLegacyWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<PlayerLegacy> {
+  const { context } = dependencies;
+  if (!context.userId && !context.loid) return { marks: [], clearedZones: [] };
+  const { board, seed } = currentBoard(dependencies);
+  const contributor = contributorToken(context);
+  const siteIds = Object.keys(createSeededSiteCounters(seed.dailySeed));
+  const markFields = siteIds.flatMap((siteId) =>
+    FAILURE_BUCKETS.map((bucket) => ({
+      siteId,
+      bucket,
+      field: `${contributor}|site|${siteId}|${bucket}`,
+    }))
+  );
+  const clearFields = ZONE_IDS.map((zoneId) => ({
+    zoneId,
+    field: `${contributor}|zone|${zoneId}|clears`,
+  }));
+  const values = await dependencies.redis.hMGet(boardKeys(board).contributors, [
+    ...markFields.map((mark) => mark.field),
+    ...clearFields.map((clear) => clear.field),
+  ]);
+  return {
+    marks: markFields
+      .map((mark, index) => ({
+        siteId: mark.siteId,
+        bucket: mark.bucket,
+        count: safeNumber(values[index] ?? undefined),
+      }))
+      .filter((mark) => mark.count > 0),
+    clearedZones: clearFields
+      .filter(
+        (_, index) => safeNumber(values[markFields.length + index] ?? undefined) > 0
+      )
+      .map((clear) => clear.zoneId),
   };
 }
 

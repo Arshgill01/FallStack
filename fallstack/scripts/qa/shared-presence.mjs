@@ -173,7 +173,7 @@ async function echoState(page) {
         above: texts.find((text) => text.startsWith('↑')) ?? null,
         below: texts.find((text) => text.startsWith('↓')) ?? null,
       },
-      stamps: texts.filter((text) => /^\+1 |A fall/.test(text)),
+      stamps: texts.filter((text) => /^\+1 |A fall|New since/.test(text)),
       unused: active,
     };
   });
@@ -322,6 +322,41 @@ try {
   );
   assert.match(caught, /caught 1\.$/);
   report.steps.push({ step: 'saves', receipt: clearBody.message, aliceLabel: caught });
+
+  // Legacy: bob's fall is part of First Gap's foothold, and only bob sees
+  // his seal on it.
+  const bobLegacy = await bob.evaluate(() => [
+    ...window.__fallstackFindScene().yourArtifactIds,
+  ]);
+  const aliceLegacy = await alice.evaluate(() => [
+    ...window.__fallstackFindScene().yourArtifactIds,
+  ]);
+  assert.equal(bobLegacy.length, 1, 'bob sees his own mark');
+  assert.deepEqual(aliceLegacy, [], 'alice has no marks of her own');
+  await shot(bob, '05-bob-your-mark');
+  report.steps.push({ step: 'legacy', bob: bobLegacy, alice: aliceLegacy });
+
+  // Return visit: alice leaves, erin falls, alice comes back to a recap.
+  const aliceContext = alice.context();
+  await alice.close();
+  pages.delete('alice');
+  await seedFall('erin', 'First Gap', 'overjump');
+  const back = await aliceContext.newPage();
+  back.on('pageerror', (error) => errors.push(`alice-back: ${String(error)}`));
+  pages.set('alice', back);
+  await back.goto(`${baseUrl}/game.html`);
+  await back.waitForFunction(() =>
+    Boolean(
+      window.__fallstackFindScene?.()?.controlsReady &&
+        document.querySelector('.game-shell')?.dataset.gameplayReady === 'true'
+    )
+  );
+  await back.waitForTimeout(350);
+  const recap = await back.locator('.mutation-banner').innerText();
+  const rings = await echoState(back);
+  await shot(back, '06-return-recap');
+  assert.match(recap, /^Since your last climb: 1 fall/);
+  report.steps.push({ step: 'return', recap, rings: rings.stamps });
 
   report.broadcasts = broadcasts.length;
   report.errors = errors;

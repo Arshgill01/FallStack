@@ -42,6 +42,7 @@ import {
   advancePlayerCheckpoint,
   loadBoardRevision,
   loadBoardState,
+  loadPlayerLegacy,
   loadPlayerResume,
   recordClearMutation,
   recordFallMutation,
@@ -52,6 +53,7 @@ const defaultBoardStore = {
   loadBoardRevision,
   loadBoardState,
   loadPlayerResume,
+  loadPlayerLegacy,
   advancePlayerCheckpoint,
   recordClearMutation,
   recordFallMutation,
@@ -84,9 +86,10 @@ export function createApi(dependencies: ApiDependencies): Hono {
     if (!postId) return error(c, 'postId is required but missing from context');
 
     try {
-      const [state, resume] = await Promise.all([
+      const [state, resume, legacy] = await Promise.all([
         dependencies.boardStore.loadBoardState(),
         dependencies.boardStore.loadPlayerResume(),
+        dependencies.boardStore.loadPlayerLegacy(),
       ]);
       const username =
         dependencies.context.username ??
@@ -100,6 +103,7 @@ export function createApi(dependencies: ApiDependencies): Hono {
         supportUrl: redditModmailUrl(dependencies.context.subredditName),
         username,
         resume,
+        legacy,
         snapshot: boardSnapshotFor(state),
       });
     } catch (err) {

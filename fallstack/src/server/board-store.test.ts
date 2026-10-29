@@ -813,3 +813,41 @@ void test('clears thank community rescuers once per climber, across replays', as
   assert.equal(rendered?.saves, 2);
   assert.match(rendered?.label ?? '', /caught 2\.$/);
 });
+
+void test('each climber gets back only their own marks on the tower', async () => {
+  const redis = new InMemoryRedis();
+  const now = () => new Date('2026-07-13T12:00:00.000Z');
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+  const nobody = createBoardStore({
+    redis,
+    context: { subredditId: 'fallstack_dev', subredditName: 'fallstack_dev' },
+    now,
+  });
+  const state = await alice.loadBoardState();
+  const site = boardSnapshotFor(state).sites[0]!;
+  for (const eventId of ['fall-a-1', 'fall-a-2'])
+    await alice.recordFallMutation({
+      state: await alice.loadBoardState(),
+      eventId,
+      fall: { zoneId: site.zoneId, siteId: site.id, siteName: site.name, bucket: 'wall_bonk' },
+      highestY: 6000,
+      username: 'u/alice',
+    });
+  const clearSite = resolveClearSite(boardSnapshotFor(state), ZONE_IDS[0])!;
+  await alice.recordClearMutation({
+    state: await alice.loadBoardState(),
+    eventId: 'clear-a-1',
+    zoneId: ZONE_IDS[0],
+    ...clearSite,
+    highestY: zoneById(ZONE_IDS[0]).yTop,
+    username: 'u/alice',
+  });
+
+  assert.deepEqual(await alice.loadPlayerLegacy(), {
+    marks: [{ siteId: site.id, bucket: 'wall_bonk', count: 2 }],
+    clearedZones: [ZONE_IDS[0]],
+  });
+  assert.deepEqual(await bob.loadPlayerLegacy(), { marks: [], clearedZones: [] });
+  assert.deepEqual(await nobody.loadPlayerLegacy(), { marks: [], clearedZones: [] });
+});

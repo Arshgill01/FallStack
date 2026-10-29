@@ -1,4 +1,4 @@
-import type { ZoneId } from './game/mutation';
+import type { FailureBucket, ZoneId } from './game/mutation';
 import type { BoardSnapshot } from './game/board';
 import type { FallObservation } from './game/mutation-events';
 import type { MutationReceipt } from './game/mutation-receipts';
@@ -6,6 +6,12 @@ import type { MutationReceipt } from './game/mutation-receipts';
 export type PlayerResume = {
   zoneId: ZoneId;
   mode: 'account' | 'session';
+};
+
+// What this climber put into today's tower, returned only to them.
+export type PlayerLegacy = {
+  marks: { siteId: string; bucket: FailureBucket; count: number }[];
+  clearedZones: ZoneId[];
 };
 
 export type ApiErrorResponse = {
@@ -22,6 +28,7 @@ export type InitGameResponse = {
   supportUrl: string | null;
   username: string;
   resume: PlayerResume;
+  legacy: PlayerLegacy;
   snapshot: BoardSnapshot;
 };
 

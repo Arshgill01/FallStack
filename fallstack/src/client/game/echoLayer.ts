@@ -26,6 +26,9 @@ type Marker = {
 };
 
 const MARKER_HOLD_MS = 2_600;
+// The mobile side rail covers 37px of canvas (14px border, a 20px inner
+// pillar, and its 3px gold edge; see .tower-side-rails), plus a gap.
+const RAIL_CLEARANCE = 42;
 const GRAVITY = 980;
 
 // Other climbers, rendered at the moment their event lands: a paper ghost
@@ -52,13 +55,15 @@ export class EchoLayer {
     echo: BoardEcho,
     placement: EchoPlacement,
     nowMs: number,
-    stamp: string = echoStamp(echo)
+    stamp: string = echoStamp(echo),
+    offscreen: 'marker' | 'skip' = 'marker'
   ) {
     const view = this.scene.cameras.main.worldView;
     const direction = offscreenDirection(placement.slot.y, {
       top: view.y,
       bottom: view.bottom,
     });
+    if (direction && offscreen === 'skip') return;
     if (direction) {
       const marker = this.#markers[direction];
       if (nowMs > marker.until) marker.entries = [];
@@ -156,9 +161,11 @@ export class EchoLayer {
         continue;
       }
       const text = (marker.text ??= this.#text(true));
-      // Clear of the 14px mobile side rail plus its gold inset.
-      const x = view.right - 24;
-      const y = direction === 'above' ? view.y + 124 : view.bottom - 18;
+      const x = view.right - RAIL_CLEARANCE;
+      // The top band belongs to the DOM banners, so the upward marker sits
+      // on the right edge in the upper-middle of the view instead.
+      const y =
+        direction === 'above' ? view.y + view.height * 0.4 : view.bottom - 18;
       text
         .setText(offscreenMarkerCopy(direction, marker.entries))
         .setOrigin(1, direction === 'above' ? 0 : 1)
@@ -171,10 +178,15 @@ export class EchoLayer {
   #stamp(echo: BoardEcho, placement: EchoPlacement, stamp: string) {
     const text = this.#text(echoIsMajor(echo));
     const slotX = this.options.layoutX(placement.slot.x);
-    text
-      .setText(stamp)
-      .setOrigin(0.5, 1)
-      .setPosition(slotX + placement.slot.width / 2, placement.slot.y - 10);
+    const view = this.scene.cameras.main.worldView;
+    text.setText(stamp).setOrigin(0.5, 1);
+    // Slots hug the tower walls; keep the stamp inside the rails.
+    const half = text.width / 2 + RAIL_CLEARANCE;
+    const centerX = slotX + placement.slot.width / 2;
+    text.setPosition(
+      Math.min(Math.max(centerX, view.x + half), Math.max(view.x + half, view.right - half)),
+      placement.slot.y - 10
+    );
     return text;
   }
 
