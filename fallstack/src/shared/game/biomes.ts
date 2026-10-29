@@ -328,7 +328,7 @@ export const GUST_TUNING = {
   warningStartMs: 2500,
   gustStartMs: 3200,
   gustEndMs: 4700,
-  accelerationX: 140,
+  accelerationX: 110,
 } as const;
 
 export type GustPhase = 'calm' | 'warning' | 'gust';

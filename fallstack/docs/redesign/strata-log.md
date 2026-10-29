@@ -58,7 +58,7 @@ event shapes.
 | --- | --- | --- | --- | --- |
 | 1 | Kiln Hollow | 1–3 | Bellows vents | Vent columns between some jumps puff on a 2.4 s beat. While a vent is active and you're airborne inside it, it cancels most of gravity. |
 | 2 | Tidewell | 4–5 | Bladder springs | Every other ledge is a spring. Landing at 430 px/s or faster rebounds you straight up. Holding Jump on touchdown plants you instead. |
-| 3 | Gale Loom | 6–8 | Crosswind gusts | A 5.2 s cycle: calm, then a 0.7 s warning (HUD shows the direction), then a 1.5 s gust of up to 140 px/s² sideways. Only airborne players are pushed. |
+| 3 | Gale Loom | 6–8 | Crosswind gusts | A 5.2 s cycle: calm, then a 0.7 s warning (HUD shows the direction), then a 1.5 s gust of up to 110 px/s² sideways. Only airborne players are pushed. |
 | 4 | Rime Archive | 9–10 | Slick ledges | The ground settle factor drops from 0.32 to 0.12, so landings skid. Charging zeroes x velocity, which stops the skid. |
 | 5 | Orrery Crown | 11–12 | Low gravity | Gravity × 0.8. |
 
