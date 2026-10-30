@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { boardSnapshotFor, createBoardStore } from './board-store.js';
+import {
+  boardSnapshotFor,
+  createBoardStore,
+  PRESENCE_WINDOW_MS,
+} from './board-store.js';
 import { createApi } from './routes/api.js';
 import { InMemoryRedis } from './testing/in-memory-redis.js';
+import {
+  echoKeyForEvent,
+  type BoardRevisionMessage,
+} from '../shared/realtime.js';
 import { BOTTOM_ZONE_ID, ZONE_IDS } from '../shared/game/mutation.js';
 import { zoneById } from '../shared/game/tower.js';
+import {
+  resolveClearRescuers,
+  resolveClearSite,
+} from '../shared/game/mutation-events.js';
 
 void test('concurrent climbers at one site preserve both mutations and ordered revisions', async () => {
   const redis = new InMemoryRedis();
@@ -396,11 +408,14 @@ void test('the revision endpoint reads only current board metadata', async () =>
     type: 'boardRevision',
     boardId: initial.board.boardId,
     revision: initial.revision,
+    recentClimbers: 0,
   });
+  // The 15s poll stays O(1): revision plus the presence count, never the board.
   assert.deepEqual(redis.readCounts(), {
     hGet: 1,
     hGetAll: 0,
     zRange: 0,
+    zCard: 1,
   });
 });
 
@@ -661,7 +676,7 @@ void test('the clear API derives and returns the authenticated resume checkpoint
   const redis = new InMemoryRedis();
   const realtimeMessages: Array<{
     channel: string;
-    message: { boardId: string; revision: number };
+    message: BoardRevisionMessage;
   }> = [];
   const currentDate = new Date('2026-07-13T12:00:00.000Z');
   const store = createBoardStore({
@@ -715,6 +730,17 @@ void test('the clear API derives and returns the authenticated resume checkpoint
         type: 'board-revision',
         boardId: initial.board.boardId,
         revision: initial.revision + 1,
+        // Clears are positive, so the echo may name the climber.
+        echo: {
+          kind: 'clear',
+          key: echoKeyForEvent('clear-first-zone'),
+          zoneId: ZONE_IDS[0],
+          siteId: realtimeMessages[0]?.message.echo?.siteId,
+          bucket: 'successful_clear',
+          count: 3,
+          visibleChange: 'site_reinforced',
+          climber: 'u/alice',
+        },
       },
     },
   ]);
@@ -744,3 +770,108 @@ function contextFor(userId: string) {
     userId,
   };
 }
+
+void test('clears thank community rescuers once per climber, across replays', async () => {
+  const redis = new InMemoryRedis();
+  const now = () => new Date('2026-07-13T12:00:00.000Z');
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+  const initial = await alice.loadBoardState();
+  const snapshot = boardSnapshotFor(initial);
+  const corpse = snapshot.zones[0]!.artifacts.find(
+    (artifact) => artifact.type === 'corpse_stack'
+  )!;
+  const rescuers = resolveClearRescuers(snapshot, ZONE_IDS[0], [
+    corpse.id,
+    'impact-v1:forged-short_jump',
+  ]);
+  assert.deepEqual(
+    rescuers.map((rescuer) => rescuer.id),
+    [corpse.id]
+  );
+  const clear = (store: typeof alice, eventId: string) =>
+    store.loadBoardState().then((state) => {
+      const site = resolveClearSite(boardSnapshotFor(state), ZONE_IDS[0])!;
+      return store.recordClearMutation({
+        state,
+        eventId,
+        zoneId: ZONE_IDS[0],
+        ...site,
+        highestY: zoneById(ZONE_IDS[0]).yTop,
+        username: 'u/climber',
+        rescuers,
+      });
+    });
+
+  const first = await clear(alice, 'clear-alice-1');
+  assert.deepEqual(first.saves?.map((save) => save.savesAfter), [1]);
+  const again = await clear(alice, 'clear-alice-2');
+  assert.deepEqual(again.saves, [], 'alice already thanked it today');
+  const replay = await clear(alice, 'clear-alice-1');
+  assert.deepEqual(replay, first, 'a replay returns the stored receipt');
+  const fromBob = await clear(bob, 'clear-bob-1');
+  assert.deepEqual(fromBob.saves?.map((save) => save.savesAfter), [2]);
+
+  const board = boardSnapshotFor(await alice.loadBoardState());
+  const rendered = board.zones[0]!.artifacts.find(
+    (artifact) => artifact.id === corpse.id
+  );
+  assert.deepEqual(board.saves, { [corpse.id]: 2 });
+  assert.equal(rendered?.saves, 2);
+  assert.match(rendered?.label ?? '', /caught 2\.$/);
+});
+
+void test('each climber gets back only their own marks on the tower', async () => {
+  const redis = new InMemoryRedis();
+  const now = () => new Date('2026-07-13T12:00:00.000Z');
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+  const nobody = createBoardStore({
+    redis,
+    context: { subredditId: 'fallstack_dev', subredditName: 'fallstack_dev' },
+    now,
+  });
+  const state = await alice.loadBoardState();
+  const site = boardSnapshotFor(state).sites[0]!;
+  for (const eventId of ['fall-a-1', 'fall-a-2'])
+    await alice.recordFallMutation({
+      state: await alice.loadBoardState(),
+      eventId,
+      fall: { zoneId: site.zoneId, siteId: site.id, siteName: site.name, bucket: 'wall_bonk' },
+      highestY: 6000,
+      username: 'u/alice',
+    });
+  const clearSite = resolveClearSite(boardSnapshotFor(state), ZONE_IDS[0])!;
+  await alice.recordClearMutation({
+    state: await alice.loadBoardState(),
+    eventId: 'clear-a-1',
+    zoneId: ZONE_IDS[0],
+    ...clearSite,
+    highestY: zoneById(ZONE_IDS[0]).yTop,
+    username: 'u/alice',
+  });
+
+  assert.deepEqual(await alice.loadPlayerLegacy(), {
+    marks: [{ siteId: site.id, bucket: 'wall_bonk', count: 2 }],
+    clearedZones: [ZONE_IDS[0]],
+  });
+  assert.deepEqual(await bob.loadPlayerLegacy(), { marks: [], clearedZones: [] });
+  assert.deepEqual(await nobody.loadPlayerLegacy(), { marks: [], clearedZones: [] });
+});
+
+void test('presence counts distinct climbers inside a ten-minute window', async () => {
+  const redis = new InMemoryRedis();
+  let nowMs = Date.parse('2026-07-13T12:00:00.000Z');
+  const now = () => new Date(nowMs);
+  const alice = createBoardStore({ redis, context: contextFor('alice'), now });
+  const bob = createBoardStore({ redis, context: contextFor('bob'), now });
+
+  await alice.touchPresence();
+  await alice.touchPresence();
+  await bob.touchPresence();
+  assert.equal(await alice.loadRecentClimbers(), 2);
+
+  nowMs += PRESENCE_WINDOW_MS + 1;
+  await bob.touchPresence();
+  assert.equal(await alice.loadRecentClimbers(), 1, 'alice went quiet');
+});

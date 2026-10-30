@@ -105,6 +105,7 @@ void test('local clear and summit update result summary', () => {
     attemptId: 'attempt_local_clear',
     zoneId: BOTTOM_ZONE_ID,
     highestY: bottom.yTop - 10,
+    helperArtifactIds: [],
   });
   const summit = applyLocalSummit(cleared, {
     attemptId: 'attempt_local_summit',
@@ -144,6 +145,7 @@ void test('local events preserve existing local result achievements', () => {
     attemptId: 'attempt_after_summit_clear',
     zoneId: MID_ZONE_ID,
     highestY: zoneById(MID_ZONE_ID).yTop - 10,
+    helperArtifactIds: [],
   });
 
   assert.equal(afterFall.totalSummits, 1);
@@ -173,6 +175,7 @@ void test('local falls and clears update highest climber when progress improves'
     attemptId: 'attempt_local_lower_clear',
     zoneId: BOTTOM_ZONE_ID,
     highestY: bottom.yTop - 10,
+    helperArtifactIds: [],
   });
 
   assert.equal(afterFall.result.highestClimberUsername, 'you');

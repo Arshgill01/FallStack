@@ -65,4 +65,5 @@ export type SoundId =
   | 'spring'
   | 'hop'
   | 'thread'
+  | 'echo'
   | 'ui';

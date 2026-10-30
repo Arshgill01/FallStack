@@ -1,4 +1,8 @@
-import type { FailureBucket, SiteMutationCounters } from './mutation.js';
+import type {
+  ArtifactType,
+  FailureBucket,
+  SiteMutationCounters,
+} from './mutation.js';
 import {
   createClearMutationReceipt,
   createMutationReceipt,
@@ -10,6 +14,8 @@ export const CONTRIBUTOR_BUCKET_CAP = 3;
 export const CONTRIBUTOR_DAILY_FALL_CAP = 10;
 export const CONTRIBUTOR_ZONE_CLEAR_CAP = 3;
 export const CONTRIBUTOR_SUMMIT_CAP = 1;
+// A climber can thank each community artifact once a day.
+export const CONTRIBUTOR_SAVE_CAP = 1;
 
 export type MutationPlan = {
   receipt: MutationReceipt;
@@ -67,10 +73,19 @@ export function planClearMutation(input: {
   siteName: string;
   siteCounters: SiteMutationCounters;
   contributorClearCount: number;
+  rescuers?: RescuerState[];
   existingReceipt?: MutationReceipt | null;
 }): MutationPlan {
   if (input.existingReceipt) return existingMutationPlan(input.existingReceipt);
   const capped = input.contributorClearCount >= CONTRIBUTOR_ZONE_CLEAR_CAP;
+  const saves = (input.rescuers ?? [])
+    .filter((rescuer) => rescuer.contributorSaveCount < CONTRIBUTOR_SAVE_CAP)
+    .map((rescuer) => ({
+      artifactId: rescuer.artifactId,
+      siteName: rescuer.siteName,
+      artifactType: rescuer.artifactType,
+      savesAfter: rescuer.savesBefore + 1,
+    }));
   return {
     receipt: createClearMutationReceipt({
       eventId: input.eventId,
@@ -80,11 +95,20 @@ export function planClearMutation(input: {
       siteName: input.siteName,
       siteBefore: input.siteCounters,
       rejection: capped ? 'capped' : null,
+      saves,
     }),
     applyMutation: !capped,
     storeReceipt: true,
   };
 }
+
+export type RescuerState = {
+  artifactId: string;
+  siteName: string;
+  artifactType: ArtifactType;
+  savesBefore: number;
+  contributorSaveCount: number;
+};
 
 export function planSummitMutation(input: {
   eventId: string;

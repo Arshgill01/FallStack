@@ -102,6 +102,14 @@ export function clampedArtifactLabelCenter(
 }
 
 export function inWorldArtifactLabel(
+  artifact: Pick<Artifact, 'bucket' | 'count'> & { saves?: number }
+): string {
+  const label = inWorldArtifactCause(artifact);
+  const saves = artifact.saves ?? 0;
+  return saves > 0 ? `${label.replace(/\.$/, '')} · caught ${saves}.` : label;
+}
+
+function inWorldArtifactCause(
   artifact: Pick<Artifact, 'bucket' | 'count'>
 ): string {
   if (artifact.bucket === 'short_jump')

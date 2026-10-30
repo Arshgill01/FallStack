@@ -6,12 +6,14 @@
 import type { ApiErrorResponse } from '../../shared/api.js';
 import type { BoardSnapshot, MutationBeat } from '../../shared/game/board.js';
 import {
+  earnedRescuers,
   TOP_ZONE_ID,
   ZONE_IDS,
   type FailureBucket,
   type ZoneId,
 } from '../../shared/game/mutation.js';
 import type { MutationReceipt } from '../../shared/game/mutation-receipts.js';
+import { MAX_CLEAR_HELPERS } from '../../shared/game/events.js';
 import {
   createCommunity,
   type ApiCall,
@@ -27,6 +29,7 @@ import {
   checkClearTarget,
   checkMutation,
   checkObserverSync,
+  checkSaves,
   checkSnapshot,
   probeSnapshot,
   renderedArtifactsAt,
@@ -107,11 +110,11 @@ export class ConnectivityRun {
     return call;
   }
 
-  async clear(player: Player, zoneId: ZoneId) {
+  async clear(player: Player, zoneId: ZoneId, helperArtifactIds: string[] = []) {
     const before = await this.begin(player);
     const hintStart = this.community.hints.length;
     const othersResume = await this.resumeSnapshot(player);
-    const call = await player.clear(zoneId);
+    const call = await player.clear(zoneId, helperArtifactIds);
     const receipt = receiptOf(call);
     this.count(receipt ? receiptOutcome(receipt) : `http-${call.status}`);
     if (!receipt || !call.ok) return call;
@@ -123,6 +126,16 @@ export class ConnectivityRun {
       zoneId
     );
     if (receipt.accepted) this.caps.recordClear(player.contributorKey, zoneId);
+    checkSaves({
+      ledger: this.ledger,
+      before,
+      after,
+      receipt,
+      zoneId,
+      helperArtifactIds,
+      caps: this.caps,
+      contributor: player.contributorKey,
+    });
     checkMutation({
       ledger: this.ledger,
       before,
@@ -351,6 +364,7 @@ export type SimulationReport = {
     acceptedEvents: number;
     organicFalls: number;
     clears: number;
+    saves: number;
     summits: number;
     visibleBeats: number;
     renderedArtifacts: number;
@@ -451,7 +465,18 @@ export async function runCommunitySimulation(
         climber.budget = 0;
         climber.sessionsLeft = 0;
       } else {
-        await run.clear(climber.player, zoneId);
+        // The climber stood on some of the zone's community rescuers on the
+        // way up; now and then a client reports one that does not exist.
+        const helpers = earnedRescuers(view.sites)
+          .filter((rescuer) => rescuer.zoneId === zoneId && random() < 0.5)
+          .map((rescuer) => rescuer.id);
+        if (random() < 0.05) helpers.unshift(`${sites[0]?.id ?? 'x'}-forged`);
+        // The shipped client sends at most this many, like the scene does.
+        await run.clear(
+          climber.player,
+          zoneId,
+          helpers.slice(0, MAX_CLEAR_HELPERS)
+        );
         climber.zoneIndex += 1;
         climber.siteIndex = 0;
         zonesReached = Math.max(zonesReached, climber.zoneIndex);
@@ -502,6 +527,7 @@ export async function runCommunitySimulation(
       acceptedEvents: final.revision - (final.totalFalls - final.organicFalls),
       organicFalls: final.organicFalls,
       clears: final.totalClears,
+      saves: Object.values(final.saves).reduce((sum, value) => sum + value, 0),
       summits: final.totalSummits,
       visibleBeats: run.visibleBeats.length,
       renderedArtifacts: rendered.length,

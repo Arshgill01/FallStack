@@ -182,14 +182,14 @@ function markdown(report, gaps) {
     '',
     '## Runs',
     '',
-    '| Date | Seed | Accepted | Falls | Clears | Summits | Visible beats | Rendered artifacts (organic) | First organic artifact (step) | Deepest zone | Rejections |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |',
+    '| Date | Seed | Accepted | Falls | Clears | Saves | Summits | Visible beats | Rendered artifacts (organic) | First organic artifact (step) | Deepest zone | Rejections |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |',
     ...report.runs.map(({ config, metrics, outcomes }) => {
       const rejections = Object.entries(outcomes)
         .filter(([key]) => key.startsWith('rejected') || key.startsWith('http'))
         .map(([key, count]) => `${key.replace('rejected:', '')} ${count}`)
         .join(', ');
-      return `| ${config.date} | ${config.seed} | ${metrics.acceptedEvents} | ${metrics.organicFalls} | ${metrics.clears} | ${metrics.summits} | ${metrics.visibleBeats} | ${metrics.renderedArtifacts} (${metrics.organicArtifacts}) | ${metrics.firstOrganicArtifactStep ?? '–'} | ${metrics.zonesReached} | ${rejections || '–'} |`;
+      return `| ${config.date} | ${config.seed} | ${metrics.acceptedEvents} | ${metrics.organicFalls} | ${metrics.clears} | ${metrics.saves} | ${metrics.summits} | ${metrics.visibleBeats} | ${metrics.renderedArtifacts} (${metrics.organicArtifacts}) | ${metrics.firstOrganicArtifactStep ?? '–'} | ${metrics.zonesReached} | ${rejections || '–'} |`;
     }),
     '',
     'Edges, gaps, and the simulated community live in `src/server/testing/`. ' +

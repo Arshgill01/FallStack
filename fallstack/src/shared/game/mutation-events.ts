@@ -1,8 +1,10 @@
 import { deriveImpactSites, type ImpactSite } from './impact-sites.js';
 import {
   earnedHelpers,
+  earnedRescuers,
   type Artifact,
   type EarnedHelper,
+  type EarnedRescuer,
   type FailureBucket,
   type GameSnapshot,
   type ZoneId,
@@ -135,6 +137,26 @@ export function resolveClearSite(
         siteFailureTotal(right) - siteFailureTotal(left)
     )[0];
   return site ? { siteId: site.id, siteName: site.name } : null;
+}
+
+export type ClearRescuer = EarnedRescuer & { siteName: string };
+
+// The community artifacts a clear may thank: earned rescuers in the cleared
+// zone, by id. Displaced-but-earned rescuers count, as with helper falls.
+export function resolveClearRescuers(
+  snapshot: GameSnapshot,
+  zoneId: ZoneId,
+  artifactIds: readonly string[]
+): ClearRescuer[] {
+  const rescuers = new Map(
+    earnedRescuers(snapshot.sites).map((rescuer) => [rescuer.id, rescuer])
+  );
+  const names = new Map(snapshot.sites.map((site) => [site.id, site.name]));
+  return [...new Set(artifactIds)].flatMap((id) => {
+    const rescuer = rescuers.get(id);
+    if (!rescuer || rescuer.zoneId !== zoneId) return [];
+    return [{ ...rescuer, siteName: names.get(rescuer.siteId) ?? 'this zone' }];
+  });
 }
 
 function siteFailureTotal(site: GameSnapshot['sites'][number]): number {

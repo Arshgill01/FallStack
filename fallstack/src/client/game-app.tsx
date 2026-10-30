@@ -18,12 +18,15 @@ import type {
   RecordClearResponse,
   RecordFallResponse,
   RecordSummitResponse,
+  PlayerLegacy,
   PlayerResume,
 } from '../shared/api';
 import {
+  artifactSlot,
   BOTTOM_ZONE_ID,
   createDailySeed,
   earnedHelpers,
+  isRescuerType,
   type Artifact,
   type ArtifactTier,
   type GameSnapshot,
@@ -44,12 +47,19 @@ import {
   resolveFallObservation,
   scopeFallEvidenceToZone,
 } from '../shared/game/mutation-events.js';
-import type { MutationReceipt } from '../shared/game/mutation-receipts.js';
+import { MAX_CLEAR_HELPERS } from '../shared/game/events.js';
+import type {
+  MutationReceipt,
+  SaveCredit,
+} from '../shared/game/mutation-receipts.js';
 import type { BoardSnapshot, MutationBeat } from '../shared/game/board.js';
 import {
+  echoKeyForEvent,
   isBoardRevisionMessage,
   isNewerBoardRevision,
+  parseBoardEcho,
   realtimeChannelForBoard,
+  type BoardEcho,
 } from '../shared/realtime.js';
 import {
   generateDailyTower,
@@ -117,6 +127,24 @@ import {
 } from './game/layout';
 import { renderReliquaryArtifact } from './game/renderArtifacts';
 import { renderClimber } from './game/renderClimbers';
+import { renderFormingMark, renderTierPressure } from './game/renderForming';
+import { EchoLayer } from './game/echoLayer';
+import { renderYourMark } from './game/renderLegacy';
+import {
+  EMPTY_LEGACY,
+  legacyCopy,
+  type ChangedSlot,
+  readVisitMemory,
+  sinceLastVisit,
+  withReceiptMark,
+  writeVisitMemory,
+  yourArtifacts,
+} from './game/legacy';
+import { echoPlacement, OwnEchoKeys, thanksEchoes } from './game/echoes';
+import {
+  deriveFormingMarks,
+  slotKindForBucket,
+} from '../shared/game/forming.js';
 import {
   POWER_UP_COLORS,
   renderBiomeBackdrop,
@@ -319,6 +347,11 @@ class FallstackScene extends Phaser.Scene {
     until: number;
   } | null = null;
   private expiredArtifactIds = new Set<string>();
+  // Community footholds and ghosts stood on since the last checkpoint; a
+  // clear thanks them.
+  private rescuersThisZone = new Set<string>();
+  private yourArtifactIds = new Set<string>();
+  private echoLayer?: EchoLayer;
   private artifactTimers = new Map<
     string,
     {
@@ -469,6 +502,11 @@ class FallstackScene extends Phaser.Scene {
     this.events.once('destroy', () =>
       window.removeEventListener('fallstack:climber', onClimber)
     );
+    this.echoLayer = new EchoLayer(this, {
+      layoutX: (x) => this.layoutX(x),
+      renderScale: () => this.renderScale,
+      reducedMotion: () => this.reducedMotion,
+    });
 
     this.refreshSnapshot(window.fallstackSnapshot);
     this.publishZone();
@@ -573,7 +611,9 @@ class FallstackScene extends Phaser.Scene {
       body.setVelocityX(0);
     }
 
-    if (input.left || input.right || this.charging || !onFloor)
+    // Only the climber's own input dismisses labels; a respawn drop or a
+    // remote reconcile must not hide the tower's explanation of itself.
+    if (input.left || input.right || this.charging)
       this.artifactLabelDismissedZones.add(this.currentZone);
 
     if (this.charging) {
@@ -731,6 +771,62 @@ class FallstackScene extends Phaser.Scene {
       snapshot,
       until: this.time.now + 5_200,
     };
+  }
+
+  setYourArtifacts(ids: Set<string>) {
+    const same =
+      ids.size === this.yourArtifactIds.size &&
+      [...ids].every((id) => this.yourArtifactIds.has(id));
+    if (same) return;
+    this.yourArtifactIds = ids;
+    this.drawWorld();
+  }
+
+  // On a return visit, ring what changed in view while this climber was away.
+  showChangedSinceVisit(slots: readonly ChangedSlot[]) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.echoLayer) return;
+    for (const changed of slots) {
+      const site = snapshot.sites.find((item) => item.id === changed.siteId);
+      if (!site) continue;
+      const echo: BoardEcho = {
+        kind: changed.bucket === 'successful_clear' ? 'clear' : 'fall',
+        key: '00000000',
+        zoneId: site.zoneId,
+        siteId: site.id,
+        bucket: changed.bucket,
+        count: null,
+        visibleChange: 'mark_added',
+        climber: null,
+      };
+      const placement = echoPlacement(echo, snapshot.sites, this.towerPlatforms);
+      if (placement)
+        this.echoLayer.show(
+          echo,
+          placement,
+          this.time.now,
+          'New since you left',
+          'skip'
+        );
+    }
+  }
+
+  // Your clear lighting the community footholds that carried you.
+  showThanks(saves: readonly SaveCredit[]) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.echoLayer) return;
+    for (const { echo, stamp } of thanksEchoes(saves, snapshot.sites)) {
+      const placement = echoPlacement(echo, snapshot.sites, this.towerPlatforms);
+      if (placement) this.echoLayer.show(echo, placement, this.time.now, stamp);
+    }
+  }
+
+  // Another climber's event, the moment the server accepts it.
+  showEcho(echo: BoardEcho) {
+    const snapshot = window.fallstackSnapshot;
+    if (!snapshot || !this.echoLayer) return;
+    const placement = echoPlacement(echo, snapshot.sites, this.towerPlatforms);
+    if (placement) this.echoLayer.show(echo, placement, this.time.now);
   }
 
   hudNoticePlacement(noticeHeight: number): HudNoticePlacement {
@@ -1070,6 +1166,12 @@ class FallstackScene extends Phaser.Scene {
     if (player.body.blocked.down || player.body.touching.down) {
       this.landingMaterial = artifactLandingMaterial(type);
       this.landingSurface = 'artifact';
+      if (
+        typeof artifactId === 'string' &&
+        artifactZoneId === this.respawnZone &&
+        isRescuerType(type)
+      )
+        this.rescuersThisZone.add(artifactId);
     }
     if (type === 'corpse_stack' || type === 'mercy_nail') {
       if (typeof artifactId === 'string') {
@@ -1184,12 +1286,18 @@ class FallstackScene extends Phaser.Scene {
     this.respawnZone = nextZone;
     this.checkpointed.add(clearedZone);
     this.showPlayerCeremony('checkpoint');
+    const helperArtifactIds = [...this.rescuersThisZone].slice(
+      0,
+      MAX_CLEAR_HELPERS
+    );
+    this.rescuersThisZone.clear();
     window.dispatchEvent(
       new CustomEvent<ClearEventDetail>('fallstack:clear', {
         detail: {
           attemptId: this.currentAttemptId,
           zoneId: clearedZone,
           highestY: this.highestY,
+          helperArtifactIds,
         },
       })
     );
@@ -1251,6 +1359,7 @@ class FallstackScene extends Phaser.Scene {
     this.publishedChargePercent = 0;
     this.lastHelperTouchAt = -Infinity;
     this.lastHelperArtifactId = null;
+    this.rescuersThisZone.clear();
     this.wallBonkPlatformId = null;
     this.lastLaunchDirection = 0;
     this.pendingImpactSpeed = 0;
@@ -1261,6 +1370,8 @@ class FallstackScene extends Phaser.Scene {
     this.showPlayerCeremony('respawn');
     this.dynamics.onRespawn(checkpoint);
     this.publishLoadout(true);
+    // After a fall the tower has something new to say about this zone.
+    this.artifactLabelDismissedZones.delete(this.respawnZone);
     this.artifactTimers.clear();
     this.expiredArtifactIds.clear();
     this.drawWorld();
@@ -1421,8 +1532,21 @@ class FallstackScene extends Phaser.Scene {
     // 4. DRAW ARTIFACTS AND LABELS
     const snapshot = window.fallstackSnapshot;
     if (!snapshot) return;
+    // A site one fall from growing something says so instead of describing
+    // what it already has: that sentence is the invitation.
+    const forming = deriveFormingMarks(snapshot.sites).sort(
+      (left, right) =>
+        left.needed - left.count - (right.needed - right.count)
+    );
+    const imminentSites = new Set(
+      forming
+        .filter((mark) => mark.needed - mark.count === 1)
+        .map((mark) => mark.siteId)
+    );
     const labelled = labelledArtifactIds(
-      snapshot.zones.flatMap((zone) => zone.artifacts)
+      snapshot.zones
+        .flatMap((zone) => zone.artifacts)
+        .filter((artifact) => !imminentSites.has(artifact.siteId))
     );
     for (const zone of snapshot.zones) {
       if (!activeZoneIds.has(zone.id)) continue;
@@ -1433,6 +1557,25 @@ class FallstackScene extends Phaser.Scene {
           labelled.has(artifact.id)
         );
       }
+    }
+
+    // 5. DRAW ARTIFACTS STILL FORMING FROM SUB-THRESHOLD FALLS
+    const labelledSites = new Set(
+      snapshot.zones
+        .flatMap((zone) => zone.artifacts)
+        .filter((artifact) => labelled.has(artifact.id))
+        .map((artifact) => artifact.siteId)
+    );
+    for (const mark of forming) {
+      if (!activeZoneIds.has(mark.zoneId) || !this.graphics) continue;
+      const layout = { ...mark, x: this.layoutX(mark.x) };
+      renderFormingMark(this.graphics, layout, {
+        reducedMotion: this.reducedMotion,
+        timeMs: this.time.now,
+      });
+      if (labelledSites.has(mark.siteId)) continue;
+      labelledSites.add(mark.siteId);
+      this.addArtifactLabel(layout.x + layout.width / 2, layout.y - 6, mark.copy);
     }
   }
 
@@ -1453,6 +1596,9 @@ class FallstackScene extends Phaser.Scene {
           this.addArtifactLabel(centerX, y, inWorldArtifactLabel(artifact));
       },
     });
+    renderTierPressure(this.graphics, artifact);
+    if (this.yourArtifactIds.has(artifact.id))
+      renderYourMark(this.graphics, artifact);
   }
 
   private drawDynamicElements(deltaMs: number) {
@@ -1579,6 +1725,9 @@ class FallstackScene extends Phaser.Scene {
 
     // 6. DRAW THE EXACT SITE NAMED BY THE LATEST MUTATION RECEIPT
     this.drawMutationHighlight(g);
+
+    // 6b. DRAW OTHER CLIMBERS' EVENTS AS THEY LAND
+    this.echoLayer?.draw(g, this.time.now);
 
     // 7. DRAW BIOME MOTION AND PICKUPS
     this.drawStrata(g);
@@ -1867,14 +2016,11 @@ class FallstackScene extends Phaser.Scene {
       (candidate) => candidate.id === highlight.receipt.siteId
     );
     if (!site) return;
-    const slot =
-      highlight.receipt.bucket === 'short_jump'
-        ? site.helperSlot
-        : highlight.receipt.bucket === 'wall_bonk'
-          ? site.ghostSlot
-          : highlight.receipt.bucket === 'successful_clear'
-            ? site.lanternSlot
-            : site.hazardSlot;
+    if (!highlight.receipt.bucket) return;
+    const slot = artifactSlot(
+      site,
+      slotKindForBucket(highlight.receipt.bucket)
+    );
     const x = this.layoutX(slot.x);
     const pulse = this.reducedMotion
       ? 0.92
@@ -2214,6 +2360,9 @@ export function GameApp() {
   const [loading, setLoading] = useState(true);
   const [sceneReady, setSceneReady] = useState(false);
   const [resume, setResume] = useState<PlayerResume | null>(null);
+  const [legacy, setLegacy] = useState<PlayerLegacy>(EMPTY_LEGACY);
+  const [recentClimbers, setRecentClimbers] = useState(0);
+  const changedSinceVisitRef = useRef<ChangedSlot[]>([]);
   const [summitOpen, setSummitOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [discussionUrl, setDiscussionUrl] = useState<string | null>(null);
@@ -2279,6 +2428,8 @@ export function GameApp() {
   const pendingBoardApplyRef = useRef<() => void>(() => {});
   const pendingBoardApplyTimerRef = useRef<number | null>(null);
   const restoredBoardRef = useRef<string | null>(null);
+  const ownEchoKeysRef = useRef(new OwnEchoKeys());
+  const lastEchoSoundAtRef = useRef(0);
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
@@ -2544,10 +2695,21 @@ export function GameApp() {
       setDiscussionUrl(data.postUrl);
       setSupportUrl(data.supportUrl);
       setResume(data.resume);
+      setRecentClimbers(data.recentClimbers ?? 0);
+      const playerLegacy = data.legacy ?? EMPTY_LEGACY;
+      setLegacy(playerLegacy);
+      const since = sinceLastVisit(
+        readVisitMemory(localStorage, data.snapshot.boardId),
+        data.snapshot,
+        playerLegacy
+      );
+      changedSinceVisitRef.current = since?.changedSlots ?? [];
       window.fallstackSnapshot = data.snapshot;
       setSnapshot(data.snapshot);
       if (successMessage === undefined) {
-        showMutation(openingMutationMessage(data.snapshot, true));
+        showMutation(
+          since?.copy ?? openingMutationMessage(data.snapshot, true)
+        );
       } else if (successMessage) {
         showMutation(successMessage);
       }
@@ -2638,6 +2800,12 @@ export function GameApp() {
     setCurrentZoneId(resume.zoneId);
     sceneRef.current?.restoreCheckpoint(resume.zoneId);
     restoredBoardRef.current = boardKey;
+    const changed = changedSinceVisitRef.current;
+    changedSinceVisitRef.current = [];
+    if (changed.length > 0)
+      window.requestAnimationFrame(() =>
+        sceneRef.current?.showChangedSinceVisit(changed)
+      );
     if (resume.zoneId !== BOTTOM_ZONE_ID) {
       const frameId = window.requestAnimationFrame(() => {
         showCheckpoint(
@@ -3000,7 +3168,20 @@ export function GameApp() {
     if (!snapshot) return;
     window.fallstackSnapshot = snapshot;
     sceneRef.current?.refreshSnapshot(snapshot);
+    if (isBoardSnapshot(snapshot)) writeVisitMemory(localStorage, snapshot);
   }, [snapshot]);
+
+  useEffect(() => {
+    if (!snapshot || !sceneReady) return;
+    sceneRef.current?.setYourArtifacts(
+      new Set(yourArtifacts(snapshot, legacy).map((artifact) => artifact.id))
+    );
+  }, [legacy, sceneReady, snapshot]);
+
+  const legacyLine = useMemo(
+    () => (snapshot ? legacyCopy(snapshot, legacy) : null),
+    [legacy, snapshot]
+  );
 
   useEffect(() => {
     if (!isBoardSnapshot(snapshot) || !sharedAvailable) return;
@@ -3009,7 +3190,11 @@ export function GameApp() {
       if (document.visibilityState !== 'visible') return;
       void (async () => {
         try {
-          const changed = await fetchChangedBoardSnapshot(snapshot);
+          const changed = await fetchChangedBoardSnapshot(
+            snapshot,
+            fetch,
+            (revision) => setRecentClimbers(revision.recentClimbers ?? 0)
+          );
           if (changed) reconcileRemoteSnapshot(changed);
         } catch (error) {
           console.error('shared refresh failed', error);
@@ -3034,6 +3219,20 @@ export function GameApp() {
       onMessage: (message: unknown) => {
         const current = window.fallstackSnapshot;
         if (
+          isBoardRevisionMessage(message) &&
+          isBoardSnapshot(current) &&
+          message.boardId === current.boardId
+        ) {
+          const echo = parseBoardEcho(message.echo);
+          if (echo && !ownEchoKeysRef.current.has(echo.key)) {
+            sceneRef.current?.showEcho(echo);
+            if (performance.now() - lastEchoSoundAtRef.current > 700) {
+              lastEchoSoundAtRef.current = performance.now();
+              soundRef.current?.play('echo', { echoKind: echo.kind });
+            }
+          }
+        }
+        if (
           requestInFlight ||
           !isBoardSnapshot(current) ||
           !isBoardRevisionMessage(message) ||
@@ -3045,6 +3244,7 @@ export function GameApp() {
           try {
             const response = await fetch('/api/init-game');
             const data = await parseApiResponse<InitGameResponse>(response);
+            setRecentClimbers(data.recentClimbers ?? 0);
             reconcileRemoteSnapshot(data.snapshot);
           } catch (error) {
             console.error(
@@ -3114,6 +3314,7 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(echoKeyForEvent(`fall:${detail.attemptId}`));
       try {
         const res = await fetch('/api/record-fall', {
           method: 'POST',
@@ -3127,6 +3328,7 @@ export function GameApp() {
           }),
         });
         const data = await parseApiResponse<RecordFallResponse>(res);
+        setLegacy((current) => withReceiptMark(current, data.receipt));
         applyBoardSnapshot(data.snapshot);
         sceneRef.current?.showMutationReceipt(data.receipt, data.snapshot);
         if (activeFallFeedbackAttemptRef.current === detail.attemptId)
@@ -3181,6 +3383,9 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(
+        echoKeyForEvent(`clear:${detail.attemptId}:${detail.zoneId}`)
+      );
       try {
         const res = await fetch('/api/record-clear', {
           method: 'POST',
@@ -3197,6 +3402,7 @@ export function GameApp() {
         setResume(data.resume);
         applyBoardSnapshot(data.snapshot);
         showCheckpoint(data.message, '');
+        sceneRef.current?.showThanks(data.receipt.saves ?? []);
       } catch (error) {
         console.error('record-clear failed', error);
         if (showApiErrorReceipt(error)) return;
@@ -3234,6 +3440,7 @@ export function GameApp() {
         return;
       }
 
+      ownEchoKeysRef.current.add(echoKeyForEvent(`summit:${detail.attemptId}`));
       try {
         const res = await fetch('/api/record-summit', {
           method: 'POST',
@@ -3458,6 +3665,16 @@ export function GameApp() {
         </div>
 
         <StrataHud zoneId={currentZoneId} />
+        {sharedAvailable && recentClimbers > 1 ? (
+          <div
+            className="hud-overlay presence-pill"
+            role="status"
+            aria-label={`${recentClimbers} climbers on this tower in the last 10 minutes`}
+          >
+            <span className="presence-dot" aria-hidden="true" />
+            {recentClimbers} climbing
+          </div>
+        ) : null}
 
         {/* Controls hint */}
         <div className="hud-overlay controls-hint" aria-hidden="true">
@@ -3607,7 +3824,8 @@ export function GameApp() {
               <p>
                 Falls add one anonymous scar at the missed jump. Repeated misses
                 can grow helpers, temporary ghosts, or crumbling hazards. A
-                clean zone clear repairs the route and becomes your checkpoint.
+                clean zone clear repairs the route and becomes your checkpoint,
+                and thanks every community foothold you stood on.
               </p>
               <dl className="guide-key">
                 <div>
@@ -3790,6 +4008,11 @@ export function GameApp() {
                 </dl>
               ) : null}
 
+              {legacyLine ? (
+                <p className="tower-memory-session tower-memory-legacy">
+                  {legacyLine}
+                </p>
+              ) : null}
               <p className="tower-memory-session">
                 Your session · {sessionStats.falls} falls ·{' '}
                 {sessionStats.clears} clears · {sessionStats.summits} summits

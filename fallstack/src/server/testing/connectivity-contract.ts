@@ -8,17 +8,25 @@ import type {
   Artifact,
   FailureBucket,
   SiteSnapshot,
+  ZoneId,
   ZoneStatus,
 } from '../../shared/game/mutation.js';
 import {
   CONTRIBUTOR_BUCKET_CAP,
   CONTRIBUTOR_DAILY_FALL_CAP,
+  CONTRIBUTOR_SAVE_CAP,
   CONTRIBUTOR_SUMMIT_CAP,
   CONTRIBUTOR_ZONE_CLEAR_CAP,
 } from '../../shared/game/mutation-plans.js';
 import type { MutationReceipt } from '../../shared/game/mutation-receipts.js';
-import { realtimeChannelForBoard } from '../../shared/realtime.js';
+import {
+  echoKeyForEvent,
+  parseBoardEcho,
+  realtimeChannelForBoard,
+} from '../../shared/realtime.js';
 import { zoneById } from '../../shared/game/tower.js';
+import { bucketDrivesVisibleSlot, siteFace } from '../../shared/game/forming.js';
+import { resolveClearRescuers } from '../../shared/game/mutation-events.js';
 
 export type EdgeKind = 'contract' | 'probe';
 
@@ -90,6 +98,12 @@ export const CONNECTIVITY_EDGES = {
     rule: 'If the rendered artifact at a site changes, the receipt that caused it announces a visible change.',
     kind: 'contract',
   },
+  'receipt.every-fall-visible': {
+    from: 'accepted event',
+    to: 'rendered site face',
+    rule: 'Every accepted event below a slot’s ceiling changes what the site draws (artifact, forming silhouette, or tier pip), so nobody’s fall is invisible.',
+    kind: 'contract',
+  },
   'snapshot.provenance': {
     from: 'site counters',
     to: 'artifact labels + headline',
@@ -106,6 +120,12 @@ export const CONNECTIVITY_EDGES = {
     from: 'accepted mutation',
     to: 'realtime channel',
     rule: 'Each accepted mutation sends one revision hint on the board channel; rejections send none.',
+    kind: 'contract',
+  },
+  'realtime.echo': {
+    from: 'accepted mutation',
+    to: 'every open client',
+    rule: 'The hint carries an echo of exactly what happened (site, bucket, count, visible change) so other climbers see it live; fall echoes name nobody.',
     kind: 'contract',
   },
   'remote.convergence': {
@@ -130,6 +150,12 @@ export const CONNECTIVITY_EDGES = {
     from: 'zone clear',
     to: 'most-scarred site',
     rule: 'A clean clear reinforces the site in its zone with the most failures.',
+    kind: 'contract',
+  },
+  'clear.saves': {
+    from: 'clear after standing on community artifacts',
+    to: 'those artifacts’ saves',
+    rule: 'An accepted clear adds one save to each valid rescuer in its zone the climber has not thanked today, and to nothing else.',
     kind: 'contract',
   },
   'clear.resume': {
@@ -279,6 +305,19 @@ export class CapModel {
     bump(this.#summits, contributor);
   }
 
+  readonly #saves = new Map<string, number>();
+
+  wouldAcceptSave(contributor: string, artifactId: string) {
+    return (
+      (this.#saves.get(`${contributor}|${artifactId}`) ?? 0) <
+      CONTRIBUTOR_SAVE_CAP
+    );
+  }
+
+  recordSave(contributor: string, artifactId: string) {
+    bump(this.#saves, `${contributor}|${artifactId}`);
+  }
+
   // Lets callers skip actions the climber could not contribute anyway.
   fallsLeft(contributor: string) {
     return CONTRIBUTOR_DAILY_FALL_CAP - (this.#falls.get(contributor) ?? 0);
@@ -353,7 +392,12 @@ export type MutationCheck = {
   receipt: MutationReceipt;
   responseSnapshot: BoardSnapshot | undefined;
   expectedAccepted: boolean;
-  newHints: { channel: string; boardId: string; revision: number }[];
+  newHints: {
+    channel: string;
+    boardId: string;
+    revision: number;
+    echo?: unknown;
+  }[];
   counter: Counter | null;
   actorUsername: string | null;
 };
@@ -456,6 +500,41 @@ export function checkMutation(input: MutationCheck) {
       `expected ${expectedHints} hint(s) at r${after.revision}, got ${JSON.stringify(input.newHints)}`
   );
 
+  if (accepted && input.newHints.length === 1) {
+    const echo = parseBoardEcho(input.newHints[0]!.echo);
+    const expectedKind =
+      input.counter === null
+        ? 'summit'
+        : input.counter === 'successfulClears'
+          ? 'clear'
+          : 'fall';
+    const problems: string[] = [];
+    if (!echo) problems.push('missing or malformed echo');
+    else {
+      if (echo.kind !== expectedKind)
+        problems.push(`kind ${echo.kind} vs ${expectedKind}`);
+      if (echo.key !== echoKeyForEvent(receipt.eventId))
+        problems.push('key does not match the event');
+      if (echo.siteId !== receipt.siteId || echo.bucket !== receipt.bucket)
+        problems.push(`site/bucket ${echo.siteId}/${echo.bucket}`);
+      if (echo.count !== receipt.counterAfter)
+        problems.push(`count ${echo.count} vs ${receipt.counterAfter}`);
+      if (echo.visibleChange !== receipt.visibleChange)
+        problems.push(`change ${echo.visibleChange} vs ${receipt.visibleChange}`);
+      if (expectedKind === 'fall' && echo.climber !== null)
+        problems.push(`fall echo names ${echo.climber}`);
+      if (
+        expectedKind !== 'fall' &&
+        input.actorUsername &&
+        echo.climber !== `u/${input.actorUsername}`
+      )
+        problems.push(`positive echo names ${echo.climber}`);
+    }
+    ledger.check('realtime.echo', problems.length === 0, () =>
+      problems.join('; ')
+    );
+  }
+
   if (input.counter && input.counter !== 'successfulClears') {
     const beat = after.recentMutations.find(
       (candidate) => candidate.revision === receipt.revisionAfter
@@ -518,6 +597,22 @@ function checkVisibleChange(input: MutationCheck) {
       'receipt.promise-visible',
       status === expected,
       () => `${change}, but the status is ${status} at ${describe()}`
+    );
+  }
+
+  const priorSite = siteById(before, siteId);
+  const nextSite = siteById(after, siteId);
+  const bucket = input.counter === 'successfulClears' ? 'successful_clear' : input.counter;
+  if (
+    receipt.accepted &&
+    priorSite &&
+    nextSite &&
+    bucketDrivesVisibleSlot(priorSite.counters, bucket)
+  ) {
+    ledger.check(
+      'receipt.every-fall-visible',
+      siteFace(priorSite) !== siteFace(nextSite),
+      () => `${receipt.siteName} drew the same face after ${describe()}`
     );
   }
 
@@ -651,6 +746,48 @@ export function probeSnapshot(ledger: ContractLedger, snapshot: BoardSnapshot) {
   }
 }
 
+export function checkSaves(input: {
+  ledger: ContractLedger;
+  before: BoardSnapshot;
+  after: BoardSnapshot;
+  receipt: MutationReceipt;
+  zoneId: ZoneId;
+  helperArtifactIds: string[];
+  caps: CapModel;
+  contributor: string;
+}) {
+  const { before, after, receipt } = input;
+  const expected = receipt.accepted
+    ? resolveClearRescuers(before, input.zoneId, input.helperArtifactIds)
+        .map((rescuer) => rescuer.id)
+        .filter((id) => input.caps.wouldAcceptSave(input.contributor, id))
+    : [];
+  for (const id of expected) input.caps.recordSave(input.contributor, id);
+  const problems: string[] = [];
+  const ids = new Set([
+    ...Object.keys(before.saves),
+    ...Object.keys(after.saves),
+  ]);
+  for (const id of ids) {
+    const delta = (after.saves[id] ?? 0) - (before.saves[id] ?? 0);
+    const want = expected.includes(id) ? 1 : 0;
+    if (delta !== want) problems.push(`${id} moved ${delta}, expected ${want}`);
+  }
+  const credited = (receipt.saves ?? []).map((save) => save.artifactId).sort();
+  if (credited.join() !== [...expected].sort().join())
+    problems.push(`receipt thanked ${credited.join() || 'nothing'}, expected ${expected.join() || 'nothing'}`);
+  for (const id of expected) {
+    const artifact = after.zones
+      .flatMap((zone) => zone.artifacts)
+      .find((candidate) => candidate.id === id);
+    if (artifact && artifact.saves !== after.saves[id])
+      problems.push(`${id} renders caught ${artifact.saves}, board has ${after.saves[id]}`);
+  }
+  input.ledger.check('clear.saves', problems.length === 0, () =>
+    problems.slice(0, 4).join('; ')
+  );
+}
+
 export function checkClearTarget(
   ledger: ContractLedger,
   before: BoardSnapshot,
@@ -724,6 +861,12 @@ export function boardsEquivalent(left: BoardSnapshot, right: BoardSnapshot) {
     left.totalSummits !== right.totalSummits
   )
     return false;
+  const saveIds = new Set([
+    ...Object.keys(left.saves),
+    ...Object.keys(right.saves),
+  ]);
+  for (const id of saveIds)
+    if ((left.saves[id] ?? 0) !== (right.saves[id] ?? 0)) return false;
   return left.sites.every((site) => {
     const other = siteById(right, site.id);
     return (

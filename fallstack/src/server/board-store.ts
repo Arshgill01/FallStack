@@ -16,6 +16,7 @@ import {
   createSeededCounters,
   createSeededSiteCounters,
   deriveSnapshot,
+  FAILURE_BUCKETS,
   isZoneId,
   SEEDED_TOTAL_FALLS,
   TOP_ZONE_ID,
@@ -32,9 +33,14 @@ import {
   type MutationPlan,
 } from '../shared/game/mutation-plans.js';
 import { type MutationReceipt } from '../shared/game/mutation-receipts.js';
-import type { ResolvedFall } from '../shared/game/mutation-events.js';
+import type { PlayerLegacy } from '../shared/api.js';
+import type {
+  ClearRescuer,
+  ResolvedFall,
+} from '../shared/game/mutation-events.js';
 
 const DAILY_KEY_TTL_SECONDS = 60 * 60 * 72;
+export const PRESENCE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_TRANSACTION_ATTEMPTS = 3;
 
 type BoardStoreContext = {
@@ -65,6 +71,10 @@ type BoardStoreRedis = {
   expire: (key: string, seconds: number) => Promise<unknown> | unknown;
   hGet: (key: string, field: string) => Promise<string | undefined>;
   hGetAll: (key: string) => Promise<Record<string, string>>;
+  hMGet: (key: string, fields: string[]) => Promise<(string | null)[]>;
+  zAdd: (key: string, ...members: SortedMember[]) => Promise<unknown>;
+  zCard: (key: string) => Promise<number>;
+  zRemRangeByScore: (key: string, min: number, max: number) => Promise<unknown>;
   hSet: (
     key: string,
     values: Record<string, string>
@@ -98,6 +108,7 @@ export type StoredBoardState = {
   totalSummits: number;
   achievements: AchievementState;
   recentMutations: MutationBeat[];
+  saves: Record<string, number>;
 };
 
 export type StoredBoardRevision = {
@@ -121,6 +132,9 @@ export function createBoardStore(dependencies: BoardStoreDependencies) {
     loadBoardStateForDate: (date: Date) =>
       loadBoardStateWith({ ...resolved, now: () => date }),
     loadPlayerResume: () => loadPlayerResumeWith(resolved),
+    loadPlayerLegacy: () => loadPlayerLegacyWith(resolved),
+    touchPresence: () => touchPresenceWith(resolved),
+    loadRecentClimbers: () => loadRecentClimbersWith(resolved),
     advancePlayerCheckpoint: (clearedZoneId: ZoneId) =>
       advancePlayerCheckpointWith(resolved, clearedZoneId),
     recordFallMutation: (input: Parameters<typeof recordFallMutationWith>[1]) =>
@@ -143,6 +157,9 @@ export const loadBoardState = defaultBoardStore.loadBoardState;
 export const loadBoardStateForDate = defaultBoardStore.loadBoardStateForDate;
 export const loadBoardRevision = defaultBoardStore.loadBoardRevision;
 export const loadPlayerResume = defaultBoardStore.loadPlayerResume;
+export const loadPlayerLegacy = defaultBoardStore.loadPlayerLegacy;
+export const touchPresence = defaultBoardStore.touchPresence;
+export const loadRecentClimbers = defaultBoardStore.loadRecentClimbers;
 export const advancePlayerCheckpoint =
   defaultBoardStore.advancePlayerCheckpoint;
 export const recordFallMutation = defaultBoardStore.recordFallMutation;
@@ -154,12 +171,13 @@ async function loadBoardStateWith(
 ): Promise<StoredBoardState> {
   const { board, seed } = currentBoard(dependencies);
   const keys = boardKeys(board);
-  const [counterFields, metaFields, achievementFields, recentMembers] =
+  const [counterFields, metaFields, achievementFields, recentMembers, saveFields] =
     await Promise.all([
       dependencies.redis.hGetAll(keys.counters),
       dependencies.redis.hGetAll(keys.meta),
       dependencies.redis.hGetAll(keys.achievements),
       dependencies.redis.zRange(keys.recent, 0, -1),
+      dependencies.redis.hGetAll(keys.saves),
     ]);
   const siteCounters = createSeededSiteCounters(seed.dailySeed);
 
@@ -183,6 +201,11 @@ async function loadBoardStateWith(
       .map(({ member }) => parseMutationBeat(member))
       .filter((beat): beat is MutationBeat => Boolean(beat))
       .slice(-20),
+    saves: Object.fromEntries(
+      Object.entries(saveFields)
+        .map(([artifactId, value]) => [artifactId, safeNumber(value)] as const)
+        .filter(([, value]) => value > 0)
+    ),
   };
 }
 
@@ -213,6 +236,77 @@ async function loadPlayerResumeWith(
   return {
     zoneId: isZoneId(stored) ? stored : ZONE_IDS[0],
     mode: 'account',
+  };
+}
+
+// Honest presence: climbers who opened or acted on today's board recently.
+// Members are contributor tokens and never leave the server; only the count
+// does. Signed-out climbers without a device id share one token, so the
+// count is a lower bound.
+async function touchPresenceWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<void> {
+  const { board } = currentBoard(dependencies);
+  const key = boardKeys(board).presence;
+  await dependencies.redis.zAdd(key, {
+    member: contributorToken(dependencies.context),
+    score: dependencies.now().getTime(),
+  });
+  await dependencies.redis.expire(key, DAILY_KEY_TTL_SECONDS);
+}
+
+async function loadRecentClimbersWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<number> {
+  const { board } = currentBoard(dependencies);
+  const key = boardKeys(board).presence;
+  await dependencies.redis.zRemRangeByScore(
+    key,
+    0,
+    dependencies.now().getTime() - PRESENCE_WINDOW_MS
+  );
+  return dependencies.redis.zCard(key);
+}
+
+// Reads the contribution fields the caps already keep, so a climber's own
+// marks cost one read and no new writes. A shared anonymous token is nobody's
+// legacy, so it gets none.
+async function loadPlayerLegacyWith(
+  dependencies: ResolvedBoardStoreDependencies
+): Promise<PlayerLegacy> {
+  const { context } = dependencies;
+  if (!context.userId && !context.loid) return { marks: [], clearedZones: [] };
+  const { board, seed } = currentBoard(dependencies);
+  const contributor = contributorToken(context);
+  const siteIds = Object.keys(createSeededSiteCounters(seed.dailySeed));
+  const markFields = siteIds.flatMap((siteId) =>
+    FAILURE_BUCKETS.map((bucket) => ({
+      siteId,
+      bucket,
+      field: `${contributor}|site|${siteId}|${bucket}`,
+    }))
+  );
+  const clearFields = ZONE_IDS.map((zoneId) => ({
+    zoneId,
+    field: `${contributor}|zone|${zoneId}|clears`,
+  }));
+  const values = await dependencies.redis.hMGet(boardKeys(board).contributors, [
+    ...markFields.map((mark) => mark.field),
+    ...clearFields.map((clear) => clear.field),
+  ]);
+  return {
+    marks: markFields
+      .map((mark, index) => ({
+        siteId: mark.siteId,
+        bucket: mark.bucket,
+        count: safeNumber(values[index] ?? undefined),
+      }))
+      .filter((mark) => mark.count > 0),
+    clearedZones: clearFields
+      .filter(
+        (_, index) => safeNumber(values[markFields.length + index] ?? undefined) > 0
+      )
+      .map((clear) => clear.zoneId),
   };
 }
 
@@ -277,6 +371,7 @@ export function boardSnapshotFor(state: StoredBoardState): BoardSnapshot {
       totalClears: state.totalClears,
       totalSummits: state.totalSummits,
       achievements: state.achievements,
+      saves: state.saves,
     }),
     state.revision,
     state.recentMutations
@@ -366,11 +461,15 @@ async function recordClearMutationWith(
     siteName: string;
     highestY: number;
     username: string;
+    rescuers?: ClearRescuer[];
   }
 ): Promise<MutationReceipt> {
   const keys = boardKeys(input.state.board);
   const counterField = siteCounterField(input.siteId, 'successfulClears');
-  const contributorField = `${contributorToken(dependencies.context)}|zone|${input.zoneId}|clears`;
+  const contributor = contributorToken(dependencies.context);
+  const contributorField = `${contributor}|zone|${input.zoneId}|clears`;
+  const rescuers = input.rescuers ?? [];
+  const saveField = (artifactId: string) => `${contributor}|saved|${artifactId}`;
 
   return runTransaction(dependencies.redis, keys, async (read) => {
     const [
@@ -392,6 +491,18 @@ async function recordClearMutationWith(
       ),
       read.number(keys.achievements, 'bestStabilizerClears'),
     ]);
+    const rescuerStates = await Promise.all(
+      rescuers.map(async (rescuer) => ({
+        artifactId: rescuer.id,
+        siteName: rescuer.siteName,
+        artifactType: rescuer.type,
+        savesBefore: await read.number(keys.saves, rescuer.id),
+        contributorSaveCount: await read.number(
+          keys.contributors,
+          saveField(rescuer.id)
+        ),
+      }))
+    );
     const plan = planClearMutation({
       eventId: input.eventId,
       boardId: input.state.board.boardId,
@@ -400,6 +511,7 @@ async function recordClearMutationWith(
       siteName: input.siteName,
       siteCounters,
       contributorClearCount: contributorCount,
+      rescuers: rescuerStates,
       existingReceipt: existing,
     });
 
@@ -412,6 +524,10 @@ async function recordClearMutationWith(
         await tx.hIncrBy(keys.contributors, contributorField, 1);
         await tx.hIncrBy(keys.meta, 'organicClears', 1);
         await tx.hIncrBy(keys.meta, 'acceptedEvents', 1);
+        for (const save of plan.receipt.saves ?? []) {
+          await tx.hIncrBy(keys.saves, save.artifactId, 1);
+          await tx.hIncrBy(keys.contributors, saveField(save.artifactId), 1);
+        }
         await queueHighestClimber(
           tx,
           keys,
@@ -518,7 +634,8 @@ async function runTransaction(
       keys.contributors,
       keys.events,
       keys.achievements,
-      keys.recent
+      keys.recent,
+      keys.saves
     );
     try {
       const work = await prepare(transactionReader(redis, keys));
@@ -645,6 +762,8 @@ function boardKeys(board: BoardIdentity) {
     achievements: `${prefix}:achievements`,
     recent: `${prefix}:recent-mutations`,
     progress: `${prefix}:player-progress`,
+    saves: `${prefix}:saves`,
+    presence: `${prefix}:presence`,
   };
 }
 

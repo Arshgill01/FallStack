@@ -134,6 +134,7 @@ Current useful commands from `fallstack/`:
 - `npm test`
 - `npm run build`
 - `npm run qa:connectivity` (simulated community days; maps every shared-mutation edge, known gaps in `src/server/testing/connectivity-contract.ts`)
+- `npm run build && npx tsc --build && npm run qa:presence` (real browser climbers against the real API and Redis double: forming marks, live echoes, saves, legacy, return recap, presence; `FALLSTACK_QA_VIEWPORT=1280x800` for desktop)
 
 ## UX And Visual Direction
 

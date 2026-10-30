@@ -1012,6 +1012,43 @@ Reason:
 - Revision-first polling preserves the live community consequence without repeatedly deriving and transporting an unchanged board.
 - Calling an installation-local board cross-Reddit global would be technically false.
 
+### 40. The Shared Board Must Be Felt, Not Just Stored
+
+Context:
+
+> Players liked the concept, but the exchange felt bland: the shared state was correct yet quantized and silent. Most falls changed a counter nobody could see, other climbers were never present, and help flowed one way.
+
+Decision:
+
+> Every accepted event changes what every climber sees, other climbers appear the moment their events land, and help flows back to the falls that built it.
+
+Concrete rules:
+
+- Every fall is visible. Below the spawn threshold, a slot draws the artifact it is about to grow as a dashed, visual-only silhouette with a tally; grown artifacts show pips toward their next tier. A site one fall from growing labels itself: "1 more wall bonk wakes a ghost ledge here." This supersedes #9's "1 fall: show a faint local mark only to that player."
+- Live echoes. The realtime hint every accepted mutation already sends carries an echo of what happened: site, bucket, count, visible change. Open clients render it at once: a paper ghost tumbling off the missed ledge, a lantern rising where someone cleared, one edge marker per direction for anything out of view. Echoes are visual only; collision still changes at the safe reconcile point.
+- Saves. A clear thanks the community footholds and ghost ledges the climber stood on since the last checkpoint: one save per rescuer per climber per day. Labels read "… made this foothold · caught 4." The result's most useful artifact ranks by saves.
+- Your mark. A climber sees a seal on artifacts their own falls are part of, and Tower Memory credits what those artifacts caught. A return visit recaps what the community did meanwhile and rings the slots that moved.
+- Honest presence. "N climbing" counts distinct climbers who opened or acted on the board in the last ten minutes. It is a count, never a list, and is hidden when you are alone.
+
+Revisits #37:
+
+- #37 cut "multiplayer presence or realtime ghosts." Echoes are not streamed positions or ghost replays; they fire only at mutation boundaries (#28), reuse the one realtime send per accepted mutation (#39), and carry no movement data. Presence is a ten-minute count, not live avatars.
+
+Privacy and trust:
+
+- Fall echoes, fall receipts, and beats never name anyone. Clear and summit echoes may name the climber (#21).
+- Echo positions come from the seed and server-resolved site IDs, never from the client. The sender skips its own echo by a hashed event key, so idempotency keys are not broadcast.
+- A climber's legacy is returned only to that climber and is read from the contribution fields the caps already keep. The shared anonymous token has no legacy.
+
+Evidence:
+
+- `npm run qa:connectivity` holds `receipt.every-fall-visible`, `realtime.echo`, and `clear.saves` across 15 simulated community days (about 6,000 accepted events and 330–400 saves per day).
+- `scripts/qa/shared-presence.mjs` drives real browser clients against the real API and Redis double: a remote fall echoes on another client and not on its sender, an off-screen fall raises an edge marker, a clear's save reaches another open tower, legacy seals show only to their owner, a return visit recaps, and presence counts both climbers.
+
+Reason:
+
+- If a new player can only describe the first ten seconds as a platformer, the product is missing. Every one of these makes the shared tower visible inside those ten seconds: the opening label is an invitation, and the first remote fall is a person.
+
 ---
 
 ## Pre-Grill Brainstorm (Historical)

@@ -216,3 +216,27 @@ void test('summit event validation requires fresh bounded summit progress', () =
   );
   assert.equal(validateRecordSummitRequest(base, now).ok, false);
 });
+
+void test('clear events carry a bounded, deduplicated list of helpers', () => {
+  const bottom = zoneById(BOTTOM_ZONE_ID);
+  const clear = { ...base, zoneId: BOTTOM_ZONE_ID, highestY: bottom.yTop - 2 };
+  const legacy = validateRecordClearRequest(clear, now);
+  assert.equal(legacy.ok && legacy.value.helperArtifactIds.length, 0);
+  const helpers = validateRecordClearRequest(
+    { ...clear, helperArtifactIds: ['impact-v1:a:b-short_jump', 'impact-v1:a:b-short_jump'] },
+    now
+  );
+  assert.deepEqual(helpers.ok && helpers.value.helperArtifactIds, [
+    'impact-v1:a:b-short_jump',
+  ]);
+  for (const helperArtifactIds of [
+    'impact-v1:a:b-short_jump',
+    Array.from({ length: 7 }, (_, index) => `helper-${index}`),
+    ['<script>'],
+    [42],
+  ])
+    assert.equal(
+      validateRecordClearRequest({ ...clear, helperArtifactIds }, now).ok,
+      false
+    );
+});
