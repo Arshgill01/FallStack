@@ -219,6 +219,8 @@ window.fallstackBuildId = BUILD_ID;
 const MOBILE_NOTICE_TOP_OFFSET = 54;
 const MOBILE_NOTICE_BOTTOM_OFFSET = 12;
 const MOBILE_NOTICE_SIDE_OFFSET = 36;
+// Clears the tower frame and height gauge drawn over the canvas edges.
+const ARTIFACT_LABEL_VIEW_GUTTER = 16;
 const NOTICE_PLAY_CLEARANCE = 10;
 const LANDING_CAMERA_SETTLE_MS = 400;
 
@@ -678,6 +680,7 @@ class FallstackScene extends Phaser.Scene {
     });
     for (const label of this.artifactLabels)
       label.setVisible(showArtifactLabels);
+    if (showArtifactLabels) this.keepArtifactLabelsInView();
 
     if (this.suppressNextLanding && onFloor) {
       this.suppressNextLanding = false;
@@ -2312,8 +2315,26 @@ class FallstackScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 1);
     label.setDepth(4);
+    label.setData('anchorX', clampedX);
     this.labels.push(label);
     this.artifactLabels.push(label);
+  }
+
+  // The world is wider than a phone and the camera pans sideways, so a label
+  // clamped to the world can still sit off screen or under the tower frame.
+  private keepArtifactLabelsInView() {
+    const view = this.cameras.main.worldView;
+    for (const label of this.artifactLabels) {
+      const anchorX = label.getData('anchorX') as number;
+      label.x =
+        view.x +
+        clampedArtifactLabelCenter(
+          anchorX - view.x,
+          view.width,
+          label.width,
+          ARTIFACT_LABEL_VIEW_GUTTER
+        );
+    }
   }
 
   private rebuildArtifactBodies() {
