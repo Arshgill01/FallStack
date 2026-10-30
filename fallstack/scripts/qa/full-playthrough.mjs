@@ -803,7 +803,33 @@ async function performJump(page, current, target, attempt, blockers) {
     );
     await controlUp(page, 'Space');
   }
-  await waitForEventCount(page, 'launch', launchCount + 1, 2_000);
+  // A cursed foothold can collapse mid-charge; that fall is a real outcome.
+  const fallCount = await eventCount(page, 'fall');
+  await page.waitForFunction(
+    ({ launches, falls }) => {
+      const events = window.__fallstackQaEvents ?? [];
+      const count = (name) =>
+        events.filter((event) => event.name === name).length;
+      return count('launch') >= launches || count('fall') >= falls;
+    },
+    { launches: launchCount + 1, falls: fallCount + 1 },
+    { timeout: 2_000 }
+  );
+  if ((await eventCount(page, 'launch')) <= launchCount) {
+    await releaseControls(page);
+    return {
+      outcome: 'fall',
+      peakY: before.y,
+      frames: 0,
+      direction,
+      wallBounce,
+      bounced: false,
+      blockerIds: blockers.map((blocker) => blocker.id),
+      setupState: compactState(setupState),
+      launchState: compactState(await readScene(page, false)),
+      trace: [],
+    };
+  }
   const launchState = await readScene(page, false);
   recordVisibility(launchState, `jump-${target.id}-launch`);
 
